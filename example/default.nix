@@ -1,3 +1,5 @@
+# usage: nix-instantiate --eval --json --strict example | jq -r .
+
 with import <nixpkgs/lib>;
 with builtins;
 
@@ -47,6 +49,6 @@ let
   f = q: x: fun.${x.type} q x;
 
   q0.device = "/dev/sda";
-  x0 = import ./example.nix;
+  x0 = import ./config.nix;
 in
   f q0 x0

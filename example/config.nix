@@ -1,4 +1,4 @@
-# nix-instantiate --strict --json --eval format.nix | jq
+# usage: nix-instantiate --eval --json --strict example/config.nix | jq .
 {
   type = "table";
   format = "gpt";
