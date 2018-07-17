@@ -35,7 +35,7 @@ let
   '';
 
   fun.table = q: x: ''
-    parted -s -a optimal ${q.device} mklabel ${x.format}
+    parted -s ${q.device} mklabel ${x.format}
     ${concatStrings (imap (index: f (q // { inherit index; })) x.partitions)}
   '';
 
