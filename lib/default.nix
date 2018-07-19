@@ -12,6 +12,9 @@ let
     };
   };
 
+  config.layout = q: x:
+    foldl' mergeAttrs {} (mapAttrsToList (name: config-f { device = name; }) x.content);
+
   config.lv = q: x:
     config-f { device = "/dev/${q.vgname}/${q.name}"; } x.content;
 
@@ -33,6 +36,10 @@ let
 
   format.filesystem = q: x: ''
     mkfs.${x.format} ${q.device}
+  '';
+
+  format.layout = q: x: ''
+    ${concatStrings (mapAttrsToList (name: format-f { device = name; }) x.content)}
   '';
 
   format.lv = q: x: ''
