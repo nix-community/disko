@@ -2,4 +2,7 @@
 
 with import ../lib;
 
-  disko "/dev/sda" (import ./config.nix)
+{
+  format = format "/dev/sda" (import ./config.nix);
+  config = config "/dev/sda" (import ./config.nix);
+}
