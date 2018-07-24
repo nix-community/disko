@@ -1,8 +1,8 @@
 # usage: nix-instantiate --eval --json --strict example/config.nix | jq .
 {
-  type = "layout";
+  type = "devices";
   content = {
-    "/dev/sda" = {
+    sda = {
       type = "table";
       format = "gpt";
       partitions = [
