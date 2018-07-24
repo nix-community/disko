@@ -43,7 +43,7 @@ let {
   '';
 
   create.luks = q: x: ''
-    cryptsetup -q luksFormat ${q.device} ${x.keyfile}
+    cryptsetup -q luksFormat ${q.device} ${x.keyfile} ${toString (x.extraArgs or [])}
     cryptsetup luksOpen ${q.device} ${x.name} --key-file ${x.keyfile}
     ${body.create { device = "/dev/mapper/${x.name}"; } x.content}
   '';

@@ -29,6 +29,10 @@
             algo = "aes-xts...";
             name = "crypted";
             keyfile = "/tmp/secret.key";
+            extraArgs = [
+              "--hash sha512"
+              "--iter-time 5000"
+            ];
             content = {
               type = "lvm";
               name = "pool";
