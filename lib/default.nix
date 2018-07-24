@@ -15,12 +15,12 @@ let
   config.layout = q: x:
     foldl' mergeAttrs {} (mapAttrsToList (name: config-f { device = name; }) x.content);
 
-  config.lv = q: x:
-    config-f { device = "/dev/${q.vgname}/${q.name}"; } x.content;
-
   config.luks = q: x: {
     boot.initrd.luks.devices.${x.name}.device = q.device;
   } // config-f { device = "/dev/mapper/${x.name}"; } x.content;
+
+  config.lv = q: x:
+    config-f { device = "/dev/${q.vgname}/${q.name}"; } x.content;
 
   config.lvm = q: x:
     foldl' mergeAttrs {} (mapAttrsToList (name: config-f { inherit name; vgname = x.name; }) x.lvs);
@@ -32,48 +32,48 @@ let
     foldl' mergeAttrs {} (imap (index: config-f (q // { inherit index; })) x.partitions);
 
 
-  format-f = q: x: format.${x.type} q x;
+  create-f = q: x: create.${x.type} q x;
 
-  format.filesystem = q: x: ''
+  create.filesystem = q: x: ''
     mkfs.${x.format} ${q.device}
   '';
 
-  format.layout = q: x: ''
-    ${concatStrings (mapAttrsToList (name: format-f { device = name; }) x.content)}
+  create.layout = q: x: ''
+    ${concatStrings (mapAttrsToList (name: create-f { device = name; }) x.content)}
   '';
 
-  format.lv = q: x: ''
-    lvcreate -L ${x.size} -n ${q.name} ${q.vgname}
-    ${format-f { device = "/dev/${q.vgname}/${q.name}"; } x.content}
-  '';
-
-  format.luks = q: x: ''
+  create.luks = q: x: ''
     cryptsetup -q luksFormat ${q.device} ${x.keyfile}
     cryptsetup luksOpen ${q.device} ${x.name} --key-file ${x.keyfile}
-    ${format-f { device = "/dev/mapper/${x.name}"; } x.content}
+    ${create-f { device = "/dev/mapper/${x.name}"; } x.content}
   '';
 
-  format.lvm = q: x: ''
+  create.lv = q: x: ''
+    lvcreate -L ${x.size} -n ${q.name} ${q.vgname}
+    ${create-f { device = "/dev/${q.vgname}/${q.name}"; } x.content}
+  '';
+
+  create.lvm = q: x: ''
     pvcreate ${q.device}
     vgcreate ${x.name} ${q.device}
-    ${concatStrings (mapAttrsToList (name: format-f { inherit name; vgname = x.name; }) x.lvs)}
+    ${concatStrings (mapAttrsToList (name: create-f { inherit name; vgname = x.name; }) x.lvs)}
   '';
 
-  format.partition = q: x: ''
+  create.partition = q: x: ''
     parted -s ${q.device} mkpart ${x.part-type} ${x.fs-type or ""} ${x.start} ${x.end}
     ${optionalString (x.bootable or false) ''
       parted -s ${q.device} set ${toString q.index} boot on
     ''}
-    ${format-f { device = q.device + toString q.index; } x.content}
+    ${create-f { device = q.device + toString q.index; } x.content}
   '';
 
-  format.table = q: x: ''
+  create.table = q: x: ''
     parted -s ${q.device} mklabel ${x.format}
-    ${concatStrings (imap (index: format-f (q // { inherit index; })) x.partitions)}
+    ${concatStrings (imap (index: create-f (q // { inherit index; })) x.partitions)}
   '';
 
 in
   {
     config = device: config-f { inherit device; };
-    format = device: format-f { inherit device; };
+    create = device: create-f { inherit device; };
   }

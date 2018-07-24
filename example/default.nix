@@ -3,6 +3,6 @@
 with import ../lib;
 
 {
-  format = format "/dev/sda" (import ./config.nix);
   config = config "/dev/sda" (import ./config.nix);
+  create = create "/dev/sda" (import ./config.nix);
 }
