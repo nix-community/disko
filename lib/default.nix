@@ -82,8 +82,10 @@ let {
 
   mount.filesystem = q: x: {
       fs.${x.mountpoint} = ''
-        mkdir -p ${x.mountpoint}
-        mount ${q.device} ${x.mountpoint}
+        if ! [ "$(mount | sed -n 's:\([^ ]\+\) on ${x.mountpoint} .*:\1:p')" = ${q.device} ]; then
+          mkdir -p ${x.mountpoint}
+          mount ${q.device} ${x.mountpoint}
+        fi
       '';
     };
 
