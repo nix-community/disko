@@ -5,6 +5,7 @@ let {
 
   body.config = q: x: config.${x.type} q x;
   body.create = q: x: create.${x.type} q x;
+  body.mount = q: x: mount.${x.type} q x;
 
 
   config.filesystem = q: x: {
@@ -72,3 +73,46 @@ let {
     ${concatStrings (imap (index: body.create (q // { inherit index; })) x.partitions)}
   '';
 
+  mount.filesystem = q: x: {
+    fs.${x.mountpoint} = ''
+      mkdir -p ${x.mountpoint}
+      mount ${q.device} ${x.mountpoint}
+    '';
+  };
+
+  mount.devices = q: x: let
+    z = foldl' recursiveUpdate {} (mapAttrsToList (name: body.mount { device = "/dev/${name}"; }) x.content);
+    # attrValues returns values sorted by name.  This is important, because it
+    # ensures that "/" is processed before "/foo" etc.
+  in ''
+    ${concatStringsSep "\n" (attrValues z.luks)}
+    ${concatStringsSep "\n" (attrValues z.lvm)}
+    ${concatStringsSep "\n" (attrValues z.fs)}
+  '';
+
+  mount.luks = q: x: (
+    recursiveUpdate
+    (body.mount { device = "/dev/mapper/${x.name}"; } x.content)
+    {luks.${q.device} = ''
+      cryptsetup luksOpen ${q.device} ${x.name} --key-file ${x.keyfile}
+    '';}
+  );
+
+  mount.lv = q: x:
+    body.mount { device = "/dev/${q.vgname}/${q.name}"; } x.content;
+
+  mount.lvm = q: x: (
+    recursiveUpdate
+    (foldl' recursiveUpdate {} (mapAttrsToList (name: body.mount { inherit name; vgname = x.name; }) x.lvs))
+    {lvm.${q.device} = ''
+      vgchange -a y
+    '';}
+  );
+
+  mount.partition = q: x:
+    body.mount { device = q.device + toString q.index; } x.content;
+
+  mount.table = q: x:
+    foldl' recursiveUpdate {} (imap (index: body.mount (q // { inherit index; })) x.partitions);
+
+}
