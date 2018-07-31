@@ -3,7 +3,7 @@
 with import ../lib;
 
 {
-  config = config "/dev/sda" (import ./config.nix);
-  create = create "/dev/sda" (import ./config.nix);
-  mount = mount "/dev/sda" (import ./config.nix);
+  config = config (import ./config.nix);
+  create = create (import ./config.nix);
+  mount = mount (import ./config.nix);
 }
