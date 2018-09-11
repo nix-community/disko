@@ -96,7 +96,7 @@ let {
   in ''
     ${optionalString (hasAttr "luks" z) (concatStringsSep "\n" (attrValues z.luks))}
     ${optionalString (hasAttr "lvm" z) (concatStringsSep "\n" (attrValues z.lvm))}
-    ${optionalString (hasAttr "luks" z) (concatStringsSep "\n" (attrValues z.fs))}
+    ${optionalString (hasAttr "fs" z) (concatStringsSep "\n" (attrValues z.fs))}
   '';
 
   mount.luks = q: x: (
