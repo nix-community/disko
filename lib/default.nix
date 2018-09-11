@@ -94,9 +94,9 @@ let {
     # attrValues returns values sorted by name.  This is important, because it
     # ensures that "/" is processed before "/foo" etc.
   in ''
-    ${optionalString (hasAttr "luks" z) concatStringsSep "\n" (attrValues z.luks)}
-    ${optionalString (hasAttr "lvm" z) concatStringsSep "\n" (attrValues z.lvm)}
-    ${optionalString (hasAttr "luks" fs) concatStringsSep "\n" (attrValues z.fs)}
+    ${optionalString (hasAttr "luks" z) (concatStringsSep "\n" (attrValues z.luks))}
+    ${optionalString (hasAttr "lvm" z) (concatStringsSep "\n" (attrValues z.lvm))}
+    ${optionalString (hasAttr "luks" z) (concatStringsSep "\n" (attrValues z.fs))}
   '';
 
   mount.luks = q: x: (
