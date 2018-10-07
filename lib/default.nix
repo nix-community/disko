@@ -14,6 +14,7 @@ let {
     fileSystems.${x.mountpoint} = {
       device = q.device;
       fsType = x.format;
+      ${if x ? options then "options" else null} = x.options;
     };
   };
 
