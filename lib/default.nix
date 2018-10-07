@@ -26,7 +26,7 @@ let {
   } // config-f { device = "/dev/mapper/${x.name}"; } x.content;
 
   config.lv = q: x:
-    config-f { device = "/dev/${q.vgname}/${q.name}"; } x.content;
+    config-f { device = "/dev/mapper/${q.vgname}-${q.name}"; } x.content;
 
   config.lvm = q: x:
     foldl' recursiveUpdate {} (mapAttrsToList (name: config-f { inherit name; vgname = x.name; }) x.lvs);
@@ -56,7 +56,7 @@ let {
 
   create.lv = q: x: ''
     lvcreate -L ${x.size} -n ${q.name} ${q.vgname}
-    ${create-f { device = "/dev/${q.vgname}/${q.name}"; } x.content}
+    ${create-f { device = "/dev/mapper/${q.vgname}-${q.name}"; } x.content}
   '';
 
   create.lvm = q: x: ''
@@ -109,7 +109,7 @@ let {
   );
 
   mount.lv = q: x:
-    mount-f { device = "/dev/${q.vgname}/${q.name}"; } x.content;
+    mount-f { device = "/dev/mapper/${q.vgname}-${q.name}"; } x.content;
 
   mount.lvm = q: x: (
     recursiveUpdate
