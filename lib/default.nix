@@ -18,7 +18,7 @@ let {
   };
 
   config.devices = q: x:
-    foldl' mergeAttrs {} (mapAttrsToList (name: config-f { device = "/dev/${name}"; }) x.content);
+    foldl' recursiveUpdate {} (mapAttrsToList (name: config-f { device = "/dev/${name}"; }) x.content);
 
   config.luks = q: x: {
     boot.initrd.luks.devices.${x.name}.device = q.device;
@@ -28,13 +28,13 @@ let {
     config-f { device = "/dev/${q.vgname}/${q.name}"; } x.content;
 
   config.lvm = q: x:
-    foldl' mergeAttrs {} (mapAttrsToList (name: config-f { inherit name; vgname = x.name; }) x.lvs);
+    foldl' recursiveUpdate {} (mapAttrsToList (name: config-f { inherit name; vgname = x.name; }) x.lvs);
 
   config.partition = q: x:
     config-f { device = q.device + toString q.index; } x.content;
 
   config.table = q: x:
-    foldl' mergeAttrs {} (imap (index: config-f (q // { inherit index; })) x.partitions);
+    foldl' recursiveUpdate {} (imap (index: config-f (q // { inherit index; })) x.partitions);
 
 
   create-f = q: x: create.${x.type} q x;
