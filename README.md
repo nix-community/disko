@@ -33,7 +33,7 @@ in {
     after = ["getty@tty1.service" ];
     serviceConfig = {
       Type = "oneshot";
-      ExecStart = [ (disko.create cfg) (disk.mount cfg) (];
+      ExecStart = [ (disko.create cfg) (disk.mount cfg) ];
       StandardInput = "null";
       StandardOutput = "journal+console";
       StandardError = "inherit";
