@@ -48,7 +48,7 @@ in {
     <nixpkgs/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix>
   ];
   environment.systemPackages = with pkgs;[
-    (pkgs.writeScriptBin "tsp-create" (disko.mount cfg))
+    (pkgs.writeScriptBin "tsp-create" (disko.create cfg))
     (pkgs.writeScriptBin "tsp-mount" (disko.mount cfg))
   ];
   ## Optional: Automatically creates a service which runs at startup to perform the partitioning
