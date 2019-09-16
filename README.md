@@ -10,6 +10,31 @@ Master Boot Record
 ------------------
 This is how your iso configuation may look like
 
+/etc/nixos/tsp-disk.json (TODO: find the correct disk)
+```json
+{
+  "type": "devices",
+  "content": {
+    "sda": {
+      "type": "table",
+      "format": "msdos",
+      "partitions": [{
+        "type": "partition",
+        "start": "1M",
+        "end": "100%",
+        "bootable": true,
+        "content": {
+          "type": "filesystem",
+          "format": "ext4",
+          "mountpoint": "/"
+        }
+      }]
+    }
+  }
+}
+```
+
+/etc/nixos/configuration.nix
 ```nix
 { pkgs, ... }:
 let
@@ -26,30 +51,6 @@ in {
     (pkgs.writeScriptBin "tsp-create" (disko.mount cfg))
     (pkgs.writeScriptBin "tsp-mount" (disko.mount cfg))
   ];
-}
-```
-tsp-disk.json (TODO: find the correct disk)
-```json
-{
-  "type": "devices",
-  "content": {
-    "sda": {
-      "type": "table",
-      "format": "msdos",
-      "partitions": [
-        { "type": "partition",
-          "start": "1M",
-          "end": "100%",
-          "bootable": true,
-          "content": {
-            "type": "filesystem",
-            "format": "ext4",
-            "mountpoint": "/"
-          }
-        }
-      ]
-    }
-  }
   ## Optional: Automatically creates a service which runs at startup to perform the partitioning
   #systemd.services.install-to-hd = {
   #  enable = true;
