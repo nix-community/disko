@@ -67,6 +67,12 @@ in {
 }
 ```
 
+After `nixos-rebuild switch` this will add a `tsp-create` and a `tsp-mount`
+command:
+
+- **tsp-create**: creates & formats the partitions according to `tsp-disk.json`
+- **tsp-mount**: mounts the partitions to `/mnt`
+
 GUID Partition Table, LVM and dm-crypt
 --------------------------------------
 See `examples/`
