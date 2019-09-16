@@ -26,19 +26,6 @@ in {
     (pkgs.writeScriptBin "tsp-create" (disko.mount cfg))
     (pkgs.writeScriptBin "tsp-mount" (disko.mount cfg))
   ];
-  # Optional: Automatically creates a service which runs at startup to perform the partitioning
-  systemd.services.install-to-hd = {
-    enable = true;
-    wantedBy = ["multi-user.target"];
-    after = ["getty@tty1.service" ];
-    serviceConfig = {
-      Type = "oneshot";
-      ExecStart = [ (disko.create cfg) (disk.mount cfg) ];
-      StandardInput = "null";
-      StandardOutput = "journal+console";
-      StandardError = "inherit";
-    };
-  };
 }
 ```
 tsp-disk.json (TODO: find the correct disk)
@@ -63,6 +50,19 @@ tsp-disk.json (TODO: find the correct disk)
       ]
     }
   }
+  ## Optional: Automatically creates a service which runs at startup to perform the partitioning
+  #systemd.services.install-to-hd = {
+  #  enable = true;
+  #  wantedBy = ["multi-user.target"];
+  #  after = ["getty@tty1.service" ];
+  #  serviceConfig = {
+  #    Type = "oneshot";
+  #    ExecStart = [ (disko.create cfg) (disk.mount cfg) ];
+  #    StandardInput = "null";
+  #    StandardOutput = "journal+console";
+  #    StandardError = "inherit";
+  #  };
+  #};
 }
 ```
 
