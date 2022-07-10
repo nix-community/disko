@@ -1,4 +1,4 @@
-import <nixpkgs/nixos/tests/make-test.nix> ({ pkgs, ... }: let
+import <nixpkgs/nixos/tests/make-test-python.nix> ({ pkgs, ... }: let
 
   disko-config = {
     type = "devices";
@@ -82,7 +82,7 @@ import <nixpkgs/nixos/tests/make-test.nix> ({ pkgs, ... }: let
 in {
   name = "disko";
 
-  machine =
+  nodes.machine =
     { config, pkgs, ... }:
 
     {
@@ -96,10 +96,10 @@ in {
 
   testScript =
     ''
-      $machine->succeed("echo 'secret' > /tmp/secret.key");
-      $machine->succeed("${pkgs.writeScript "create" ((import ../lib).create disko-config)}");
-      $machine->succeed("${pkgs.writeScript "mount" ((import ../lib).mount disko-config)}");
-      $machine->succeed("test -b /dev/mapper/pool-raw");
+      machine.succeed("echo 'secret' > /tmp/secret.key");
+      machine.succeed("${pkgs.writeScript "create" ((import ../lib).create disko-config)}");
+      machine.succeed("${pkgs.writeScript "mount" ((import ../lib).mount disko-config)}");
+      machine.succeed("test -b /dev/mapper/pool-raw");
     '';
 
 })
