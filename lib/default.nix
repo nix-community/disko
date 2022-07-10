@@ -31,6 +31,8 @@ let {
   config.lvm = q: x:
     foldl' recursiveUpdate {} (mapAttrsToList (name: config-f { inherit name; vgname = x.name; }) x.lvs);
 
+  config.noop = q: x: {};
+
   config.partition = q: x:
     config-f { device = q.device + toString q.index; } x.content;
 
@@ -64,6 +66,8 @@ let {
     vgcreate ${x.name} ${q.device}
     ${concatStrings (mapAttrsToList (name: create-f { inherit name; vgname = x.name; }) x.lvs)}
   '';
+
+  create.noop = q: x: "";
 
   create.partition = q: x: ''
     parted -s ${q.device} mkpart ${x.part-type} ${x.fs-type or ""} ${x.start} ${x.end}
@@ -118,6 +122,8 @@ let {
       vgchange -a y
     '';}
   );
+
+  mount.noop = q: x: {};
 
   mount.partition = q: x:
     mount-f { device = q.device + toString q.index; } x.content;

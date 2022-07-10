@@ -56,11 +56,18 @@ import <nixpkgs/nixos/tests/make-test.nix> ({ pkgs, ... }: let
                   };
                   home = {
                     type = "lv";
-                    size = "100M";
+                    size = "10M";
                     content = {
                       type = "filesystem";
                       format = "ext4";
                       mountpoint = "/home";
+                    };
+                  };
+                  raw = {
+                    type = "lv";
+                    size = "10M";
+                    content = {
+                      type = "noop";
                     };
                   };
                 };
@@ -92,6 +99,7 @@ in {
       $machine->succeed("echo 'secret' > /tmp/secret.key");
       $machine->succeed("${pkgs.writeScript "create" ((import ../lib).create disko-config)}");
       $machine->succeed("${pkgs.writeScript "mount" ((import ../lib).mount disko-config)}");
+      $machine->succeed("test -b /dev/mapper/pool-raw");
     '';
 
 })
