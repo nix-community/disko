@@ -1,3 +1,4 @@
-final: prev: {
-  diskoEnv = import ./diskoEnv.nix {pkgs = final;};
+final: prev: rec {
+  disko.env = import ./diskoEnv.nix {pkgs = final;};
+  disko.lib = import ./lib {diskoEnv = disko.env; lib = final.lib;};
 }
