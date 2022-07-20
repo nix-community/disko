@@ -1,4 +1,8 @@
-import <nixpkgs/nixos/tests/make-test-python.nix> ({ pkgs, ... }: let
+{
+  nixpkgs ? <nixpkgs>,
+  diskoLib ? import ../. {},
+}:
+import (nixpkgs + "/nixos/tests/make-test-python.nix") ({ pkgs, ... }: let
 
   disko-config = {
     type = "devices";
@@ -87,8 +91,8 @@ in {
 
     {
       imports = [
-        <nixpkgs/nixos/modules/profiles/installation-device.nix>
-        <nixpkgs/nixos/modules/profiles/base.nix>
+        (nixpkgs + "/nixos/modules/profiles/installation-device.nix")
+        (nixpkgs + "/nixos/modules/profiles/base.nix")
       ];
 
       virtualisation.emptyDiskImages = [ 512 ];
@@ -97,8 +101,8 @@ in {
   testScript =
     ''
       machine.succeed("echo 'secret' > /tmp/secret.key");
-      machine.succeed("${pkgs.writeScript "create" ((import ../lib).create disko-config)}");
-      machine.succeed("${pkgs.writeScript "mount" ((import ../lib).mount disko-config)}");
+      machine.succeed("${pkgs.writeScript "create" (diskoLib.create disko-config)}");
+      machine.succeed("${pkgs.writeScript "mount" (diskoLib.mount disko-config)}");
       machine.succeed("test -b /dev/mapper/pool-raw");
     '';
 

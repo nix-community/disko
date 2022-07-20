@@ -1,4 +1,5 @@
-with import <nixpkgs/lib>;
+{diskoEnv, lib}:
+with lib;
 with builtins;
 
 let {
@@ -7,6 +8,7 @@ let {
   body.create = create-f {};
   body.mount = mount-f {};
 
+  bin = "${diskoEnv}/bin";
 
   config-f = q: x: config.${x.type} q x;
 
@@ -43,7 +45,7 @@ let {
   create-f = q: x: create.${x.type} q x;
 
   create.filesystem = q: x: ''
-    mkfs.${x.format} ${q.device}
+    ${bin}/mkfs.${x.format} ${q.device}
   '';
 
   create.devices = q: x: ''
@@ -51,34 +53,34 @@ let {
   '';
 
   create.luks = q: x: ''
-    cryptsetup -q luksFormat ${q.device} ${x.keyfile} ${toString (x.extraArgs or [])}
-    cryptsetup luksOpen ${q.device} ${x.name} --key-file ${x.keyfile}
+    ${bin}/cryptsetup -q luksFormat ${q.device} ${x.keyfile} ${toString (x.extraArgs or [])}
+    ${bin}/cryptsetup luksOpen ${q.device} ${x.name} --key-file ${x.keyfile}
     ${create-f { device = "/dev/mapper/${x.name}"; } x.content}
   '';
 
   create.lv = q: x: ''
-    lvcreate -L ${x.size} -n ${q.name} ${q.vgname}
+    ${bin}/lvcreate -L ${x.size} -n ${q.name} ${q.vgname}
     ${create-f { device = "/dev/mapper/${q.vgname}-${q.name}"; } x.content}
   '';
 
   create.lvm = q: x: ''
-    pvcreate ${q.device}
-    vgcreate ${x.name} ${q.device}
+    ${bin}/pvcreate ${q.device}
+    ${bin}/vgcreate ${x.name} ${q.device}
     ${concatStrings (mapAttrsToList (name: create-f { inherit name; vgname = x.name; }) x.lvs)}
   '';
 
   create.noop = q: x: "";
 
   create.partition = q: x: ''
-    parted -s ${q.device} mkpart ${x.part-type} ${x.fs-type or ""} ${x.start} ${x.end}
+    ${bin}/parted -s ${q.device} mkpart ${x.part-type} ${x.fs-type or ""} ${x.start} ${x.end}
     ${optionalString (x.bootable or false) ''
-      parted -s ${q.device} set ${toString q.index} boot on
+      ${bin}/parted -s ${q.device} set ${toString q.index} boot on
     ''}
     ${create-f { device = q.device + toString q.index; } x.content}
   '';
 
   create.table = q: x: ''
-    parted -s ${q.device} mklabel ${x.format}
+    ${bin}/parted -s ${q.device} mklabel ${x.format}
     ${concatStrings (imap (index: create-f (q // { inherit index; })) x.partitions)}
   '';
 
@@ -108,7 +110,7 @@ let {
     recursiveUpdate
     (mount-f { device = "/dev/mapper/${x.name}"; } x.content)
     {luks.${q.device} = ''
-      cryptsetup luksOpen ${q.device} ${x.name} --key-file ${x.keyfile}
+      ${bin}/cryptsetup luksOpen ${q.device} ${x.name} --key-file ${x.keyfile}
     '';}
   );
 
@@ -119,7 +121,7 @@ let {
     recursiveUpdate
     (foldl' recursiveUpdate {} (mapAttrsToList (name: mount-f { inherit name; vgname = x.name; }) x.lvs))
     {lvm.${q.device} = ''
-      vgchange -a y
+      ${bin}/vgchange -a y
     '';}
   );
 
