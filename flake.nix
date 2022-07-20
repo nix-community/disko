@@ -13,6 +13,7 @@
         };
       in rec {
         lib = import ./. {inherit pkgs;};
+        packages.env = pkgs.disko.env;
         checks.test = import (./. + "/tests/test.nix")
           {inherit nixpkgs; diskoLib = lib;}
           {inherit pkgs system;};
