@@ -45,25 +45,30 @@ let {
   create-f = q: x: create.${x.type} q x;
 
   create.filesystem = q: x: ''
+    #!${bin}/bash
     ${bin}/mkfs.${x.format} ${q.device}
   '';
 
   create.devices = q: x: ''
+    #!${bin}/bash
     ${concatStrings (mapAttrsToList (name: create-f { device = "/dev/${name}"; }) x.content)}
   '';
 
   create.luks = q: x: ''
+    #!${bin}/bash
     ${bin}/cryptsetup -q luksFormat ${q.device} ${x.keyfile} ${toString (x.extraArgs or [])}
     ${bin}/cryptsetup luksOpen ${q.device} ${x.name} --key-file ${x.keyfile}
     ${create-f { device = "/dev/mapper/${x.name}"; } x.content}
   '';
 
   create.lv = q: x: ''
+    #!${bin}/bash
     ${bin}/lvcreate -L ${x.size} -n ${q.name} ${q.vgname}
     ${create-f { device = "/dev/mapper/${q.vgname}-${q.name}"; } x.content}
   '';
 
   create.lvm = q: x: ''
+    #!${bin}/bash
     ${bin}/pvcreate ${q.device}
     ${bin}/vgcreate ${x.name} ${q.device}
     ${concatStrings (mapAttrsToList (name: create-f { inherit name; vgname = x.name; }) x.lvs)}
@@ -72,6 +77,7 @@ let {
   create.noop = q: x: "";
 
   create.partition = q: x: ''
+    #!${bin}/bash
     ${bin}/parted -s ${q.device} mkpart ${x.part-type} ${x.fs-type or ""} ${x.start} ${x.end}
     ${optionalString (x.bootable or false) ''
       ${bin}/parted -s ${q.device} set ${toString q.index} boot on
@@ -80,6 +86,7 @@ let {
   '';
 
   create.table = q: x: ''
+    #!${bin}/bash
     ${bin}/parted -s ${q.device} mklabel ${x.format}
     ${concatStrings (imap (index: create-f (q // { inherit index; })) x.partitions)}
   '';

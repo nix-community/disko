@@ -2,6 +2,8 @@
   pkgs.symlinkJoin {
     name = "diskoEnv";
     paths = with pkgs;[
+      bash
+
       # Device and partition tools
       cryptsetup
       lvm2.bin
