@@ -38,19 +38,15 @@ This is how your iso configuation may look like
 ```nix
 { pkgs, ... }:
 let
-  disko = (builtins.fetchGit {
-    url = https://cgit.lassul.us/disko/;
-    rev = "88f56a0b644dd7bfa8438409bea5377adef6aef4";
-  }) + "/lib";
+  disko = import (builtins.fetchGit {
+    url = https://github.com/nix-community/disko;
+    rev = "22b87e5c0a6fc32bb75f91f4465ba9651c2c13ca";
+  }) {};
   cfg = builtins.fromJSON ./tsp-disk.json;
+  create = pkgs.writeScript "tsp-create" (disko.create cfg);
+  mount = pkgs.writeScript "tsp-mount" (disko.mount cfg);
 in {
-  imports = [
-    <nixpkgs/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix>
-  ];
-  environment.systemPackages = with pkgs;[
-    (pkgs.writeScriptBin "tsp-create" (disko.create cfg))
-    (pkgs.writeScriptBin "tsp-mount" (disko.mount cfg))
-  ];
+  environment.systemPackages = with pkgs; [create mount];
   ## Optional: Automatically creates a service which runs at startup to perform the partitioning
   #systemd.services.install-to-hd = {
   #  enable = true;
@@ -58,7 +54,7 @@ in {
   #  after = ["getty@tty1.service" ];
   #  serviceConfig = {
   #    Type = "oneshot";
-  #    ExecStart = [ (disko.create cfg) (disk.mount cfg) ];
+  #    ExecStart = [ create mount ];
   #    StandardInput = "null";
   #    StandardOutput = "journal+console";
   #    StandardError = "inherit";
