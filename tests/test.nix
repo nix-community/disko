@@ -85,6 +85,8 @@ let
       };
     };
   };
+  tsp-create = pkgs.writeScript "create" ((pkgs.callPackage ../. {}).create disko-config);
+  tsp-mount = pkgs.writeScript "mount" ((pkgs.callPackage ../. {}).mount disko-config);
 in makeTest' {
   name = "disko";
 
@@ -105,8 +107,9 @@ in makeTest' {
 
   testScript = ''
     machine.succeed("echo 'secret' > /tmp/secret.key");
-    machine.succeed("${pkgs.writeScript "create" ((pkgs.callPackage ../. {}).create disko-config)}");
-    machine.succeed("${pkgs.writeScript "mount" ((pkgs.callPackage ../. {}).mount disko-config)}");
+    machine.succeed("${tsp-create}");
+    machine.succeed("${tsp-mount}");
+    machine.succeed("${tsp-mount}"); # verify that the command is idempotent
     machine.succeed("test -b /dev/mapper/pool-raw");
   '';
 }
