@@ -1,5 +1,12 @@
-import <nixpkgs/nixos/tests/make-test-python.nix> ({ pkgs, ... }: let
-
+{ makeTest ? import <nixpkgs/nixos/tests/make-test-python.nix>
+, pkgs ? (import <nixpkgs> {})
+}:
+let
+  makeTest' = args:
+    makeTest args {
+      inherit pkgs;
+      inherit (pkgs) system;
+    };
   disko-config = {
     type = "devices";
     content = {
@@ -78,28 +85,28 @@ import <nixpkgs/nixos/tests/make-test-python.nix> ({ pkgs, ... }: let
       };
     };
   };
-
-in {
+in makeTest' {
   name = "disko";
 
   nodes.machine =
-    { config, pkgs, ... }:
+    { config, pkgs, modulesPath, ... }:
 
     {
       imports = [
-        <nixpkgs/nixos/modules/profiles/installation-device.nix>
-        <nixpkgs/nixos/modules/profiles/base.nix>
+        (modulesPath + "/profiles/installation-device.nix")
+        (modulesPath + "/profiles/base.nix")
       ];
+
+      # speed-up eval
+      documentation.enable = false;
 
       virtualisation.emptyDiskImages = [ 512 ];
     };
 
-  testScript =
-    ''
-      machine.succeed("echo 'secret' > /tmp/secret.key");
-      machine.succeed("${pkgs.writeScript "create" ((import ../lib).create disko-config)}");
-      machine.succeed("${pkgs.writeScript "mount" ((import ../lib).mount disko-config)}");
-      machine.succeed("test -b /dev/mapper/pool-raw");
-    '';
-
-})
+  testScript = ''
+    machine.succeed("echo 'secret' > /tmp/secret.key");
+    machine.succeed("${pkgs.writeScript "create" ((pkgs.callPackage ../. {}).create disko-config)}");
+    machine.succeed("${pkgs.writeScript "mount" ((pkgs.callPackage ../. {}).mount disko-config)}");
+    machine.succeed("test -b /dev/mapper/pool-raw");
+  '';
+}
