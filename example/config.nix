@@ -24,6 +24,7 @@
           part-type = "primary";
           start = "1024MiB";
           end = "100%";
+          flags = [ "bios_grub" ];
           content = {
             type = "luks";
             algo = "aes-xts...";
