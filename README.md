@@ -10,39 +10,35 @@ Master Boot Record
 ------------------
 This is how your iso configuation may look like
 
-/etc/nixos/tsp-disk.json (TODO: find the correct disk)
-```json
-{
-  "type": "devices",
-  "content": {
-    "sda": {
-      "type": "table",
-      "format": "msdos",
-      "partitions": [{
-        "type": "partition",
-        "start": "1M",
-        "end": "100%",
-        "bootable": true,
-        "content": {
-          "type": "filesystem",
-          "format": "ext4",
-          "mountpoint": "/"
-        }
-      }]
-    }
-  }
-}
-```
-
 /etc/nixos/configuration.nix
 ```nix
 { pkgs, modulesPath, ... }:
 let
-  disko = builtins.fetchGit {
-    url = https://cgit.lassul.us/disko/;
-    rev = "88f56a0b644dd7bfa8438409bea5377adef6aef4";
+  disko = pkgs.callPackage (builtins.fetchGit {
+    url = "https://github.com/nix-community/disko";
+    ref = "master";
+  }) {};
+  cfg = {
+    type = "devices";
+    content = {
+      sda = {
+        type = "table";
+        format = "msdos";
+        partitions = [{
+          type = "partition";
+          part-type = "primary";
+          start = "1M";
+          end = "100%";
+          bootable = true;
+          content = {
+            type = "filesystem";
+            format = "ext4";
+            mountpoint = "/";
+          };
+        }];
+      };
+    };
   };
-  cfg = builtins.fromJSON ./tsp-disk.json;
 in {
   imports = [
     (modulesPath + "/installer/cd-dvd/installation-cd-minimal.nix")
