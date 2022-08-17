@@ -1,6 +1,8 @@
 disko
 =====
 
+foo
+
 nix-powered automatic disk partitioning
 
 Usage
