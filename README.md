@@ -36,16 +36,16 @@ This is how your iso configuation may look like
 
 /etc/nixos/configuration.nix
 ```nix
-{ pkgs, ... }:
+{ pkgs, modulesPath, ... }:
 let
-  disko = (builtins.fetchGit {
+  disko = builtins.fetchGit {
     url = https://cgit.lassul.us/disko/;
     rev = "88f56a0b644dd7bfa8438409bea5377adef6aef4";
-  }) + "/lib";
+  };
   cfg = builtins.fromJSON ./tsp-disk.json;
 in {
   imports = [
-    <nixpkgs/nixos/modules/installer/cd-dvd/installation-cd-minimal.nix>
+    (modulesPath + "/installer/cd-dvd/installation-cd-minimal.nix")
   ];
   environment.systemPackages = with pkgs;[
     (pkgs.writeScriptBin "tsp-create" (disko.create cfg))
