@@ -75,6 +75,9 @@ let {
     ${optionalString (x.bootable or false) ''
       parted -s ${q.device} set ${toString q.index} boot on
     ''}
+    ${concatMapStringsSep "" (flag: ''
+      parted -s ${q.device} set ${toString q.index} ${flag} on
+    '') (x.flags or [])}
     ${create-f { device = q.device + toString q.index; } x.content}
   '';
 

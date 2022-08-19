@@ -1,10 +1,32 @@
-{ pkgs, ... }:
+{ pkgs, lib, ... }:
 let
-  disko = (builtins.fetchGit {
-    url = https://cgit.lassul.us/disko/;
-    rev = "88f56a0b644dd7bfa8438409bea5377adef6aef4";
-  }) + "/lib";
-  cfg = builtins.fromJSON ./tsp-disk.json;
+  disko = import (builtins.fetchGit {
+    url = "https://github.com/nix-community/disko";
+    ref = "master";
+  }) {
+    inherit lib;
+  };
+  cfg = {
+    type = "devices";
+    content = {
+      sda = {
+        type = "table";
+        format = "msdos";
+        partitions = [{
+          type = "partition";
+          part-type = "primary";
+          start = "1M";
+          end = "100%";
+          bootable = true;
+          content = {
+            type = "filesystem";
+            format = "ext4";
+            mountpoint = "/";
+          };
+        }];
+      };
+    };
+  };
 in {
   imports = [
     (disko.config cfg)
