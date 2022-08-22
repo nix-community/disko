@@ -35,7 +35,7 @@ let {
   config.noop = q: x: {};
 
   config.partition = q: x:
-    config-f { device = q.device + toString q.index; } x.content;
+    config-f { device = q.device + "-part" + toString q.index; } x.content;
 
   config.table = q: x:
     foldl' recursiveUpdate {} (imap (index: config-f (q // { inherit index; })) x.partitions);
@@ -78,7 +78,7 @@ let {
     ${concatMapStringsSep "" (flag: ''
       parted -s ${q.device} set ${toString q.index} ${flag} on
     '') (x.flags or [])}
-    ${create-f { device = q.device + toString q.index; } x.content}
+    ${create-f { device = q.device + "-part" + toString q.index; } x.content}
   '';
 
   create.table = q: x: ''
@@ -129,7 +129,7 @@ let {
   mount.noop = q: x: {};
 
   mount.partition = q: x:
-    mount-f { device = q.device + toString q.index; } x.content;
+    mount-f { device = q.device + "-part" + toString q.index; } x.content;
 
   mount.table = q: x:
     foldl' recursiveUpdate {} (imap (index: mount-f (q // { inherit index; })) x.partitions);
