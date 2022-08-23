@@ -8,8 +8,8 @@
       partitions = [
         {
           type = "partition";
-          start = "0";
-          end = "1M";
+          start = "1MB";
+          end = "2MB";
           part-type = "primary";
           flags = ["bios_grub"];
           content.type = "noop";
@@ -17,7 +17,7 @@
         {
           type = "partition";
           # leave space for the grub aka BIOS boot
-          start = "1M";
+          start = "2MB";
           end = "100%";
           part-type = "primary";
           bootable = true;
