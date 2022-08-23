@@ -159,7 +159,7 @@ let {
   mount.noop = q: x: {};
 
   mount.partition = q: x:
-    mount-f { device = "\"\${${helper.device-id q.device}}\"-part" + toString q.index; } x.content;
+    mount-f { device = "\"\${${q.device}}\"-part" + toString q.index; } x.content;
 
   mount.table = q: x: (
     recursiveUpdate
