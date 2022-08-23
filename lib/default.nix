@@ -130,7 +130,7 @@ let {
   create.partition = q: x: let
     env = helper.device-id q.device;
   in  ''${optionalString (q.stage == 1) ''
-      parted -s "''${${env}}" mkpart ${x.part-type} ${x.fs-type or ""} ${x.start} ${x.end}
+      parted --align ${x.align or "optimal"} -s "''${${env}}" mkpart ${x.part-type} ${x.fs-type or ""} ${x.start} ${x.end}
       # ensure /dev/disk/by-path/..-partN exists before continuing
       udevadm trigger --subsystem-match=block; udevadm settle
       ${optionalString (x.bootable or false) ''
