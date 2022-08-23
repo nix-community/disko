@@ -11,11 +11,11 @@ let {
 
   helper.find-device = device: let
     environment = helper.device-id device;
-  in ''
-    if echo '${device}' | grep -q '^/dev/disk'; then
-      # DEVICE points already to /dev/disk, so we don't handle it via /dev/disk/by-path
-      ${environment}='${device}'
-    else
+  in
+    # DEVICE points already to /dev/disk, so we don't handle it via /dev/disk/by-path
+    if hasPrefix "/dev/disk" device then
+       "${environment}='${device}'"
+    else ''
       ${environment}=$(for x in /dev/disk/by-path/*; do
         dev=$x
         if [ "$(readlink -f $x)" = '${device}' ]; then
@@ -29,8 +29,7 @@ let {
       else
         echo $target
       fi)
-    fi
-  '';
+    '';
 
   helper.device-id = device: "DEVICE${builtins.substring 0 5 (builtins.hashString "sha1" device)}";
 
