@@ -6,7 +6,7 @@ let
   cfg = import ./config.nix;
   #cfg = import ./config-gpt-bios.nix;
 in
-with import ../lib { inherit (pkgs) lib;};
+with import ../. { inherit (pkgs) lib;};
 
 {
   config = config cfg;
