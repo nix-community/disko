@@ -76,8 +76,8 @@ let {
   '';
 
   create.luks = q: x: ''
-    cryptsetup -q luksFormat ${q.device} ${x.keyfile} ${toString (x.extraArgs or [])}
-    cryptsetup luksOpen ${q.device} ${x.name} --key-file ${x.keyfile}
+    cryptsetup -q luksFormat ${q.device} ${if builtins.hasAttr "keyfile" x then x.keyfile else ""} ${toString (x.extraArgs or [])}
+    cryptsetup luksOpen ${q.device} ${x.name} ${if builtins.hasAttr "keyfile" x then "--key-file " + x.keyfile else ""}
     ${create-f { device = "/dev/mapper/${x.name}"; } x.content}
   '';
 
@@ -141,7 +141,7 @@ let {
     recursiveUpdate
     (mount-f { device = "/dev/mapper/${x.name}"; } x.content)
     {luks.${q.device} = ''
-      cryptsetup luksOpen ${q.device} ${x.name} --key-file ${x.keyfile}
+      cryptsetup luksOpen ${q.device} ${x.name} ${if builtins.hasAttr "keyfile" x then "--key-file " + x.keyfile else ""}
     '';}
   );
 
