@@ -1,4 +1,4 @@
-{ lib ? <nixpkgs/lib> }:
+{ lib ? import <nixpkgs/lib> }:
 with lib;
 with builtins;
 
