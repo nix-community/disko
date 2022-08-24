@@ -92,7 +92,7 @@ let
   '';
 
   create.lv = q: x: ''
-    lvcreate -L ${x.size} -n ${q.name} ${q.vgname}
+    lvcreate ${if hasInfix "%" x.size then "-l" else "-L"} ${x.size} -n ${q.name} ${q.vgname}
     ${create-f { device = "/dev/mapper/${q.vgname}-${q.name}"; } x.content}
   '';
 
