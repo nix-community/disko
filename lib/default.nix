@@ -2,12 +2,7 @@
 with lib;
 with builtins;
 
-let {
-
-  body.config = config-f {};
-  body.create = create-f {};
-  body.mount = mount-f {};
-
+let
 
   helper.find-device = device: let
     environment = helper.device-id device;
@@ -16,14 +11,14 @@ let {
     if hasPrefix "/dev/disk" device then
        "${environment}='${device}'"
     else ''
-      ${environment}=$(for x in /dev/disk/by-path/*; do
+      ${environment}=$(for x in $(find /dev/disk/{by-path,by-id}/); do
         dev=$x
-        if [ "$(readlink -f $x)" = '${device}' ]; then
+        if [ "$(readlink -f $x)" = "$(readlink -f '${device}')" ]; then
           target=$dev
           break
         fi
       done
-      if test -z $target; then
+      if test -z ''${target+x}; then
         echo 'unable to find path of disk: ${device}, bailing out' >&2
         exit 1
       else
@@ -71,8 +66,23 @@ let {
     mkfs.${x.format} ${q.device}
   '';
 
-  create.devices = q: x: ''
-    ${concatStrings (mapAttrsToList (name: create-f { device = "/dev/${name}"; }) x.content)}
+  create.devices = q: x: let
+    raid-devices = lib.filterAttrs (_: dev: dev.type == "mdadm") x.content;
+    other-devices = lib.filterAttrs (_: dev: dev.type != "mdadm") x.content;
+  in ''
+    ${concatStrings (mapAttrsToList (name: create-f { device = "/dev/${name}"; }) other-devices)}
+    ${concatStrings (mapAttrsToList (name: create-f { device = "/dev/${name}"; name = name; }) raid-devices)}
+  '';
+
+  create.mdraid = q: x: ''
+    RAIDDEVICES_N_${x.name}=$((''${RAIDDEVICES_N_${x.name}:-0}+1))
+    RAIDDEVICES_${x.name}="''${RAIDDEVICES_${x.name}:-}${q.device} "
+  '';
+
+  create.mdadm = q: x: ''
+    echo 'y' | mdadm --create /dev/md/${q.name} --level=${toString x.level or 1} --raid-devices=''${RAIDDEVICES_N_${q.name}} ''${RAIDDEVICES_${q.name}}
+    udevadm trigger --subsystem-match=block; udevadm settle
+    ${create-f { device = "/dev/md/${q.name}"; } x.content}
   '';
 
   create.luks = q: x: ''
@@ -158,6 +168,10 @@ let {
 
   mount.noop = q: x: {};
 
+  # TODO maybe we need to do something here?
+  mount.mdadm = mount.noop;
+  mount.mdraid = mount.noop;
+
   mount.partition = q: x:
     mount-f { device = "\"\${${q.device}}\"-part" + toString q.index; } x.content;
 
@@ -166,4 +180,15 @@ let {
     (foldl' recursiveUpdate {} (imap (index: mount-f (q // { inherit index; device = helper.device-id q.device; })) x.partitions))
     {table.${q.device} = helper.find-device q.device;}
   );
+in {
+  config = config-f {};
+  create = cfg: ''
+    set -efux
+    ${create-f {} cfg}
+  '';
+  mount = cfg: ''
+    set -efux
+    ${mount-f {} cfg}
+  '';
+
 }
