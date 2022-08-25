@@ -151,7 +151,7 @@ let
     recursiveUpdate
     (mount-f { device = "/dev/mapper/${x.name}"; } x.content)
     {luks.${q.device} = ''
-      cryptsetup luksOpen ${q.device} ${x.name} ${if builtins.hasAttr "keyfile" x then "--key-file " + x.keyfile else ""}
+      cryptsetup status ${x.name} >/dev/null 2>/dev/null || cryptsetup luksOpen ${q.device} ${x.name} ${if builtins.hasAttr "keyfile" x then "--key-file " + x.keyfile else ""}
     '';}
   );
 
