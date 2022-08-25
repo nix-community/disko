@@ -82,7 +82,9 @@ let
   '';
 
   create.filesystem = q: x: ''
-    mkfs.${x.format} ${q.device}
+    mkfs.${x.format} \
+      ${lib.optionalString (!isNull x.extraArgs or null) x.extraArgs} \
+      ${q.device}
   '';
 
   create.devices = q: x: let
