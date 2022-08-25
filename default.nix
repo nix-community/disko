@@ -52,10 +52,10 @@ let
     boot.initrd.luks.devices.${x.name}.device = q.device;
   } // config-f { device = "/dev/mapper/${x.name}"; } x.content;
 
-  config.lv = q: x:
-    config-f { device = "/dev/mapper/${q.vgname}-${q.name}"; } x.content;
+  config.lvm_lv = q: x:
+    config-f { device = "/dev/${q.vgname}/${q.name}"; } x.content;
 
-  config.lvm = q: x:
+  config.lvm_vg = q: x:
     foldl' recursiveUpdate {} (mapAttrsToList (name: config-f { inherit name; vgname = x.name; }) x.lvs);
 
   config.noop = q: x: {};
@@ -74,8 +74,8 @@ let
   '';
 
   create.devices = q: x: let
-    raid-devices = lib.filterAttrs (_: dev: dev.type == "mdadm" || dev.type == "zpool") x.content;
-    other-devices = lib.filterAttrs (_: dev: dev.type != "mdadm" && dev.type != "zpool") x.content;
+    raid-devices = lib.filterAttrs (_: dev: dev.type == "mdadm" || dev.type == "zpool" || dev.type == "lvm_vg") x.content;
+    other-devices = lib.filterAttrs (_: dev: dev.type != "mdadm" && dev.type != "zpool" && dev.type != "lvm_vg") x.content;
   in ''
     ${concatStrings (mapAttrsToList (name: create-f { device = "/dev/${name}"; }) other-devices)}
     ${concatStrings (mapAttrsToList (name: create-f { device = "/dev/${name}"; name = name; }) raid-devices)}
@@ -98,15 +98,24 @@ let
     ${create-f { device = "/dev/mapper/${x.name}"; } x.content}
   '';
 
-  create.lv = q: x: ''
-    lvcreate ${if hasInfix "%" x.size then "-l" else "-L"} ${x.size} -n ${q.name} ${q.vgname}
-    ${create-f { device = "/dev/mapper/${q.vgname}-${q.name}"; } x.content}
+  create.lvm_pv = q: x: ''
+    pvcreate ${q.device}
+    LVMDEVICES_${x.vg}="''${LVMDEVICES_${x.vg}:-}${q.device} "
   '';
 
-  create.lvm = q: x: ''
-    pvcreate ${q.device}
-    vgcreate ${x.name} ${q.device}
-    ${concatStrings (mapAttrsToList (name: create-f { inherit name; vgname = x.name; }) x.lvs)}
+  create.lvm_lv = q: x: ''
+    lvcreate \
+      ${if hasInfix "%" x.size then "-l" else "-L"} ${x.size} \
+      -n ${q.name} \
+      ${lib.optionalString (!isNull x.lvm_type or null) "--type=${x.lvm_type}"} \
+      ${lib.optionalString (!isNull x.extraArgs or null) x.extraArgs} \
+      ${q.vgname}
+    ${create-f { device = "/dev/${q.vgname}/${q.name}"; } x.content}
+  '';
+
+  create.lvm_vg = q: x: ''
+    vgcreate ${q.name} $LVMDEVICES_${q.name}
+    ${concatStrings (mapAttrsToList (name: create-f { inherit name; vgname = q.name; }) x.lvs)}
   '';
 
   create.noop = q: x: "";
@@ -190,16 +199,18 @@ let
     '';}
   );
 
-  mount.lv = q: x:
-    mount-f { device = "/dev/mapper/${q.vgname}-${q.name}"; } x.content;
+  mount.lvm_lv = q: x:
+    mount-f { device = "/dev/${q.vgname}/${q.name}"; } x.content;
 
-  mount.lvm = q: x: (
+  mount.lvm_vg = q: x: (
     recursiveUpdate
-    (foldl' recursiveUpdate {} (mapAttrsToList (name: mount-f { inherit name; vgname = x.name; }) x.lvs))
+    (foldl' recursiveUpdate {} (mapAttrsToList (name: mount-f { inherit name; vgname = q.name; }) x.lvs))
     {lvm.${q.device} = ''
       vgchange -a y
     '';}
   );
+
+  mount.lvm_pv = mount.noop;
 
   mount.noop = q: x: {};
 

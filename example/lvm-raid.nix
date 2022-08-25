@@ -7,38 +7,28 @@
       partitions = [
         {
           type = "partition";
-          part-type = "ESP";
-          start = "1MiB";
-          end = "100MiB";
-          fs-type = "FAT32";
-          bootable = true;
+          part-type = "primary";
+          start = "0%";
+          end = "100%";
           content = {
-            type = "filesystem";
-            format = "vfat";
-            mountpoint = "/boot";
-            options = [
-              "defaults"
-            ];
+            type = "lvm_pv";
+            vg = "pool";
           };
         }
+      ];
+    };
+    vdc = {
+      type = "table";
+      format = "gpt";
+      partitions = [
         {
           type = "partition";
           part-type = "primary";
-          start = "100MiB";
+          start = "0%";
           end = "100%";
           content = {
-            type = "luks";
-            algo = "aes-xts...";
-            name = "crypted";
-            keyfile = "/tmp/secret.key";
-            extraArgs = [
-              "--hash sha512"
-              "--iter-time 5000"
-            ];
-            content = {
-              type = "lvm_pv";
-              vg = "pool";
-            };
+            type = "lvm_pv";
+            vg = "pool";
           };
         }
       ];
@@ -50,6 +40,7 @@
             type = "lvm_lv";
             size = "100M";
             mountpoint = "/";
+            lvm_type = "mirror";
             content = {
               type = "filesystem";
               format = "ext4";
@@ -62,17 +53,11 @@
           home = {
             type = "lvm_lv";
             size = "10M";
+            lvm_type = "raid0";
             content = {
               type = "filesystem";
               format = "ext4";
               mountpoint = "/home";
-            };
-          };
-          raw = {
-            type = "lvm_lv";
-            size = "10M";
-            content = {
-              type = "noop";
             };
           };
         };
