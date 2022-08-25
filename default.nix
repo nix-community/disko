@@ -38,6 +38,13 @@ let
     };
   };
 
+  config.zfs_filesystem = q: x: {
+    fileSystems.${x.mountpoint} = {
+      device = q.device;
+      fsType = "zfs";
+    };
+  };
+
   config.devices = q: x:
     foldl' recursiveUpdate {} (mapAttrsToList (name: config-f { device = "/dev/${name}"; }) x.content);
 
@@ -67,8 +74,8 @@ let
   '';
 
   create.devices = q: x: let
-    raid-devices = lib.filterAttrs (_: dev: dev.type == "mdadm") x.content;
-    other-devices = lib.filterAttrs (_: dev: dev.type != "mdadm") x.content;
+    raid-devices = lib.filterAttrs (_: dev: dev.type == "mdadm" || dev.type == "zpool") x.content;
+    other-devices = lib.filterAttrs (_: dev: dev.type != "mdadm" && dev.type != "zpool") x.content;
   in ''
     ${concatStrings (mapAttrsToList (name: create-f { device = "/dev/${name}"; }) other-devices)}
     ${concatStrings (mapAttrsToList (name: create-f { device = "/dev/${name}"; name = name; }) raid-devices)}
@@ -125,6 +132,32 @@ let
     ${concatStrings (imap (index: create-f (q // { inherit index; })) x.partitions)}
   '';
 
+  create.zfs = q: x: ''
+    ZFSDEVICES_${x.pool}="''${ZFSDEVICES_${x.pool}:-}${q.device} "
+  '';
+
+  create.zfs_filesystem = q: x: ''
+    zfs create ${q.pool}/${x.name} \
+      ${lib.optionalString (isAttrs x.options or null) (concatStringsSep " " (mapAttrsToList (n: v: "-o ${n}=${v}") x.options))}
+  '';
+
+  create.zfs_volume = q: x: ''
+    zfs create ${q.pool}/${x.name} \
+      -V ${x.size} \
+      ${lib.optionalString (isAttrs x.options or null) (concatStringsSep " " (mapAttrsToList (n: v: "-o ${n}=${v}") x.options))}
+    udevadm trigger --subsystem-match=block; udevadm settle
+    ${create-f { device = "/dev/zvol/${q.pool}/${x.name}"; } x.content}
+  '';
+
+  create.zpool = q: x: ''
+    zpool create ${q.name} \
+      ${lib.optionalString (!isNull x.mode || x.mode != "stripe") x.mode} \
+      ${lib.optionalString (isAttrs x.options or null) (concatStringsSep " " (mapAttrsToList (n: v: "-o ${n}=${v}") x.options))} \
+      ${lib.optionalString (isAttrs x.rootFsOptions or null) (concatStringsSep " " (mapAttrsToList (n: v: "-O ${n}=${v}") x.rootFsOptions))} \
+      ''${ZFSDEVICES_${q.name}}
+    ${concatMapStrings (create-f (q // { pool = q.name; })) x.datasets}
+  '';
+
 
   mount-f = q: x: mount.${x.type} q x;
 
@@ -144,6 +177,8 @@ let
     ${optionalString (hasAttr "table" z) (concatStringsSep "\n" (attrValues z.table))}
     ${optionalString (hasAttr "luks" z) (concatStringsSep "\n" (attrValues z.luks))}
     ${optionalString (hasAttr "lvm" z) (concatStringsSep "\n" (attrValues z.lvm))}
+    ${optionalString (hasAttr "zpool" z) (concatStringsSep "\n" (attrValues z.zpool))}
+    ${optionalString (hasAttr "zfs" z) (concatStringsSep "\n" (attrValues z.zfs))}
     ${optionalString (hasAttr "fs" z) (concatStringsSep "\n" (attrValues z.fs))}
   '';
 
@@ -170,7 +205,6 @@ let
 
   mount.mdadm = q: x:
     mount-f { device = "/dev/md/${q.name}"; } x.content;
-  # TODO maybe we need to do something here?
   mount.mdraid = mount.noop;
 
   mount.partition = q: x:
@@ -181,6 +215,31 @@ let
     (foldl' recursiveUpdate {} (imap (index: mount-f (q // { inherit index; device = helper.device-id q.device; })) x.partitions))
     {table.${q.device} = helper.find-device q.device;}
   );
+
+  mount.zfs = mount.noop;
+
+  mount.zpool = q: x: (
+    recursiveUpdate
+    (foldl' recursiveUpdate {} (map (mount-f (q // { pool = q.name; })) x.datasets))
+    {zpool.${q.device} = ''
+      zpool list '${q.name}' >/dev/null 2>/dev/null || zpool import '${q.name}'
+    '';}
+  );
+
+  mount.zfs_filesystem = q: x: {
+      zfs.${x.mountpoint} = ''
+        if ! findmnt '${q.pool}/${x.name}' /mnt${x.mountpoint} > /dev/null 2>&1; then
+          mount \
+            ${lib.optionalString ((x.options.mountpoint or "") != "legacy") "-o zfsutil"} \
+            -t zfs ${q.pool}/${x.name} /mnt${x.mountpoint} \
+            -o X-mount.mkdir
+        fi
+      '';
+    };
+
+  mount.zfs_volume = q: x:
+    mount-f { device = "/dev/zvol/${q.pool}/${x.name}"; } x.content;
+
 in {
   config = config-f {};
   create = cfg: ''
