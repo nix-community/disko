@@ -137,7 +137,7 @@ let
     };
 
   mount.devices = q: x: let
-    z = foldl' recursiveUpdate {} (mapAttrsToList (name: mount-f { device = "/dev/${name}"; }) x.content);
+    z = foldl' recursiveUpdate {} (mapAttrsToList (name: mount-f { device = "/dev/${name}"; inherit name; }) x.content);
     # attrValues returns values sorted by name.  This is important, because it
     # ensures that "/" is processed before "/foo" etc.
   in ''
@@ -168,8 +168,9 @@ let
 
   mount.noop = q: x: {};
 
+  mount.mdadm = q: x:
+    mount-f { device = "/dev/md/${q.name}"; } x.content;
   # TODO maybe we need to do something here?
-  mount.mdadm = mount.noop;
   mount.mdraid = mount.noop;
 
   mount.partition = q: x:

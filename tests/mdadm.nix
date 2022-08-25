@@ -7,7 +7,7 @@ let
       inherit pkgs;
       inherit (pkgs) system;
     };
-  disko-config = import ../example/raid.nix;
+  disko-config = import ../example/mdadm.nix;
   tsp-create = pkgs.writeScript "create" ((pkgs.callPackage ../. {}).create disko-config);
   tsp-mount = pkgs.writeScript "mount" ((pkgs.callPackage ../. {}).mount disko-config);
 in makeTest' {
@@ -34,5 +34,6 @@ in makeTest' {
     machine.succeed("${tsp-mount}");
     machine.succeed("${tsp-mount}"); # verify that the command is idempotent
     machine.succeed("test -b /dev/md/raid1");
+    machine.succeed("grep -qs '/mnt/raid' /proc/mounts");
   '';
 }
