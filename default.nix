@@ -69,6 +69,18 @@ let
 
   create-f = q: x: create.${x.type} q x;
 
+  create.btrfs = q: x: ''
+    mkfs.btrfs ${q.device}
+    ${lib.optionalString (!isNull x.subvolumes or null) ''
+      MNTPOINT=$(mktemp -d)
+      (
+        mount ${q.device} "$MNTPOINT"
+        trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
+        ${concatMapStringsSep "\n" (subvolume: "btrfs subvolume create \"$MNTPOINT\"/${subvolume}") x.subvolumes}
+      )
+    ''}
+  '';
+
   create.filesystem = q: x: ''
     mkfs.${x.format} ${q.device}
   '';
@@ -177,6 +189,8 @@ let
         fi
       '';
     };
+
+  mount.btrfs = mount.filesystem;
 
   mount.devices = q: x: let
     z = foldl' recursiveUpdate {} (mapAttrsToList (name: mount-f { device = "/dev/${name}"; inherit name; }) x.content);
