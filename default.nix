@@ -256,29 +256,48 @@ let
 
   mount.zfs = mount.noop;
 
-  mount.zpool = q: x: (
+  mount.zpool = q: x:
+    let
+      datasets = [{
+        inherit (q) name;
+        type = "zfs_filesystem";
+        dataset = q.name;
+        mountpoint = x.mountpoint or "/${q.name}";
+        options = q.rootFsOptions or { };
+      }] ++ x.datasets;
+    in
     recursiveUpdate
-      (foldl' recursiveUpdate { } (map (mount-f (q // { pool = q.name; })) x.datasets))
+      (foldl' recursiveUpdate { }
+        (
+          (map
+            (x: mount-f
+              ({
+                dataset = x.dataset or "${q.name}/${x.name}";
+                mountpoint = x.mountpoint or "/${q.name}/${x.name}";
+              } // q)
+              x)
+            datasets)
+        )
+      )
       {
         zpool.${q.device} = ''
           zpool list '${q.name}' >/dev/null 2>/dev/null || zpool import '${q.name}'
         '';
-      }
-  );
+      };
 
   mount.zfs_filesystem = q: x: {
-    zfs.${x.mountpoint} = ''
-      if ! findmnt '${q.pool}/${x.name}' /mnt${x.mountpoint} > /dev/null 2>&1; then
+    zfs.${q.mountpoint} = lib.optionalString ((x.options.mountpoint or "") != "none") ''
+      if ! findmnt '${q.dataset}' /mnt${q.mountpoint} > /dev/null 2>&1; then
         mount \
           ${lib.optionalString ((x.options.mountpoint or "") != "legacy") "-o zfsutil"} \
-          -t zfs ${q.pool}/${x.name} /mnt${x.mountpoint} \
+          -t zfs ${q.dataset} /mnt${q.mountpoint} \
           -o X-mount.mkdir
       fi
     '';
   };
 
   mount.zfs_volume = q: x:
-    mount-f { device = "/dev/zvol/${q.pool}/${x.name}"; } x.content;
+    mount-f { device = "/dev/zvol/${q.dataset}"; } x.content;
 
 in
 {

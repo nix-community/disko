@@ -17,9 +17,9 @@ makeDiskoTest {
     assert_property("zroot", "com.sun:auto-snapshot", "false")
     assert_property("zroot/zfs_fs", "com.sun:auto-snapshot", "true")
     assert_property("zroot/zfs_testvolume", "volsize", "10M")
+    assert_property("zroot/zfs_unmounted_fs", "mountpoint", "none")
 
-    # FIXME: we cannot mount rootfs yet
-    #machine.succeed("mountpoint /mnt");
+    machine.succeed("mountpoint /mnt");
     machine.succeed("mountpoint /mnt/zfs_fs");
     machine.succeed("mountpoint /mnt/zfs_legacy_fs");
     machine.succeed("mountpoint /mnt/ext4onzfs");
