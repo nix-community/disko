@@ -153,7 +153,7 @@ let
       '') (x.flags or [])}
       ${create-f { device = "\"\${${env}}\"-part" + toString q.index; } x.content}
     '';
- 
+
   create.table = q: x: ''
     ${helper.find-device q.device}
     parted -s "''${${helper.device-id q.device}}" mklabel ${x.format}
