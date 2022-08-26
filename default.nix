@@ -179,7 +179,7 @@ let
 
   create.zpool = q: x: ''
     zpool create ${q.name} \
-      ${lib.optionalString (!isNull x.mode || x.mode != "stripe") x.mode} \
+      ${lib.optionalString (!isNull (x.mode or null) && x.mode != "stripe") x.mode} \
       ${lib.optionalString (isAttrs x.options or null) (concatStringsSep " " (mapAttrsToList (n: v: "-o ${n}=${v}") x.options))} \
       ${lib.optionalString (isAttrs x.rootFsOptions or null) (concatStringsSep " " (mapAttrsToList (n: v: "-O ${n}=${v}") x.rootFsOptions))} \
       ''${ZFSDEVICES_${q.name}}
@@ -192,10 +192,19 @@ let
   mount.filesystem = q: x: {
     fs.${x.mountpoint} = ''
       if ! findmnt ${q.device} "/mnt${x.mountpoint}" > /dev/null 2>&1; then
-        mount ${q.device} "/mnt${x.mountpoint}" -o X-mount.mkdir
+        mount ${q.device} "/mnt${x.mountpoint}" \
+        -o X-mount.mkdir \
+        ${lib.optionalString (isList x.mountOptions or null) (concatStringsSep " " x.mountOptions)}
       fi
     '';
   };
+
+  mount.zfs_filesystem = q: x:
+    optionalAttrs ((x.options.mountpoint or "") != "none")
+      (mount.filesystem (q // { device = q.dataset; }) (x // { mountOptions = [
+        (lib.optionalString ((x.options.mountpoint or "") != "legacy") "-o zfsutil")
+        "-t zfs"
+      ]; }));
 
   mount.btrfs = mount.filesystem;
 
@@ -284,17 +293,6 @@ let
           zpool list '${q.name}' >/dev/null 2>/dev/null || zpool import '${q.name}'
         '';
       };
-
-  mount.zfs_filesystem = q: x: {
-    zfs.${q.mountpoint} = lib.optionalString ((x.options.mountpoint or "") != "none") ''
-      if ! findmnt '${q.dataset}' /mnt${q.mountpoint} > /dev/null 2>&1; then
-        mount \
-          ${lib.optionalString ((x.options.mountpoint or "") != "legacy") "-o zfsutil"} \
-          -t zfs ${q.dataset} /mnt${q.mountpoint} \
-          -o X-mount.mkdir
-      fi
-    '';
-  };
 
   mount.zfs_volume = q: x:
     mount-f { device = "/dev/zvol/${q.dataset}"; } x.content;
