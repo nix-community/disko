@@ -1,5 +1,5 @@
 { makeTest ? import <nixpkgs/nixos/tests/make-test-python.nix>
-, pkgs ? (import <nixpkgs> {})
+, pkgs ? (import <nixpkgs> { })
 }@args:
 let
   lib = pkgs.lib;
@@ -12,4 +12,5 @@ let
     );
 
   allTests = lib.genAttrs (allTestFilenames) (test: import (./. + "/${test}.nix") { inherit makeDiskoTest; });
-in allTests
+in
+allTests

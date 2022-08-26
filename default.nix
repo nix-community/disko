@@ -4,12 +4,13 @@ with builtins;
 
 let
 
-  helper.find-device = device: let
-    environment = helper.device-id device;
-  in
+  helper.find-device = device:
+    let
+      environment = helper.device-id device;
+    in
     # DEVICE points already to /dev/disk, so we don't handle it via /dev/disk/by-path
     if hasPrefix "/dev/disk" device then
-       "${environment}='${device}'"
+      "${environment}='${device}'"
     else ''
       ${environment}=$(for x in $(find /dev/disk/{by-path,by-id}/); do
         dev=$x
@@ -46,7 +47,7 @@ let
   };
 
   config.devices = q: x:
-    foldl' recursiveUpdate {} (mapAttrsToList (name: config-f { device = "/dev/${name}"; }) x.content);
+    foldl' recursiveUpdate { } (mapAttrsToList (name: config-f { device = "/dev/${name}"; }) x.content);
 
   config.luks = q: x: {
     boot.initrd.luks.devices.${x.name}.device = q.device;
@@ -56,15 +57,15 @@ let
     config-f { device = "/dev/${q.vgname}/${q.name}"; } x.content;
 
   config.lvm_vg = q: x:
-    foldl' recursiveUpdate {} (mapAttrsToList (name: config-f { inherit name; vgname = x.name; }) x.lvs);
+    foldl' recursiveUpdate { } (mapAttrsToList (name: config-f { inherit name; vgname = x.name; }) x.lvs);
 
-  config.noop = q: x: {};
+  config.noop = q: x: { };
 
   config.partition = q: x:
     config-f { device = q.device + toString q.index; } x.content;
 
   config.table = q: x:
-    foldl' recursiveUpdate {} (imap (index: config-f (q // { inherit index; })) x.partitions);
+    foldl' recursiveUpdate { } (imap (index: config-f (q // { inherit index; })) x.partitions);
 
 
   create-f = q: x: create.${x.type} q x;
@@ -87,13 +88,15 @@ let
       ${q.device}
   '';
 
-  create.devices = q: x: let
-    raid-devices = lib.filterAttrs (_: dev: dev.type == "mdadm" || dev.type == "zpool" || dev.type == "lvm_vg") x.content;
-    other-devices = lib.filterAttrs (_: dev: dev.type != "mdadm" && dev.type != "zpool" && dev.type != "lvm_vg") x.content;
-  in ''
-    ${concatStrings (mapAttrsToList (name: create-f { device = "/dev/${name}"; }) other-devices)}
-    ${concatStrings (mapAttrsToList (name: create-f { device = "/dev/${name}"; name = name; }) raid-devices)}
-  '';
+  create.devices = q: x:
+    let
+      raid-devices = lib.filterAttrs (_: dev: dev.type == "mdadm" || dev.type == "zpool" || dev.type == "lvm_vg") x.content;
+      other-devices = lib.filterAttrs (_: dev: dev.type != "mdadm" && dev.type != "zpool" && dev.type != "lvm_vg") x.content;
+    in
+    ''
+      ${concatStrings (mapAttrsToList (name: create-f { device = "/dev/${name}"; }) other-devices)}
+      ${concatStrings (mapAttrsToList (name: create-f { device = "/dev/${name}"; name = name; }) raid-devices)}
+    '';
 
   create.mdraid = q: x: ''
     RAIDDEVICES_N_${x.name}=$((''${RAIDDEVICES_N_${x.name}:-0}+1))
@@ -134,20 +137,22 @@ let
 
   create.noop = q: x: "";
 
-  create.partition = q: x: let
-    env = helper.device-id q.device;
-  in ''
-    parted -s "''${${env}}" mkpart ${x.part-type} ${x.fs-type or ""} ${x.start} ${x.end}
-    # ensure /dev/disk/by-path/..-partN exists before continuing
-    udevadm trigger --subsystem-match=block; udevadm settle
-    ${optionalString (x.bootable or false) ''
-      parted -s "''${${env}}" set ${toString q.index} boot on
-    ''}
-    ${concatMapStringsSep "" (flag: ''
-      parted -s "''${${env}}" set ${toString q.index} ${flag} on
-    '') (x.flags or [])}
-    ${create-f { device = "\"\${${env}}\"-part" + toString q.index; } x.content}
-  '';
+  create.partition = q: x:
+    let
+      env = helper.device-id q.device;
+    in
+    ''
+      parted -s "''${${env}}" mkpart ${x.part-type} ${x.fs-type or ""} ${x.start} ${x.end}
+      # ensure /dev/disk/by-path/..-partN exists before continuing
+      udevadm trigger --subsystem-match=block; udevadm settle
+      ${optionalString (x.bootable or false) ''
+        parted -s "''${${env}}" set ${toString q.index} boot on
+      ''}
+      ${concatMapStringsSep "" (flag: ''
+        parted -s "''${${env}}" set ${toString q.index} ${flag} on
+      '') (x.flags or [])}
+      ${create-f { device = "\"\${${env}}\"-part" + toString q.index; } x.content}
+    '';
 
   create.table = q: x: ''
     ${helper.find-device q.device}
@@ -185,34 +190,38 @@ let
   mount-f = q: x: mount.${x.type} q x;
 
   mount.filesystem = q: x: {
-      fs.${x.mountpoint} = ''
-        if ! findmnt ${q.device} "/mnt${x.mountpoint}" > /dev/null 2>&1; then
-          mount ${q.device} "/mnt${x.mountpoint}" -o X-mount.mkdir
-        fi
-      '';
-    };
+    fs.${x.mountpoint} = ''
+      if ! findmnt ${q.device} "/mnt${x.mountpoint}" > /dev/null 2>&1; then
+        mount ${q.device} "/mnt${x.mountpoint}" -o X-mount.mkdir
+      fi
+    '';
+  };
 
   mount.btrfs = mount.filesystem;
 
-  mount.devices = q: x: let
-    z = foldl' recursiveUpdate {} (mapAttrsToList (name: mount-f { device = "/dev/${name}"; inherit name; }) x.content);
-    # attrValues returns values sorted by name.  This is important, because it
-    # ensures that "/" is processed before "/foo" etc.
-  in ''
-    ${optionalString (hasAttr "table" z) (concatStringsSep "\n" (attrValues z.table))}
-    ${optionalString (hasAttr "luks" z) (concatStringsSep "\n" (attrValues z.luks))}
-    ${optionalString (hasAttr "lvm" z) (concatStringsSep "\n" (attrValues z.lvm))}
-    ${optionalString (hasAttr "zpool" z) (concatStringsSep "\n" (attrValues z.zpool))}
-    ${optionalString (hasAttr "zfs" z) (concatStringsSep "\n" (attrValues z.zfs))}
-    ${optionalString (hasAttr "fs" z) (concatStringsSep "\n" (attrValues z.fs))}
-  '';
+  mount.devices = q: x:
+    let
+      z = foldl' recursiveUpdate { } (mapAttrsToList (name: mount-f { device = "/dev/${name}"; inherit name; }) x.content);
+      # attrValues returns values sorted by name.  This is important, because it
+      # ensures that "/" is processed before "/foo" etc.
+    in
+    ''
+      ${optionalString (hasAttr "table" z) (concatStringsSep "\n" (attrValues z.table))}
+      ${optionalString (hasAttr "luks" z) (concatStringsSep "\n" (attrValues z.luks))}
+      ${optionalString (hasAttr "lvm" z) (concatStringsSep "\n" (attrValues z.lvm))}
+      ${optionalString (hasAttr "zpool" z) (concatStringsSep "\n" (attrValues z.zpool))}
+      ${optionalString (hasAttr "zfs" z) (concatStringsSep "\n" (attrValues z.zfs))}
+      ${optionalString (hasAttr "fs" z) (concatStringsSep "\n" (attrValues z.fs))}
+    '';
 
   mount.luks = q: x: (
     recursiveUpdate
-    (mount-f { device = "/dev/mapper/${x.name}"; } x.content)
-    {luks.${q.device} = ''
-      cryptsetup status ${x.name} >/dev/null 2>/dev/null || cryptsetup luksOpen ${q.device} ${x.name} ${if builtins.hasAttr "keyfile" x then "--key-file " + x.keyfile else ""}
-    '';}
+      (mount-f { device = "/dev/mapper/${x.name}"; } x.content)
+      {
+        luks.${q.device} = ''
+          cryptsetup status ${x.name} >/dev/null 2>/dev/null || cryptsetup luksOpen ${q.device} ${x.name} ${if builtins.hasAttr "keyfile" x then "--key-file " + x.keyfile else ""}
+        '';
+      }
   );
 
   mount.lvm_lv = q: x:
@@ -220,15 +229,17 @@ let
 
   mount.lvm_vg = q: x: (
     recursiveUpdate
-    (foldl' recursiveUpdate {} (mapAttrsToList (name: mount-f { inherit name; vgname = q.name; }) x.lvs))
-    {lvm.${q.device} = ''
-      vgchange -a y
-    '';}
+      (foldl' recursiveUpdate { } (mapAttrsToList (name: mount-f { inherit name; vgname = q.name; }) x.lvs))
+      {
+        lvm.${q.device} = ''
+          vgchange -a y
+        '';
+      }
   );
 
   mount.lvm_pv = mount.noop;
 
-  mount.noop = q: x: {};
+  mount.noop = q: x: { };
 
   mount.mdadm = q: x:
     mount-f { device = "/dev/md/${q.name}"; } x.content;
@@ -239,36 +250,39 @@ let
 
   mount.table = q: x: (
     recursiveUpdate
-    (foldl' recursiveUpdate {} (imap (index: mount-f (q // { inherit index; device = helper.device-id q.device; })) x.partitions))
-    {table.${q.device} = helper.find-device q.device;}
+      (foldl' recursiveUpdate { } (imap (index: mount-f (q // { inherit index; device = helper.device-id q.device; })) x.partitions))
+      { table.${q.device} = helper.find-device q.device; }
   );
 
   mount.zfs = mount.noop;
 
   mount.zpool = q: x: (
     recursiveUpdate
-    (foldl' recursiveUpdate {} (map (mount-f (q // { pool = q.name; })) x.datasets))
-    {zpool.${q.device} = ''
-      zpool list '${q.name}' >/dev/null 2>/dev/null || zpool import '${q.name}'
-    '';}
+      (foldl' recursiveUpdate { } (map (mount-f (q // { pool = q.name; })) x.datasets))
+      {
+        zpool.${q.device} = ''
+          zpool list '${q.name}' >/dev/null 2>/dev/null || zpool import '${q.name}'
+        '';
+      }
   );
 
   mount.zfs_filesystem = q: x: {
-      zfs.${x.mountpoint} = ''
-        if ! findmnt '${q.pool}/${x.name}' /mnt${x.mountpoint} > /dev/null 2>&1; then
-          mount \
-            ${lib.optionalString ((x.options.mountpoint or "") != "legacy") "-o zfsutil"} \
-            -t zfs ${q.pool}/${x.name} /mnt${x.mountpoint} \
-            -o X-mount.mkdir
-        fi
-      '';
-    };
+    zfs.${x.mountpoint} = ''
+      if ! findmnt '${q.pool}/${x.name}' /mnt${x.mountpoint} > /dev/null 2>&1; then
+        mount \
+          ${lib.optionalString ((x.options.mountpoint or "") != "legacy") "-o zfsutil"} \
+          -t zfs ${q.pool}/${x.name} /mnt${x.mountpoint} \
+          -o X-mount.mkdir
+      fi
+    '';
+  };
 
   mount.zfs_volume = q: x:
     mount-f { device = "/dev/zvol/${q.pool}/${x.name}"; } x.content;
 
-in {
-  config = config-f {};
+in
+{
+  config = config-f { };
   create = cfg: ''
     set -efux
     ${create-f {} cfg}

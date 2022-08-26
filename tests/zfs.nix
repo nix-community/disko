@@ -1,5 +1,5 @@
-{ pkgs ? (import <nixpkgs> {})
-, makeDiskoTest ? (pkgs.callPackage ./lib.nix {}).makeDiskoTest
+{ pkgs ? (import <nixpkgs> { })
+, makeDiskoTest ? (pkgs.callPackage ./lib.nix { }).makeDiskoTest
 }:
 makeDiskoTest {
   disko-config = import ../example/zfs.nix;
