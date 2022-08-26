@@ -9,11 +9,11 @@
     };
     checks.x86_64-linux = let
       pkgs = nixpkgs.legacyPackages.x86_64-linux;
-    in {
+    in
       # Run tests: nix flake check -L
-      nixos-test = pkgs.callPackage ./tests/test.nix {
+      import ./tests {
+        inherit pkgs;
         makeTest = import (pkgs.path + "/nixos/tests/make-test-python.nix");
       };
-    };
   };
 }
