@@ -12,11 +12,16 @@
     zroot = {
       type = "zpool";
       mode = "mirror";
+      rootFsOptions = {
+        compression = "lz4";
+        "com.sun:auto-snapshot" = "false";
+      };
       datasets = [
         {
           type = "zfs_filesystem";
           name = "zfs_fs";
           mountpoint = "/zfs_fs";
+          options."com.sun:auto-snapshot" = "true";
         }
         {
           type = "zfs_filesystem";
