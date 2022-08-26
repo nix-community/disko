@@ -5,6 +5,6 @@ makeDiskoTest {
   disko-config = import ../example/mdadm.nix;
   extraTestScript = ''
     machine.succeed("test -b /dev/md/raid1");
-    machine.succeed("grep -qs '/mnt/raid' /proc/mounts");
+    machine.succeed("mountpoint /mnt/raid");
   '';
 }

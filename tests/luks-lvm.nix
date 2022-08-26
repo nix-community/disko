@@ -5,6 +5,6 @@ makeDiskoTest {
   disko-config = import ../example/luks-lvm.nix;
   extraTestScript = ''
     machine.succeed("cryptsetup isLuks /dev/vdb2");
-    machine.succeed("grep -qs '/mnt/home' /proc/mounts");
+    machine.succeed("mountpoint /mnt/home");
   '';
 }
