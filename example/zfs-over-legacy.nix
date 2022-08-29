@@ -1,41 +1,46 @@
 {
-  type = "devices";
-  content = {
+  disk = {
     vdb = {
-      type = "table";
-      format = "gpt";
-      partitions = [
-        {
-          type = "partition";
-          # leave space for the grub aka BIOS boot
-          start = "0%";
-          end = "100%";
-          part-type = "primary";
-          bootable = true;
-          content = {
-            type = "filesystem";
-            format = "ext4";
-            mountpoint = "/";
-          };
-        }
-      ];
+      type = "disk";
+      device = "/dev/vdb";
+      content = {
+        type = "table";
+        format = "gpt";
+        partitions = [
+          {
+            type = "partition";
+            start = "0%";
+            end = "100%";
+            name = "primary";
+            bootable = true;
+            content = {
+              type = "filesystem";
+              format = "ext4";
+              mountpoint = "/";
+            };
+          }
+        ];
+      };
     };
     vdc = {
-      type = "zfs";
-      pool = "zroot";
+      type = "disk";
+      device = "/dev/vdc";
+      content = {
+        type = "zfs";
+        pool = "zroot";
+      };
     };
+  };
+  zpool = {
     zroot = {
       type = "zpool";
-      mountpoint = "/";
-
-      datasets = [
-        {
-          type = "zfs_filesystem";
-          name = "zfs_fs";
+      datasets = {
+        zfs_fs = {
+          zfs_type = "filesystem";
           mountpoint = "/zfs_fs";
           options."com.sun:auto-snapshot" = "true";
-        }
-      ];
+        };
+      };
     };
   };
 }

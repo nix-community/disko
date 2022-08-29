@@ -1,25 +1,28 @@
 {
-  type = "devices";
-  content = {
+  disk = {
     vdb = {
-      type = "table";
-      format = "gpt";
-      partitions = [
-        {
-          type = "partition";
-          part-type = "primary";
-          start = "0%";
-          end = "100%";
-          content = {
-            type = "btrfs";
-            mountpoint = "/";
-            subvolumes = [
-              "/home"
-              "/test"
-            ];
-          };
-        }
-      ];
+      type = "disk";
+      device = "/dev/vdb";
+      content = {
+        type = "table";
+        format = "gpt";
+        partitions = [
+          {
+            name = "root";
+            type = "partition";
+            start = "0%";
+            end = "100%";
+            content = {
+              type = "btrfs";
+              mountpoint = "/";
+              subvolumes = [
+                "/home"
+                "/test"
+              ];
+            };
+          }
+        ];
+      };
     };
   };
 }
