@@ -3,6 +3,6 @@ let
 in {
   test = pkgs.writeScript "test" ''
     #!/bin/sh
-    nix-build "${toString ./tests/test.nix}";
+    nix-build "${toString ./tests}";
   '';
 }
