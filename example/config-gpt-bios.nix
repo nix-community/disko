@@ -2,7 +2,7 @@
 {
   type = "devices";
   content = {
-    sda = {
+    vdb = {
       type = "table";
       format = "gpt";
       partitions = [

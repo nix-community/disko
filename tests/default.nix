@@ -11,6 +11,6 @@ let
         (lib.attrNames (builtins.readDir ./.))
     );
 
-  allTests = lib.genAttrs (allTestFilenames) (test: import (./. + "/${test}.nix") { inherit makeDiskoTest; });
+  allTests = lib.genAttrs (allTestFilenames) (test: import (./. + "/${test}.nix") { inherit pkgs makeDiskoTest; });
 in
 allTests
