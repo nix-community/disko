@@ -12,6 +12,7 @@
           end = "100%";
           content = {
             type = "btrfs";
+            extraArgs = "-f"; # Override existing partition
             subvolumes = {
               # Subvolume name is different from mountpoint
               rootfs = {

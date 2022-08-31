@@ -84,7 +84,7 @@ let
     let
       subvolumeNames = attrNames x.subvolumes;
     in ''
-    mkfs.btrfs ${q.device}
+    mkfs.btrfs ${q.device} ${x.extraArgs or ""}
     ${lib.optionalString (!isNull x.subvolumes or null) ''
       MNTPOINT=$(mktemp -d)
       (
