@@ -46,6 +46,16 @@ let
     };
   };
 
+  config.btrfs = q: x: {
+    fileSystems = mapAttrs' (name: value:
+      nameValuePair "${value.mountpoint or name}" {
+        device = q.device;
+        fsType = "btrfs";
+        options = (value.mountOptions or []) ++ ["subvol=${name}"];
+      })
+      x.subvolumes;
+  };
+
   config.devices = q: x:
     foldl' recursiveUpdate { } (mapAttrsToList (name: config-f { device = "/dev/${name}"; }) x.content);
 
@@ -70,14 +80,17 @@ let
 
   create-f = q: x: create.${x.type} q x;
 
-  create.btrfs = q: x: ''
+  create.btrfs = q: x:
+    let
+      subvolumeNames = attrNames x.subvolumes;
+    in ''
     mkfs.btrfs ${q.device}
     ${lib.optionalString (!isNull x.subvolumes or null) ''
       MNTPOINT=$(mktemp -d)
       (
         mount ${q.device} "$MNTPOINT"
         trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-        ${concatMapStringsSep "\n" (subvolume: "btrfs subvolume create \"$MNTPOINT\"/${subvolume}") x.subvolumes}
+        ${concatMapStringsSep "\n" (subvolume: "btrfs subvolume create \"$MNTPOINT\"/${subvolume}") subvolumeNames}
       )
     ''}
   '';
@@ -194,7 +207,7 @@ let
       if ! findmnt ${q.device} "/mnt${x.mountpoint}" > /dev/null 2>&1; then
         mount ${q.device} "/mnt${x.mountpoint}" \
         -o X-mount.mkdir \
-        ${lib.optionalString (isList x.mountOptions or null) (concatStringsSep " " x.mountOptions)}
+        ${lib.optionalString (isList x.mountOptions or null) ("-o " + (concatStringsSep "," x.mountOptions))}
       fi
     '';
   };
@@ -206,7 +219,16 @@ let
         "-t zfs"
       ]; }));
 
-  mount.btrfs = mount.filesystem;
+  mount.btrfs = q: x:
+    let
+      subvols = mapAttrsToList
+        (name: value: value // {
+          mountpoint = value.mountpoint or name;
+          mountOptions = (value.mountOptions or []) ++ ["subvol=${name}"];
+        })
+        x.subvolumes;
+    in
+  foldl' recursiveUpdate {} (map (mount.filesystem q) subvols);
 
   mount.devices = q: x:
     let
