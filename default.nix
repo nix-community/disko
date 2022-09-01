@@ -84,6 +84,7 @@ let
     let
       subvolumeNames = attrNames x.subvolumes;
     in ''
+    udevadm trigger --subsystem-match=block; udevadm settle
     mkfs.btrfs ${q.device} ${x.extraArgs or ""}
     ${lib.optionalString (!isNull x.subvolumes or null) ''
       MNTPOINT=$(mktemp -d)
@@ -96,6 +97,7 @@ let
   '';
 
   create.filesystem = q: x: ''
+    udevadm trigger --subsystem-match=block; udevadm settle
     mkfs.${x.format} \
       ${lib.optionalString (!isNull x.extraArgs or null) x.extraArgs} \
       ${q.device}
