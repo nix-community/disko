@@ -10,7 +10,7 @@ rec {
     subType = typeAttr: mkOptionType rec {
       name = "subType";
       description = "one of ${attrNames typeAttr}";
-      check = x: typeAttr.${x.type}.check x;
+      check = x: if x ? type then typeAttr.${x.type}.check x else throw "No type option set in:\n${generators.toPretty {} x}";
       merge = loc: defs:
         foldl' (res: def: typeAttr.${def.value.type}.merge loc [def]) {} defs;
       nestedTypes = typeAttr;
@@ -780,6 +780,7 @@ rec {
       type = mkOption {
         type = types.enum [ "zfs_dataset" ];
         default = "zfs_dataset";
+        internal = true;
       };
       zfs_type = mkOption {
         type = types.enum [ "filesystem" "volume" ];
@@ -867,6 +868,7 @@ rec {
       type = mkOption {
         type = types.enum [ "mdadm" ];
         default = "mdadm";
+        internal = true;
       };
       level = mkOption {
         type = types.int;
@@ -914,6 +916,7 @@ rec {
     options = {
       type = mkOption {
         type = types.enum [ "mdraid" ];
+        internal = true;
       };
 
       name = mkOption {
@@ -955,6 +958,7 @@ rec {
     options = {
       type = mkOption {
         type = types.enum [ "luks" ];
+        internal = true;
       };
       name = mkOption {
         type = types.str;
