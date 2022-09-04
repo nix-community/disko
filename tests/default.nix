@@ -4,6 +4,14 @@
 let
   lib = pkgs.lib;
   makeDiskoTest = (pkgs.callPackage ./lib.nix { inherit makeTest; }).makeDiskoTest;
+
+  evalTest = name: configFile: let
+    disko-config = import configFile;
+  in {
+    "${name}-tsp-create" = pkgs.writeScript "create" ((pkgs.callPackage ../. { }).create disko-config);
+    "${name}-tsp-mount" = pkgs.writeScript "mount" ((pkgs.callPackage ../. { }).mount disko-config);
+  };
+
   allTestFilenames =
     builtins.map (lib.removeSuffix ".nix") (
       builtins.filter
@@ -11,6 +19,7 @@ let
         (lib.attrNames (builtins.readDir ./.))
     );
 
-  allTests = lib.genAttrs (allTestFilenames) (test: import (./. + "/${test}.nix") { inherit makeDiskoTest; });
+  allTests = lib.genAttrs (allTestFilenames) (test: import (./. + "/${test}.nix") { inherit makeDiskoTest; }) //
+             evalTest "lvm-luks-example" ../example/config.nix;
 in
 allTests
