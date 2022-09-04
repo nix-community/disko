@@ -19,23 +19,29 @@ let
     ref = "master";
   }) {};
   cfg = {
-    type = "devices";
-    content = {
+    disk = {
       sda = {
-        type = "table";
-        format = "msdos";
-        partitions = [{
-          type = "partition";
-          part-type = "primary";
-          start = "1M";
-          end = "100%";
-          bootable = true;
-          content = {
-            type = "filesystem";
-            format = "ext4";
-            mountpoint = "/";
-          };
-        }];
+        device = "/dev/sda";
+        type = "device";
+        content = {
+          type = "table";
+          format = "msdos";
+          partitions = [
+            {
+              name = "root";
+              type = "partition";
+              part-type = "primary";
+              start = "1M";
+              end = "100%";
+              bootable = true;
+              content = {
+                type = "filesystem";
+                format = "ext4";
+                mountpoint = "/";
+              };
+            }
+          ];
+        };
       };
     };
   };
