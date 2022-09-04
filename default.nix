@@ -2,7 +2,7 @@
 , pkgs ? import <nixpkgs> {}
 }:
 let
-  types = import ./types.nix { inherit pkgs; };
+  types = import ./types.nix { inherit lib pkgs; };
   eval = cfg: lib.evalModules {
     modules = lib.singleton {
       # _file = toString input;

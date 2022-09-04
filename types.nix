@@ -1,5 +1,5 @@
-{ pkgs ? import <nixpkgs> {} }:
-with pkgs.lib;
+{ lib, pkgs }:
+with lib;
 with builtins;
 
 rec {

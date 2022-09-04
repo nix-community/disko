@@ -1,39 +1,58 @@
-{ pkgs, lib, ... }:
-let
-  disko = import (builtins.fetchGit {
-    url = "https://github.com/nix-community/disko";
-    ref = "master";
-  }) {
+{
+  pkgs,
+  lib,
+  ...
+}: let
+  # We just import from the repository for testing here:
+  diskoNixos = import ../../. {
     inherit lib;
   };
+  disko = import ../../. {
+    inherit lib;
+    inherit pkgs;
+  };
+  # In your own system use something like this:
+  #import (builtins.fetchGit {
+  #  url = "https://github.com/nix-community/disko";
+  #  ref = "master";
+  #}) {
+  #  inherit lib;
+  #};
   cfg = {
-    type = "devices";
-    content = {
+    disk = {
       sda = {
-        type = "table";
-        format = "msdos";
-        partitions = [{
-          type = "partition";
-          part-type = "primary";
-          start = "1M";
-          end = "100%";
-          bootable = true;
-          content = {
-            type = "filesystem";
-            format = "ext4";
-            mountpoint = "/";
-          };
-        }];
+        device = "/dev/sda";
+        type = "device";
+        content = {
+          type = "table";
+          format = "msdos";
+          partitions = [
+            {
+              name = "root";
+              type = "partition";
+              part-type = "primary";
+              start = "1M";
+              end = "100%";
+              bootable = true;
+              content = {
+                type = "filesystem";
+                format = "ext4";
+                mountpoint = "/";
+              };
+            }
+          ];
+        };
       };
     };
   };
 in {
   imports = [
-    (disko.config cfg)
+    (diskoNixos.config cfg)
   ];
-  environment.systemPackages = with pkgs;[
+  boot.loader.grub.devices = [ "/dev/sda" ];
+  system.stateVersion = "22.05";
+  environment.systemPackages = with pkgs; [
     (pkgs.writeScriptBin "tsp-create" (disko.create cfg))
     (pkgs.writeScriptBin "tsp-mount" (disko.mount cfg))
   ];
 }
-

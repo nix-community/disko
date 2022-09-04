@@ -20,6 +20,8 @@ let
     );
 
   allTests = lib.genAttrs (allTestFilenames) (test: import (./. + "/${test}.nix") { inherit makeDiskoTest; }) //
-             evalTest "lvm-luks-example" ../example/config.nix;
+             evalTest "lvm-luks-example" ../example/config.nix // {
+               standalone = (pkgs.nixos [ ../example/stand-alone/configuration.nix ]).config.system.build.toplevel;
+             };
 in
 allTests
