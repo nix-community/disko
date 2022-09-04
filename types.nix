@@ -415,7 +415,6 @@ rec {
       };
       name = mkOption {
         type = types.nullOr types.str;
-        default = null;
       };
       start = mkOption {
         type = types.str;
