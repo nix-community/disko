@@ -1,14 +1,23 @@
 {
-  type = "devices";
-  content = {
+  disk = {
     vdb = {
-      type = "zfs";
-      pool = "zroot";
+      type = "disk";
+      device = "/dev/vdb";
+      content = {
+        type = "zfs";
+        pool = "zroot";
+      };
     };
     vdc = {
-      type = "zfs";
-      pool = "zroot";
+      type = "disk";
+      device = "/dev/vdc";
+      content = {
+        type = "zfs";
+        pool = "zroot";
+      };
     };
+  };
+  zpool = {
     zroot = {
       type = "zpool";
       mode = "mirror";
@@ -18,35 +27,31 @@
       };
       mountpoint = "/";
 
-      datasets = [
-        {
-          type = "zfs_filesystem";
-          name = "zfs_fs";
+      datasets = {
+        zfs_fs = {
+          zfs_type = "filesystem";
           mountpoint = "/zfs_fs";
           options."com.sun:auto-snapshot" = "true";
-        }
-        {
-          type = "zfs_filesystem";
-          name = "zfs_unmounted_fs";
+        };
+        zfs_unmounted_fs = {
+          zfs_type = "filesystem";
           options.mountpoint = "none";
-        }
-        {
-          type = "zfs_filesystem";
-          name = "zfs_legacy_fs";
+        };
+        zfs_legacy_fs = {
+          zfs_type = "filesystem";
           options.mountpoint = "legacy";
           mountpoint = "/zfs_legacy_fs";
-        }
-        {
-          type = "zfs_volume";
-          name = "zfs_testvolume";
+        };
+        zfs_testvolume = {
+          zfs_type = "volume";
           size = "10M";
           content = {
             type = "filesystem";
             format = "ext4";
             mountpoint = "/ext4onzfs";
           };
-        }
-      ];
+        };
+      };
     };
   };
 }

@@ -1,39 +1,47 @@
-# usage: nix-instantiate --eval --json --strict example/config.nix | jq .
 {
-  type = "devices";
-  content = {
+  disk = {
     vdb = {
-      type = "table";
-      format = "gpt";
-      partitions = [
-        {
-          type = "partition";
-          part-type = "primary";
-          start = "1MiB";
-          end = "100%";
-          content = {
-            type = "mdraid";
-            name = "raid1";
-          };
-        }
-      ];
+      type = "disk";
+      device = "/dev/vdb";
+      content = {
+        type = "table";
+        format = "gpt";
+        partitions = [
+          {
+            type = "partition";
+            name = "mdadm";
+            start = "1MiB";
+            end = "100%";
+            content = {
+              type = "mdraid";
+              name = "raid1";
+            };
+          }
+        ];
+      };
     };
     vdc = {
-      type = "table";
-      format = "gpt";
-      partitions = [
-        {
-          type = "partition";
-          part-type = "primary";
-          start = "1MiB";
-          end = "100%";
-          content = {
-            type = "mdraid";
-            name = "raid1";
-          };
-        }
-      ];
+      type = "disk";
+      device = "/dev/vdc";
+      content = {
+        type = "table";
+        format = "gpt";
+        partitions = [
+          {
+            type = "partition";
+            name = "mdadm";
+            start = "1MiB";
+            end = "100%";
+            content = {
+              type = "mdraid";
+              name = "raid1";
+            };
+          }
+        ];
+      };
     };
+  };
+  mdadm = {
     raid1 = {
       type = "mdadm";
       level = 1;
@@ -43,7 +51,7 @@
         partitions = [
           {
             type = "partition";
-            part-type = "primary";
+            name = "primary";
             start = "1MiB";
             end = "100%";
             content = {

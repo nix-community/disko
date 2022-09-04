@@ -17,7 +17,7 @@
         };
       tsp-create = pkgs.writeScript "create" ((pkgs.callPackage ../. { }).create disko-config);
       tsp-mount = pkgs.writeScript "mount" ((pkgs.callPackage ../. { }).mount disko-config);
-      num-disks = builtins.length (builtins.filter (x: builtins.match "vd." x == [ ]) (lib.attrNames disko-config.content));
+      num-disks = builtins.length (lib.attrNames disko-config.disk);
     in
     makeTest' {
       name = "disko";
