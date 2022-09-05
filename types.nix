@@ -764,6 +764,7 @@ rec {
               fileSystems.${config.mountpoint} = {
                 device = config.name;
                 fsType = "zfs";
+                options = lib.optional ((config.options.mountpoint or "") != "legacy") "zfsutil";
               };
             });
       };
@@ -852,6 +853,7 @@ rec {
               fileSystems.${config.mountpoint} = {
                 device = "${zpool}/${config.name}";
                 fsType = "zfs";
+                options = lib.optional ((config.options.mountpoint or "") != "legacy") "zfsutil";
               };
             };
       };
