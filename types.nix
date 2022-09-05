@@ -55,7 +55,7 @@ rec {
         schemas = {
           dev__da = dev + toString index; # /dev/{s,v}da style
           dev_disk = "${dev}-part${toString index}"; # /dev/disk/by-id/xxx style
-          dev_nvme = "${dev}n1p${toString index}"; # /dev/nvme0n1p1 style
+          dev_nvme = "${dev}p${toString index}"; # /dev/nvme0n1p1 style
           dev_md = "${dev}p${toString index}"; # /dev/nvme0n1p1 style
         };
         detectSchema =
