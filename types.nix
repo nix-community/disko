@@ -763,7 +763,7 @@ rec {
             (optionalAttrs (!isNull config.mountpoint) {
               fileSystems.${config.mountpoint} = {
                 device = config.name;
-                fsType = [ "zfs" ];
+                fsType = "zfs";
               };
             });
       };
@@ -851,7 +851,7 @@ rec {
             optionalAttrs (config.zfs_type == "filesystem" && config.options.mountpoint or "" != "none") {
               fileSystems.${config.mountpoint} = {
                 device = "${zpool}/${config.name}";
-                fsType = [ "zfs" ];
+                fsType = "zfs";
               };
             };
       };
