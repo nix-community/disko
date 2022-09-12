@@ -464,6 +464,8 @@ rec {
           ${concatMapStringsSep "" (flag: ''
             parted -s ${dev} set ${toString config.index} ${flag} on
           '') config.flags}
+          # ensure further operations can detect new partitions
+          udevadm trigger --subsystem-match=block; udevadm settle
           ${optionalString (!isNull config.content) (config.content._create (diskoLib.deviceNumbering dev config.index))}
         '';
       };
