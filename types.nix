@@ -1,4 +1,4 @@
-{ lib, pkgs }:
+{ lib }:
 with lib;
 with builtins;
 
@@ -65,6 +65,21 @@ rec {
           if match "/dev/md/.*" dev != null then "dev_md" else
           abort "${dev} seems not to be a supported disk format";
       in schemas.${detectSchema};
+
+    /* A nix option type representing a json datastructure, vendored from nixpkgs to avoid dependency on pkgs */
+    jsonType = let
+      valueType = types.nullOr (types.oneOf [
+        types.bool
+        types.int
+        types.float
+        types.str
+        types.path
+        (types.attrsOf valueType)
+        (types.listOf valueType)
+      ]) // {
+        description = "JSON value";
+      };
+    in valueType;
 
     /* Given a attrset of dependencies and a devices attrset
        returns a sorted list by dependencies. aborts if a loop is found
@@ -231,7 +246,7 @@ rec {
       _meta = mkOption {
         internal = true;
         readOnly = true;
-        type = types.functionTo (pkgs.formats.json {}).type;
+        type = types.functionTo diskoLib.jsonType;
         default = dev: {
         };
       };
@@ -254,7 +269,7 @@ rec {
       _mount = mkOption {
         internal = true;
         readOnly = true;
-        type = types.functionTo (pkgs.formats.json {}).type;
+        type = types.functionTo diskoLib.jsonType;
         default = dev: {
           fs.${config.mountpoint} = ''
             if ! findmnt ${dev} "/mnt${config.mountpoint}" > /dev/null 2>&1; then
@@ -305,7 +320,7 @@ rec {
       _meta = mkOption {
         internal = true;
         readOnly = true;
-        type = types.functionTo (pkgs.formats.json {}).type;
+        type = types.functionTo diskoLib.jsonType;
         default = dev: {
         };
       };
@@ -322,7 +337,7 @@ rec {
       _mount = mkOption {
         internal = true;
         readOnly = true;
-        type = types.functionTo (pkgs.formats.json {}).type;
+        type = types.functionTo diskoLib.jsonType;
         default = dev: {
           fs.${config.mountpoint} = ''
             if ! findmnt ${dev} "/mnt${config.mountpoint}" > /dev/null 2>&1; then
@@ -363,7 +378,7 @@ rec {
       _meta = mkOption {
         internal = true;
         readOnly = true;
-        type = types.functionTo (pkgs.formats.json {}).type;
+        type = types.functionTo diskoLib.jsonType;
         default = dev:
           diskoLib.deepMergeMap (partition: partition._meta dev) config.partitions;
       };
@@ -379,7 +394,7 @@ rec {
       _mount = mkOption {
         internal = true;
         readOnly = true;
-        type = types.functionTo (pkgs.formats.json {}).type;
+        type = types.functionTo diskoLib.jsonType;
         default = dev:
           let
             partMounts = diskoLib.deepMergeMap (partition: partition._mount dev) config.partitions;
@@ -441,7 +456,7 @@ rec {
       _meta = mkOption {
         internal = true;
         readOnly = true;
-        type = types.functionTo (pkgs.formats.json {}).type;
+        type = types.functionTo diskoLib.jsonType;
         default = dev:
           optionalAttrs (!isNull config.content) (config.content._meta dev);
       };
@@ -472,7 +487,7 @@ rec {
       _mount = mkOption {
         internal = true;
         readOnly = true;
-        type = types.functionTo (pkgs.formats.json {}).type;
+        type = types.functionTo diskoLib.jsonType;
         default = dev:
           optionalAttrs (!isNull config.content) (config.content._mount (diskoLib.deviceNumbering dev config.index));
       };
@@ -497,7 +512,7 @@ rec {
       _meta = mkOption {
         internal = true;
         readOnly = true;
-        type = types.functionTo (pkgs.formats.json {}).type;
+        type = types.functionTo diskoLib.jsonType;
         default = dev: {
           dependencies.lvm_vg.${config.vg} = [ dev ];
         };
@@ -514,7 +529,7 @@ rec {
       _mount = mkOption {
         internal = true;
         readOnly = true;
-        type = types.functionTo (pkgs.formats.json {}).type;
+        type = types.functionTo diskoLib.jsonType;
         default = dev:
           {};
       };
@@ -543,7 +558,7 @@ rec {
       _meta = mkOption {
         internal = true;
         readOnly = true;
-        type = (pkgs.formats.json {}).type;
+        type = diskoLib.jsonType;
         default =
           diskoLib.deepMergeMap (lv: lv._meta [ "lvm_vg" config.name ]) (attrValues config.lvs);
       };
@@ -559,7 +574,7 @@ rec {
       _mount = mkOption {
         internal = true;
         readOnly = true;
-        type = (pkgs.formats.json {}).type;
+        type = diskoLib.jsonType;
         default = let
           lvMounts = diskoLib.deepMergeMap (lv: lv._mount config.name) (attrValues config.lvs);
         in {
@@ -605,7 +620,7 @@ rec {
       _meta = mkOption {
         internal = true;
         readOnly = true;
-        type = types.functionTo (pkgs.formats.json {}).type;
+        type = types.functionTo diskoLib.jsonType;
         default = dev:
           optionalAttrs (!isNull config.content) (config.content._meta dev);
       };
@@ -626,7 +641,7 @@ rec {
       _mount = mkOption {
         internal = true;
         readOnly = true;
-        type = types.functionTo (pkgs.formats.json {}).type;
+        type = types.functionTo diskoLib.jsonType;
         default = vg:
           optionalAttrs (!isNull config.content) (config.content._mount "/dev/${vg}/${config.name}");
       };
@@ -651,7 +666,7 @@ rec {
       _meta = mkOption {
         internal = true;
         readOnly = true;
-        type = types.functionTo (pkgs.formats.json {}).type;
+        type = types.functionTo diskoLib.jsonType;
         default = dev: {
           dependencies.zpool.${config.pool} = [ dev ];
         };
@@ -667,7 +682,7 @@ rec {
       _mount = mkOption {
         internal = true;
         readOnly = true;
-        type = types.functionTo (pkgs.formats.json {}).type;
+        type = types.functionTo diskoLib.jsonType;
         default = dev:
           {};
       };
@@ -715,7 +730,7 @@ rec {
       _meta = mkOption {
         internal = true;
         readOnly = true;
-        type = (pkgs.formats.json {}).type;
+        type = diskoLib.jsonType;
         default =
           diskoLib.deepMergeMap (dataset: dataset._meta [ "zpool" config.name ]) (attrValues config.datasets);
       };
@@ -735,7 +750,7 @@ rec {
       _mount = mkOption {
         internal = true;
         readOnly = true;
-        type = (pkgs.formats.json {}).type;
+        type = diskoLib.jsonType;
         default = let
           datasetMounts = diskoLib.deepMergeMap (dataset: dataset._mount config.name) (attrValues config.datasets);
         in {
@@ -812,7 +827,7 @@ rec {
       _meta = mkOption {
         internal = true;
         readOnly = true;
-        type = types.functionTo (pkgs.formats.json {}).type;
+        type = types.functionTo diskoLib.jsonType;
         default = dev:
           optionalAttrs (!isNull config.content) (config.content._meta dev);
       };
@@ -833,7 +848,7 @@ rec {
       _mount = mkOption {
         internal = true;
         readOnly = true;
-        type = types.functionTo (pkgs.formats.json {}).type;
+        type = types.functionTo diskoLib.jsonType;
         default = zpool:
           optionalAttrs (config.zfs_type == "volume" && !isNull config.content) (config.content._mount "/dev/zvol/${zpool}/${config.name}") //
             optionalAttrs (config.zfs_type == "filesystem" && config.options.mountpoint or "" != "none") { fs.${config.mountpoint} = ''
@@ -881,7 +896,7 @@ rec {
       _meta = mkOption {
         internal = true;
         readOnly = true;
-        type = (pkgs.formats.json {}).type;
+        type = diskoLib.jsonType;
         default =
           optionalAttrs (!isNull config.content) (config.content._meta [ "mdadm" config.name ]);
       };
@@ -901,7 +916,7 @@ rec {
       _mount = mkOption {
         internal = true;
         readOnly = true;
-        type = (pkgs.formats.json {}).type;
+        type = diskoLib.jsonType;
         default =
           optionalAttrs (!isNull config.content) (config.content._mount "/dev/md/${config.name}");
         # TODO we probably need to assemble the mdadm somehow
@@ -928,7 +943,7 @@ rec {
       _meta = mkOption {
         internal = true;
         readOnly = true;
-        type = types.functionTo (pkgs.formats.json {}).type;
+        type = types.functionTo diskoLib.jsonType;
         default = dev: {
           dependencies.mdadm.${config.name} = [ dev ];
         };
@@ -945,7 +960,7 @@ rec {
       _mount = mkOption {
         internal = true;
         readOnly = true;
-        type = types.functionTo (pkgs.formats.json {}).type;
+        type = types.functionTo diskoLib.jsonType;
         default = dev:
           {};
       };
@@ -978,7 +993,7 @@ rec {
       _meta = mkOption {
         internal = true;
         readOnly = true;
-        type = types.functionTo (pkgs.formats.json {}).type;
+        type = types.functionTo diskoLib.jsonType;
         default = dev:
           optionalAttrs (!isNull config.content) (config.content._meta dev);
       };
@@ -995,7 +1010,7 @@ rec {
       _mount = mkOption {
         internal = true;
         readOnly = true;
-        type = types.functionTo (pkgs.formats.json {}).type;
+        type = types.functionTo diskoLib.jsonType;
         default = dev:
           let
             contentMount = config.content._mount "/dev/mapper/${config.name}";
@@ -1037,7 +1052,7 @@ rec {
       _meta = mkOption {
         internal = true;
         readOnly = true;
-        type = (pkgs.formats.json {}).type;
+        type = diskoLib.jsonType;
         default =
           optionalAttrs (!isNull config.content) (config.content._meta [ "disk" config.device ]);
       };
@@ -1050,7 +1065,7 @@ rec {
       _mount = mkOption {
         internal = true;
         readOnly = true;
-        type = (pkgs.formats.json {}).type;
+        type = diskoLib.jsonType;
         default =
           optionalAttrs (!isNull config.content) (config.content._mount config.device);
       };
