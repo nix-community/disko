@@ -1,8 +1,6 @@
-{ lib ? import <nixpkgs/lib>
-, pkgs ? import <nixpkgs> {}
-}:
+{ lib ? import <nixpkgs/lib> }:
 let
-  types = import ./types.nix { inherit lib pkgs; };
+  types = import ./types.nix { inherit lib; };
   eval = cfg: lib.evalModules {
     modules = lib.singleton {
       # _file = toString input;
