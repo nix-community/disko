@@ -4,12 +4,8 @@
   ...
 }: let
   # We just import from the repository for testing here:
-  diskoNixos = import ../../. {
-    inherit lib;
-  };
   disko = import ../../. {
     inherit lib;
-    inherit pkgs;
   };
   # In your own system use something like this:
   #import (builtins.fetchGit {
@@ -47,7 +43,7 @@
   };
 in {
   imports = [
-    (diskoNixos.config cfg)
+    (disko.config cfg)
   ];
   boot.loader.grub.devices = [ "/dev/sda" ];
   system.stateVersion = "22.05";
