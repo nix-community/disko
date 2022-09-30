@@ -648,8 +648,8 @@ rec {
       _config = mkOption {
         internal = true;
         readOnly = true;
-        default = dev:
-          optionalAttrs (!isNull config.content) (config.content._config dev);
+        default = vg:
+          optionalAttrs (!isNull config.content) (config.content._config "/dev/${vg}/${config.name}");
       };
     };
   });
