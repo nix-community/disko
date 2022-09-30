@@ -1,15 +1,30 @@
-{
+{ disks ? [ "/dev/vdb" "/dev/vdc" ] }: {
   disk = {
     vdb = {
       type = "disk";
-      device = "/dev/vdb";
+      device = builtins.elemAt disks 0;
       content = {
         type = "table";
         format = "gpt";
         partitions = [
           {
             type = "partition";
-            start = "0%";
+            name = "ESP";
+            start = "1MiB";
+            end = "100MiB";
+            bootable = true;
+            content = {
+              type = "filesystem";
+              format = "vfat";
+              mountpoint = "/boot";
+              options = [
+                "defaults"
+              ];
+            };
+          }
+          {
+            type = "partition";
+            start = "100MiB";
             end = "100%";
             name = "primary";
             bootable = true;
@@ -24,7 +39,7 @@
     };
     vdc = {
       type = "disk";
-      device = "/dev/vdc";
+      device = builtins.elemAt disks 1;
       content = {
         type = "zfs";
         pool = "zroot";
@@ -34,10 +49,16 @@
   zpool = {
     zroot = {
       type = "zpool";
+      rootFsOptions.mountpoint = "none";
       datasets = {
-        zfs_fs = {
+        "root" = {
+          zfs_type = "filesystem";
+          options.mountpoint = "none";
+        };
+        "root/zfs_fs" = {
           zfs_type = "filesystem";
           mountpoint = "/zfs_fs";
+          options.mountpoint = "/zfs_fs";
           options."com.sun:auto-snapshot" = "true";
         };
       };

@@ -4,9 +4,9 @@
 makeDiskoTest {
   disko-config = import ../example/lvm-raid.nix;
   extraTestScript = ''
-    machine.succeed("mountpoint /mnt/home");
+    machine.succeed("mountpoint /home");
   '';
   extraConfig = {
-    boot.kernelModules = [ "dm-raid" "dm-mirror" ];
+    boot.kernelModules = [ "dm-raid0" "dm-mirror" ];
   };
 }

@@ -1,25 +1,40 @@
-{
+{ disks ? [ "/dev/vdb" "/dev/vdc" ] }: {
   disk = {
-    disk1 = {
+    disk0 = {
       type = "disk";
-      device = "/dev/vdb";
+      device = builtins.elemAt disks 0;
       content = {
         type = "table";
         format = "gpt";
         partitions = [
           {
             type = "partition";
-            start = "0";
-            end = "1M";
-            name = "grub";
-            flags = ["bios_grub"];
+            name = "ESP";
+            start = "1MiB";
+            end = "128MiB";
+            fs-type = "fat32";
+            bootable = true;
+            content = {
+              type = "filesystem";
+              format = "vfat";
+              mountpoint = "/boot";
+            };
           }
+        ];
+      };
+    };
+    disk1 = {
+      type = "disk";
+      device = builtins.elemAt disks 1;
+      content = {
+        type = "table";
+        format = "gpt";
+        partitions = [
           {
             type = "partition";
             start = "1M";
             end = "100%";
             name = "luks";
-            bootable = true;
             content = {
               type = "luks";
               name = "crypted1";
@@ -39,24 +54,16 @@
     };
     disk2 = {
       type = "disk";
-      device = "/dev/vdc";
+      device = builtins.elemAt disks 2;
       content = {
         type = "table";
         format = "gpt";
         partitions = [
           {
             type = "partition";
-            start = "0";
-            end = "1M";
-            name = "grub";
-            flags = ["bios_grub"];
-          }
-          {
-            type = "partition";
             start = "1M";
             end = "100%";
             name = "luks";
-            bootable = true;
             content = {
               type = "luks";
               name = "crypted2";
@@ -81,17 +88,17 @@
       level = 1;
       content = {
         type = "table";
-        format = "msdos";
+        format = "gpt";
         partitions = [
           {
             type = "partition";
-            name = "xfs";
+            name = "bla";
             start = "1MiB";
             end = "100%";
             content = {
               type = "filesystem";
-              format = "xfs";
-              mountpoint = "/xfs_mdadm_lvm";
+              format = "ext4";
+              mountpoint = "/ext4_mdadm_lvm";
             };
           }
         ];

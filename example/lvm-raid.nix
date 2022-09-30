@@ -1,16 +1,28 @@
-{
+{ disks ? [ "/dev/vdb" "/dev/vdc" ] }: {
   disk = {
-    vdb = {
+    one = {
       type = "disk";
-      device = "/dev/vdb";
+      device = builtins.elemAt disks 0;
       content = {
         type = "table";
         format = "gpt";
         partitions = [
           {
+            name = "boot";
+            type = "partition";
+            start = "0";
+            end = "100M";
+            fs-type = "fat32";
+            bootable = true;
+            content = {
+              type = "mdraid";
+              name = "boot";
+            };
+          }
+          {
             type = "partition";
             name = "primary";
-            start = "0%";
+            start = "100M";
             end = "100%";
             content = {
               type = "lvm_pv";
@@ -20,17 +32,29 @@
         ];
       };
     };
-    vdc = {
+    two = {
       type = "disk";
-      device = "/dev/vdc";
+      device = builtins.elemAt disks 1;
       content = {
         type = "table";
         format = "gpt";
         partitions = [
           {
+            name = "boot";
+            type = "partition";
+            start = "0";
+            end = "100M";
+            fs-type = "fat32";
+            bootable = true;
+            content = {
+              type = "mdraid";
+              name = "boot";
+            };
+          }
+          {
             type = "partition";
             name = "primary";
-            start = "0%";
+            start = "100M";
             end = "100%";
             content = {
               type = "lvm_pv";
@@ -38,6 +62,18 @@
             };
           }
         ];
+      };
+    };
+  };
+  mdadm = {
+    boot = {
+      type = "mdadm";
+      level = 1;
+      metadata = "1.0";
+      content = {
+        type = "filesystem";
+        format = "vfat";
+        mountpoint = "/boot";
       };
     };
   };

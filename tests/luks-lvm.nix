@@ -4,7 +4,12 @@
 makeDiskoTest {
   disko-config = import ../example/luks-lvm.nix;
   extraTestScript = ''
-    machine.succeed("cryptsetup isLuks /dev/vdb2");
-    machine.succeed("mountpoint /mnt/home");
+    machine.succeed("cryptsetup isLuks /dev/vda2");
+    machine.succeed("mountpoint /home");
+  '';
+  enableOCR = true;
+  bootCommands = ''
+    machine.wait_for_text("Passphrase for")
+    machine.send_chars("secret\n")
   '';
 }

@@ -3,6 +3,9 @@
 }:
 makeDiskoTest {
   disko-config = import ../example/zfs.nix;
+  extraConfig = {
+    fileSystems."/zfs_legacy_fs".options = [ "nofail" ]; # TODO find out why we need this!
+  };
   extraTestScript = ''
     machine.succeed("test -b /dev/zvol/zroot/zfs_testvolume");
 
@@ -19,9 +22,8 @@ makeDiskoTest {
     assert_property("zroot/zfs_testvolume", "volsize", "10M")
     assert_property("zroot/zfs_unmounted_fs", "mountpoint", "none")
 
-    machine.succeed("mountpoint /mnt");
-    machine.succeed("mountpoint /mnt/zfs_fs");
-    machine.succeed("mountpoint /mnt/zfs_legacy_fs");
-    machine.succeed("mountpoint /mnt/ext4onzfs");
+    machine.succeed("mountpoint /zfs_fs");
+    machine.succeed("mountpoint /zfs_legacy_fs");
+    machine.succeed("mountpoint /ext4onzfs");
   '';
 }

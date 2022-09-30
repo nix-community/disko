@@ -1,8 +1,8 @@
-{
+{ disks ? [ "/dev/vdb" ] }: {
   disk = {
     vdb = {
       type = "disk";
-      device = "/dev/vdb";
+      device = builtins.elemAt disks 0;
       content = {
         type = "table";
         format = "gpt";
@@ -10,7 +10,6 @@
           {
             type = "partition";
             name = "ESP";
-            # fs-type = "FAT32";
             start = "1MiB";
             end = "100MiB";
             bootable = true;
@@ -34,7 +33,6 @@
               keyFile = "/tmp/secret.key";
               extraArgs = [
                 "--hash sha512"
-                "--iter-time 5000"
               ];
               content = {
                 type = "lvm_pv";

@@ -14,6 +14,7 @@
       import ./tests {
         inherit pkgs;
         makeTest = import (pkgs.path + "/nixos/tests/make-test-python.nix");
+        eval-config = import (pkgs.path + "/nixos/lib/eval-config.nix");
       };
   };
 }

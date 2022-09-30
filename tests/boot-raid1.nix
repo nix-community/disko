@@ -2,10 +2,9 @@
 , makeDiskoTest ? (pkgs.callPackage ./lib.nix { }).makeDiskoTest
 }:
 makeDiskoTest {
-  disko-config = import ../example/zfs-over-legacy.nix;
+  disko-config = import ../example/boot-raid1.nix;
   extraTestScript = ''
-    machine.succeed("test -e /zfs_fs");
-    machine.succeed("mountpoint /zfs_fs");
+    machine.succeed("test -b /dev/md/boot");
+    machine.succeed("mountpoint /boot");
   '';
 }
-

@@ -1,19 +1,56 @@
-{
+{ disks ? [ "/dev/vdb" "/dev/vdc" ] }: {
   disk = {
-    vdb = {
+    x = {
       type = "disk";
-      device = "/dev/vdb";
+      device = builtins.elemAt disks 0;
       content = {
-        type = "zfs";
-        pool = "zroot";
+        type = "table";
+        format = "gpt";
+        partitions = [
+          {
+            type = "partition";
+            name = "ESP";
+            start = "0";
+            end = "64MiB";
+            fs-type = "fat32";
+            bootable = true;
+            content = {
+              type = "filesystem";
+              format = "vfat";
+              mountpoint = "/boot";
+            };
+          }
+          {
+            type = "partition";
+            name = "zfs";
+            start = "128MiB";
+            end = "100%";
+            content = {
+              type = "zfs";
+              pool = "zroot";
+            };
+          }
+        ];
       };
     };
-    vdc = {
+    y = {
       type = "disk";
-      device = "/dev/vdc";
+      device = builtins.elemAt disks 1;
       content = {
-        type = "zfs";
-        pool = "zroot";
+        type = "table";
+        format = "gpt";
+        partitions = [
+          {
+            type = "partition";
+            name = "zfs";
+            start = "128MiB";
+            end = "100%";
+            content = {
+              type = "zfs";
+              pool = "zroot";
+            };
+          }
+        ];
       };
     };
   };
