@@ -892,6 +892,10 @@ rec {
         type = types.int;
         default = 1;
       };
+      metadata = mkOption {
+        type = types.enum [ "1" "1.0" "1.1" "1.2" "default" "ddf" "imsm" ];
+        default = "default";
+      };
       content = diskoLib.deviceType;
       _meta = mkOption {
         internal = true;
@@ -908,6 +912,8 @@ rec {
           echo 'y' | mdadm --create /dev/md/${config.name} \
             --level=${toString config.level} \
             --raid-devices=''${RAIDDEVICES_N_${config.name}} \
+            --metadata=${config.metadata} \
+            --homehost=any \
             ''${RAIDDEVICES_${config.name}}
           udevadm trigger --subsystem-match=block; udevadm settle
           ${optionalString (!isNull config.content) (config.content._create "/dev/md/${config.name}")}
