@@ -33,8 +33,8 @@ rec {
        deepMergeMap :: -> (AttrSet -> AttrSet ) -> [ AttrSet ] -> Attrset
 
        Example:
-         deepMergeMap (x: x.t = "test") [ { x = { y = 1; z = 3; }; } { x = { 123 = 234; }; } ]
-         => { x = { y = 1; z = 3; 123 = 234; t = "test"; }; }
+         deepMergeMap (x: x.t = "test") [ { x = { y = 1; z = 3; }; } { x = { bla = 234; }; } ]
+         => { x = { y = 1; z = 3; bla = 234; t = "test"; }; }
     */
     deepMergeMap = f: listOfAttrs:
       foldr (attr: acc: (recursiveUpdate acc (f attr))) {} listOfAttrs;
@@ -216,12 +216,12 @@ rec {
       };
       config = mkOption {
         readOnly = true;
-        default = diskoLib.deepMergeMap (dev: dev._config) (flatten (map attrValues [
+        default = { imports = flatten (map (dev: dev._config) (flatten (map attrValues [
           config.devices.disk
           config.devices.lvm_vg
           config.devices.mdadm
           config.devices.zpool
-        ]));
+        ])));};
       };
     };
   });
@@ -283,12 +283,12 @@ rec {
       _config = mkOption {
         internal = true;
         readOnly = true;
-        default = dev: {
+        default = dev: [{
           fileSystems.${config.mountpoint} = {
             device = dev;
             fsType = "btrfs";
           };
-        };
+        }];
       };
     };
   });
@@ -351,12 +351,12 @@ rec {
       _config = mkOption {
         internal = true;
         readOnly = true;
-        default = dev: {
+        default = dev: [{
           fileSystems.${config.mountpoint} = {
             device = dev;
             fsType = config.format;
           };
-        };
+        }];
       };
     };
   });
@@ -409,7 +409,7 @@ rec {
         internal = true;
         readOnly = true;
         default = dev:
-          diskoLib.deepMergeMap (partition: partition._config dev) config.partitions;
+          map (partition: partition._config dev) config.partitions;
       };
     };
   });
@@ -495,7 +495,7 @@ rec {
         internal = true;
         readOnly = true;
         default = dev:
-          optionalAttrs (!isNull config.content) (config.content._config (diskoLib.deviceNumbering dev config.index));
+          optional (!isNull config.content) (config.content._config (diskoLib.deviceNumbering dev config.index));
       };
     };
   });
@@ -536,7 +536,7 @@ rec {
       _config = mkOption {
         internal = true;
         readOnly = true;
-        default = dev: {};
+        default = dev: [];
       };
     };
   });
@@ -589,7 +589,7 @@ rec {
         internal = true;
         readOnly = true;
         default =
-          diskoLib.deepMergeMap (lv: lv._config config.name) (attrValues config.lvs);
+          map (lv: lv._config config.name) (attrValues config.lvs);
       };
     };
   });
@@ -649,7 +649,12 @@ rec {
         internal = true;
         readOnly = true;
         default = vg:
-          optionalAttrs (!isNull config.content) (config.content._config "/dev/${vg}/${config.name}");
+          [
+            (optional (!isNull config.content) (config.content._config "/dev/${vg}/${config.name}"))
+            (optional (!isNull config.lvm_type) {
+              boot.initrd.kernelModules = [ "dm-${config.lvm_type}" ];
+            })
+          ];
       };
     };
   });
@@ -689,7 +694,7 @@ rec {
       _config = mkOption {
         internal = true;
         readOnly = true;
-        default = dev: {};
+        default = dev: [];
       };
     };
   });
@@ -775,15 +780,16 @@ rec {
         internal = true;
         readOnly = true;
         default =
-          recursiveUpdate
-            (diskoLib.deepMergeMap (dataset: dataset._config config.name) (attrValues config.datasets))
-            (optionalAttrs (!isNull config.mountpoint) {
+          [
+            (map (dataset: dataset._config config.name) (attrValues config.datasets))
+            (optional (!isNull config.mountpoint) {
               fileSystems.${config.mountpoint} = {
                 device = config.name;
                 fsType = "zfs";
                 options = lib.optional ((config.options.mountpoint or "") != "legacy") "zfsutil";
               };
-            });
+            })
+          ];
       };
     };
   });
@@ -865,14 +871,14 @@ rec {
         internal = true;
         readOnly = true;
         default = zpool:
-          optionalAttrs (config.zfs_type == "volume" && !isNull config.content) (config.content._config "/dev/zvol/${zpool}/${config.name}") //
-            optionalAttrs (config.zfs_type == "filesystem" && config.options.mountpoint or "" != "none") {
-              fileSystems.${config.mountpoint} = {
-                device = "${zpool}/${config.name}";
-                fsType = "zfs";
-                options = lib.optional ((config.options.mountpoint or "") != "legacy") "zfsutil";
-              };
+          (optional (config.zfs_type == "volume" && !isNull config.content) (config.content._config "/dev/zvol/${zpool}/${config.name}")) ++
+          (optional (config.zfs_type == "filesystem" && config.options.mountpoint or "" != "none") {
+            fileSystems.${config.mountpoint} = {
+              device = "${zpool}/${config.name}";
+              fsType = "zfs";
+              options = lib.optional ((config.options.mountpoint or "") != "legacy") "zfsutil";
             };
+          });
       };
     };
   });
@@ -931,7 +937,7 @@ rec {
         internal = true;
         readOnly = true;
         default =
-          optionalAttrs (!isNull config.content) (config.content._config "/dev/md/${config.name}");
+          optional (!isNull config.content) (config.content._config "/dev/md/${config.name}");
       };
     };
   });
@@ -973,7 +979,7 @@ rec {
       _config = mkOption {
         internal = true;
         readOnly = true;
-        default = dev: {};
+        default = dev: [];
       };
     };
   });
@@ -1034,10 +1040,10 @@ rec {
         internal = true;
         readOnly = true;
         default = dev:
-          recursiveUpdate {
+          [
             # TODO do we need this always in initrd and only there?
-            boot.initrd.luks.devices.${config.name}.device = dev;
-          } (optionalAttrs (!isNull config.content) (config.content._config "/dev/mapper/${config.name}"));
+            { boot.initrd.luks.devices.${config.name}.device = dev; }
+          ] ++ (optional (!isNull config.content) (config.content._config "/dev/mapper/${config.name}"));
       };
     };
   });
@@ -1079,7 +1085,7 @@ rec {
         internal = true;
         readOnly = true;
         default =
-          optionalAttrs (!isNull config.content) (config.content._config config.device);
+          optional (!isNull config.content) (config.content._config config.device);
       };
     };
   });
