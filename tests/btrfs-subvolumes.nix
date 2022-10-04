@@ -4,8 +4,8 @@
 makeDiskoTest {
   disko-config = import ../example/btrfs-subvolumes.nix;
   extraTestScript = ''
-    machine.succeed("test -e /mnt/test");
-    machine.succeed("btrfs subvolume list /mnt | grep -qs 'path test$'");
+    machine.succeed("test -e /test");
+    machine.succeed("btrfs subvolume list / | grep -qs 'path test$'");
   '';
 }
 

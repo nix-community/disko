@@ -1,6 +1,6 @@
 { disks ? [ "/dev/vdb" "/dev/vdc" ] }: {
   disk = {
-    vdb = {
+    one = {
       type = "disk";
       device = builtins.elemAt disks 0;
       content = {
@@ -17,8 +17,20 @@
           }
           {
             type = "partition";
-            name = "mdadm";
+            name = "ESP";
             start = "1MiB";
+            end = "128MiB";
+            fs-type = "fat32";
+            bootable = true;
+            content = {
+              type = "mdraid";
+              name = "boot";
+            };
+          }
+          {
+            type = "partition";
+            name = "mdadm";
+            start = "128MiB";
             end = "100%";
             content = {
               type = "mdraid";
@@ -28,7 +40,7 @@
         ];
       };
     };
-    vdc = {
+    two = {
       type = "disk";
       device = builtins.elemAt disks 1;
       content = {
@@ -45,8 +57,20 @@
           }
           {
             type = "partition";
-            name = "mdadm";
+            name = "ESP";
             start = "1MiB";
+            end = "128MiB";
+            fs-type = "fat32";
+            bootable = true;
+            content = {
+              type = "mdraid";
+              name = "boot";
+            };
+          }
+          {
+            type = "partition";
+            name = "mdadm";
+            start = "128MiB";
             end = "100%";
             content = {
               type = "mdraid";
@@ -58,6 +82,16 @@
     };
   };
   mdadm = {
+    boot = {
+      type = "mdadm";
+      level = 1;
+      metadata = "1.0";
+      content = {
+        type = "filesystem";
+        format = "vfat";
+        mountpoint = "/boot";
+      };
+    };
     raid1 = {
       type = "mdadm";
       level = 1;

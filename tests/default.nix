@@ -1,9 +1,10 @@
 { makeTest ? import <nixpkgs/nixos/tests/make-test-python.nix>
+, eval-config ? import <nixpkgs/nixos/lib/eval-config.nix>
 , pkgs ? (import <nixpkgs> { })
 }@args:
 let
   lib = pkgs.lib;
-  makeDiskoTest = (pkgs.callPackage ./lib.nix { inherit makeTest; }).makeDiskoTest;
+  makeDiskoTest = (pkgs.callPackage ./lib.nix { inherit makeTest eval-config; }).makeDiskoTest;
 
   evalTest = name: configFile: let
     disko-config = import configFile;

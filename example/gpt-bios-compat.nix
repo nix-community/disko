@@ -1,8 +1,8 @@
 # Example to create a bios compatible gpt partition
-{
+{ disks ? [ "/dev/vdb" ] }: {
   disk = {
     vdb = {
-      device = "/dev/vdb";
+      device = builtins.elemAt disks 0;
       type = "disk";
       content = {
         type = "table";
