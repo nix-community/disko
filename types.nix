@@ -132,7 +132,7 @@ rec {
     # POSIX.1‐2017, 3.2 Absolute Pathname
     absolute-pathname = mkOptionType {
       name = "POSIX absolute pathname";
-      check = x: isString x && substring 0 1 x == "/" && pathname.check x;
+      check = x: isString x && ((substring 0 1 x == "/" && pathname.check x) || substring 0 1 x == "$");
       merge = mergeOneOption;
     };
 
