@@ -54,6 +54,7 @@ rec {
       let
         schemas = {
           dev__da = dev + toString index; # /dev/{s,v}da style
+          dev_var = dev;
           dev_disk = "${dev}-part${toString index}"; # /dev/disk/by-id/xxx style
           dev_nvme = "${dev}p${toString index}"; # /dev/nvme0n1p1 style
           dev_md = "${dev}p${toString index}"; # /dev/nvme0n1p1 style
@@ -63,6 +64,7 @@ rec {
           if match "/dev/disk/.*" dev != null then "dev_disk" else
           if match "/dev/nvme.*" dev != null then "dev_nvme" else
           if match "/dev/md/.*" dev != null then "dev_md" else
+          if match ".*" dev != null then "dev_var" else
           abort "${dev} seems not to be a supported disk format";
       in schemas.${detectSchema};
 
