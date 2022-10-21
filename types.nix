@@ -81,15 +81,15 @@ rec {
       };
     in valueType;
 
-    /* Given a attrset of dependencies and a devices attrset
-       returns a sorted list by dependencies. aborts if a loop is found
+    /* Given a attrset of deviceDependencies and a devices attrset
+       returns a sorted list by deviceDependencies. aborts if a loop is found
 
        sortDevicesByDependencies :: AttrSet -> AttrSet -> [ [ str str ] ]
     */
-    sortDevicesByDependencies = dependencies: devices:
+    sortDevicesByDependencies = deviceDependencies: devices:
       let
         dependsOn = a: b:
-          elem a (attrByPath b [] dependencies);
+          elem a (attrByPath b [] deviceDependencies);
         maybeSortedDevices = toposort dependsOn (diskoLib.deviceList devices);
       in
         if (hasAttr "cycle" maybeSortedDevices) then
@@ -182,7 +182,7 @@ rec {
           config.devices.mdadm
           config.devices.zpool
         ])) // {
-          sortedDeviceList = diskoLib.sortDevicesByDependencies config.meta.dependencies config.devices;
+          sortedDeviceList = diskoLib.sortDevicesByDependencies config.meta.deviceDependencies config.devices;
         };
       };
       create = mkOption {
@@ -514,7 +514,7 @@ rec {
         readOnly = true;
         type = types.functionTo diskoLib.jsonType;
         default = dev: {
-          dependencies.lvm_vg.${config.vg} = [ dev ];
+          deviceDependencies.lvm_vg.${config.vg} = [ dev ];
         };
       };
       _create = mkOption {
@@ -673,7 +673,7 @@ rec {
         readOnly = true;
         type = types.functionTo diskoLib.jsonType;
         default = dev: {
-          dependencies.zpool.${config.pool} = [ dev ];
+          deviceDependencies.zpool.${config.pool} = [ dev ];
         };
       };
       _create = mkOption {
@@ -957,7 +957,7 @@ rec {
         readOnly = true;
         type = types.functionTo diskoLib.jsonType;
         default = dev: {
-          dependencies.mdadm.${config.name} = [ dev ];
+          deviceDependencies.mdadm.${config.name} = [ dev ];
         };
       };
       _create = mkOption {
