@@ -21,10 +21,10 @@
           inherit (pkgs) system;
         };
       disks = [ "/dev/vda" "/dev/vdb" "/dev/vdc" "/dev/vdd" "/dev/vde" "/dev/vdf" ];
-      tsp-create = pkgs.writeScript "create" ((pkgs.callPackage ../. { }).create (disko-config { disks = builtins.tail disks; }));
-      tsp-mount = pkgs.writeScript "mount" ((pkgs.callPackage ../. { }).mount (disko-config { disks = builtins.tail disks; }));
-      tsp-config = (pkgs.callPackage ../. { }).config (disko-config { inherit disks; });
-      num-disks = builtins.length (lib.attrNames (disko-config {}).disk);
+      tsp-create = pkgs.writeScript "create" ((pkgs.callPackage ../. { }).create (disko-config { disks = builtins.tail disks; inherit lib; }));
+      tsp-mount = pkgs.writeScript "mount" ((pkgs.callPackage ../. { }).mount (disko-config { disks = builtins.tail disks; inherit lib; }));
+      tsp-config = (pkgs.callPackage ../. { }).config (disko-config { inherit disks; inherit lib; });
+      num-disks = builtins.length (lib.attrNames (disko-config { inherit lib; }).disk);
       installed-system = { modulesPath, ... }: {
         imports = [
           tsp-config
