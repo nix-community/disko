@@ -17,4 +17,5 @@ in {
   create = cfg: (eval cfg).config.topLevel.create;
   mount = cfg: (eval cfg).config.topLevel.mount;
   config = cfg: (eval cfg).config.topLevel.config;
+  packages = cfg: (eval cfg).config.topLevel.packages;
 }

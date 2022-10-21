@@ -223,6 +223,16 @@ rec {
           config.devices.zpool
         ])));};
       };
+      packages = mkOption {
+        readOnly = true;
+        # type = types.functionTo (types.listOf types.package);
+        default = pkgs: unique (flatten (map (dev: dev._pkgs pkgs) (flatten (map attrValues [
+          config.devices.disk
+          config.devices.lvm_vg
+          config.devices.mdadm
+          config.devices.zpool
+        ]))));
+      };
     };
   });
 
@@ -289,6 +299,12 @@ rec {
             fsType = "btrfs";
           };
         }];
+      };
+      _pkgs= mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo (types.listOf types.package);
+        default = pkgs: [];
       };
     };
   });
@@ -358,6 +374,18 @@ rec {
           };
         }];
       };
+      _pkgs = mkOption {
+        internal = true;
+        readOnly = true;
+        # type = types.functionTo (types.listOf types.package);
+        default = pkgs:
+          # TODO add many more
+          if (config.format == "xfs") then [ pkgs.xfsprogs ]
+          else if (config.format == "btrfs") then [ pkgs.btrfs-progs ]
+          else if (config.format == "vfat") then [ pkgs.dosfstools ]
+          else if (config.format == "ext2") then [ pkgs.e2fsprogs ]
+          else [];
+      };
     };
   });
 
@@ -410,6 +438,13 @@ rec {
         readOnly = true;
         default = dev:
           map (partition: partition._config dev) config.partitions;
+      };
+      _pkgs = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo (types.listOf types.package);
+        default = pkgs:
+          [ pkgs.parted ] ++ flatten (map (partition: partition._pkgs pkgs) config.partitions);
       };
     };
   });
@@ -497,6 +532,12 @@ rec {
         default = dev:
           optional (!isNull config.content) (config.content._config (diskoLib.deviceNumbering dev config.index));
       };
+      _pkgs = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo (types.listOf types.package);
+        default = pkgs: optionals (!isNull config.content) (config.content._pkgs pkgs);
+      };
     };
   });
 
@@ -537,6 +578,12 @@ rec {
         internal = true;
         readOnly = true;
         default = dev: [];
+      };
+      _pkgs = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo (types.listOf types.package);
+        default = pkgs: [ pkgs.lvm2 ];
       };
     };
   });
@@ -590,6 +637,12 @@ rec {
         readOnly = true;
         default =
           map (lv: lv._config config.name) (attrValues config.lvs);
+      };
+      _pkgs = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo (types.listOf types.package);
+        default = pkgs: flatten (map (lv: lv._pkgs pkgs) (attrValues config.lvs));
       };
     };
   });
@@ -656,6 +709,12 @@ rec {
             })
           ];
       };
+      _pkgs = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo (types.listOf types.package);
+        default = pkgs: lib.optionals (!isNull config.content) (config.content._pkgs pkgs);
+      };
     };
   });
 
@@ -695,6 +754,12 @@ rec {
         internal = true;
         readOnly = true;
         default = dev: [];
+      };
+      _pkgs = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo (types.listOf types.package);
+        default = pkgs: [ pkgs.zfs ];
       };
     };
   });
@@ -779,17 +844,22 @@ rec {
       _config = mkOption {
         internal = true;
         readOnly = true;
-        default =
-          [
-            (map (dataset: dataset._config config.name) (attrValues config.datasets))
-            (optional (!isNull config.mountpoint) {
-              fileSystems.${config.mountpoint} = {
-                device = config.name;
-                fsType = "zfs";
-                options = lib.optional ((config.options.mountpoint or "") != "legacy") "zfsutil";
-              };
-            })
-          ];
+        default = [
+          (map (dataset: dataset._config config.name) (attrValues config.datasets))
+          (optional (!isNull config.mountpoint) {
+            fileSystems.${config.mountpoint} = {
+              device = config.name;
+              fsType = "zfs";
+              options = lib.optional ((config.options.mountpoint or "") != "legacy") "zfsutil";
+            };
+          })
+        ];
+      };
+      _pkgs = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo (types.listOf types.package);
+        default = pkgs: flatten (map (dataset: dataset._pkgs pkgs) (attrValues config.datasets));
       };
     };
   });
@@ -880,6 +950,12 @@ rec {
             };
           });
       };
+      _pkgs = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo (types.listOf types.package);
+        default = pkgs: lib.optionals (!isNull config.content) (config.content._pkgs pkgs);
+      };
     };
   });
 
@@ -939,6 +1015,12 @@ rec {
         default =
           optional (!isNull config.content) (config.content._config "/dev/md/${config.name}");
       };
+      _pkgs = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo (types.listOf types.package);
+        default = pkgs: (lib.optionals (!isNull config.content) (config.content._pkgs pkgs));
+      };
     };
   });
 
@@ -980,6 +1062,12 @@ rec {
         internal = true;
         readOnly = true;
         default = dev: [];
+      };
+      _pkgs = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo (types.listOf types.package);
+        default = pkgs: [ pkgs.mdadm ];
       };
     };
   });
@@ -1045,6 +1133,12 @@ rec {
             { boot.initrd.luks.devices.${config.name}.device = dev; }
           ] ++ (optional (!isNull config.content) (config.content._config "/dev/mapper/${config.name}"));
       };
+      _pkgs = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo (types.listOf types.package);
+        default = pkgs: [ pkgs.cryptsetup ] ++ (lib.optionals (!isNull config.content) (config.content._pkgs pkgs));
+      };
     };
   });
 
@@ -1086,6 +1180,12 @@ rec {
         readOnly = true;
         default =
           optional (!isNull config.content) (config.content._config config.device);
+      };
+      _pkgs = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo (types.listOf types.package);
+        default = pkgs: lib.optionals (!isNull config.content) (config.content._pkgs pkgs);
       };
     };
   });
