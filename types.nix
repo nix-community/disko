@@ -119,6 +119,51 @@ rec {
          => "hello world"
     */
     maybeStr = x: optionalString (!isNull x) x;
+
+    /* Takes a disko device specification, returns an attrset with metadata
+
+       meta :: types.devices -> AttrSet
+    */
+    meta = devices: diskoLib.deepMergeMap (dev: dev._meta) (flatten (map attrValues (attrValues devices)));
+    /* Takes a disko device specification and returns a string which formats the disks
+
+       create :: types.devices -> str
+    */
+    create = devices: let
+      sortedDeviceList = diskoLib.sortDevicesByDependencies (diskoLib.meta devices).deviceDependencies devices;
+    in ''
+      set -efux
+      ${concatStrings (map (dev: attrByPath (dev ++ [ "_create" ]) "" devices) sortedDeviceList)}
+    '';
+    /* Takes a disko device specification and returns a string which mounts the disks
+
+       mount :: types.devices -> str
+    */
+    mount = devices: let
+      fsMounts = diskoLib.deepMergeMap (dev: dev._mount.fs or {}) (flatten (map attrValues (attrValues devices)));
+      sortedDeviceList = diskoLib.sortDevicesByDependencies (diskoLib.meta devices).deviceDependencies devices;
+    in ''
+      set -efux
+      # first create the neccessary devices
+      ${concatStrings (map (dev: attrByPath (dev ++ [ "_mount" "dev" ]) "" devices) sortedDeviceList)}
+
+      # and then mount the filesystems in alphabetical order
+      # attrValues returns values sorted by name.  This is important, because it
+      # ensures that "/" is processed before "/foo" etc.
+      ${concatStrings (attrValues fsMounts)}
+    '';
+    /* Takes a disko device specification and returns a nixos configuration
+
+       config :: types.devices -> nixosConfig
+    */
+    config = devices: {
+      imports = flatten (map (dev: dev._config) (flatten (map attrValues (attrValues devices))));
+    };
+    /* Takes a disko device specification and returns a function to get the needed packages to format/mount the disks
+
+       packages :: types.devices -> pkgs -> [ derivation ]
+    */
+    packages = devices: pkgs: unique (flatten (map (dev: dev._pkgs pkgs) (flatten (map attrValues (attrValues devices)))));
   };
 
   optionTypes = rec {
@@ -152,89 +197,27 @@ rec {
   };
 
   /* topLevel type of the disko config, takes attrsets of disks mdadms zpools and lvm vgs.
-     exports create, mount, meta and config
   */
-  topLevel = types.submodule ({ config, ... }: {
+  devices = types.submodule {
     options = {
-      devices = {
-        disk = mkOption {
-          type = types.attrsOf disk;
-          default = {};
-        };
-        mdadm = mkOption {
-          type = types.attrsOf mdadm;
-          default = {};
-        };
-        zpool = mkOption {
-          type = types.attrsOf zpool;
-          default = {};
-        };
-        lvm_vg = mkOption {
-          type = types.attrsOf lvm_vg;
-          default = {};
-        };
+      disk = mkOption {
+        type = types.attrsOf disk;
+        default = {};
       };
-      meta = mkOption {
-        readOnly = true;
-        default = diskoLib.deepMergeMap (dev: dev._meta) (flatten (map attrValues [
-          config.devices.disk
-          config.devices.lvm_vg
-          config.devices.mdadm
-          config.devices.zpool
-        ])) // {
-          sortedDeviceList = diskoLib.sortDevicesByDependencies config.meta.deviceDependencies config.devices;
-        };
+      mdadm = mkOption {
+        type = types.attrsOf mdadm;
+        default = {};
       };
-      create = mkOption {
-        readOnly = true;
-        type = types.str;
-        default = ''
-          set -efux
-          ${concatStrings (map (dev: attrByPath (dev ++ [ "_create" ]) "" config.devices) config.meta.sortedDeviceList)}
-        '';
+      zpool = mkOption {
+        type = types.attrsOf zpool;
+        default = {};
       };
-      mount = mkOption {
-        readOnly = true;
-        type = types.str;
-        default = let
-          fsMounts = diskoLib.deepMergeMap (dev: dev._mount.fs or {}) (flatten (map attrValues [
-            config.devices.disk
-            config.devices.lvm_vg
-            config.devices.mdadm
-            config.devices.zpool
-          ]));
-        in ''
-          set -efux
-          # first create the neccessary devices
-          ${concatStrings (map (dev: attrByPath (dev ++ [ "_mount" "dev" ]) "" config.devices) config.meta.sortedDeviceList)}
-
-          # and then mount the filesystems in alphabetical order
-          # attrValues returns values sorted by name.  This is important, because it
-          # ensures that "/" is processed before "/foo" etc.
-          ${concatStrings (attrValues fsMounts)}
-        '';
-      };
-      config = mkOption {
-        readOnly = true;
-        default = { imports = flatten (map (dev: dev._config) (flatten (map attrValues [
-          config.devices.disk
-          config.devices.lvm_vg
-          config.devices.mdadm
-          config.devices.zpool
-        ])));};
-      };
-      packages = mkOption {
-        readOnly = true;
-        # type = types.functionTo (types.listOf types.package);
-        default = pkgs: unique (flatten (map (dev: dev._pkgs pkgs) (flatten (map attrValues [
-          config.devices.disk
-          config.devices.lvm_vg
-          config.devices.mdadm
-          config.devices.zpool
-        ]))));
+      lvm_vg = mkOption {
+        type = types.attrsOf lvm_vg;
+        default = {};
       };
     };
-  });
+  };
 
   btrfs = types.submodule ({ config, ... }: {
     options = {

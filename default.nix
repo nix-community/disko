@@ -4,18 +4,18 @@ let
   eval = cfg: lib.evalModules {
     modules = lib.singleton {
       # _file = toString input;
-      imports = lib.singleton { topLevel.devices = cfg; };
+      imports = lib.singleton { devices = cfg; };
       options = {
-        topLevel = lib.mkOption {
-          type = types.topLevel;
+        devices = lib.mkOption {
+          type = types.devices;
         };
       };
     };
   };
 in {
   types = types;
-  create = cfg: (eval cfg).config.topLevel.create;
-  mount = cfg: (eval cfg).config.topLevel.mount;
-  config = cfg: (eval cfg).config.topLevel.config;
-  packages = cfg: (eval cfg).config.topLevel.packages;
+  create = cfg: types.diskoLib.create (eval cfg).config.devices;
+  mount = cfg: types.diskoLib.mount (eval cfg).config.devices;
+  config = cfg: types.diskoLib.config (eval cfg).config.devices;
+  packages = cfg: types.diskoLib.packages (eval cfg).config.devices;
 }
