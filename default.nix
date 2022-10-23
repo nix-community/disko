@@ -16,6 +16,6 @@ in {
   types = types;
   create = cfg: types.diskoLib.create (eval cfg).config.devices;
   mount = cfg: types.diskoLib.mount (eval cfg).config.devices;
-  config = cfg: types.diskoLib.config (eval cfg).config.devices;
+  config = cfg: { imports = types.diskoLib.config (eval cfg).config.devices; };
   packages = cfg: types.diskoLib.packages (eval cfg).config.devices;
 }

@@ -156,9 +156,7 @@ rec {
 
        config :: types.devices -> nixosConfig
     */
-    config = devices: {
-      imports = flatten (map (dev: dev._config) (flatten (map attrValues (attrValues devices))));
-    };
+    config = devices: flatten (map (dev: dev._config) (flatten (map attrValues (attrValues devices))));
     /* Takes a disko device specification and returns a function to get the needed packages to format/mount the disks
 
        packages :: types.devices -> pkgs -> [ derivation ]
