@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+set -euo pipefail
+set -x
+
+readonly libexec_dir="${0%/*}"
+
+# mount was chosen as the default mode because it's less destructive
+mode=mount
+nix_args=()
+
+showUsage() {
+  cat <<USAGE
+Usage: $0 [options] disk-config.nix
+
+Options:
+
+* -m, --mode mode
+  set the mode, either create or mount
+* --arg name value
+  pass value to nix-build. can be used to set disk-names for example
+* --argstr name value
+  pass value to nix-build as string
+USAGE
+}
+
+abort() {
+  echo "aborted: $*" >&2
+  exit 1
+}
+
+## Main ##
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -m | --mode)
+      mode=$2
+      shift
+      ;;
+    --argstr | --arg)
+      nix_args+=("$1" "$2" "$3")
+      shift
+      shift
+      ;;
+    --help)
+      showUsage
+      exit 0
+      ;;
+    *)
+      if [ -z ${disko_config+x} ] && [ -e $1 ]; then
+        disko_config=$1
+      else
+        showUsage
+      fi
+      ;;
+  esac
+  shift
+done
+
+if ! ([[ $mode = "create" ]] || [[ $mode = "mount" ]]); then
+  abort "mode must be either create or mount"
+fi
+
+script=$(nix-build "${libexec_dir}"/cli.nix \
+  --arg diskoFile "$disko_config" \
+  --argstr mode "$mode" \
+  "${nix_args[@]}"
+)
+exec "$script"
