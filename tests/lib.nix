@@ -12,6 +12,7 @@
     , grub-devices ? [ "nodev" ]
     , efi ? true
     , enableOCR ? false
+    , testMode ? "direct" # can be one of direct module cli
     }:
     let
       lib = pkgs.lib;
@@ -21,13 +22,21 @@
           inherit (pkgs) system;
         };
       disks = [ "/dev/vda" "/dev/vdb" "/dev/vdc" "/dev/vdd" "/dev/vde" "/dev/vdf" ];
-      tsp-create = pkgs.writeScript "create" ((pkgs.callPackage ../. { }).create (disko-config { disks = builtins.tail disks; inherit lib; }));
-      tsp-mount = pkgs.writeScript "mount" ((pkgs.callPackage ../. { }).mount (disko-config { disks = builtins.tail disks; inherit lib; }));
-      tsp-config = (pkgs.callPackage ../. { }).config (disko-config { inherit disks; inherit lib; });
-      num-disks = builtins.length (lib.attrNames (disko-config { inherit lib; }).disk);
+      tsp-create = pkgs.writeScript "create" ((pkgs.callPackage ../. { }).create (import disko-config { disks = builtins.tail disks; inherit lib; }));
+      tsp-mount = pkgs.writeScript "mount" ((pkgs.callPackage ../. { }).mount (import disko-config { disks = builtins.tail disks; inherit lib; }));
+      tsp-config = (pkgs.callPackage ../. { }).config (import disko-config { inherit disks; inherit lib; });
+      num-disks = builtins.length (lib.attrNames (import disko-config { inherit lib; }).disk);
       installed-system = { modulesPath, ... }: {
         imports = [
-          tsp-config
+          (lib.optionalAttrs (testMode == "direct" || testMode == "cli") tsp-config)
+          (lib.optionalAttrs (testMode == "module") {
+            imports = [ ../module.nix ];
+            disko = {
+              addScripts = false;
+              enableConfig = true;
+              devices = import disko-config { inherit disks lib; };
+            };
+          })
           (modulesPath + "/testing/test-instrumentation.nix")
           (modulesPath + "/profiles/qemu-guest.nix")
           (modulesPath + "/profiles/minimal.nix")
@@ -63,6 +72,21 @@
       inherit enableOCR;
       nodes.machine = { config, pkgs, modulesPath, ... }: {
         imports = [
+          (lib.optionalAttrs (testMode == "module") {
+            imports = [ ../module.nix ];
+            disko = {
+              addScripts = true;
+              enableConfig = false;
+              devices = import disko-config { disks = builtins.tail disks; inherit lib; };
+            };
+          })
+          (lib.optionalAttrs (testMode == "cli") {
+            imports = [ (modulesPath + "/installer/cd-dvd/channel.nix") ];
+            system.extraDependencies = [
+              ((pkgs.callPackage ../. { }).createScript (import disko-config { disks = builtins.tail disks; inherit lib; }) pkgs)
+              ((pkgs.callPackage ../. { }).mountScript (import disko-config { disks = builtins.tail disks; inherit lib; }) pkgs)
+            ];
+          })
           (modulesPath + "/profiles/base.nix")
           (modulesPath + "/profiles/minimal.nix")
           extraConfig
@@ -97,9 +121,25 @@
 
         machine.start()
         machine.succeed("echo -n 'secret' > /tmp/secret.key")
-        machine.succeed("${tsp-create}")
-        machine.succeed("${tsp-mount}")
-        machine.succeed("${tsp-mount}") # verify that the command is idempotent
+        ${lib.optionalString (testMode == "direct") ''
+          machine.succeed("${tsp-create}")
+          machine.succeed("${tsp-mount}")
+          machine.succeed("${tsp-mount}") # verify that the command is idempotent
+        ''}
+        ${lib.optionalString (testMode == "module") ''
+          machine.succeed("disko-create")
+          machine.succeed("disko-mount")
+          machine.succeed("disko-mount") # verify that the command is idempotent
+        ''}
+        ${lib.optionalString (testMode == "cli") ''
+          # TODO use the disko cli here
+          # machine.succeed("${../.}/disko --no-pkgs --mode create ${disko-config}")
+          # machine.succeed("${../.}/disko --no-pkgs --mode mount ${disko-config}")
+          # machine.succeed("${../.}/disko --no-pkgs --mode mount ${disko-config}") # verify that the command is idempotent
+          machine.succeed("${tsp-create}")
+          machine.succeed("${tsp-mount}")
+          machine.succeed("${tsp-mount}") # verify that the command is idempotent
+        ''}
 
         # mount nix-store in /mnt
         machine.succeed("mkdir -p /mnt/nix/store")
