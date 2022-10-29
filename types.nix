@@ -360,12 +360,16 @@ rec {
         readOnly = true;
         # type = types.functionTo (types.listOf types.package);
         default = pkgs:
-          # TODO add many more
-          if (config.format == "xfs") then [ pkgs.xfsprogs ]
-          else if (config.format == "btrfs") then [ pkgs.btrfs-progs ]
-          else if (config.format == "vfat") then [ pkgs.dosfstools ]
-          else if (config.format == "ext2") then [ pkgs.e2fsprogs ]
-          else [];
+          [ pkgs.util-linux ] ++ (
+            # TODO add many more
+            if (config.format == "xfs") then [ pkgs.xfsprogs ]
+            else if (config.format == "btrfs") then [ pkgs.btrfs-progs ]
+            else if (config.format == "vfat") then [ pkgs.dosfstools ]
+            else if (config.format == "ext2") then [ pkgs.e2fsprogs ]
+            else if (config.format == "ext3") then [ pkgs.e2fsprogs ]
+            else if (config.format == "ext4") then [ pkgs.e2fsprogs ]
+            else []
+          );
       };
     };
   });
@@ -425,7 +429,7 @@ rec {
         readOnly = true;
         type = types.functionTo (types.listOf types.package);
         default = pkgs:
-          [ pkgs.parted ] ++ flatten (map (partition: partition._pkgs pkgs) config.partitions);
+          [ pkgs.parted pkgs.systemdMinimal ] ++ flatten (map (partition: partition._pkgs pkgs) config.partitions);
       };
     };
   });
@@ -840,7 +844,7 @@ rec {
         internal = true;
         readOnly = true;
         type = types.functionTo (types.listOf types.package);
-        default = pkgs: flatten (map (dataset: dataset._pkgs pkgs) (attrValues config.datasets));
+        default = pkgs: [ pkgs.util-linux ] ++ flatten (map (dataset: dataset._pkgs pkgs) (attrValues config.datasets));
       };
     };
   });
@@ -935,7 +939,7 @@ rec {
         internal = true;
         readOnly = true;
         type = types.functionTo (types.listOf types.package);
-        default = pkgs: lib.optionals (!isNull config.content) (config.content._pkgs pkgs);
+        default = pkgs: [ pkgs.util-linux ] ++ lib.optionals (!isNull config.content) (config.content._pkgs pkgs);
       };
     };
   });
