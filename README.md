@@ -1,6 +1,48 @@
-# disko
+# disko - declarative disk partitioning
 
-nix-powered automatic disk partitioning.  partition your disks declaratively NixOS style.
+Disko takes the NixOS module system and makes it work for disk partitioning
+as well.
+
+I wanted to write a curses NixOS installer, and that was the first step that I
+hit; the disk formatting is a manual process. Once that's done, the NixOS
+system itself is declarative, but the actual formatting of disks is manual.
+
+## Features
+
+* supports LVM, ZFS, btrfs, GPT, mdadm, ext4, ...
+* supports recursive layouts
+* outputs a NixOS-compatible module
+* CLI
+
+## How-to guides
+
+### NixOS installation
+
+During the NixOS installation process, replace the [Partitioning and
+formatting](https://nixos.org/manual/nixos/stable/index.html#sec-installation-partitioning)
+steps with the following:
+
+1. Find a disk layout in ./examples that you like.
+2. Write the config based on the example and your disk layout.
+4. Run the CLI (`nix run github:nix-community/disko`) to apply the changes.
+5. FIXME: Copy the disko module and disk layout around.
+6. Continue the NixOS installation.
+
+### Using without NixOS
+
+## Reference
+
+### Module options
+
+TODO: link to generated module options
+
+### Examples
+
+./examples
+
+### CLI
+
+TODO: output of the cli --help
 
 ## Installing NixOS module
 
