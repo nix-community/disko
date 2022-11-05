@@ -8,6 +8,15 @@
     lib = import ./. {
       inherit (nixpkgs) lib;
     };
+    packages.x86_64-linux.disko = let
+      pkgs = nixpkgs.legacyPackages.x86_64-linux;
+    in pkgs.stdenv.mkDerivation {
+      name = "disko";
+      src = ./.;
+      meta.description = "Format disks with nix-config";
+      installFlags = [ "PREFIX=$(out)" ];
+    };
+    packages.x86_64-linux.default = self.packages.x86_64-linux.disko;
     checks.x86_64-linux = let
       pkgs = nixpkgs.legacyPackages.x86_64-linux;
     in
