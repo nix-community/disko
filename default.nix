@@ -1,15 +1,12 @@
 { lib ? import <nixpkgs/lib> }:
 let
   types = import ./types.nix { inherit lib; };
+  options = import ./options.nix { inherit lib; };
   eval = cfg: lib.evalModules {
     modules = lib.singleton {
       # _file = toString input;
       imports = lib.singleton { devices = cfg; };
-      options = {
-        devices = lib.mkOption {
-          type = types.devices;
-        };
-      };
+      inherit options;
     };
   };
 in {

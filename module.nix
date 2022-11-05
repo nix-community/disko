@@ -1,12 +1,11 @@
 { config, lib, pkgs, ... }:
 let
   types = import ./types.nix { inherit lib; };
+  options = import ./options.nix { inherit lib; };
   cfg = config.disko;
 in {
   options.disko = {
-    devices = lib.mkOption {
-      type = types.devices;
-    };
+    inherit (options) devices;
     enableConfig = lib.mkOption {
       description = ''
         configure nixos with the specified devices

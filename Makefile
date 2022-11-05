@@ -3,7 +3,7 @@ SHARE ?= $(PREFIX)/share/disko
 
 all:
 
-SOURCES = disko cli.nix default.nix types.nix
+SOURCES = disko cli.nix default.nix types.nix options.nix
 
 install:
 	mkdir -p $(PREFIX)/bin $(SHARE)
