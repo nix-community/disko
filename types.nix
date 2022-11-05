@@ -18,13 +18,13 @@ rec {
 
     # option for valid contents of partitions (basically like devices, but without tables)
     partitionType = mkOption {
-      type = types.nullOr (diskoLib.subType { inherit btrfs filesystem zfs mdraid luks lvm_pv; });
+      type = types.nullOr (diskoLib.subType { inherit btrfs filesystem zfs mdraid luks lvm_pv swap; });
       default = null;
     };
 
     # option for valid contents of devices
     deviceType = mkOption {
-      type = types.nullOr (diskoLib.subType { inherit table btrfs filesystem zfs mdraid luks lvm_pv; });
+      type = types.nullOr (diskoLib.subType { inherit table btrfs filesystem zfs mdraid luks lvm_pv swap; });
       default = null;
     };
 
@@ -543,6 +543,62 @@ rec {
         readOnly = true;
         type = types.functionTo (types.listOf types.package);
         default = pkgs: optionals (!isNull config.content) (config.content._pkgs pkgs);
+      };
+    };
+  });
+
+  swap = types.submodule ({ config, ... }: {
+    options = {
+      type = mkOption {
+        type = types.enum [ "swap" ];
+        internal = true;
+      };
+      randomEncryption = mkOption {
+        type = types.bool;
+        default = false;
+      };
+      _meta = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo diskoLib.jsonType;
+        default = dev: {
+        };
+      };
+      _create = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo types.str;
+        default = dev: ''
+          mkswap ${dev}
+        '';
+      };
+      _mount = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo diskoLib.jsonType;
+        default = dev: {
+          fs.${dev} = ''
+            if ! $(swapon --show | grep -q '^${dev} '); then
+              swapon ${dev}
+            fi
+          '';
+        };
+      };
+      _config = mkOption {
+        internal = true;
+        readOnly = true;
+        default = dev: [{
+          swapDevices = [{
+            device = dev;
+            randomEncryption = config.randomEncryption;
+          }];
+        }];
+      };
+      _pkgs = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo (types.listOf types.package);
+        default = pkgs: [ pkgs.util-linux ];
       };
     };
   });
@@ -1158,7 +1214,7 @@ rec {
         type = types.enum [ "disk" ];
       };
       device = mkOption {
-        type = optionTypes.absolute-pathname; # TODO check if subpath of /dev ?
+        type = optionTypes.absolute-pathname; # TODO check if subpath of /dev ? - No! eg: /.swapfile
       };
       content = diskoLib.deviceType;
       _meta = mkOption {
