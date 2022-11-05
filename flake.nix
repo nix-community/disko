@@ -3,10 +3,12 @@
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-  outputs = { self, nixpkgs, ... }: {
+  outputs = { self, nixpkgs, ... }: let
     lib = import ./. {
       inherit (nixpkgs) lib;
     };
+  in {
+    inherit lib;
     checks.x86_64-linux = let
       pkgs = nixpkgs.legacyPackages.x86_64-linux;
     in
@@ -16,5 +18,7 @@
         makeTest = import (pkgs.path + "/nixos/tests/make-test-python.nix");
         eval-config = import (pkgs.path + "/nixos/lib/eval-config.nix");
       };
-  };
+  }
+  // lib # shorthand
+  ;
 }
