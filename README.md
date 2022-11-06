@@ -24,7 +24,7 @@ steps with the following:
 
 1. Find a disk layout in ./examples that you like.
 2. Write the config based on the example and your disk layout.
-4. Run the CLI (`nix run github:nix-community/disko`) to apply the changes.
+4. Run the CLI (`nix run github:nix-community/disko --no-write-lock-file`) to apply the changes.
 5. FIXME: Copy the disko module and disk layout around.
 6. Continue the NixOS installation.
 

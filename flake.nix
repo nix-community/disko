@@ -1,7 +1,8 @@
 {
   description = "Description for the project";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+  # don't lock to give precedence to a USB live-installer's registry
+  inputs.nixpkgs.url = "nixpkgs";
 
   outputs = { self, nixpkgs, ... }: {
     nixosModules.disko = import ./module.nix;
@@ -9,8 +10,8 @@
       inherit (nixpkgs) lib;
     };
     packages.x86_64-linux.disko = let
-      inherit (nixpkgs) lib;
       pkgs = nixpkgs.legacyPackages.x86_64-linux;
+      inherit (pkgs) lib;
       inclFiles = {src, name}: files: lib.cleanSourceWith {
         inherit src name;
         filter = _path: _type: _type == "regular"
