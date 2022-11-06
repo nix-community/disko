@@ -1,10 +1,14 @@
 { pkgs ? import <nixpkgs> {}
 , mode ? "mount"
+, fromFlake ? null
 , diskoFile
 , ... }@args:
 let
-  disko = import ./. { inherit (pkgs) lib; };
-  diskFormat = import diskoFile;
+  disko = import ./. { };
+  diskFormat =
+    if fromFlake != null
+    then (builtins.getFlake fromFlake) + "/${diskoFile}"
+    else import diskoFile;
   diskoEval = if (mode == "create") then
     disko.createScript diskFormat pkgs
   else if (mode == "mount") then
