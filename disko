@@ -27,6 +27,8 @@ Options:
   pass value to nix-build. can be used to set disk-names for example
 * --argstr name value
   pass value to nix-build as string
+* --dry-run
+  just show the path to the script instead of running it
 USAGE
 }
 
@@ -49,8 +51,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     -f | --flake)
-      from_flake="$2"
-      nix_args+=("--argstr" "fromFlake" "$2")
+      flake="$2"
       shift
       ;;
     --argstr | --arg)
@@ -61,6 +62,12 @@ while [[ $# -gt 0 ]]; do
     --help)
       showUsage
       exit 0
+      ;;
+    --dry-run)
+      dry_run=y
+      ;;
+    --show-trace)
+      nix_args+=("$1")
       ;;
     *)
       if [ -z ${disko_config+x} ]; then
@@ -78,17 +85,30 @@ if ! ([[ $mode = "create" ]] || [[ $mode = "mount" ]]); then
   abort "mode must be either create or mount"
 fi
 
-if [[ -e "${disko_config+x}" ]]; then
+if [[ ! -z "${flake+x}" ]]; then
+  if [[ $flake =~ ^(.*)\#([^\#\"]*)$ ]]; then
+   flake="${BASH_REMATCH[1]}"
+   flakeAttr="${BASH_REMATCH[2]}"
+  fi
+  if [[ -z "$flakeAttr" ]]; then
+    echo "Please specify the name of the NixOS configuration to be installed, as a URI fragment in the flake-uri."
+    echo "For example, to use the output diskoConfigurations.foo from the flake.nix, append \"#foo\" to the flake-uri."
+    exit 1
+  fi
+  nix_args+=("--arg" "flake" "$flake")
+  nix_args+=("--argstr" "flakeAttr" "$flakeAttr")
+elif [[ ! -z "${disko_config+x}" ]] && [[ -e "$disko_config" ]]; then
   nix_args+=("--arg" "diskoFile" "$disko_config")
-elif [[ -n "${from_flake+x}" ]]; then
-  nix_args+=("--argstr" "diskoFile" "$disko_config")
 else
-  abort "disko config must be an exising file of flake must be set"
+  abort "disko config must be an exising file or flake must be set"
 fi
 
 script=$(nix-build "${libexec_dir}"/cli.nix \
-  --argstr diskoFile "$disko_config" \
   --argstr mode "$mode" \
   "${nix_args[@]}"
 )
-exec "$script"
+if [[ ! -z "${dry_run+x}" ]]; then
+  echo "$script"
+else
+  exec "$script"
+fi

@@ -1,14 +1,17 @@
 { pkgs ? import <nixpkgs> {}
 , mode ? "mount"
-, fromFlake ? null
-, diskoFile
+, flake ? null
+, flakeAttr ? null
+, diskoFile ? null
 , ... }@args:
 let
   disko = import ./. { };
-  diskFormat =
-    if fromFlake != null
-    then (builtins.getFlake fromFlake) + "/${diskoFile}"
-    else import diskoFile;
+
+  diskFormat = if flake != null then
+    (pkgs.lib.attrByPath [ "diskoConfigurations" flakeAttr ] (builtins.abort "${flakeAttr} does not exist") (builtins.getFlake flake)) args
+  else
+    import diskoFile args;
+
   diskoEval = if (mode == "create") then
     disko.createScript diskFormat pkgs
   else if (mode == "mount") then
