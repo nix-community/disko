@@ -78,7 +78,7 @@ if ! ([[ $mode = "create" ]] || [[ $mode = "mount" ]]); then
   abort "mode must be either create or mount"
 fi
 
-if [[ -e "${disko_config}" ]]; then
+if [[ -e "${disko_config+x}" ]]; then
   nix_args+=("--arg" "diskoFile" "$disko_config")
 elif [[ -n "${from_flake+x}" ]]; then
   nix_args+=("--argstr" "diskoFile" "$disko_config")
