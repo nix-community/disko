@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly libexec_dir="${0%/*}"
+
+# a file with the disko config
+declare disko_config
+
+# a flake uri, if present disko config is relative to the flake root
+declare from_flake
+
+# mount was chosen as the default mode because it's less destructive
+mode=mount
+nix_args=()
+
+showUsage() {
+  cat <<USAGE
+Usage: $0 [options] disk-config.nix
+
+Options:
+
+* -m, --mode mode
+  set the mode, either create or mount
+* -f, --flake uri
+  fetch the disko config relative to this flake's root
+* --arg name value
+  pass value to nix-build. can be used to set disk-names for example
+* --argstr name value
+  pass value to nix-build as string
+USAGE
+}
+
+abort() {
+  echo "aborted: $*" >&2
+  exit 1
+}
+
+## Main ##
+
+[[ $# -eq 0 ]] && {
+  showUsage
+  exit 1
+}
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -m | --mode)
+      mode=$2
+      shift
+      ;;
+    -f | --flake)
+      from_flake="$2"
+      nix_args+=("--argstr" "fromFlake" "$2")
+      shift
+      ;;
+    --argstr | --arg)
+      nix_args+=("$1" "$2" "$3")
+      shift
+      shift
+      ;;
+    --help)
+      showUsage
+      exit 0
+      ;;
+    *)
+      if [ -z ${disko_config+x} ]; then
+        disko_config=$1
+      else
+        showUsage
+        exit 1
+      fi
+      ;;
+  esac
+  shift
+done
+
+if ! ([[ $mode = "create" ]] || [[ $mode = "mount" ]]); then
+  abort "mode must be either create or mount"
+fi
+
+if [[ -e "${disko_config}" ]]; then
+  nix_args+=("--arg" "diskoFile" "$disko_config")
+elif [[ -n "${from_flake+x}" ]]; then
+  nix_args+=("--argstr" "diskoFile" "$disko_config")
+else
+  abort "disko config must be an exising file of flake must be set"
+fi
+
+script=$(nix-build "${libexec_dir}"/cli.nix \
+  --argstr diskoFile "$disko_config" \
+  --argstr mode "$mode" \
+  "${nix_args[@]}"
+)
+exec "$script"

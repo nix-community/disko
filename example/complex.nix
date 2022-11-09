@@ -1,4 +1,4 @@
-{ disks ? [ "/dev/vdb" "/dev/vdc" ] }: {
+{ disks ? [ "/dev/vdb" "/dev/vdc" "/dev/vdd" ], ... }: {
   disk = {
     disk0 = {
       type = "disk";

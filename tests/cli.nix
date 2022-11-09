@@ -6,6 +6,7 @@ makeDiskoTest {
   extraConfig = {
     fileSystems."/zfs_legacy_fs".options = [ "nofail" ]; # TODO find out why we need this!
   };
+  testMode = "cli";
   extraTestScript = ''
     machine.succeed("test -b /dev/zroot/zfs_testvolume");
     machine.succeed("test -b /dev/md/raid1p1");

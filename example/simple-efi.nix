@@ -1,8 +1,8 @@
 { disks ? [ "/dev/vdb" ], ... }: {
   disk = {
     vdb = {
-      type = "disk";
       device = builtins.elemAt disks 0;
+      type = "disk";
       content = {
         type = "table";
         format = "gpt";
@@ -11,8 +11,7 @@
             type = "partition";
             name = "ESP";
             start = "1MiB";
-            end = "128MiB";
-            fs-type = "fat32";
+            end = "100MiB";
             bootable = true;
             content = {
               type = "filesystem";
@@ -23,15 +22,14 @@
           {
             name = "root";
             type = "partition";
-            start = "128MiB";
+            start = "100MiB";
             end = "100%";
+            part-type = "primary";
+            bootable = true;
             content = {
-              type = "btrfs";
+              type = "filesystem";
+              format = "ext4";
               mountpoint = "/";
-              subvolumes = [
-                "/home"
-                "/test"
-              ];
             };
           }
         ];

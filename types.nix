@@ -81,15 +81,15 @@ rec {
       };
     in valueType;
 
-    /* Given a attrset of dependencies and a devices attrset
-       returns a sorted list by dependencies. aborts if a loop is found
+    /* Given a attrset of deviceDependencies and a devices attrset
+       returns a sorted list by deviceDependencies. aborts if a loop is found
 
        sortDevicesByDependencies :: AttrSet -> AttrSet -> [ [ str str ] ]
     */
-    sortDevicesByDependencies = dependencies: devices:
+    sortDevicesByDependencies = deviceDependencies: devices:
       let
         dependsOn = a: b:
-          elem a (attrByPath b [] dependencies);
+          elem a (attrByPath b [] deviceDependencies);
         maybeSortedDevices = toposort dependsOn (diskoLib.deviceList devices);
       in
         if (hasAttr "cycle" maybeSortedDevices) then
@@ -119,6 +119,49 @@ rec {
          => "hello world"
     */
     maybeStr = x: optionalString (!isNull x) x;
+
+    /* Takes a disko device specification, returns an attrset with metadata
+
+       meta :: types.devices -> AttrSet
+    */
+    meta = devices: diskoLib.deepMergeMap (dev: dev._meta) (flatten (map attrValues (attrValues devices)));
+    /* Takes a disko device specification and returns a string which formats the disks
+
+       create :: types.devices -> str
+    */
+    create = devices: let
+      sortedDeviceList = diskoLib.sortDevicesByDependencies (diskoLib.meta devices).deviceDependencies devices;
+    in ''
+      set -efux
+      ${concatStrings (map (dev: attrByPath (dev ++ [ "_create" ]) "" devices) sortedDeviceList)}
+    '';
+    /* Takes a disko device specification and returns a string which mounts the disks
+
+       mount :: types.devices -> str
+    */
+    mount = devices: let
+      fsMounts = diskoLib.deepMergeMap (dev: dev._mount.fs or {}) (flatten (map attrValues (attrValues devices)));
+      sortedDeviceList = diskoLib.sortDevicesByDependencies (diskoLib.meta devices).deviceDependencies devices;
+    in ''
+      set -efux
+      # first create the neccessary devices
+      ${concatStrings (map (dev: attrByPath (dev ++ [ "_mount" "dev" ]) "" devices) sortedDeviceList)}
+
+      # and then mount the filesystems in alphabetical order
+      # attrValues returns values sorted by name.  This is important, because it
+      # ensures that "/" is processed before "/foo" etc.
+      ${concatStrings (attrValues fsMounts)}
+    '';
+    /* Takes a disko device specification and returns a nixos configuration
+
+       config :: types.devices -> nixosConfig
+    */
+    config = devices: flatten (map (dev: dev._config) (flatten (map attrValues (attrValues devices))));
+    /* Takes a disko device specification and returns a function to get the needed packages to format/mount the disks
+
+       packages :: types.devices -> pkgs -> [ derivation ]
+    */
+    packages = devices: pkgs: unique (flatten (map (dev: dev._pkgs pkgs) (flatten (map attrValues (attrValues devices)))));
   };
 
   optionTypes = rec {
@@ -152,79 +195,27 @@ rec {
   };
 
   /* topLevel type of the disko config, takes attrsets of disks mdadms zpools and lvm vgs.
-     exports create, mount, meta and config
   */
-  topLevel = types.submodule ({ config, ... }: {
+  devices = types.submodule {
     options = {
-      devices = {
-        disk = mkOption {
-          type = types.attrsOf disk;
-          default = {};
-        };
-        mdadm = mkOption {
-          type = types.attrsOf mdadm;
-          default = {};
-        };
-        zpool = mkOption {
-          type = types.attrsOf zpool;
-          default = {};
-        };
-        lvm_vg = mkOption {
-          type = types.attrsOf lvm_vg;
-          default = {};
-        };
+      disk = mkOption {
+        type = types.attrsOf disk;
+        default = {};
       };
-      meta = mkOption {
-        readOnly = true;
-        default = diskoLib.deepMergeMap (dev: dev._meta) (flatten (map attrValues [
-          config.devices.disk
-          config.devices.lvm_vg
-          config.devices.mdadm
-          config.devices.zpool
-        ])) // {
-          sortedDeviceList = diskoLib.sortDevicesByDependencies config.meta.dependencies config.devices;
-        };
+      mdadm = mkOption {
+        type = types.attrsOf mdadm;
+        default = {};
       };
-      create = mkOption {
-        readOnly = true;
-        type = types.str;
-        default = ''
-          set -efux
-          ${concatStrings (map (dev: attrByPath (dev ++ [ "_create" ]) "" config.devices) config.meta.sortedDeviceList)}
-        '';
+      zpool = mkOption {
+        type = types.attrsOf zpool;
+        default = {};
       };
-      mount = mkOption {
-        readOnly = true;
-        type = types.str;
-        default = let
-          fsMounts = diskoLib.deepMergeMap (dev: dev._mount.fs or {}) (flatten (map attrValues [
-            config.devices.disk
-            config.devices.lvm_vg
-            config.devices.mdadm
-            config.devices.zpool
-          ]));
-        in ''
-          set -efux
-          # first create the neccessary devices
-          ${concatStrings (map (dev: attrByPath (dev ++ [ "_mount" "dev" ]) "" config.devices) config.meta.sortedDeviceList)}
-
-          # and then mount the filesystems in alphabetical order
-          # attrValues returns values sorted by name.  This is important, because it
-          # ensures that "/" is processed before "/foo" etc.
-          ${concatStrings (attrValues fsMounts)}
-        '';
-      };
-      config = mkOption {
-        readOnly = true;
-        default = { imports = flatten (map (dev: dev._config) (flatten (map attrValues [
-          config.devices.disk
-          config.devices.lvm_vg
-          config.devices.mdadm
-          config.devices.zpool
-        ])));};
+      lvm_vg = mkOption {
+        type = types.attrsOf lvm_vg;
+        default = {};
       };
     };
-  });
+  };
 
   btrfs = types.submodule ({ config, ... }: {
     options = {
@@ -289,6 +280,12 @@ rec {
             fsType = "btrfs";
           };
         }];
+      };
+      _pkgs= mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo (types.listOf types.package);
+        default = pkgs: [];
       };
     };
   });
@@ -358,6 +355,22 @@ rec {
           };
         }];
       };
+      _pkgs = mkOption {
+        internal = true;
+        readOnly = true;
+        # type = types.functionTo (types.listOf types.package);
+        default = pkgs:
+          [ pkgs.util-linux ] ++ (
+            # TODO add many more
+            if (config.format == "xfs") then [ pkgs.xfsprogs ]
+            else if (config.format == "btrfs") then [ pkgs.btrfs-progs ]
+            else if (config.format == "vfat") then [ pkgs.dosfstools ]
+            else if (config.format == "ext2") then [ pkgs.e2fsprogs ]
+            else if (config.format == "ext3") then [ pkgs.e2fsprogs ]
+            else if (config.format == "ext4") then [ pkgs.e2fsprogs ]
+            else []
+          );
+      };
     };
   });
 
@@ -410,6 +423,13 @@ rec {
         readOnly = true;
         default = dev:
           map (partition: partition._config dev) config.partitions;
+      };
+      _pkgs = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo (types.listOf types.package);
+        default = pkgs:
+          [ pkgs.parted pkgs.systemdMinimal ] ++ flatten (map (partition: partition._pkgs pkgs) config.partitions);
       };
     };
   });
@@ -497,6 +517,12 @@ rec {
         default = dev:
           optional (!isNull config.content) (config.content._config (diskoLib.deviceNumbering dev config.index));
       };
+      _pkgs = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo (types.listOf types.package);
+        default = pkgs: optionals (!isNull config.content) (config.content._pkgs pkgs);
+      };
     };
   });
 
@@ -514,7 +540,7 @@ rec {
         readOnly = true;
         type = types.functionTo diskoLib.jsonType;
         default = dev: {
-          dependencies.lvm_vg.${config.vg} = [ dev ];
+          deviceDependencies.lvm_vg.${config.vg} = [ dev ];
         };
       };
       _create = mkOption {
@@ -537,6 +563,12 @@ rec {
         internal = true;
         readOnly = true;
         default = dev: [];
+      };
+      _pkgs = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo (types.listOf types.package);
+        default = pkgs: [ pkgs.lvm2 ];
       };
     };
   });
@@ -590,6 +622,12 @@ rec {
         readOnly = true;
         default =
           map (lv: lv._config config.name) (attrValues config.lvs);
+      };
+      _pkgs = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo (types.listOf types.package);
+        default = pkgs: flatten (map (lv: lv._pkgs pkgs) (attrValues config.lvs));
       };
     };
   });
@@ -656,6 +694,12 @@ rec {
             })
           ];
       };
+      _pkgs = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo (types.listOf types.package);
+        default = pkgs: lib.optionals (!isNull config.content) (config.content._pkgs pkgs);
+      };
     };
   });
 
@@ -673,7 +717,7 @@ rec {
         readOnly = true;
         type = types.functionTo diskoLib.jsonType;
         default = dev: {
-          dependencies.zpool.${config.pool} = [ dev ];
+          deviceDependencies.zpool.${config.pool} = [ dev ];
         };
       };
       _create = mkOption {
@@ -695,6 +739,12 @@ rec {
         internal = true;
         readOnly = true;
         default = dev: [];
+      };
+      _pkgs = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo (types.listOf types.package);
+        default = pkgs: [ pkgs.zfs ];
       };
     };
   });
@@ -779,17 +829,22 @@ rec {
       _config = mkOption {
         internal = true;
         readOnly = true;
-        default =
-          [
-            (map (dataset: dataset._config config.name) (attrValues config.datasets))
-            (optional (!isNull config.mountpoint) {
-              fileSystems.${config.mountpoint} = {
-                device = config.name;
-                fsType = "zfs";
-                options = lib.optional ((config.options.mountpoint or "") != "legacy") "zfsutil";
-              };
-            })
-          ];
+        default = [
+          (map (dataset: dataset._config config.name) (attrValues config.datasets))
+          (optional (!isNull config.mountpoint) {
+            fileSystems.${config.mountpoint} = {
+              device = config.name;
+              fsType = "zfs";
+              options = lib.optional ((config.options.mountpoint or "") != "legacy") "zfsutil";
+            };
+          })
+        ];
+      };
+      _pkgs = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo (types.listOf types.package);
+        default = pkgs: [ pkgs.util-linux ] ++ flatten (map (dataset: dataset._pkgs pkgs) (attrValues config.datasets));
       };
     };
   });
@@ -880,6 +935,12 @@ rec {
             };
           });
       };
+      _pkgs = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo (types.listOf types.package);
+        default = pkgs: [ pkgs.util-linux ] ++ lib.optionals (!isNull config.content) (config.content._pkgs pkgs);
+      };
     };
   });
 
@@ -939,6 +1000,12 @@ rec {
         default =
           optional (!isNull config.content) (config.content._config "/dev/md/${config.name}");
       };
+      _pkgs = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo (types.listOf types.package);
+        default = pkgs: (lib.optionals (!isNull config.content) (config.content._pkgs pkgs));
+      };
     };
   });
 
@@ -957,7 +1024,7 @@ rec {
         readOnly = true;
         type = types.functionTo diskoLib.jsonType;
         default = dev: {
-          dependencies.mdadm.${config.name} = [ dev ];
+          deviceDependencies.mdadm.${config.name} = [ dev ];
         };
       };
       _create = mkOption {
@@ -980,6 +1047,12 @@ rec {
         internal = true;
         readOnly = true;
         default = dev: [];
+      };
+      _pkgs = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo (types.listOf types.package);
+        default = pkgs: [ pkgs.mdadm ];
       };
     };
   });
@@ -1045,6 +1118,12 @@ rec {
             { boot.initrd.luks.devices.${config.name}.device = dev; }
           ] ++ (optional (!isNull config.content) (config.content._config "/dev/mapper/${config.name}"));
       };
+      _pkgs = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo (types.listOf types.package);
+        default = pkgs: [ pkgs.cryptsetup ] ++ (lib.optionals (!isNull config.content) (config.content._pkgs pkgs));
+      };
     };
   });
 
@@ -1086,6 +1165,12 @@ rec {
         readOnly = true;
         default =
           optional (!isNull config.content) (config.content._config config.device);
+      };
+      _pkgs = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo (types.listOf types.package);
+        default = pkgs: lib.optionals (!isNull config.content) (config.content._pkgs pkgs);
       };
     };
   });
