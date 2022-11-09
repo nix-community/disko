@@ -104,6 +104,7 @@ else
 fi
 
 script=$(nix-build "${libexec_dir}"/cli.nix \
+  --no-out-link \
   --argstr mode "$mode" \
   "${nix_args[@]}"
 )
