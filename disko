@@ -16,6 +16,7 @@ nix_args=()
 showUsage() {
   cat <<USAGE
 Usage: $0 [options] disk-config.nix
+or $0 [options] --flake github:somebody/somewhere
 
 Options:
 
