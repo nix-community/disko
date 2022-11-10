@@ -98,6 +98,7 @@ if [[ ! -z "${flake+x}" ]]; then
   fi
   nix_args+=("--arg" "flake" "$flake")
   nix_args+=("--argstr" "flakeAttr" "$flakeAttr")
+  nix_args+=(--extra-experimental-features flakes)
 elif [[ ! -z "${disko_config+x}" ]] && [[ -e "$disko_config" ]]; then
   nix_args+=("--arg" "diskoFile" "$disko_config")
 else
