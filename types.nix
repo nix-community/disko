@@ -130,7 +130,7 @@ rec {
        create :: types.devices -> str
     */
     create = devices: let
-      sortedDeviceList = diskoLib.sortDevicesByDependencies (diskoLib.meta devices).deviceDependencies devices;
+      sortedDeviceList = diskoLib.sortDevicesByDependencies ((diskoLib.meta devices).deviceDependencies or {}) devices;
     in ''
       set -efux
       ${concatStrings (map (dev: attrByPath (dev ++ [ "_create" ]) "" devices) sortedDeviceList)}
@@ -141,7 +141,7 @@ rec {
     */
     mount = devices: let
       fsMounts = diskoLib.deepMergeMap (dev: dev._mount.fs or {}) (flatten (map attrValues (attrValues devices)));
-      sortedDeviceList = diskoLib.sortDevicesByDependencies (diskoLib.meta devices).deviceDependencies devices;
+      sortedDeviceList = diskoLib.sortDevicesByDependencies ((diskoLib.meta devices).deviceDependencies or {}) devices;
     in ''
       set -efux
       # first create the neccessary devices
