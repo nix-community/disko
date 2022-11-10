@@ -30,6 +30,8 @@ Options:
   pass value to nix-build as string
 * --dry-run
   just show the path to the script instead of running it
+* --debug
+  run with set -x
 USAGE
 }
 
@@ -47,6 +49,9 @@ abort() {
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --debug)
+      set -x
+      ;;
     -m | --mode)
       mode=$2
       shift
