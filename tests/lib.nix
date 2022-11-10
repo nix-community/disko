@@ -13,6 +13,7 @@
     , efi ? true
     , enableOCR ? false
     , testMode ? "direct" # can be one of direct module cli
+    , testBoot ? true # if we actually want to test booting or just create/mount
     }:
     let
       lib = pkgs.lib;
@@ -141,26 +142,29 @@
           machine.succeed("${tsp-mount}") # verify that the command is idempotent
         ''}
 
-        # mount nix-store in /mnt
-        machine.succeed("mkdir -p /mnt/nix/store")
-        machine.succeed("mount --bind /nix/store /mnt/nix/store")
+        ${lib.optionalString testBoot ''
+          # mount nix-store in /mnt
+          machine.succeed("mkdir -p /mnt/nix/store")
+          machine.succeed("mount --bind /nix/store /mnt/nix/store")
 
-        machine.succeed("nix-store --load-db < ${pkgs.closureInfo {rootPaths = [installedTopLevel];}}/registration")
+          machine.succeed("nix-store --load-db < ${pkgs.closureInfo {rootPaths = [installedTopLevel];}}/registration")
 
-        # fix "this is not a NixOS installation"
-        machine.succeed("mkdir -p /mnt/etc")
-        machine.succeed("touch /mnt/etc/NIXOS")
+          # fix "this is not a NixOS installation"
+          machine.succeed("mkdir -p /mnt/etc")
+          machine.succeed("touch /mnt/etc/NIXOS")
 
-        machine.succeed("mkdir -p /mnt/nix/var/nix/profiles")
-        machine.succeed("nix-env -p /mnt/nix/var/nix/profiles/system --set ${installedTopLevel}")
-        machine.succeed("NIXOS_INSTALL_BOOTLOADER=1 nixos-enter --root /mnt -- ${installedTopLevel}/bin/switch-to-configuration boot")
-        machine.succeed("sync")
-        machine.shutdown()
+          machine.succeed("mkdir -p /mnt/nix/var/nix/profiles")
+          machine.succeed("nix-env -p /mnt/nix/var/nix/profiles/system --set ${installedTopLevel}")
+          machine.succeed("NIXOS_INSTALL_BOOTLOADER=1 nixos-enter --root /mnt -- ${installedTopLevel}/bin/switch-to-configuration boot")
+          machine.succeed("sync")
+          machine.shutdown()
 
-        machine = create_test_machine(oldmachine=machine, args={ "name": "booted_machine" })
-        machine.start()
-        ${bootCommands}
-        machine.wait_for_unit("local-fs.target")
+          machine = create_test_machine(oldmachine=machine, args={ "name": "booted_machine" })
+          machine.start()
+          ${bootCommands}
+          machine.wait_for_unit("local-fs.target")
+        ''}
+
         ${extraTestScript}
       '';
     };
