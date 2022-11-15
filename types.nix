@@ -51,11 +51,11 @@ rec {
        => "/dev/disk/by-id/xxx-part2"
     */
     deviceNumbering = dev: index:
-      if match "/dev/[vs]d.*" dev != null then
+      if match "/dev/[vs]d.+" dev != null then
         dev + toString index  # /dev/{s,v}da style
-      else if match "/dev/disk/.*" dev != null then
+      else if match "/dev/disk/.+" dev != null then
         "${dev}-part${toString index}" # /dev/disk/by-id/xxx style
-      else if match "/dev/(nvme|md/|mmcblk).*" dev != null then
+      else if match "/dev/(nvme|md/|mmcblk).+" dev != null then
         "${dev}p${toString index}" # /dev/nvme0n1p1 style
       else
         abort "${dev} seems not to be a supported disk format";
