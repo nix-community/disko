@@ -51,21 +51,14 @@ rec {
        => "/dev/disk/by-id/xxx-part2"
     */
     deviceNumbering = dev: index:
-      let
-        schemas = {
-          dev__da = dev + toString index; # /dev/{s,v}da style
-          dev_disk = "${dev}-part${toString index}"; # /dev/disk/by-id/xxx style
-          dev_nvme = "${dev}p${toString index}"; # /dev/nvme0n1p1 style
-          dev_md = "${dev}p${toString index}"; # /dev/nvme0n1p1 style
-        };
-        detectSchema =
-          if match "/dev/[vs]d.*" dev != null then "dev__da" else
-          if match "/dev/disk/.*" dev != null then "dev_disk" else
-          if match "/dev/nvme.*" dev != null then "dev_nvme" else
-          if match "/dev/md/.*" dev != null then "dev_md" else
-          if match "/dev/mmcblk.*" dev != null then "dev_nvme" else
-          abort "${dev} seems not to be a supported disk format";
-      in schemas.${detectSchema};
+      if match "/dev/[vs]d.*" dev != null then
+        dev + toString index  # /dev/{s,v}da style
+      else if match "/dev/disk/.*" dev != null then
+        "${dev}-part${toString index}" # /dev/disk/by-id/xxx style
+      else if match "/dev/(nvme|md/|mmcblk).*" dev != null then
+        "${dev}p${toString index}" # /dev/nvme0n1p1 style
+      else
+        abort "${dev} seems not to be a supported disk format";
 
     /* A nix option type representing a json datastructure, vendored from nixpkgs to avoid dependency on pkgs */
     jsonType = let
