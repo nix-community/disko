@@ -48,7 +48,7 @@ TODO: output of the cli --help
 
 You can use the NixOS module in one of the following ways:
 
-### Flakes
+### Flakes (Current recommendation)
 
 If you use nix flakes support:
 
@@ -71,7 +71,7 @@ If you use nix flakes support:
 }
 ```
 
-### [niv](https://github.com/nmattia/niv) (Current recommendation)
+### [niv](https://github.com/nmattia/niv)
   First add it to niv:
 
 ```console
