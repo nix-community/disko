@@ -63,6 +63,7 @@ rec {
           if match "/dev/disk/.*" dev != null then "dev_disk" else
           if match "/dev/nvme.*" dev != null then "dev_nvme" else
           if match "/dev/md/.*" dev != null then "dev_md" else
+          if match "/dev/mmcblk.*" dev != null then "dev_nvme" else
           abort "${dev} seems not to be a supported disk format";
       in schemas.${detectSchema};
 
