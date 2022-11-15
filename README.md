@@ -48,7 +48,8 @@ TODO: output of the cli --help
 
 You can use the NixOS module in one of the following ways:
 
-### Flakes
+<details>
+  <summary>Flakes (Current recommendation)</summary>
 
 If you use nix flakes support:
 
@@ -70,9 +71,11 @@ If you use nix flakes support:
   };
 }
 ```
-
-### [niv](https://github.com/nmattia/niv) (Current recommendation)
-  First add it to niv:
+</details>
+<details>
+  <summary>niv</summary>
+  
+  First add it to [niv](https://github.com/nmattia/niv):
 
 ```console
 $ niv add nix-community/disko
@@ -85,8 +88,9 @@ $ niv add nix-community/disko
   imports = [ "${(import ./nix/sources.nix).disko}/modules/disko.nix" ];
 }
 ```
-
-### nix-channel
+</details>
+<details>
+  <summary>nix-channel</summary>
 
   As root run:
 
@@ -102,8 +106,9 @@ $ nix-channel --update
   imports = [ <disko/modules/disko.nix> ];
 }
 ```
-
-### fetchTarball
+</details>
+<details>
+  <summary>fetchTarball</summary>
 
   Add the following to your configuration.nix:
 
@@ -129,6 +134,7 @@ $ nix-channel --update
   ];
 }
 ```
+</details>
 
 ## Using the NixOS module
 
