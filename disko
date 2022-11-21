@@ -107,7 +107,7 @@ if [[ ! -z "${flake+x}" ]]; then
 elif [[ ! -z "${disko_config+x}" ]] && [[ -e "$disko_config" ]]; then
   nix_args+=("--arg" "diskoFile" "$disko_config")
 else
-  abort "disko config must be an exising file or flake must be set"
+  abort "disko config must be an existing file or flake must be set"
 fi
 
 script=$(nix-build "${libexec_dir}"/cli.nix \
