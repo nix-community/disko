@@ -16,7 +16,7 @@ rec {
       nestedTypes = typeAttr;
     };
 
-    # option for valid contents of partitons (basically like devices, but without tables)
+    # option for valid contents of partitions (basically like devices, but without tables)
     partitionType = mkOption {
       type = types.nullOr (diskoLib.subType { inherit btrfs filesystem zfs mdraid luks lvm_pv; });
       default = null;
@@ -138,7 +138,7 @@ rec {
       sortedDeviceList = diskoLib.sortDevicesByDependencies ((diskoLib.meta devices).deviceDependencies or {}) devices;
     in ''
       set -efux
-      # first create the neccessary devices
+      # first create the necessary devices
       ${concatStrings (map (dev: attrByPath (dev ++ [ "_mount" "dev" ]) "" devices) sortedDeviceList)}
 
       # and then mount the filesystems in alphabetical order
