@@ -24,6 +24,10 @@ in {
     export PATH=${lib.makeBinPath (types.diskoLib.packages (eval cfg).config.devices pkgs)}
     ${types.diskoLib.mount (eval cfg).config.devices}
   '';
+  zapCreateMount = cfg: pkgs: pkgs.writeScript "disko-zap-create-mount" ''
+    export PATH=${lib.makeBinPath (types.diskoLib.packages (eval cfg).config.devices pkgs)}
+    ${types.diskoLib.zapCreateMount (eval cfg).config.devices}
+  '';
   config = cfg: { imports = types.diskoLib.config (eval cfg).config.devices; };
   packages = cfg: types.diskoLib.packages (eval cfg).config.devices;
 }

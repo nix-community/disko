@@ -87,8 +87,8 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
-if ! ([[ $mode = "create" ]] || [[ $mode = "mount" ]]); then
-  abort "mode must be either create or mount"
+if ! ([[ $mode = "create" ]] || [[ $mode = "mount" ]] || [[ $mode = "zap_create_mount" ]]); then
+  abort "mode must be either create, mount or zap_create_mount"
 fi
 
 if [[ ! -z "${flake+x}" ]]; then

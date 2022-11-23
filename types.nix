@@ -146,6 +146,26 @@ rec {
       # ensures that "/" is processed before "/foo" etc.
       ${concatStrings (attrValues fsMounts)}
     '';
+    /* takes a disko device specification and returns a string which unmounts, destroys all disks and then runs create and mount
+
+       zapCreateMount :: types.devices -> str
+    */
+    zapCreateMount = devices: ''
+      set -efux
+      # print existing disks
+      lsblk
+
+      # TODO get zap the same way we get create
+      # make partitioning idempotent by dismounting already mounted filesystems
+      if findmnt /mnt; then
+        umount -Rlv /mnt
+      fi
+
+      echo 'creating partitions...'
+      ${diskoLib.create devices}
+      echo 'mounting partitions...'
+      ${diskoLib.mount devices}
+    '';
     /* Takes a disko device specification and returns a nixos configuration
 
        config :: types.devices -> nixosConfig
