@@ -394,7 +394,7 @@ rec {
         readOnly = true;
         type = types.functionTo types.str;
         default = dev: ''
-          parted -s ${dev} mklabel ${config.format}
+          parted -s ${dev} -- mklabel ${config.format}
           ${concatMapStrings (partition: partition._create dev config.format) config.partitions}
         '';
       };
@@ -480,18 +480,18 @@ rec {
         type = types.functionTo (types.functionTo types.str);
         default = dev: type: ''
           ${optionalString (type == "gpt") ''
-            parted -s ${dev} mkpart ${config.name} ${diskoLib.maybeStr config.fs-type} ${config.start} ${config.end}
+            parted -s ${dev} -- mkpart ${config.name} ${diskoLib.maybeStr config.fs-type} ${config.start} ${config.end}
           ''}
           ${optionalString (type == "msdos") ''
-            parted -s ${dev} mkpart ${config.part-type} ${diskoLib.maybeStr config.fs-type} ${diskoLib.maybeStr config.fs-type} ${config.start} ${config.end}
+            parted -s ${dev} -- mkpart ${config.part-type} ${diskoLib.maybeStr config.fs-type} ${diskoLib.maybeStr config.fs-type} ${config.start} ${config.end}
           ''}
           # ensure /dev/disk/by-path/..-partN exists before continuing
           udevadm trigger --subsystem-match=block; udevadm settle
           ${optionalString (config.bootable) ''
-            parted -s ${dev} set ${toString config.index} boot on
+            parted -s ${dev} -- set ${toString config.index} boot on
           ''}
           ${concatMapStringsSep "" (flag: ''
-            parted -s ${dev} set ${toString config.index} ${flag} on
+            parted -s ${dev} -- set ${toString config.index} ${flag} on
           '') config.flags}
           # ensure further operations can detect new partitions
           udevadm trigger --subsystem-match=block; udevadm settle
