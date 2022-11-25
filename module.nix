@@ -46,7 +46,7 @@ in {
       ${types.diskoLib.mount cfg.devices}
     '';
 
-    system.build.disko = pkgs.writers.writeDash "disko" ''
+    system.build.disko = pkgs.writers.writeBash "disko" ''
       export PATH=${lib.makeBinPath (types.diskoLib.packages cfg.devices pkgs)}
       ${types.diskoLib.zapCreateMount cfg.devices}
     '';

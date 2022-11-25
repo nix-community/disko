@@ -152,6 +152,7 @@ rec {
     */
     zapCreateMount = devices: ''
       set -efux
+      shopt -s nullglob
       # print existing disks
       lsblk
 
@@ -160,6 +161,12 @@ rec {
       if findmnt /mnt; then
         umount -Rlv /mnt
       fi
+
+      # stop all existing raids
+      for r in /dev/md/* /dev/md[0-9]*; do
+        # might fail if the device was already closed in the loop
+        mdadm --stop "$r" || true
+      done
 
       echo 'creating partitions...'
       ${diskoLib.create devices}
