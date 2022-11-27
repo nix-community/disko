@@ -51,6 +51,11 @@ in {
       ${types.diskoLib.zapCreateMount cfg.devices}
     '';
 
+    # This is useful to skip copying executables uploading a script to an in-memory installer
+    system.build.diskoNoDeps = pkgs.writers.writeBash "disko" ''
+      ${types.diskoLib.zapCreateMount cfg.devices}
+    '';
+
     # Remember to add config keys here if they are added to types
     fileSystems = lib.mkIf cfg.enableConfig (lib.mkMerge (lib.catAttrs "fileSystems" (types.diskoLib.config cfg.devices)));
     boot = lib.mkIf cfg.enableConfig (lib.mkMerge (lib.catAttrs "boot" (types.diskoLib.config cfg.devices)));
