@@ -16,26 +16,8 @@ in {
       type = lib.types.bool;
       default = true;
     };
-    addScripts = lib.mkOption {
-      description = ''
-        add disko-create and disko-mount scripts to systemPackages.
-      '';
-      type = lib.types.bool;
-      default = true;
-    };
   };
   config = {
-    environment.systemPackages = (lib.optionals cfg.addScripts [
-      (pkgs.writers.writeDashBin "disko-create" ''
-        export PATH=${lib.makeBinPath (types.diskoLib.packages cfg.devices pkgs)}
-        ${types.diskoLib.create cfg.devices}
-      '')
-      (pkgs.writers.writeDashBin "disko-mount" ''
-        export PATH=${lib.makeBinPath (types.diskoLib.packages cfg.devices pkgs)}
-        ${types.diskoLib.mount cfg.devices}
-      '')
-    ]) ++ lib.optionals cfg.enableConfig (types.diskoLib.packages cfg.devices pkgs);
-
     system.build.formatScript = pkgs.writers.writeDash "disko-create" ''
       export PATH=${lib.makeBinPath (types.diskoLib.packages cfg.devices pkgs)}
       ${types.diskoLib.create cfg.devices}

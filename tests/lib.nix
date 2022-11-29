@@ -33,7 +33,6 @@
           (lib.optionalAttrs (testMode == "module") {
             imports = [ ../module.nix ];
             disko = {
-              addScripts = false;
               enableConfig = true;
               devices = import disko-config { inherit disks lib; };
             };
@@ -76,7 +75,6 @@
           (lib.optionalAttrs (testMode == "module") {
             imports = [ ../module.nix ];
             disko = {
-              addScripts = true;
               enableConfig = false;
               devices = import disko-config { disks = builtins.tail disks; inherit lib; };
             };
