@@ -52,7 +52,8 @@ in {
     '';
 
     # This is useful to skip copying executables uploading a script to an in-memory installer
-    system.build.diskoNoDeps = pkgs.writers.writeBash "disko" ''
+    system.build.diskoNoDeps = pkgs.writeScript "disko" ''
+      #!/usr/bin/env bash
       ${types.diskoLib.zapCreateMount cfg.devices}
     '';
 
