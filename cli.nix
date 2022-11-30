@@ -16,7 +16,7 @@ let
     disko.createScript diskFormat pkgs
   else if (mode == "mount") then
     disko.mountScript diskFormat pkgs
-  else if (mode = "zap_create_mount") then
+  else if (mode == "zap_create_mount") then
     disko.zapCreateMount diskFormat pkgs
   else
     builtins.abort "invalid mode"
