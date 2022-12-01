@@ -26,6 +26,7 @@
       tsp-create = pkgs.writeScript "create" ((pkgs.callPackage ../. { }).create (import disko-config { disks = builtins.tail disks; inherit lib; }));
       tsp-mount = pkgs.writeScript "mount" ((pkgs.callPackage ../. { }).mount (import disko-config { disks = builtins.tail disks; inherit lib; }));
       tsp-config = (pkgs.callPackage ../. { }).config (import disko-config { inherit disks; inherit lib; });
+      tsp-disko = pkgs.writeScript "disko" ((pkgs.callPackage ../. { }).zapCreateMount (import disko-config { disks = builtins.tail disks; inherit lib; }));
       num-disks = builtins.length (lib.attrNames (import disko-config { inherit lib; }).disk);
       installed-system = { modulesPath, ... }: {
         imports = [
@@ -127,20 +128,24 @@
           machine.succeed("${tsp-create}")
           machine.succeed("${tsp-mount}")
           machine.succeed("${tsp-mount}") # verify that the command is idempotent
+          machine.succeed("${tsp-disko}") # verify that we can destroy and recreate
         ''}
         ${lib.optionalString (testMode == "module") ''
           machine.succeed("${nodes.machine.system.build.formatScript}")
           machine.succeed("${nodes.machine.system.build.mountScript}")
           machine.succeed("${nodes.machine.system.build.mountScript}") # verify that the command is idempotent
+          machine.succeed("${nodes.machine.system.build.disko}") # verify that the destroy and recreate again
         ''}
         ${lib.optionalString (testMode == "cli") ''
           # TODO use the disko cli here
           # machine.succeed("${../.}/disko --no-pkgs --mode create ${disko-config}")
           # machine.succeed("${../.}/disko --no-pkgs --mode mount ${disko-config}")
           # machine.succeed("${../.}/disko --no-pkgs --mode mount ${disko-config}") # verify that the command is idempotent
+          # machine.succeed("${../.}/disko --no-pkgs --mode zap_create_mount ${disko-config}") # verify that we can destroy and recreate again
           machine.succeed("${tsp-create}")
           machine.succeed("${tsp-mount}")
           machine.succeed("${tsp-mount}") # verify that the command is idempotent
+          machine.succeed("${tsp-disko}") # verify that we can destroy and recreate
         ''}
 
         ${lib.optionalString testBoot ''

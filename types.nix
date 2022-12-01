@@ -155,22 +155,101 @@ rec {
     zapCreateMount = devices: ''
       set -efux
       shopt -s nullglob
-      # print existing disks
-      lsblk
 
-      # TODO get zap the same way we get create
       # make partitioning idempotent by dismounting already mounted filesystems
       if findmnt /mnt; then
         umount -Rlv /mnt
       fi
 
-      # stop all existing raids
-      if command -v mdadm; then
-        for r in /dev/md/* /dev/md[0-9]*; do
-          # might fail if the device was already closed in the loop
-          mdadm --stop "$r" || true
+      for dev in ${toString (lib.catAttrs "device" (lib.attrValues devices.disk))}; do
+        blkdeactivate -d retry,force -l retry,wholevg -u "$dev"
+
+        # get paths for device
+        by_path=$(for x in $(find /dev/disk/by-path/); do
+          if [ "$(readlink -f $x)" = "$(readlink -f "$dev")" ]; then
+            target=$x
+            break
+          fi
         done
-      fi
+        if test -z ''${target+x}; then
+          echo "unable to find path of disk: $dev, bailing out" >&2
+          echo "nodev"
+        else
+          echo $target
+        fi)
+
+        # get ids paths for device
+        by_id=$(for x in $(find /dev/disk/by-id/); do
+          if [ "$(readlink -f $x)" = "$(readlink -f "$dev")" ]; then
+            target=$x
+            break
+          fi
+        done
+        if test -z ''${target+x}; then
+          echo "unable to find path of disk: $dev, bailing out" >&2
+          echo "nodev"
+        else
+          echo $target
+        fi)
+
+        if type -p zpool >/dev/null; then
+          # remove from all zpools
+          for zpool in $(zpool list -H -o name); do
+            part=$(zpool list -v -H -P "$zpool" | grep -Eo "($dev|''${by_path}|''${by_id})[a-zA-Z0-9-]*") || :
+            if test -n "$part"; then
+              # try removing device from pool, if that fails, destroy the pool
+              zpool remove "$zpool" "$part" || zpool destroy "$zpool"
+              udevadm trigger --subsystem-match=block; udevadm settle
+            fi
+          done
+        fi
+
+        if type -p vgreduce >/dev/null; then
+          # remove from all volume groups
+          for vg in $(vgdisplay -C -o vg_name --noheadings | grep -o '[a-zA-Z0-9-]*'); do
+            if test -n "$vg"; then
+              vgchange -a n "$vg"
+              vgremove -f "$vg" || :
+            fi
+          done
+        fi
+
+        if type -p mdadm >/dev/null; then
+          # remove from all raids
+          for raid in $(mdadm --detail --scan | cut -d ' ' -f 2); do
+            if test -n "$raid"; then
+              raid=$(readlink -f "$raid")
+              part=$(mdadm -v --detail --scan "$raid" | grep -Eo "($dev|''${by_path}|''${by_id})[a-zA-Z0-9-]*") || :
+              if test -n "$part"; then
+                # TODO try removing device from raid first
+                mdadm --stop "$raid" || :
+                mdadm --remove "$raid" "$part" || :
+              fi
+            fi
+          done
+          set +f
+          for p in "$dev"[a-zA-Z0-9-]*; do mdadm --zero-superblock "$p" || :; done
+          set -f
+        fi
+
+        # deactivate luks devices
+        if type -p cryptsetup >/dev/null; then
+          for crypt in $(dmsetup ls --target crypt | cut -f 1); do
+            if cryptsetup status "$crypt" | grep -Eq "$dev|''${by_path}|''${by_id}"; then
+              cryptsetup luksClose "$crypt"
+            fi
+          done
+        fi
+
+        set +f
+        for p in "$dev"[a-zA-Z0-9-]*; do
+          swapoff "$p" || :
+          wipefs --all "$p"
+        done
+        set -f
+        wipefs --all "$dev"
+
+      done
 
       echo 'creating partitions...'
       ${diskoLib.create devices}
@@ -822,6 +901,7 @@ rec {
         type = types.functionTo types.str;
         default = vg: ''
           lvcreate \
+            --yes \
             ${if hasInfix "%" config.size then "-l" else "-L"} ${config.size} \
             -n ${config.name} \
             ${optionalString (!isNull config.lvm_type) "--type=${config.lvm_type}"} \
