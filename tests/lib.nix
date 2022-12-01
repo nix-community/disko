@@ -33,7 +33,6 @@
           (lib.optionalAttrs (testMode == "module") {
             imports = [ ../module.nix ];
             disko = {
-              addScripts = false;
               enableConfig = true;
               devices = import disko-config { inherit disks lib; };
             };
@@ -76,7 +75,6 @@
           (lib.optionalAttrs (testMode == "module") {
             imports = [ ../module.nix ];
             disko = {
-              addScripts = true;
               enableConfig = false;
               devices = import disko-config { disks = builtins.tail disks; inherit lib; };
             };
@@ -105,7 +103,7 @@
         virtualisation.emptyDiskImages = builtins.genList (_: 4096) num-disks;
       };
 
-      testScript = ''
+      testScript = { nodes, ... }: ''
         def disks(oldmachine, num_disks):
             disk_flags = ""
             for i in range(num_disks):
@@ -128,9 +126,9 @@
           machine.succeed("${tsp-mount}") # verify that the command is idempotent
         ''}
         ${lib.optionalString (testMode == "module") ''
-          machine.succeed("disko-create")
-          machine.succeed("disko-mount")
-          machine.succeed("disko-mount") # verify that the command is idempotent
+          machine.succeed("${nodes.machine.system.build.formatScript}")
+          machine.succeed("${nodes.machine.system.build.mountScript}")
+          machine.succeed("${nodes.machine.system.build.mountScript}") # verify that the command is idempotent
         ''}
         ${lib.optionalString (testMode == "cli") ''
           # TODO use the disko cli here

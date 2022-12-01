@@ -1,6 +1,6 @@
 # Example to create a bios compatible gpt partition
 { disks ? [ "/dev/vdb" ], lib, ... }: {
-  disk = lib.traceValSeq (lib.genAttrs [ (lib.head disks) ] (device: {
+  disk = lib.genAttrs [ (lib.head disks) ] (device: {
     device = device;
     type = "disk";
     content = {
@@ -31,5 +31,5 @@
         }
       ];
     };
-  }));
+  });
 }
