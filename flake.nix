@@ -44,6 +44,7 @@
       meta.description = "Format disks with nix-config";
     };
     packages.x86_64-linux.default = self.packages.x86_64-linux.disko;
+    templates = import ./templates;
     checks.x86_64-linux = let
       pkgs = nixpkgs.legacyPackages.x86_64-linux;
     in
