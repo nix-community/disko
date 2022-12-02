@@ -8,7 +8,7 @@ makeDiskoTest {
     machine.succeed("swapon --show >&2");
     machine.succeed("""
       lsblk --json |
-        ${pkgs.jq}/bin/jq -e '.blockdevices[] |
+        jq -e '.blockdevices[] |
           select(.name == "vda") |
           .children[] |
           select(.name == "vda3") |

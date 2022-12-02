@@ -60,6 +60,9 @@
           efiSupport = efi;
           efiInstallAsRemovable = efi;
         };
+        environment.systemPackages = [
+          pkgs.jq
+        ];
       };
       installedTopLevel = (eval-config {
         modules = [ installed-system ];
