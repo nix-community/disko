@@ -119,6 +119,7 @@ rec {
        meta :: types.devices -> AttrSet
     */
     meta = devices: diskoLib.deepMergeMap (dev: dev._meta) (flatten (map attrValues (attrValues devices)));
+
     /* Takes a disko device specification and returns a string which formats the disks
 
        create :: types.devices -> str
@@ -215,7 +216,7 @@ rec {
     };
   };
 
-  /* topLevel type of the disko config, takes attrsets of disks mdadms zpools and lvm vgs.
+  /* topLevel type of the disko config, takes attrsets of disks, mdadms, zpools, nodevs, and lvm vgs.
   */
   devices = types.submodule {
     options = {
@@ -235,8 +236,81 @@ rec {
         type = types.attrsOf lvm_vg;
         default = {};
       };
+      nodev = mkOption {
+        type = types.attrsOf nodev;
+        default = {};
+      };
     };
   };
+
+  nodev = types.submodule ({ config, ... }: {
+    options = {
+      type = mkOption {
+        type = types.enum [ "nodev" ];
+        default = "nodev";
+        internal = true;
+      };
+      fsType = mkOption {
+        type = types.str;
+      };
+      device = mkOption {
+        type = types.str;
+        default = "none";
+      };
+      mountpoint = mkOption {
+        type = optionTypes.absolute-pathname;
+        default = config._module.args.name;
+      };
+      mountOptions = mkOption {
+        type = types.listOf types.str;
+        default = [];
+      };
+      _meta = mkOption {
+        internal = true;
+        readOnly = true;
+        type = diskoLib.jsonType;
+        default = {
+        };
+      };
+      _create = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.str;
+        default = "";
+      };
+      _mount = mkOption {
+        internal = true;
+        readOnly = true;
+        type = diskoLib.jsonType;
+        default = {
+          fs.${config.mountpoint} = ''
+            if ! findmnt ${config.fsType} "/mnt${config.mountpoint}" > /dev/null 2>&1; then
+              mount -t ${config.fsType} ${config.device} "/mnt${config.mountpoint}" \
+              ${concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
+              -o X-mount.mkdir
+            fi
+          '';
+        };
+      };
+      _config = mkOption {
+        internal = true;
+        readOnly = true;
+        default = [{
+          fileSystems.${config.mountpoint} = {
+            device = config.device;
+            fsType = config.fsType;
+            options = config.mountOptions;
+          };
+        }];
+      };
+      _pkgs= mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo (types.listOf types.package);
+        default = pkgs: [];
+      };
+    };
+  });
 
   btrfs = types.submodule ({ config, ... }: {
     options = {
