@@ -834,6 +834,7 @@ rec {
       };
       type = mkOption {
         type = types.enum [ "zpool" ];
+        default = "zpool";
         internal = true;
       };
       mode = mkOption {
@@ -1212,6 +1213,8 @@ rec {
       };
       type = mkOption {
         type = types.enum [ "disk" ];
+        default = "disk";
+        internal = true;
       };
       device = mkOption {
         type = optionTypes.absolute-pathname; # TODO check if subpath of /dev ? - No! eg: /.swapfile
