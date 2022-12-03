@@ -286,7 +286,7 @@ rec {
           fs.${config.mountpoint} = ''
             if ! findmnt ${dev} "/mnt${config.mountpoint}" > /dev/null 2>&1; then
               mount ${dev} "/mnt${config.mountpoint}" \
-              ${concatStringsSep " " config.mountOptions} \
+              ${concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
               -o X-mount.mkdir
             fi
           '';
@@ -360,7 +360,7 @@ rec {
           fs.${config.mountpoint} = ''
             if ! findmnt ${dev} "/mnt${config.mountpoint}" > /dev/null 2>&1; then
               mount ${dev} "/mnt${config.mountpoint}" \
-              ${toString config.mountOptions} \
+              ${concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
               -o X-mount.mkdir
             fi
           '';
@@ -895,7 +895,7 @@ rec {
               if ! findmnt ${config.name} "/mnt${config.mountpoint}" > /dev/null 2>&1; then
                 mount ${config.name} "/mnt${config.mountpoint}" \
                 ${optionalString ((config.options.mountpoint or "") != "legacy") "-o zfsutil"} \
-                ${toString config.mountOptions} \
+                ${concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
                 -o X-mount.mkdir \
                 -t zfs
               fi
@@ -993,7 +993,7 @@ rec {
               if ! findmnt ${zpool}/${config.name} "/mnt${config.mountpoint}" > /dev/null 2>&1; then
                 mount ${zpool}/${config.name} "/mnt${config.mountpoint}" \
                 -o X-mount.mkdir \
-                ${toString config.mountOptions} \
+                ${concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
                 ${optionalString ((config.options.mountpoint or "") != "legacy") "-o zfsutil"} \
                 -t zfs
               fi
