@@ -39,10 +39,6 @@
               type = "luks";
               name = "crypted1";
               keyFile = "/tmp/secret.key";
-              extraArgs = [
-                "--hash sha512"
-                "--iter-time 5000"
-              ];
               content = {
                 type = "lvm_pv";
                 vg = "pool";
@@ -68,10 +64,6 @@
               type = "luks";
               name = "crypted2";
               keyFile = "/tmp/secret.key";
-              extraArgs = [
-                "--hash sha512"
-                "--iter-time 5000"
-              ];
               content = {
                 type = "lvm_pv";
                 vg = "pool";

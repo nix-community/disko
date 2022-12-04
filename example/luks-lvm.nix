@@ -31,9 +31,6 @@
               type = "luks";
               name = "crypted";
               keyFile = "/tmp/secret.key";
-              extraArgs = [
-                "--hash sha512"
-              ];
               content = {
                 type = "lvm_pv";
                 vg = "pool";
