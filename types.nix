@@ -216,7 +216,7 @@ rec {
     };
   };
 
-  /* topLevel type of the disko config, takes attrsets of disks, mdadms, zpools, nodevs, and lvm vgs.
+  /* topLevel type of the disko config, takes attrsets of disks, mdadms, zpools, mountpoints, and lvm vgs.
   */
   devices = types.submodule {
     options = {
@@ -236,18 +236,18 @@ rec {
         type = types.attrsOf lvm_vg;
         default = {};
       };
-      nodev = mkOption {
-        type = types.attrsOf nodev;
+      mountpoint = mkOption {
+        type = types.attrsOf mountpoint;
         default = {};
       };
     };
   };
 
-  nodev = types.submodule ({ config, ... }: {
+  mountpoint = types.submodule ({ config, ... }: {
     options = {
       type = mkOption {
-        type = types.enum [ "nodev" ];
-        default = "nodev";
+        type = types.enum [ "mountpoint" ];
+        default = "mountpoint";
         internal = true;
       };
       fsType = mkOption {

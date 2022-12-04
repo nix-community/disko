@@ -36,7 +36,7 @@
       };
     };
   };
-  nodev = {
+  mountpoint = {
     "/tmp" = {
       fsType = "tmpfs";
       mountOptions = [
