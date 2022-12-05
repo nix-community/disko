@@ -57,6 +57,8 @@ rec {
         "${dev}-part${toString index}" # /dev/disk/by-id/xxx style
       else if match "/dev/(nvme|md/|mmcblk).+" dev != null then
         "${dev}p${toString index}" # /dev/nvme0n1p1 style
+      else if match "\\\$\\{.+}" dev != null then # shell variable: ${primaryDisk}
+        "${dev}${toString index}"
       else
         abort "${dev} seems not to be a supported disk format";
 
@@ -214,6 +216,13 @@ rec {
           isString x && (x == "/" || (length xs > 0 && all filename.check xs));
       merge = mergeOneOption;
     };
+
+    shell-variable = mkOptionType {
+      name = "Shell variable";
+      check = x: match "\\\$\\{.+}" x != null;
+      merge = mergeOneOption;
+    };
+
   };
 
   /* topLevel type of the disko config, takes attrsets of disks, mdadms, zpools, nodevs, and lvm vgs.
@@ -1291,7 +1300,7 @@ rec {
         internal = true;
       };
       device = mkOption {
-        type = optionTypes.absolute-pathname; # TODO check if subpath of /dev ? - No! eg: /.swapfile
+        type = types.oneOf [ optionTypes.shell-variable optionTypes.absolute-pathname ]; # TODO check if subpath of /dev ? - No! eg: /.swapfile
       };
       content = diskoLib.deviceType;
       _meta = mkOption {
