@@ -1327,7 +1327,9 @@ rec {
         internal = true;
         readOnly = true;
         default =
-          optional (!isNull config.content) (config.content._config config.device);
+          if optionTypes.shell-variable.check config.device
+          then throw "NixOS config can't be generated when using shell variables."
+          else optional (!isNull config.content) (config.content._config config.device);
       };
       _pkgs = mkOption {
         internal = true;
