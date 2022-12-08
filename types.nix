@@ -164,6 +164,10 @@ rec {
         umount -Rlv /mnt
       fi
 
+      for ds in $(zpool list -H -o name); do
+        zpool destroy "$ds"
+      done
+
       # stop all existing raids
       if command -v mdadm; then
         for r in /dev/md/* /dev/md[0-9]*; do
