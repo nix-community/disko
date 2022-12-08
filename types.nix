@@ -169,7 +169,7 @@ rec {
       done
 
       # stop all existing raids
-      if command -v mdadm; then
+      if command -v mdadm &>/dev/null; then
         for r in /dev/md/* /dev/md[0-9]*; do
           # might fail if the device was already closed in the loop
           mdadm --stop "$r" || true
