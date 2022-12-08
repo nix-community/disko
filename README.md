@@ -114,7 +114,7 @@ $ nix-channel --update
 
 ``` nix
 {
-  imports = [ "${builtins.fetchTarball "https://github.com/nix-community/disko/archive/main.tar.gz"}/modules/disko.nix" ];
+  imports = [ "${builtins.fetchTarball "https://github.com/nix-community/disko/archive/master.tar.gz"}/module.nix" ];
 }
 ```
 

@@ -147,6 +147,7 @@ rec {
       # ensures that "/" is processed before "/foo" etc.
       ${concatStrings (attrValues fsMounts)}
     '';
+
     /* takes a disko device specification and returns a string which unmounts, destroys all disks and then runs create and mount
 
        zapCreateMount :: types.devices -> str
@@ -164,10 +165,12 @@ rec {
       fi
 
       # stop all existing raids
-      for r in /dev/md/* /dev/md[0-9]*; do
-        # might fail if the device was already closed in the loop
-        mdadm --stop "$r" || true
-      done
+      if command -v mdadm; then
+        for r in /dev/md/* /dev/md[0-9]*; do
+          # might fail if the device was already closed in the loop
+          mdadm --stop "$r" || true
+        done
+      fi
 
       echo 'creating partitions...'
       ${diskoLib.create devices}
