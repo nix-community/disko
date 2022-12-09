@@ -66,7 +66,7 @@
       };
       installedTopLevel = (eval-config {
         modules = [ installed-system ];
-        system = "x86_64-linux";
+        inherit (pkgs) system;
       }).config.system.build.toplevel;
     in
     makeTest' {
