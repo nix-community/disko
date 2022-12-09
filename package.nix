@@ -1,4 +1,4 @@
-{ coreutils, gnused, lib }:
+{ stdenvNoCC, lib }:
 
 let
   inclFiles = {src, name}: files: lib.cleanSourceWith {
@@ -6,13 +6,16 @@ let
     filter = _path: _type: _type == "regular" && lib.any (file: builtins.baseNameOf _path == file) files;
   };
 in
-derivation rec {
-  system = "x86_64-linux";
+stdenvNoCC.mkDerivation rec {
   name = "disko";
-  builder = "/bin/sh";
-  PATH    = "${coreutils}/bin:${gnused}/bin";
-  passAsFile = ["buildPhase"];
-  buildPhase = ''
+  src = inclFiles { inherit name; src = ./.; } [
+    "disko"
+    "cli.nix"
+    "default.nix"
+    "types.nix"
+    "options.nix"
+  ];
+  installPhase = ''
     mkdir -p $out/bin $out/share/disko
     cp -r $src/* $out/share/disko
     sed \
@@ -21,14 +24,11 @@ derivation rec {
       $src/disko > $out/bin/disko
     chmod 755 $out/bin/disko
   '';
-  args = ["-c" ". $buildPhasePath"];
-  src = inclFiles { inherit name; src = ./.; } [
-    "disko"
-    "cli.nix"
-    "default.nix"
-    "types.nix"
-    "options.nix"
-  ];
-} // {
-  meta.description = "Format disks with nix-config";
+  meta = with lib; {
+    description = "Format disks with nix-config";
+    homepage = "https://github.com/nix-community/disko";
+    license = licenses.mit;
+    maintainers = with maintainers; [ lassulus ];
+    platforms = platforms.linux;
+  };
 }
