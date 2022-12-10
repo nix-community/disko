@@ -17,7 +17,7 @@ in {
   create = cfg: types.diskoLib.create (eval cfg).config.devices;
   createScript = cfg: pkgs: pkgs.writeScript "disko-create" ''
     #!/usr/bin/env bash
-    export PATH=${lib.makeBinPath (types.diskoLib.packages (eval cfg).config.devices pkgs)}
+    export PATH=${lib.makeBinPath (types.diskoLib.packages (eval cfg).config.devices pkgs)}:$PATH
     ${types.diskoLib.create (eval cfg).config.devices}
   '';
   createScriptNoDeps = cfg: pkgs: pkgs.writeScript "disko-create" ''
@@ -27,7 +27,7 @@ in {
   mount = cfg: types.diskoLib.mount (eval cfg).config.devices;
   mountScript = cfg: pkgs: pkgs.writeScript "disko-mount" ''
     #!/usr/bin/env bash
-    export PATH=${lib.makeBinPath (types.diskoLib.packages (eval cfg).config.devices pkgs)}
+    export PATH=${lib.makeBinPath (types.diskoLib.packages (eval cfg).config.devices pkgs)}:$PATH
     ${types.diskoLib.mount (eval cfg).config.devices}
   '';
   mountScriptNoDeps = cfg: pkgs: pkgs.writeScript "disko-mount" ''
@@ -37,7 +37,7 @@ in {
   zapCreateMount = cfg: types.diskoLib.zapCreateMount (eval cfg).config.devices;
   zapCreateMountScript = cfg: pkgs: pkgs.writeScript "disko-zap-create-mount" ''
     #!/usr/bin/env bash
-    export PATH=${lib.makeBinPath (types.diskoLib.packages (eval cfg).config.devices pkgs)}
+    export PATH=${lib.makeBinPath (types.diskoLib.packages (eval cfg).config.devices pkgs)}:$PATH
     ${types.diskoLib.zapCreateMount (eval cfg).config.devices}
   '';
   zapCreateMountScriptNoDeps = cfg: pkgs: pkgs.writeScript "disko-zap-create-mount" ''
