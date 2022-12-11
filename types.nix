@@ -675,7 +675,7 @@ rec {
         internal = true;
         readOnly = true;
         type = types.functionTo (types.listOf types.package);
-        default = pkgs: [ pkgs.util-linux ];
+        default = pkgs: [ pkgs.gnugrep pkgs.util-linux ];
       };
     };
   });
