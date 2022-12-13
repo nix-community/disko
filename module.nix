@@ -20,23 +20,23 @@ in {
     };
   };
   config = lib.mkIf (cfg.devices.disk != {}) {
-    system.build.formatScript = pkgs.writers.writeBash "disko-create" ''
+    system.build.formatScript = pkgs.writers.writeBashBin "disko-create" ''
       export PATH=${lib.makeBinPath (types.diskoLib.packages cfg.devices pkgs)}:$PATH
       ${types.diskoLib.create cfg.devices}
     '';
 
-    system.build.mountScript = pkgs.writers.writeBash "disko-mount" ''
+    system.build.mountScript = pkgs.writers.writeBashBin "disko-mount" ''
       export PATH=${lib.makeBinPath (types.diskoLib.packages cfg.devices pkgs)}:$PATH
       ${types.diskoLib.mount cfg.devices}
     '';
 
-    system.build.disko = pkgs.writers.writeBash "disko" ''
+    system.build.disko = pkgs.writers.writeBashBin "disko" ''
       export PATH=${lib.makeBinPath (types.diskoLib.packages cfg.devices pkgs)}:$PATH
       ${types.diskoLib.zapCreateMount cfg.devices}
     '';
 
     # This is useful to skip copying executables uploading a script to an in-memory installer
-    system.build.diskoNoDeps = pkgs.writeScript "disko" ''
+    system.build.diskoNoDeps = pkgs.writeScriptBin "disko" ''
       #!/usr/bin/env bash
       ${types.diskoLib.zapCreateMount cfg.devices}
     '';
