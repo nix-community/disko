@@ -605,8 +605,9 @@ rec {
         internal = true;
         readOnly = true;
         type = types.functionTo (types.listOf types.package);
+        # lvm2 package is required hereafter to use `blkdeactivate` in `zapCreateMount` script
         default = pkgs:
-          [ pkgs.parted pkgs.systemdMinimal ] ++ flatten (map (partition: partition._pkgs pkgs) config.partitions);
+          [ pkgs.parted pkgs.systemdMinimal pkgs.lvm2 pkgs.gnugrep pkgs.coreutils pkgs.findutils ] ++ flatten (map (partition: partition._pkgs pkgs) config.partitions);
       };
     };
   });
