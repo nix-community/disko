@@ -89,7 +89,7 @@
             type = "filesystem";
             format = "ext4";
             mountpoint = "/";
-            options = [
+            mountOptions = [
               "defaults"
             ];
           };

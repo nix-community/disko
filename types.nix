@@ -266,7 +266,7 @@ rec {
       };
       mountOptions = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ "defaults" ];
       };
       _meta = mkOption {
         internal = true;
@@ -323,7 +323,7 @@ rec {
       };
       mountOptions = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ "defaults" ];
       };
       subvolumes = mkOption {
         type = types.listOf optionTypes.pathname;
@@ -376,6 +376,7 @@ rec {
           fileSystems.${config.mountpoint} = {
             device = dev;
             fsType = "btrfs";
+            options = config.mountOptions;
           };
         }];
       };
@@ -400,11 +401,7 @@ rec {
       };
       mountOptions = mkOption {
         type = types.listOf types.str;
-        default = [];
-      };
-      options = mkOption {
-        type = types.listOf types.str;
-        default = [];
+        default = [ "defaults" ];
       };
       mountpoint = mkOption {
         type = optionTypes.absolute-pathname;
@@ -450,6 +447,7 @@ rec {
           fileSystems.${config.mountpoint} = {
             device = dev;
             fsType = config.format;
+            options = config.mountOptions;
           };
         }];
       };
@@ -932,7 +930,7 @@ rec {
       };
       mountOptions = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ "defaults" ];
       };
       datasets = mkOption {
         type = types.attrsOf zfs_dataset;
@@ -990,7 +988,7 @@ rec {
             fileSystems.${config.mountpoint} = {
               device = config.name;
               fsType = "zfs";
-              options = lib.optional ((config.options.mountpoint or "") != "legacy") "zfsutil";
+              options = config.mountOptions ++ lib.optional ((config.options.mountpoint or "") != "legacy") "zfsutil";
             };
           })
         ];
@@ -1024,7 +1022,7 @@ rec {
       };
       mountOptions = mkOption {
         type = types.listOf types.str;
-        default = [];
+        default = [ "defaults" ];
       };
 
       # filesystem options
@@ -1086,7 +1084,7 @@ rec {
             fileSystems.${config.mountpoint} = {
               device = "${zpool}/${config.name}";
               fsType = "zfs";
-              options = lib.optional ((config.options.mountpoint or "") != "legacy") "zfsutil";
+              options = config.mountOptions ++ lib.optional ((config.options.mountpoint or "") != "legacy") "zfsutil";
             };
           });
       };
