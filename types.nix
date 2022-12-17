@@ -306,7 +306,7 @@ rec {
           };
         }];
       };
-      _pkgs= mkOption {
+      _pkgs = mkOption {
         internal = true;
         readOnly = true;
         type = types.functionTo (types.listOf types.package);
@@ -321,16 +321,103 @@ rec {
         type = types.enum [ "btrfs" ];
         internal = true;
       };
+      extraArgs = mkOption {
+        type = types.str;
+        default = "";
+      };
       mountOptions = mkOption {
         type = types.listOf types.str;
         default = [ "defaults" ];
       };
       subvolumes = mkOption {
-        type = types.listOf optionTypes.pathname;
-        default = [];
+        type = types.attrsOf btrfs_subvol;
+        default = {};
       };
       mountpoint = mkOption {
-        type = optionTypes.absolute-pathname;
+        type = types.nullOr optionTypes.absolute-pathname;
+        default = null;
+      };
+      _meta = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo diskoLib.jsonType;
+        default = dev:
+          diskoLib.deepMergeMap (subvol: subvol._meta dev) (attrValues config.subvolumes);
+      };
+      _create = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo types.str;
+        default = dev: ''
+          mkfs.btrfs ${dev} ${config.extraArgs}
+          ${concatMapStrings (subvol: subvol._create dev) (attrValues config.subvolumes)}
+        '';
+      };
+      _mount = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo diskoLib.jsonType;
+        default = dev:
+          let
+            subvolMounts = diskoLib.deepMergeMap (subvol: subvol._mount dev config.mountpoint) (attrValues config.subvolumes);
+          in {
+            fs = subvolMounts.fs // optionalAttrs (!isNull config.mountpoint) {
+              ${config.mountpoint} = ''
+                if ! findmnt ${dev} "/mnt${config.mountpoint}" > /dev/null 2>&1; then
+                  mount ${dev} "/mnt${config.mountpoint}" \
+                  ${concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
+                  -o X-mount.mkdir
+                fi
+              '';
+            };
+          };
+      };
+      _config = mkOption {
+        internal = true;
+        readOnly = true;
+        default = dev: [
+          (map (subvol: subvol._config dev config.mountpoint) (attrValues config.subvolumes))
+          (optional (!isNull config.mountpoint) {
+            fileSystems.${config.mountpoint} = {
+              device = dev;
+              fsType = "btrfs";
+              options = config.mountOptions;
+            };
+          })
+        ];
+      };
+      _pkgs = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo (types.listOf types.package);
+        default = pkgs:
+          [ pkgs.btrfs-progs ] ++ flatten (map (subvolume: subvolume._pkgs pkgs) (attrValues config.subvolumes));
+      };
+    };
+  });
+
+  btrfs_subvol = types.submodule ({ config, ... }: {
+    options = {
+      name = mkOption {
+        type = types.str;
+        default = config._module.args.name;
+      };
+      type = mkOption {
+        type = types.enum [ "btrfs_subvol" ];
+        default = "btrfs_subvol";
+        internal = true;
+      };
+      extraArgs = mkOption {
+        type = types.str;
+        default = "";
+      };
+      mountOptions = mkOption {
+        type = types.listOf types.str;
+        default = [ "defaults" ];
+      };
+      mountpoint = mkOption {
+        type = types.nullOr optionTypes.absolute-pathname;
+        default = null;
       };
       _meta = mkOption {
         internal = true;
@@ -344,26 +431,27 @@ rec {
         readOnly = true;
         type = types.functionTo types.str;
         default = dev: ''
-          mkfs.btrfs ${dev}
-          ${optionalString (!isNull config.subvolumes or null) ''
-            MNTPOINT=$(mktemp -d)
-            (
-              mount ${dev} "$MNTPOINT"
-              trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-              ${concatMapStringsSep "\n" (subvolume: "btrfs subvolume create \"$MNTPOINT\"/${subvolume}") config.subvolumes}
-            )
-          ''}
+          MNTPOINT=$(mktemp -d)
+          (
+            mount ${dev} "$MNTPOINT" -o subvol=/
+            trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
+            btrfs subvolume create "$MNTPOINT"/${config.name} ${config.extraArgs}
+          )
         '';
       };
       _mount = mkOption {
         internal = true;
         readOnly = true;
-        type = types.functionTo diskoLib.jsonType;
-        default = dev: {
-          fs.${config.mountpoint} = ''
-            if ! findmnt ${dev} "/mnt${config.mountpoint}" > /dev/null 2>&1; then
-              mount ${dev} "/mnt${config.mountpoint}" \
-              ${concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
+        type = types.functionTo (types.functionTo diskoLib.jsonType);
+        default = dev: parent: let
+          mountpoint = if (!isNull config.mountpoint) then config.mountpoint
+                       else if (isNull parent) then config.name
+                       else null;
+        in optionalAttrs (!isNull mountpoint) {
+          fs.${mountpoint} = ''
+            if ! findmnt ${dev} "/mnt${mountpoint}" > /dev/null 2>&1; then
+              mount ${dev} "/mnt${mountpoint}" \
+              ${concatMapStringsSep " " (opt: "-o ${opt}") (config.mountOptions ++ [ "subvol=${config.name}" ])} \
               -o X-mount.mkdir
             fi
           '';
@@ -372,19 +460,23 @@ rec {
       _config = mkOption {
         internal = true;
         readOnly = true;
-        default = dev: [{
-          fileSystems.${config.mountpoint} = {
+        default = dev: parent: let
+          mountpoint = if (!isNull config.mountpoint) then config.mountpoint
+                       else if (isNull parent) then config.name
+                       else null;
+        in optional (!isNull mountpoint) {
+          fileSystems.${mountpoint} = {
             device = dev;
             fsType = "btrfs";
-            options = config.mountOptions;
+            options = config.mountOptions ++ [ "subvol=${config.name}" ];
           };
-        }];
+        };
       };
-      _pkgs= mkOption {
+      _pkgs = mkOption {
         internal = true;
         readOnly = true;
         type = types.functionTo (types.listOf types.package);
-        default = pkgs: [];
+        default = pkgs: [ pkgs.coreutils ];
       };
     };
   });
