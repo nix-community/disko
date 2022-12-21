@@ -383,7 +383,7 @@ rec {
         internal = true;
         readOnly = true;
         type = types.functionTo (types.listOf types.package);
-        default = pkgs: [];
+        default = pkgs: [ pkgs.btrfs-progs pkgs.coreutils ];
       };
     };
   });
