@@ -6,7 +6,9 @@
 , noDeps ? false
 , ... }@args:
 let
-  disko = import ./. { };
+  disko = import ./. {
+    lib = pkgs.lib;
+  };
 
   diskFormat = if flake != null then
     (pkgs.lib.attrByPath [ "diskoConfigurations" flakeAttr ] (builtins.abort "${flakeAttr} does not exist") (builtins.getFlake flake)) args
