@@ -1135,6 +1135,7 @@ rec {
             --level=${toString config.level} \
             --raid-devices=''${RAIDDEVICES_N_${config.name}} \
             --metadata=${config.metadata} \
+            --force \
             --homehost=any \
             ''${RAIDDEVICES_${config.name}}
           udevadm trigger --subsystem-match=block; udevadm settle
