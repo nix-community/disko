@@ -27,11 +27,21 @@
             end = "100%";
             content = {
               type = "btrfs";
-              mountpoint = "/";
-              subvolumes = [
-                "/home"
-                "/test"
-              ];
+              extraArgs = "-f"; # Override existing partition
+              subvolumes = {
+                # Subvolume name is different from mountpoint
+                "/rootfs" = {
+                  mountpoint = "/";
+                };
+                # Mountpoints inferred from subvolume name
+                "/home" = {
+                  mountOptions = ["compress=zstd"];
+                };
+                "/nix" = {
+                  mountOptions = ["compress=zstd" "noatime"];
+                };
+                "/test" = {};
+              };
             };
           }
         ];
