@@ -655,7 +655,7 @@ rec {
         type = types.functionTo diskoLib.jsonType;
         default = dev: {
           fs.${dev} = ''
-            if ! $(swapon --show | grep -q '^${dev} '); then
+            if ! swapon --show | grep -q '^${dev} '; then
               swapon ${dev}
             fi
           '';
