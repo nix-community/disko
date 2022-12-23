@@ -109,7 +109,7 @@
             type = "filesystem";
             format = "ext4";
             mountpoint = "/ext4_on_lvm";
-            options = [
+            mountOptions = [
               "defaults"
             ];
           };
