@@ -16,4 +16,7 @@ makeDiskoTest {
         '
     """);
   '';
+  extraConfig = {
+    environment.systemPackages = [ pkgs.jq ];
+  };
 }
