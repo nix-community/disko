@@ -25,7 +25,6 @@
             start = "100MiB";
             end = "-1G";
             part-type = "primary";
-            bootable = true;
             content = {
               type = "filesystem";
               format = "ext4";
@@ -33,12 +32,11 @@
             };
           }
           {
-            name = "root";
+            name = "swap";
             type = "partition";
             start = "-1G";
             end = "100%";
             part-type = "primary";
-            bootable = true;
             content = {
               type = "swap";
               randomEncryption = true;

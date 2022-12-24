@@ -49,7 +49,6 @@
   zpool = {
     zroot = {
       type = "zpool";
-      rootFsOptions.mountpoint = "none";
       datasets = {
         "root" = {
           zfs_type = "filesystem";
@@ -58,7 +57,6 @@
         "root/zfs_fs" = {
           zfs_type = "filesystem";
           mountpoint = "/zfs_fs";
-          options.mountpoint = "/zfs_fs";
           options."com.sun:auto-snapshot" = "true";
         };
       };
