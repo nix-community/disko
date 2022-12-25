@@ -20,7 +20,7 @@ let
         (lib.attrNames (builtins.readDir ./.))
     );
 
-  allTests = lib.genAttrs (allTestFilenames) (test: import (./. + "/${test}.nix") { inherit makeDiskoTest; }) //
+  allTests = lib.genAttrs (allTestFilenames) (test: import (./. + "/${test}.nix") { inherit makeDiskoTest pkgs; }) //
              evalTest "lvm-luks-example" ../example/config.nix // {
                standalone = (pkgs.nixos [ ../example/stand-alone/configuration.nix ]).config.system.build.toplevel;
              };

@@ -154,23 +154,11 @@ rec {
     */
     zapCreateMount = devices: ''
       set -efux
-      shopt -s nullglob
-      # print existing disks
-      lsblk
+      umount -Rv /mnt || :
 
-      # TODO get zap the same way we get create
-      # make partitioning idempotent by dismounting already mounted filesystems
-      if findmnt /mnt; then
-        umount -Rlv /mnt
-      fi
-
-      # stop all existing raids
-      if command -v mdadm; then
-        for r in /dev/md/* /dev/md[0-9]*; do
-          # might fail if the device was already closed in the loop
-          mdadm --stop "$r" || true
-        done
-      fi
+      for dev in ${toString (lib.catAttrs "device" (lib.attrValues devices.disk))}; do
+        ${./disk-deactivate}/disk-deactivate "$dev" | bash -x
+      done
 
       echo 'creating partitions...'
       ${diskoLib.create devices}
@@ -912,6 +900,7 @@ rec {
         type = types.functionTo types.str;
         default = vg: ''
           lvcreate \
+            --yes \
             ${if hasInfix "%" config.size then "-l" else "-L"} ${config.size} \
             -n ${config.name} \
             ${optionalString (!isNull config.lvm_type) "--type=${config.lvm_type}"} \
@@ -1418,7 +1407,7 @@ rec {
         internal = true;
         readOnly = true;
         type = types.functionTo (types.listOf types.package);
-        default = pkgs: lib.optionals (!isNull config.content) (config.content._pkgs pkgs);
+        default = pkgs: [ pkgs.jq ] ++ lib.optionals (!isNull config.content) (config.content._pkgs pkgs);
       };
     };
   });

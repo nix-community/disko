@@ -19,17 +19,17 @@ in {
   };
   config = {
     system.build.formatScript = pkgs.writers.writeDash "disko-create" ''
-      export PATH=${lib.makeBinPath (types.diskoLib.packages cfg.devices pkgs)}
+      export PATH=${lib.makeBinPath (types.diskoLib.packages cfg.devices pkgs)}:$PATH
       ${types.diskoLib.create cfg.devices}
     '';
 
     system.build.mountScript = pkgs.writers.writeDash "disko-mount" ''
-      export PATH=${lib.makeBinPath (types.diskoLib.packages cfg.devices pkgs)}
+      export PATH=${lib.makeBinPath (types.diskoLib.packages cfg.devices pkgs)}:$PATH
       ${types.diskoLib.mount cfg.devices}
     '';
 
     system.build.disko = pkgs.writers.writeBash "disko" ''
-      export PATH=${lib.makeBinPath (types.diskoLib.packages cfg.devices pkgs)}
+      export PATH=${lib.makeBinPath (types.diskoLib.packages cfg.devices pkgs)}:$PATH
       ${types.diskoLib.zapCreateMount cfg.devices}
     '';
 

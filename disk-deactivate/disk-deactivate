@@ -1,0 +1,6 @@
+#!/bin/sh
+set -efux
+# dependencies: jq util-linux lvm2 mdadm zfs
+disk=$1
+
+lsblk --output-all --json | jq -r --arg disk_to_clear "$disk" -f "$(dirname $0)/disk-deactivate.jq"
