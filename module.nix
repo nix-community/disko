@@ -5,7 +5,8 @@ let
 in {
   options.disko = {
     devices = lib.mkOption {
-      type = types.devices;
+      type = lib.types.nullOr types.devices;
+      default = null;
     };
     enableConfig = lib.mkOption {
       description = ''
@@ -17,7 +18,7 @@ in {
       default = true;
     };
   };
-  config = {
+  config = lib.mkIf (cfg.devices != null) {
     system.build.formatScript = pkgs.writers.writeDash "disko-create" ''
       export PATH=${lib.makeBinPath (types.diskoLib.packages cfg.devices pkgs)}:$PATH
       ${types.diskoLib.create cfg.devices}
