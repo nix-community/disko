@@ -19,7 +19,7 @@ makeDiskoTest {
   enableOCR = true;
   bootCommands = ''
     machine.wait_for_text("Passphrase for")
-    machine.send_chars("secret\n")
+    machine.send_chars("secretsecret\n")
   '';
   extraConfig = {
     boot.kernelModules = [ "dm-raid" "dm-mirror" ];

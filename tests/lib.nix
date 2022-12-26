@@ -123,7 +123,7 @@
             return machine
 
         machine.start()
-        machine.succeed("echo -n 'secret' > /tmp/secret.key")
+        machine.succeed("echo -n 'secretsecret' > /tmp/secret.key")
         ${lib.optionalString (testMode == "direct") ''
           machine.succeed("${tsp-create}")
           machine.succeed("${tsp-mount}")
