@@ -12,6 +12,7 @@
     , grub-devices ? [ "nodev" ]
     , efi ? true
     , enableOCR ? false
+    , postDisko ? ""
     , testMode ? "direct" # can be one of direct module cli
     , testBoot ? true # if we actually want to test booting or just create/mount
     }:
@@ -147,6 +148,8 @@
           machine.succeed("${tsp-mount}") # verify that the command is idempotent
           machine.succeed("${tsp-disko}") # verify that we can destroy and recreate
         ''}
+
+        ${postDisko}
 
         ${lib.optionalString testBoot ''
           # mount nix-store in /mnt

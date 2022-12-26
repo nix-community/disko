@@ -88,6 +88,21 @@
             mountpoint = "/ext4onzfs";
           };
         };
+        encrypted = {
+          zfs_type = "filesystem";
+          size = "20M";
+          options = {
+            mountpoint = "none";
+            encryption = "aes-256-gcm";
+            keyformat = "passphrase";
+            keylocation = "file:///tmp/secret.key";
+          };
+        };
+        "encrypted/test" = {
+          zfs_type = "filesystem";
+          size = "2M";
+          mountpoint = "/zfs_crypted";
+        };
       };
     };
   };
