@@ -5,7 +5,16 @@ makeDiskoTest {
   disko-config = ../example/zfs.nix;
   extraConfig = {
     fileSystems."/zfs_legacy_fs".options = [ "nofail" ]; # TODO find out why we need this!
+    boot.zfs.requestEncryptionCredentials = true;
   };
+  postDisko = ''
+    machine.succeed("zfs set keylocation=prompt zroot/encrypted")
+  '';
+  enableOCR = true;
+  bootCommands = ''
+    machine.wait_for_text("passphrase for")
+    machine.send_chars("secretsecret\n")
+  '';
   extraTestScript = ''
     machine.succeed("test -b /dev/zvol/zroot/zfs_testvolume");
 
@@ -25,5 +34,8 @@ makeDiskoTest {
     machine.succeed("mountpoint /zfs_fs");
     machine.succeed("mountpoint /zfs_legacy_fs");
     machine.succeed("mountpoint /ext4onzfs");
+    machine.succeed("mountpoint /zfs_crypted");
+    machine.succeed("zfs get keystatus zroot/encrypted");
+    machine.succeed("zfs get keystatus zroot/encrypted/test");
   '';
 }
