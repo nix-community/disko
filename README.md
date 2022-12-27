@@ -140,7 +140,7 @@ $ nix-channel --update
 
 ```nix
 {
-  # checkout the example folder for how to configure different diska layouts
+  # checkout the example folder for how to configure different disko layouts
   disko.devices = {
     disk.sda = {
       device = "/dev/sda";
