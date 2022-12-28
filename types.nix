@@ -1118,6 +1118,10 @@ rec {
         default = {};
         description = "Options for the ZFS pool";
       };
+      optionsAfterCreate = mkOption {
+        type = types.attrsOf types.str;
+        default = {};
+      };
       rootFsOptions = mkOption {
         type = types.attrsOf types.str;
         default = {};
@@ -1155,6 +1159,7 @@ rec {
             ${concatStringsSep " " (mapAttrsToList (n: v: "-o ${n}=${v}") config.options)} \
             ${concatStringsSep " " (mapAttrsToList (n: v: "-O ${n}=${v}") config.rootFsOptions)} \
             ''${ZFSDEVICES_${config.name}}
+          zfs set ${concatStringsSep " " (mapAttrsToList (n: v: "${n}=${v}") config.optionsAfterCreate)} ${config.name}
           ${concatMapStrings (dataset: dataset._create config.name) (attrValues config.datasets)}
         '';
         description = "Creation script";
