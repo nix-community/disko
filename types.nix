@@ -514,8 +514,9 @@ rec {
           fs.${config.mountpoint} = ''
             if ! findmnt ${dev} "/mnt${config.mountpoint}" > /dev/null 2>&1; then
               mount ${dev} "/mnt${config.mountpoint}" \
-              ${concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
-              -o X-mount.mkdir
+                -t "${config.format}" \
+                ${concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
+                -o X-mount.mkdir
             fi
           '';
         };
