@@ -545,6 +545,7 @@ rec {
             else if (config.format == "ext2") then [ pkgs.e2fsprogs ]
             else if (config.format == "ext3") then [ pkgs.e2fsprogs ]
             else if (config.format == "ext4") then [ pkgs.e2fsprogs ]
+            else if (config.format == "bcachefs") then [ pkgs.bcachefs-tools ]
             else []
           );
       };
