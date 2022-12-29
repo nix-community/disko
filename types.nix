@@ -165,11 +165,21 @@ rec {
       echo 'mounting partitions...'
       ${diskoLib.mount devices}
     '';
+
+    /* Checks if one of the config modules includes boot.loader.grub.devices for MBR booting,
+       and otherwise sets it to "nodev".
+    */
+    checkBootDevices = modules:
+      if any (module: (attrByPath ["boot" "loader" "grub" "devices"] null module) != null) modules
+      then modules
+      else modules ++ [{ boot.loader.grub.devices = ["nodev"]; }];
+
     /* Takes a disko device specification and returns a nixos configuration
 
        config :: types.devices -> nixosConfig
     */
-    config = devices: flatten (map (dev: dev._config) (flatten (map attrValues (attrValues devices))));
+    config = devices:
+      diskoLib.checkBootDevices (flatten (map (dev: dev._config) (flatten (map attrValues (attrValues devices)))));
     /* Takes a disko device specification and returns a function to get the needed packages to format/mount the disks
 
        packages :: types.devices -> pkgs -> [ derivation ]
