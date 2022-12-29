@@ -598,7 +598,8 @@ rec {
         internal = true;
         readOnly = true;
         default = dev:
-          map (partition: partition._config dev) config.partitions;
+          (flatten (map (partition: optional (builtins.elem "bios_grub" partition.flags) { boot.loader.grub.devices = [dev]; }) config.partitions))
+          ++ map (partition: partition._config dev) config.partitions;
       };
       _pkgs = mkOption {
         internal = true;
