@@ -7,5 +7,4 @@ makeDiskoTest {
     machine.succeed("mountpoint /");
   '';
   efi = false;
-  grub-devices = [ "/dev/vdb" ];
 }

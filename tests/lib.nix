@@ -9,7 +9,6 @@
     , extraTestScript ? ""
     , bootCommands ? ""
     , extraConfig ? { }
-    , grub-devices ? [ "nodev" ]
     , efi ? true
     , enableOCR ? false
     , postDisko ? ""
@@ -58,7 +57,6 @@
 
         boot.consoleLogLevel = lib.mkForce 100;
         boot.loader.grub = {
-          devices = grub-devices;
           efiSupport = efi;
           efiInstallAsRemovable = efi;
         };
