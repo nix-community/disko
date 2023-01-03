@@ -20,12 +20,14 @@ rec {
     partitionType = mkOption {
       type = types.nullOr (diskoLib.subType { inherit btrfs filesystem zfs mdraid luks lvm_pv swap; });
       default = null;
+      description = "The type of partition";
     };
 
     # option for valid contents of devices
     deviceType = mkOption {
       type = types.nullOr (diskoLib.subType { inherit table btrfs filesystem zfs mdraid luks lvm_pv swap; });
       default = null;
+      description = "The type of device";
     };
 
     /* deepMergeMap takes a function and a list of attrsets and deep merges them
@@ -183,6 +185,7 @@ rec {
       name = "POSIX portable filename";
       check = x: isString x && builtins.match "[0-9A-Za-z._][0-9A-Za-z._-]*" x != null;
       merge = mergeOneOption;
+      description = "A filename";
     };
 
     # POSIX.1‐2017, 3.2 Absolute Pathname
@@ -190,6 +193,7 @@ rec {
       name = "POSIX absolute pathname";
       check = x: isString x && substring 0 1 x == "/" && pathname.check x;
       merge = mergeOneOption;
+      description = "An absolute path";
     };
 
     # POSIX.1-2017, 3.271 Pathname
@@ -214,22 +218,27 @@ rec {
       disk = mkOption {
         type = types.attrsOf disk;
         default = {};
+        description = "Block device";
       };
       mdadm = mkOption {
         type = types.attrsOf mdadm;
         default = {};
+        description = "mdadm device";
       };
       zpool = mkOption {
         type = types.attrsOf zpool;
         default = {};
+        description = "ZFS pool device";
       };
       lvm_vg = mkOption {
         type = types.attrsOf lvm_vg;
         default = {};
+        description = "LVM VG device";
       };
       nodev = mkOption {
         type = types.attrsOf nodev;
         default = {};
+        description = "A non-block device";
       };
     };
   };
@@ -240,21 +249,26 @@ rec {
         type = types.enum [ "nodev" ];
         default = "nodev";
         internal = true;
+        description = "Device type";
       };
       fsType = mkOption {
         type = types.str;
+        description = "File system type";
       };
       device = mkOption {
         type = types.str;
         default = "none";
+        description = "Device to use";
       };
       mountpoint = mkOption {
         type = optionTypes.absolute-pathname;
         default = config._module.args.name;
+        description = "Location to mount the file system at";
       };
       mountOptions = mkOption {
         type = types.listOf types.str;
         default = [ "defaults" ];
+        description = "Options to pass to mount";
       };
       _meta = mkOption {
         internal = true;
@@ -262,12 +276,14 @@ rec {
         type = diskoLib.jsonType;
         default = {
         };
+        description = "Metadata";
       };
       _create = mkOption {
         internal = true;
         readOnly = true;
         type = types.str;
         default = "";
+        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -282,6 +298,7 @@ rec {
             fi
           '';
         };
+        description = "Mount script";
       };
       _config = mkOption {
         internal = true;
@@ -293,12 +310,14 @@ rec {
             options = config.mountOptions;
           };
         }];
+        description = "NixOS configuration";
       };
       _pkgs = mkOption {
         internal = true;
         readOnly = true;
         type = types.functionTo (types.listOf types.package);
         default = pkgs: [];
+        description = "Packages";
       };
     };
   });
@@ -308,22 +327,27 @@ rec {
       type = mkOption {
         type = types.enum [ "btrfs" ];
         internal = true;
+        description = "Type";
       };
       extraArgs = mkOption {
         type = types.str;
         default = "";
+        description = "Arguments to pass to BTRFS";
       };
       mountOptions = mkOption {
         type = types.listOf types.str;
         default = [ "defaults" ];
+        description = "A list of options to pass to mount.";
       };
       subvolumes = mkOption {
         type = types.attrsOf btrfs_subvol;
         default = {};
+        description = "Subvolumes to define for BTRFS.";
       };
       mountpoint = mkOption {
         type = types.nullOr optionTypes.absolute-pathname;
         default = null;
+        description = "A path to mount the BTRFS filesystem to.";
       };
       _meta = mkOption {
         internal = true;
@@ -331,6 +355,7 @@ rec {
         type = types.functionTo diskoLib.jsonType;
         default = dev:
           diskoLib.deepMergeMap (subvol: subvol._meta dev) (attrValues config.subvolumes);
+        description = "Metadata";
       };
       _create = mkOption {
         internal = true;
@@ -340,6 +365,7 @@ rec {
           mkfs.btrfs ${dev} ${config.extraArgs}
           ${concatMapStrings (subvol: subvol._create dev) (attrValues config.subvolumes)}
         '';
+        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -359,6 +385,7 @@ rec {
               '';
             };
           };
+        description = "Mount script";
       };
       _config = mkOption {
         internal = true;
@@ -373,6 +400,7 @@ rec {
             };
           })
         ];
+        description = "NixOS configuration";
       };
       _pkgs = mkOption {
         internal = true;
@@ -380,6 +408,7 @@ rec {
         type = types.functionTo (types.listOf types.package);
         default = pkgs:
           [ pkgs.btrfs-progs ] ++ flatten (map (subvolume: subvolume._pkgs pkgs) (attrValues config.subvolumes));
+        description = "Packages";
       };
     };
   });
@@ -389,23 +418,28 @@ rec {
       name = mkOption {
         type = types.str;
         default = config._module.args.name;
+        description = "Name of the BTRFS subvolume.";
       };
       type = mkOption {
         type = types.enum [ "btrfs_subvol" ];
         default = "btrfs_subvol";
         internal = true;
+        description = "Type";
       };
       extraArgs = mkOption {
         type = types.str;
         default = "";
+        description = "Extra arguments to pass";
       };
       mountOptions = mkOption {
         type = types.listOf types.str;
         default = [ "defaults" ];
+        description = "Options to pass to mount";
       };
       mountpoint = mkOption {
         type = types.nullOr optionTypes.absolute-pathname;
         default = null;
+        description = "Location to mount the subvolume to.";
       };
       _meta = mkOption {
         internal = true;
@@ -413,6 +447,7 @@ rec {
         type = types.functionTo diskoLib.jsonType;
         default = dev: {
         };
+        description = "Metadata";
       };
       _create = mkOption {
         internal = true;
@@ -426,6 +461,7 @@ rec {
             btrfs subvolume create "$MNTPOINT"/${config.name} ${config.extraArgs}
           )
         '';
+        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -444,6 +480,7 @@ rec {
             fi
           '';
         };
+        description = "Mount script";
       };
       _config = mkOption {
         internal = true;
@@ -459,12 +496,14 @@ rec {
             options = config.mountOptions ++ [ "subvol=${config.name}" ];
           };
         };
+        description = "NixOS configuration";
       };
       _pkgs = mkOption {
         internal = true;
         readOnly = true;
         type = types.functionTo (types.listOf types.package);
         default = pkgs: [ pkgs.coreutils ];
+        description = "Packages";
       };
     };
   });
@@ -474,20 +513,25 @@ rec {
       type = mkOption {
         type = types.enum [ "filesystem" ];
         internal = true;
+        description = "Type";
       };
       extraArgs = mkOption {
         type = types.str;
         default = "";
+        description = "Arguments to pass";
       };
       mountOptions = mkOption {
         type = types.listOf types.str;
         default = [ "defaults" ];
+        description = "Options to pass to mount";
       };
       mountpoint = mkOption {
         type = optionTypes.absolute-pathname;
+        description = "Path to mount the filesystem to";
       };
       format = mkOption {
         type = types.str;
+        description = "Format of the filesystem";
       };
       _meta = mkOption {
         internal = true;
@@ -495,6 +539,7 @@ rec {
         type = types.functionTo diskoLib.jsonType;
         default = dev: {
         };
+        description = "Metadata";
       };
       _create = mkOption {
         internal = true;
@@ -505,6 +550,7 @@ rec {
             ${config.extraArgs} \
             ${dev}
         '';
+        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -519,6 +565,7 @@ rec {
             fi
           '';
         };
+        description = "Mount script";
       };
       _config = mkOption {
         internal = true;
@@ -530,6 +577,7 @@ rec {
             options = config.mountOptions;
           };
         }];
+        description = "NixOS configuration";
       };
       _pkgs = mkOption {
         internal = true;
@@ -546,6 +594,7 @@ rec {
             else if (config.format == "ext4") then [ pkgs.e2fsprogs ]
             else []
           );
+        description = "Packages";
       };
     };
   });
@@ -555,14 +604,17 @@ rec {
       type = mkOption {
         type = types.enum [ "table" ];
         internal = true;
+        description = "Partition table";
       };
       format = mkOption {
         type = types.enum [ "gpt" "msdos" ];
         default = "gpt";
+        description = "The kind of partition table";
       };
       partitions = mkOption {
         type = types.listOf partition;
         default = [];
+        description = "List of partitions to add to the partition table";
       };
       _meta = mkOption {
         internal = true;
@@ -570,6 +622,7 @@ rec {
         type = types.functionTo diskoLib.jsonType;
         default = dev:
           diskoLib.deepMergeMap (partition: partition._meta dev) config.partitions;
+        description = "Metadata";
       };
       _create = mkOption {
         internal = true;
@@ -579,6 +632,7 @@ rec {
           parted -s ${dev} -- mklabel ${config.format}
           ${concatMapStrings (partition: partition._create dev config.format) config.partitions}
         '';
+        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -593,12 +647,14 @@ rec {
             '';
             fs = partMounts.fs or {};
         };
+        description = "Mount script";
       };
       _config = mkOption {
         internal = true;
         readOnly = true;
         default = dev:
           map (partition: partition._config dev) config.partitions;
+        description = "NixOS configuration";
       };
       _pkgs = mkOption {
         internal = true;
@@ -606,6 +662,7 @@ rec {
         type = types.functionTo (types.listOf types.package);
         default = pkgs:
           [ pkgs.parted pkgs.systemdMinimal ] ++ flatten (map (partition: partition._pkgs pkgs) config.partitions);
+        description = "Packages";
       };
     };
   });
@@ -615,38 +672,47 @@ rec {
       type = mkOption {
         type = types.enum [ "partition" ];
         internal = true;
+        description = "Type";
       };
       part-type = mkOption {
         type = types.enum [ "primary" "logical" "extended" ];
         default = "primary";
+        description = "Partition type";
       };
       fs-type = mkOption {
         type = types.nullOr (types.enum [ "btrfs" "ext2" "ext3" "ext4" "fat16" "fat32" "hfs" "hfs+" "linux-swap" "ntfs" "reiserfs" "udf" "xfs" ]);
         default = null;
+        description = "Filesystem type to use";
       };
       name = mkOption {
         type = types.nullOr types.str;
+        description = "Name of the partition";
       };
       start = mkOption {
         type = types.str;
         default = "0%";
+        description = "Start of the partition";
       };
       end = mkOption {
         type = types.str;
         default = "100%";
+        description = "End of the partition";
       };
       index = mkOption {
         type = types.int;
         # TODO find a better way to get the index
         default = toInt (head (match ".*entry ([[:digit:]]+)]" config._module.args.name));
+        description = "Index of the partition";
       };
       flags = mkOption {
         type = types.listOf types.str;
         default = [];
+        description = "Partition flags";
       };
       bootable = mkOption {
         type = types.bool;
         default = false;
+        description = "Whether to make the partition bootable";
       };
       content = diskoLib.partitionType;
       _meta = mkOption {
@@ -655,6 +721,7 @@ rec {
         type = types.functionTo diskoLib.jsonType;
         default = dev:
           optionalAttrs (!isNull config.content) (config.content._meta dev);
+        description = "Metadata";
       };
       _create = mkOption {
         internal = true;
@@ -679,6 +746,7 @@ rec {
           udevadm trigger --subsystem-match=block; udevadm settle
           ${optionalString (!isNull config.content) (config.content._create (diskoLib.deviceNumbering dev config.index))}
         '';
+        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -686,18 +754,21 @@ rec {
         type = types.functionTo diskoLib.jsonType;
         default = dev:
           optionalAttrs (!isNull config.content) (config.content._mount (diskoLib.deviceNumbering dev config.index));
+        description = "Mount script";
       };
       _config = mkOption {
         internal = true;
         readOnly = true;
         default = dev:
           optional (!isNull config.content) (config.content._config (diskoLib.deviceNumbering dev config.index));
+        description = "NixOS configuration";
       };
       _pkgs = mkOption {
         internal = true;
         readOnly = true;
         type = types.functionTo (types.listOf types.package);
         default = pkgs: optionals (!isNull config.content) (config.content._pkgs pkgs);
+        description = "Packages";
       };
     };
   });
@@ -707,10 +778,12 @@ rec {
       type = mkOption {
         type = types.enum [ "swap" ];
         internal = true;
+        description = "Type";
       };
       randomEncryption = mkOption {
         type = types.bool;
         default = false;
+        description = "Whether to randomly encrypt the swap";
       };
       _meta = mkOption {
         internal = true;
@@ -718,6 +791,7 @@ rec {
         type = types.functionTo diskoLib.jsonType;
         default = dev: {
         };
+        description = "Metadata";
       };
       _create = mkOption {
         internal = true;
@@ -726,6 +800,7 @@ rec {
         default = dev: ''
           mkswap ${dev}
         '';
+        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -738,6 +813,7 @@ rec {
             fi
           '';
         };
+        description = "Mount script";
       };
       _config = mkOption {
         internal = true;
@@ -748,12 +824,14 @@ rec {
             randomEncryption = config.randomEncryption;
           }];
         }];
+        description = "NixOS configuration";
       };
       _pkgs = mkOption {
         internal = true;
         readOnly = true;
         type = types.functionTo (types.listOf types.package);
         default = pkgs: [ pkgs.gnugrep pkgs.util-linux ];
+        description = "Packages";
       };
     };
   });
@@ -763,9 +841,11 @@ rec {
       type = mkOption {
         type = types.enum [ "lvm_pv" ];
         internal = true;
+        description = "Type";
       };
       vg = mkOption {
         type = types.str;
+        description = "Volume group";
       };
       _meta = mkOption {
         internal = true;
@@ -774,6 +854,7 @@ rec {
         default = dev: {
           deviceDependencies.lvm_vg.${config.vg} = [ dev ];
         };
+        description = "Metadata";
       };
       _create = mkOption {
         internal = true;
@@ -783,6 +864,7 @@ rec {
           pvcreate ${dev}
           LVMDEVICES_${config.vg}="''${LVMDEVICES_${config.vg}:-}${dev} "
         '';
+        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -790,17 +872,20 @@ rec {
         type = types.functionTo diskoLib.jsonType;
         default = dev:
           {};
+        description = "Mount script";
       };
       _config = mkOption {
         internal = true;
         readOnly = true;
         default = dev: [];
+        description = "NixOS configuration";
       };
       _pkgs = mkOption {
         internal = true;
         readOnly = true;
         type = types.functionTo (types.listOf types.package);
         default = pkgs: [ pkgs.lvm2 ];
+        description = "Packages";
       };
     };
   });
@@ -810,14 +895,17 @@ rec {
       name = mkOption {
         type = types.str;
         default = config._module.args.name;
+        description = "Name of the volume gorup";
       };
       type = mkOption {
         type = types.enum [ "lvm_vg" ];
         internal = true;
+        description = "Type";
       };
       lvs = mkOption {
         type = types.attrsOf lvm_lv;
         default = {};
+        description = "LVS for the volume group";
       };
       _meta = mkOption {
         internal = true;
@@ -825,6 +913,7 @@ rec {
         type = diskoLib.jsonType;
         default =
           diskoLib.deepMergeMap (lv: lv._meta [ "lvm_vg" config.name ]) (attrValues config.lvs);
+        description = "Metadata";
       };
       _create = mkOption {
         internal = true;
@@ -834,6 +923,7 @@ rec {
           vgcreate ${config.name} $LVMDEVICES_${config.name}
           ${concatMapStrings (lv: lv._create config.name) (attrValues config.lvs)}
         '';
+        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -848,18 +938,21 @@ rec {
           '';
           fs = lvMounts.fs;
         };
+        description = "Mount script";
       };
       _config = mkOption {
         internal = true;
         readOnly = true;
         default =
           map (lv: lv._config config.name) (attrValues config.lvs);
+        description = "NixOS configuration";
       };
       _pkgs = mkOption {
         internal = true;
         readOnly = true;
         type = types.functionTo (types.listOf types.package);
         default = pkgs: flatten (map (lv: lv._pkgs pkgs) (attrValues config.lvs));
+        description = "Packages";
       };
     };
   });
@@ -869,22 +962,27 @@ rec {
       name = mkOption {
         type = types.str;
         default = config._module.args.name;
+        description = "Name of the logical volume";
       };
       type = mkOption {
         type = types.enum [ "lvm_lv" ];
         default = "lvm_lv";
         internal = true;
+        description = "Type";
       };
       size = mkOption {
         type = types.str; # TODO lvm size type
+        description = "Size of the logical volume";
       };
       lvm_type = mkOption {
         type = types.nullOr (types.enum [ "mirror" "raid0" "raid1" ]); # TODO add all types
         default = null; # maybe there is always a default type?
+        description = "LVM type";
       };
       extraArgs = mkOption {
         type = types.str;
         default = "";
+        description = "Extra arguments";
       };
       content = diskoLib.partitionType;
       _meta = mkOption {
@@ -893,6 +991,7 @@ rec {
         type = types.functionTo diskoLib.jsonType;
         default = dev:
           optionalAttrs (!isNull config.content) (config.content._meta dev);
+        description = "Metadata";
       };
       _create = mkOption {
         internal = true;
@@ -908,6 +1007,7 @@ rec {
             ${vg}
           ${optionalString (!isNull config.content) (config.content._create "/dev/${vg}/${config.name}")}
         '';
+        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -915,6 +1015,7 @@ rec {
         type = types.functionTo diskoLib.jsonType;
         default = vg:
           optionalAttrs (!isNull config.content) (config.content._mount "/dev/${vg}/${config.name}");
+        description = "Mount script";
       };
       _config = mkOption {
         internal = true;
@@ -926,12 +1027,14 @@ rec {
               boot.initrd.kernelModules = [ "dm-${config.lvm_type}" ];
             })
           ];
+        description = "NixOS configuration";
       };
       _pkgs = mkOption {
         internal = true;
         readOnly = true;
         type = types.functionTo (types.listOf types.package);
         default = pkgs: lib.optionals (!isNull config.content) (config.content._pkgs pkgs);
+        description = "Packages";
       };
     };
   });
@@ -941,9 +1044,11 @@ rec {
       type = mkOption {
         type = types.enum [ "zfs" ];
         internal = true;
+        description = "Type";
       };
       pool = mkOption {
         type = types.str;
+        description = "Name of the ZFS pool";
       };
       _meta = mkOption {
         internal = true;
@@ -952,6 +1057,7 @@ rec {
         default = dev: {
           deviceDependencies.zpool.${config.pool} = [ dev ];
         };
+        description = "Metadata";
       };
       _create = mkOption {
         internal = true;
@@ -960,6 +1066,7 @@ rec {
         default = dev: ''
           ZFSDEVICES_${config.pool}="''${ZFSDEVICES_${config.pool}:-}${dev} "
         '';
+        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -967,17 +1074,20 @@ rec {
         type = types.functionTo diskoLib.jsonType;
         default = dev:
           {};
+        description = "Mount script";
       };
       _config = mkOption {
         internal = true;
         readOnly = true;
         default = dev: [];
+        description = "NixOS configuration";
       };
       _pkgs = mkOption {
         internal = true;
         readOnly = true;
         type = types.functionTo (types.listOf types.package);
         default = pkgs: [ pkgs.zfs ];
+        description = "Packages";
       };
     };
   });
@@ -987,34 +1097,42 @@ rec {
       name = mkOption {
         type = types.str;
         default = config._module.args.name;
+        description = "Name of the ZFS pool";
       };
       type = mkOption {
         type = types.enum [ "zpool" ];
         default = "zpool";
         internal = true;
+        description = "Type";
       };
       mode = mkOption {
         type = types.str; # TODO zfs modes
         default = "";
+        description = "Mode of the ZFS pool";
       };
       options = mkOption {
         type = types.attrsOf types.str;
         default = {};
+        description = "Options for the ZFS pool";
       };
       rootFsOptions = mkOption {
         type = types.attrsOf types.str;
         default = {};
+        description = "Options for the root filesystem";
       };
       mountpoint = mkOption {
         type = types.nullOr optionTypes.absolute-pathname;
         default = null;
+        description = "The mountpoint of the pool";
       };
       mountOptions = mkOption {
         type = types.listOf types.str;
         default = [ "defaults" ];
+        description = "Options to pass to mount";
       };
       datasets = mkOption {
         type = types.attrsOf zfs_dataset;
+        description = "List of datasets to define";
       };
       _meta = mkOption {
         internal = true;
@@ -1022,6 +1140,7 @@ rec {
         type = diskoLib.jsonType;
         default =
           diskoLib.deepMergeMap (dataset: dataset._meta [ "zpool" config.name ]) (attrValues config.datasets);
+        description = "Metadata";
       };
       _create = mkOption {
         internal = true;
@@ -1035,6 +1154,7 @@ rec {
             ''${ZFSDEVICES_${config.name}}
           ${concatMapStrings (dataset: dataset._create config.name) (attrValues config.datasets)}
         '';
+        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -1059,6 +1179,7 @@ rec {
             '';
           };
         };
+        description = "Mount script";
       };
       _config = mkOption {
         internal = true;
@@ -1073,12 +1194,14 @@ rec {
             };
           })
         ];
+        description = "NixOS configuration";
       };
       _pkgs = mkOption {
         internal = true;
         readOnly = true;
         type = types.functionTo (types.listOf types.package);
         default = pkgs: [ pkgs.util-linux ] ++ flatten (map (dataset: dataset._pkgs pkgs) (attrValues config.datasets));
+        description = "Packages";
       };
     };
   });
@@ -1088,34 +1211,41 @@ rec {
       name = mkOption {
         type = types.str;
         default = config._module.args.name;
+        description = "Name of the dataset";
       };
       type = mkOption {
         type = types.enum [ "zfs_dataset" ];
         default = "zfs_dataset";
         internal = true;
+        description = "Type";
       };
       zfs_type = mkOption {
         type = types.enum [ "filesystem" "volume" ];
+        description = "The type of the dataset";
       };
       options = mkOption {
         type = types.attrsOf types.str;
         default = {};
+        description = "Options to set for the dataset";
       };
       mountOptions = mkOption {
         type = types.listOf types.str;
         default = [ "defaults" ];
+        description = "Mount options";
       };
 
       # filesystem options
       mountpoint = mkOption {
         type = types.nullOr optionTypes.absolute-pathname;
         default = null;
+        description = "Path to mount the dataset to";
       };
 
       # volume options
       size = mkOption {
         type = types.nullOr types.str; # TODO size
         default = null;
+        description = "Size of the dataset";
       };
 
       content = diskoLib.partitionType;
@@ -1125,6 +1255,7 @@ rec {
         type = types.functionTo diskoLib.jsonType;
         default = dev:
           optionalAttrs (!isNull config.content) (config.content._meta dev);
+        description = "Metadata";
       };
       _create = mkOption {
         internal = true;
@@ -1139,6 +1270,7 @@ rec {
             ${optionalString (!isNull config.content) (config.content._create "/dev/zvol/${zpool}/${config.name}")}
           ''}
         '';
+        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -1155,6 +1287,7 @@ rec {
                 -t zfs
               fi
             ''; };
+        description = "Mount script";
       };
       _config = mkOption {
         internal = true;
@@ -1168,12 +1301,14 @@ rec {
               options = config.mountOptions ++ lib.optional ((config.options.mountpoint or "") != "legacy") "zfsutil";
             };
           });
+        description = "NixOS configuration";
       };
       _pkgs = mkOption {
         internal = true;
         readOnly = true;
         type = types.functionTo (types.listOf types.package);
         default = pkgs: [ pkgs.util-linux ] ++ lib.optionals (!isNull config.content) (config.content._pkgs pkgs);
+        description = "Packages";
       };
     };
   });
@@ -1183,19 +1318,23 @@ rec {
       name = mkOption {
         type = types.str;
         default = config._module.args.name;
+        description = "Name";
       };
       type = mkOption {
         type = types.enum [ "mdadm" ];
         default = "mdadm";
         internal = true;
+        description = "Type";
       };
       level = mkOption {
         type = types.int;
         default = 1;
+        description = "mdadm level";
       };
       metadata = mkOption {
         type = types.enum [ "1" "1.0" "1.1" "1.2" "default" "ddf" "imsm" ];
         default = "default";
+        description = "Metadata";
       };
       content = diskoLib.deviceType;
       _meta = mkOption {
@@ -1204,6 +1343,7 @@ rec {
         type = diskoLib.jsonType;
         default =
           optionalAttrs (!isNull config.content) (config.content._meta [ "mdadm" config.name ]);
+        description = "Metadata";
       };
       _create = mkOption {
         internal = true;
@@ -1220,6 +1360,7 @@ rec {
           udevadm trigger --subsystem-match=block; udevadm settle
           ${optionalString (!isNull config.content) (config.content._create "/dev/md/${config.name}")}
         '';
+        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -1228,18 +1369,21 @@ rec {
         default =
           optionalAttrs (!isNull config.content) (config.content._mount "/dev/md/${config.name}");
         # TODO we probably need to assemble the mdadm somehow
+        description = "Mount script";
       };
       _config = mkOption {
         internal = true;
         readOnly = true;
         default =
           optional (!isNull config.content) (config.content._config "/dev/md/${config.name}");
+        description = "NixOS configuration";
       };
       _pkgs = mkOption {
         internal = true;
         readOnly = true;
         type = types.functionTo (types.listOf types.package);
         default = pkgs: (lib.optionals (!isNull config.content) (config.content._pkgs pkgs));
+        description = "Packages";
       };
     };
   });
@@ -1249,10 +1393,12 @@ rec {
       type = mkOption {
         type = types.enum [ "mdraid" ];
         internal = true;
+        description = "Type";
       };
 
       name = mkOption {
         type = types.str;
+        description = "Name";
       };
       _meta = mkOption {
         internal = true;
@@ -1261,6 +1407,7 @@ rec {
         default = dev: {
           deviceDependencies.mdadm.${config.name} = [ dev ];
         };
+        description = "Metadata";
       };
       _create = mkOption {
         internal = true;
@@ -1270,6 +1417,7 @@ rec {
           RAIDDEVICES_N_${config.name}=$((''${RAIDDEVICES_N_${config.name}:-0}+1))
           RAIDDEVICES_${config.name}="''${RAIDDEVICES_${config.name}:-}${dev} "
         '';
+        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -1277,17 +1425,20 @@ rec {
         type = types.functionTo diskoLib.jsonType;
         default = dev:
           {};
+        description = "Mount script";
       };
       _config = mkOption {
         internal = true;
         readOnly = true;
         default = dev: [];
+        description = "NixOS configuration";
       };
       _pkgs = mkOption {
         internal = true;
         readOnly = true;
         type = types.functionTo (types.listOf types.package);
         default = pkgs: [ pkgs.mdadm ];
+        description = "Packages";
       };
     };
   });
@@ -1297,17 +1448,21 @@ rec {
       type = mkOption {
         type = types.enum [ "luks" ];
         internal = true;
+        description = "Type";
       };
       name = mkOption {
         type = types.str;
+        description = "Name of the LUKS";
       };
       keyFile = mkOption {
         type = types.nullOr optionTypes.absolute-pathname;
         default = null;
+        description = "Path to the key for encryption";
       };
       extraArgs = mkOption {
         type = types.listOf types.str;
         default = [];
+        description = "Extra arguments";
       };
       content = diskoLib.deviceType;
       _meta = mkOption {
@@ -1316,6 +1471,7 @@ rec {
         type = types.functionTo diskoLib.jsonType;
         default = dev:
           optionalAttrs (!isNull config.content) (config.content._meta dev);
+        description = "Metadata";
       };
       _create = mkOption {
         internal = true;
@@ -1326,6 +1482,7 @@ rec {
           cryptsetup luksOpen ${dev} ${config.name} ${optionalString (!isNull config.keyFile) "--key-file ${config.keyFile}"}
           ${optionalString (!isNull config.content) (config.content._create "/dev/mapper/${config.name}")}
         '';
+        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -1343,6 +1500,7 @@ rec {
               '';
               fs = optionalAttrs (!isNull config.content) contentMount.fs or {};
             };
+        description = "Mount script";
       };
       _config = mkOption {
         internal = true;
@@ -1352,12 +1510,14 @@ rec {
             # TODO do we need this always in initrd and only there?
             { boot.initrd.luks.devices.${config.name}.device = dev; }
           ] ++ (optional (!isNull config.content) (config.content._config "/dev/mapper/${config.name}"));
+        description = "NixOS configuration";
       };
       _pkgs = mkOption {
         internal = true;
         readOnly = true;
         type = types.functionTo (types.listOf types.package);
         default = pkgs: [ pkgs.cryptsetup ] ++ (lib.optionals (!isNull config.content) (config.content._pkgs pkgs));
+        description = "Packages";
       };
     };
   });
@@ -1367,14 +1527,17 @@ rec {
       name = mkOption {
         type = types.str;
         default = config._module.args.name;
+        description = "Device name";
       };
       type = mkOption {
         type = types.enum [ "disk" ];
         default = "disk";
         internal = true;
+        description = "Type";
       };
       device = mkOption {
         type = optionTypes.absolute-pathname; # TODO check if subpath of /dev ? - No! eg: /.swapfile
+        description = "Device path";
       };
       content = diskoLib.deviceType;
       _meta = mkOption {
@@ -1383,12 +1546,14 @@ rec {
         type = diskoLib.jsonType;
         default =
           optionalAttrs (!isNull config.content) (config.content._meta [ "disk" config.device ]);
+        description = "Metadata";
       };
       _create = mkOption {
         internal = true;
         readOnly = true;
         type = types.str;
         default = config.content._create config.device;
+        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -1396,18 +1561,21 @@ rec {
         type = diskoLib.jsonType;
         default =
           optionalAttrs (!isNull config.content) (config.content._mount config.device);
+        description = "Mount script";
       };
       _config = mkOption {
         internal = true;
         readOnly = true;
         default =
           optional (!isNull config.content) (config.content._config config.device);
+        description = "NixOS configuration";
       };
       _pkgs = mkOption {
         internal = true;
         readOnly = true;
         type = types.functionTo (types.listOf types.package);
         default = pkgs: [ pkgs.jq ] ++ lib.optionals (!isNull config.content) (config.content._pkgs pkgs);
+        description = "Packages";
       };
     };
   });

@@ -7,6 +7,7 @@ in {
     devices = lib.mkOption {
       type = types.devices;
       default = {};
+      description = "The devices to set up";
     };
     enableConfig = lib.mkOption {
       description = ''
