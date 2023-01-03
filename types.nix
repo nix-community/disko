@@ -208,6 +208,7 @@ rec {
         in
           isString x && (x == "/" || (length xs > 0 && all filename.check xs));
       merge = mergeOneOption;
+      description = "A path name";
     };
   };
 
