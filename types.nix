@@ -9,7 +9,7 @@ rec {
     # uses the field "type" to find the correct type in the attrset
     subType = typeAttr: mkOptionType rec {
       name = "subType";
-      description = "one of ${attrNames typeAttr}";
+      description = "one of ${concatStringsSep "," (attrNames typeAttr)}";
       check = x: if x ? type then typeAttr.${x.type}.check x else throw "No type option set in:\n${generators.toPretty {} x}";
       merge = loc: defs:
         foldl' (res: def: typeAttr.${def.value.type}.merge loc [def]) {} defs;
