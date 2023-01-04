@@ -1,0 +1,32 @@
+pull_request_rules:
+  - name: automatic merge on CI success
+    conditions:
+      - check-success=Evaluate flake.nix
+      - check-success=package disko [x86_64-linux]
+      - check-success=check boot-raid1 [x86_64-linux]
+      - check-success=check bcachefs [x86_64-linux]
+      - check-success=check luks-lvm [x86_64-linux]
+      - check-success=check mdadm [x86_64-linux]
+      - check-success=check lvm-luks-example-tsp-mount [x86_64-linux]
+      - check-success=package default [x86_64-linux]
+      - check-success=check lvm-luks-example-tsp-create [x86_64-linux]
+      - check-success=check cli [x86_64-linux]
+      - check-success=check btrfs-subvolumes [x86_64-linux]
+      - check-success=check multi-device-no-deps [x86_64-linux]
+      - check-success=check negative-size [x86_64-linux]
+      - check-success=check swap [x86_64-linux]
+      - check-success=check module [x86_64-linux]
+      - check-success=check zfs [x86_64-linux]
+      - check-success=check zfs-over-legacy [x86_64-linux]
+      - check-success=check with-lib [x86_64-linux]
+      - check-success=check complex [x86_64-linux]
+      - check-success=check gpt-bios-compat [x86_64-linux]
+      - check-success=check lvm-raid [x86_64-linux]
+      - check-success=check standalone [x86_64-linux]
+      - check-success=check tmpfs [x86_64-linux]
+      - check-success=check simple-efi [x86_64-linux]
+      - author=nix-eval-jobs-bot
+    actions:
+      merge:
+        method: merge
+      delete_head_branch: {}
