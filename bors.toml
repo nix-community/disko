@@ -1,0 +1,28 @@
+cut_body_after = "" # don't include text from the PR body in the merge commit message
+status = [
+  # garnix
+  "Evaluate flake.nix",
+  "package disko [x86_64-linux]",
+  "check boot-raid1 [x86_64-linux]",
+  "check bcachefs [x86_64-linux]",
+  "check luks-lvm [x86_64-linux]",
+  "check mdadm [x86_64-linux]",
+  "check lvm-luks-example-tsp-mount [x86_64-linux]",
+  "package default [x86_64-linux]",
+  "check lvm-luks-example-tsp-create [x86_64-linux]",
+  "check cli [x86_64-linux]",
+  "check btrfs-subvolumes [x86_64-linux]",
+  "check multi-device-no-deps [x86_64-linux]",
+  "check negative-size [x86_64-linux]",
+  "check swap [x86_64-linux]",
+  "check module [x86_64-linux]",
+  "check zfs [x86_64-linux]",
+  "check zfs-over-legacy [x86_64-linux]",
+  "check with-lib [x86_64-linux]",
+  "check complex [x86_64-linux]",
+  "check gpt-bios-compat [x86_64-linux]",
+  "check lvm-raid [x86_64-linux]",
+  "check standalone [x86_64-linux]",
+  "check tmpfs [x86_64-linux]",
+  "check simple-efi [x86_64-linux]"
+]
