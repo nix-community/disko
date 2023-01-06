@@ -116,6 +116,17 @@ rec {
     */
     maybeStr = x: optionalString (!isNull x) x;
 
+    /* Takes a Submodules config and options argument and returns a serializable
+       subset of config variables as a shell script snippet.
+    */
+    defineHookVariables = {config, options}:
+      lib.toShellVars
+        (lib.mapAttrs
+          (n: o: o.value)
+          (lib.filterAttrs diskoLib.isSerializable options));
+    isSerializable = n: o: !(lib.hasPrefix "_" n || lib.hasSuffix "Hook" n || diskoLib.isAttrsOfSubmodule o);
+    isAttrsOfSubmodule = o: o.type.name == "attrsOf" && o.type.nestedTypes.elemType.name == "submodule";
+
     /* Takes a disko device specification, returns an attrset with metadata
 
        meta :: types.devices -> AttrSet
@@ -1095,7 +1106,8 @@ rec {
     };
   });
 
-  zpool = types.submodule ({ config, ... }: {
+  zpool = types.submodule ({ config, options, ... }:
+    {
     options = {
       name = mkOption {
         type = types.str;
@@ -1118,9 +1130,9 @@ rec {
         default = {};
         description = "Options for the ZFS pool";
       };
-      optionsAfterCreate = mkOption {
-        type = types.attrsOf types.str;
-        default = {};
+      postCreateHook = mkOption {
+        type = types.str;
+        default = "zfs set keylocation=prompt $name";
       };
       rootFsOptions = mkOption {
         type = types.attrsOf types.str;
@@ -1154,14 +1166,13 @@ rec {
         readOnly = true;
         type = types.str;
         default = ''
+          ${diskoLib.defineHookVariables { inherit config options; }}
           zpool create ${config.name} \
             ${config.mode} \
             ${concatStringsSep " " (mapAttrsToList (n: v: "-o ${n}=${v}") config.options)} \
             ${concatStringsSep " " (mapAttrsToList (n: v: "-O ${n}=${v}") config.rootFsOptions)} \
             ''${ZFSDEVICES_${config.name}}
-          ${lib.optionalString
-            (config.optionsAfterCreate != {})
-            "zfs set ${concatStringsSep " " (mapAttrsToList (n: v: "${n}=${v}") config.optionsAfterCreate)} ${config.name}"}
+          ${config.postCreateHook}
           ${concatMapStrings (dataset: dataset._create config.name) (attrValues config.datasets)}
         '';
         description = "Creation script";
