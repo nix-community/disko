@@ -141,24 +141,6 @@ rec {
       };
     };
 
-    mkCreateOption = { config, options, default }:
-      mkOption {
-        description = "Creation script";
-        internal = true;
-        readOnly = true;
-        type = types.str;
-        default = lib.concatStringsSep "\n" [
-          "(" #subshell for namespacing
-          (diskoLib.defineHookVariables { inherit config options; })
-          config.preCreateHook
-          default
-          config.postCreateHook
-          ")"
-        ];
-      };
-
-
-
     /* Takes a disko device specification, returns an attrset with metadata
 
        meta :: types.devices -> AttrSet
@@ -1189,8 +1171,10 @@ rec {
           diskoLib.deepMergeMap (dataset: dataset._meta [ "zpool" config.name ]) (attrValues config.datasets);
         description = "Metadata";
       };
-      _create = diskoLib.mkCreateOption {
-        inherit config options;
+      _create = mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.str;
         default = ''
           zpool create ${config.name} \
             ${config.mode} \
@@ -1199,6 +1183,7 @@ rec {
             ''${ZFSDEVICES_${config.name}}
           ${concatMapStrings (dataset: dataset._create config.name) (attrValues config.datasets)}
         '';
+        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
