@@ -127,6 +127,38 @@ rec {
     isSerializable = n: o: !(lib.hasPrefix "_" n || lib.hasSuffix "Hook" n || diskoLib.isAttrsOfSubmodule o);
     isAttrsOfSubmodule = o: o.type.name == "attrsOf" && o.type.nestedTypes.elemType.name == "submodule";
 
+    hookMixin = { config, options,... }: {
+      options = let
+        mkHook = mkOption {
+          type = types.str;
+          default = "";
+        };
+      in {
+        preCreateHook = mkHook;
+        postCreateHook = mkHook;
+        preMountHook = mkHook;
+        postMountHook = mkHook;
+      };
+    };
+
+    mkCreateOption = { config, options, default }:
+      mkOption {
+        description = "Creation script";
+        internal = true;
+        readOnly = true;
+        type = types.str;
+        default = lib.concatStringsSep "\n" [
+          "(" #subshell for namespacing
+          (diskoLib.defineHookVariables { inherit config options; })
+          config.preCreateHook
+          default
+          config.postCreateHook
+          ")"
+        ];
+      };
+
+
+
     /* Takes a disko device specification, returns an attrset with metadata
 
        meta :: types.devices -> AttrSet
@@ -255,7 +287,7 @@ rec {
     };
   };
 
-  nodev = types.submodule ({ config, ... }: {
+  nodev = types.submodule [diskoLib.hookMixin ({ config, options, ... }: {
     options = {
       type = mkOption {
         type = types.enum [ "nodev" ];
@@ -332,9 +364,9 @@ rec {
         description = "Packages";
       };
     };
-  });
+  })];
 
-  btrfs = types.submodule ({ config, ... }: {
+  btrfs = types.submodule [diskoLib.hookMixin ({ config, options, ... }: {
     options = {
       type = mkOption {
         type = types.enum [ "btrfs" ];
@@ -423,9 +455,9 @@ rec {
         description = "Packages";
       };
     };
-  });
+  })];
 
-  btrfs_subvol = types.submodule ({ config, ... }: {
+  btrfs_subvol = types.submodule [diskoLib.hookMixin ({ config, options, ... }: {
     options = {
       name = mkOption {
         type = types.str;
@@ -518,9 +550,9 @@ rec {
         description = "Packages";
       };
     };
-  });
+  })];
 
-  filesystem = types.submodule ({ config, ... }: {
+  filesystem = types.submodule [diskoLib.hookMixin ({ config, options, ... }: {
     options = {
       type = mkOption {
         type = types.enum [ "filesystem" ];
@@ -611,9 +643,9 @@ rec {
         description = "Packages";
       };
     };
-  });
+  })];
 
-  table = types.submodule ({ config, ... }: {
+  table = types.submodule [diskoLib.hookMixin ({ config, options, ... }: {
     options = {
       type = mkOption {
         type = types.enum [ "table" ];
@@ -679,9 +711,9 @@ rec {
         description = "Packages";
       };
     };
-  });
+  })];
 
-  partition = types.submodule ({ config, ... }: {
+  partition = types.submodule [diskoLib.hookMixin ({ config, options, ... }: {
     options = {
       type = mkOption {
         type = types.enum [ "partition" ];
@@ -785,9 +817,9 @@ rec {
         description = "Packages";
       };
     };
-  });
+  })];
 
-  swap = types.submodule ({ config, ... }: {
+  swap = types.submodule [diskoLib.hookMixin ({ config, options, ... }: {
     options = {
       type = mkOption {
         type = types.enum [ "swap" ];
@@ -848,9 +880,9 @@ rec {
         description = "Packages";
       };
     };
-  });
+  })];
 
-  lvm_pv = types.submodule ({ config, ... }: {
+  lvm_pv = types.submodule [diskoLib.hookMixin ({ config, options, ... }: {
     options = {
       type = mkOption {
         type = types.enum [ "lvm_pv" ];
@@ -902,9 +934,9 @@ rec {
         description = "Packages";
       };
     };
-  });
+  })];
 
-  lvm_vg = types.submodule ({ config, ... }: {
+  lvm_vg = types.submodule [diskoLib.hookMixin ({ config, options, ... }: {
     options = {
       name = mkOption {
         type = types.str;
@@ -969,9 +1001,9 @@ rec {
         description = "Packages";
       };
     };
-  });
+  })];
 
-  lvm_lv = types.submodule ({ config, ... }: {
+  lvm_lv = types.submodule [diskoLib.hookMixin ({ config, options, ... }: {
     options = {
       name = mkOption {
         type = types.str;
@@ -1051,9 +1083,9 @@ rec {
         description = "Packages";
       };
     };
-  });
+  })];
 
-  zfs = types.submodule ({ config, ... }: {
+  zfs = types.submodule [diskoLib.hookMixin ({ config, options, ... }: {
     options = {
       type = mkOption {
         type = types.enum [ "zfs" ];
@@ -1104,9 +1136,9 @@ rec {
         description = "Packages";
       };
     };
-  });
+  })];
 
-  zpool = types.submodule ({ config, options, ... }:
+  zpool = types.submodule [diskoLib.hookMixin ({ config, options, ... }:
     {
     options = {
       name = mkOption {
@@ -1129,10 +1161,6 @@ rec {
         type = types.attrsOf types.str;
         default = {};
         description = "Options for the ZFS pool";
-      };
-      postCreateHook = mkOption {
-        type = types.str;
-        default = "zfs set keylocation=prompt $name";
       };
       rootFsOptions = mkOption {
         type = types.attrsOf types.str;
@@ -1161,21 +1189,16 @@ rec {
           diskoLib.deepMergeMap (dataset: dataset._meta [ "zpool" config.name ]) (attrValues config.datasets);
         description = "Metadata";
       };
-      _create = mkOption {
-        internal = true;
-        readOnly = true;
-        type = types.str;
+      _create = diskoLib.mkCreateOption {
+        inherit config options;
         default = ''
-          ${diskoLib.defineHookVariables { inherit config options; }}
           zpool create ${config.name} \
             ${config.mode} \
             ${concatStringsSep " " (mapAttrsToList (n: v: "-o ${n}=${v}") config.options)} \
             ${concatStringsSep " " (mapAttrsToList (n: v: "-O ${n}=${v}") config.rootFsOptions)} \
             ''${ZFSDEVICES_${config.name}}
-          ${config.postCreateHook}
           ${concatMapStrings (dataset: dataset._create config.name) (attrValues config.datasets)}
         '';
-        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -1225,9 +1248,9 @@ rec {
         description = "Packages";
       };
     };
-  });
+  })];
 
-  zfs_dataset = types.submodule ({ config, ... }: {
+  zfs_dataset = types.submodule [diskoLib.hookMixin ({ config, options, ... }: {
     options = {
       name = mkOption {
         type = types.str;
@@ -1332,9 +1355,9 @@ rec {
         description = "Packages";
       };
     };
-  });
+  })];
 
-  mdadm = types.submodule ({ config, ... }: {
+  mdadm = types.submodule [diskoLib.hookMixin ({ config, options, ... }: {
     options = {
       name = mkOption {
         type = types.str;
@@ -1407,9 +1430,9 @@ rec {
         description = "Packages";
       };
     };
-  });
+  })];
 
-  mdraid = types.submodule ({ config, ... }: {
+  mdraid = types.submodule [diskoLib.hookMixin ({ config, options, ... }: {
     options = {
       type = mkOption {
         type = types.enum [ "mdraid" ];
@@ -1462,9 +1485,9 @@ rec {
         description = "Packages";
       };
     };
-  });
+  })];
 
-  luks = types.submodule ({ config, ... }: {
+  luks = types.submodule [diskoLib.hookMixin ({ config, options, ... }: {
     options = {
       type = mkOption {
         type = types.enum [ "luks" ];
@@ -1541,9 +1564,9 @@ rec {
         description = "Packages";
       };
     };
-  });
+  })];
 
-  disk = types.submodule ({ config, ... }: {
+  disk = types.submodule [diskoLib.hookMixin ({ config, options, ... }: {
     options = {
       name = mkOption {
         type = types.str;
@@ -1599,5 +1622,5 @@ rec {
         description = "Packages";
       };
     };
-  });
+  })];
 }
