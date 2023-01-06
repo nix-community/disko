@@ -141,7 +141,7 @@ rec {
       sortedDeviceList = diskoLib.sortDevicesByDependencies ((diskoLib.meta devices).deviceDependencies or {}) devices;
     in ''
       set -efux
-      ${concatStrings (map (dev: attrByPath (dev ++ [ "_create" ]) "" devices) sortedDeviceList)}
+      ${concatMapStrings (dev: attrByPath (dev ++ [ "_create" ]) "" devices) sortedDeviceList}
     '';
     /* Takes a disko device specification and returns a string which mounts the disks
 
@@ -153,7 +153,7 @@ rec {
     in ''
       set -efux
       # first create the necessary devices
-      ${concatStrings (map (dev: attrByPath (dev ++ [ "_mount" "dev" ]) "" devices) sortedDeviceList)}
+      ${concatMapStrings (dev: attrByPath (dev ++ [ "_mount" "dev" ]) "" devices) sortedDeviceList}
 
       # and then mount the filesystems in alphabetical order
       # attrValues returns values sorted by name.  This is important, because it
@@ -657,7 +657,7 @@ rec {
             partMounts = diskoLib.deepMergeMap (partition: partition._mount dev) config.partitions;
           in {
             dev = ''
-              ${concatStrings (map (x: x.dev or "") (attrValues partMounts))}
+              ${concatMapStrings (x: x.dev or "") (attrValues partMounts)}
             '';
             fs = partMounts.fs or {};
         };
@@ -948,7 +948,7 @@ rec {
         in {
           dev = ''
             vgchange -a y
-            ${concatStrings (map (x: x.dev or "") (attrValues lvMounts))}
+            ${concatMapStrings (x: x.dev or "") (attrValues lvMounts)}
           '';
           fs = lvMounts.fs;
         };
@@ -1186,7 +1186,7 @@ rec {
         in {
           dev = ''
             zpool list '${config.name}' >/dev/null 2>/dev/null || zpool import '${config.name}'
-            ${concatStrings (map (x: x.dev or "") (attrValues datasetMounts))}
+            ${concatMapStrings (x: x.dev or "") (attrValues datasetMounts)}
           '';
           fs = datasetMounts.fs // optionalAttrs (!isNull config.mountpoint) {
             ${config.mountpoint} = ''
