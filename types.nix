@@ -155,7 +155,7 @@ rec {
       sortedDeviceList = diskoLib.sortDevicesByDependencies ((diskoLib.meta devices).deviceDependencies or {}) devices;
     in ''
       set -efux
-      ${concatMapStrings (dev: attrByPath (dev ++ [ "_create" ]) "" devices) sortedDeviceList}
+      ${concatMapStrings (dev: (attrByPath (dev ++ [ "_create" ]) ({}: {}) devices) {}) sortedDeviceList}
     '';
     /* Takes a disko device specification and returns a string which mounts the disks
 
@@ -307,8 +307,8 @@ rec {
       _create = mkOption {
         internal = true;
         readOnly = true;
-        type = types.str;
-        default = "";
+        type = types.functionTo types.str;
+        default = {}: "";
         description = "Creation script";
       };
       _mount = mkOption {
@@ -387,9 +387,9 @@ rec {
         internal = true;
         readOnly = true;
         type = types.functionTo types.str;
-        default = dev: ''
+        default = {dev}: ''
           mkfs.btrfs ${dev} ${config.extraArgs}
-          ${concatMapStrings (subvol: subvol._create dev) (attrValues config.subvolumes)}
+          ${concatMapStrings (subvol: subvol._create { inherit dev; }) (attrValues config.subvolumes)}
         '';
         description = "Creation script";
       };
@@ -479,7 +479,7 @@ rec {
         internal = true;
         readOnly = true;
         type = types.functionTo types.str;
-        default = dev: ''
+        default = {dev}: ''
           MNTPOINT=$(mktemp -d)
           (
             mount ${dev} "$MNTPOINT" -o subvol=/
@@ -571,7 +571,7 @@ rec {
         internal = true;
         readOnly = true;
         type = types.functionTo types.str;
-        default = dev: ''
+        default = {dev}: ''
           mkfs.${config.format} \
             ${config.extraArgs} \
             ${dev}
@@ -656,9 +656,9 @@ rec {
         internal = true;
         readOnly = true;
         type = types.functionTo types.str;
-        default = dev: ''
+        default = {dev}: ''
           parted -s ${dev} -- mklabel ${config.format}
-          ${concatMapStrings (partition: partition._create dev config.format) config.partitions}
+          ${concatMapStrings (partition: partition._create {inherit dev; type = config.format;} ) config.partitions}
         '';
         description = "Creation script";
       };
@@ -754,8 +754,8 @@ rec {
       _create = mkOption {
         internal = true;
         readOnly = true;
-        type = types.functionTo (types.functionTo types.str);
-        default = dev: type: ''
+        type = types.functionTo types.str;
+        default = {dev, type}: ''
           ${optionalString (type == "gpt") ''
             parted -s ${dev} -- mkpart ${config.name} ${diskoLib.maybeStr config.fs-type} ${config.start} ${config.end}
           ''}
@@ -772,7 +772,7 @@ rec {
           '') config.flags}
           # ensure further operations can detect new partitions
           udevadm trigger --subsystem-match=block; udevadm settle
-          ${optionalString (!isNull config.content) (config.content._create (diskoLib.deviceNumbering dev config.index))}
+          ${optionalString (!isNull config.content) (config.content._create {dev = (diskoLib.deviceNumbering dev config.index);})}
         '';
         description = "Creation script";
       };
@@ -825,7 +825,7 @@ rec {
         internal = true;
         readOnly = true;
         type = types.functionTo types.str;
-        default = dev: ''
+        default = {dev}: ''
           mkswap ${dev}
         '';
         description = "Creation script";
@@ -888,7 +888,7 @@ rec {
         internal = true;
         readOnly = true;
         type = types.functionTo types.str;
-        default = dev: ''
+        default = {dev}: ''
           pvcreate ${dev}
           LVMDEVICES_${config.vg}="''${LVMDEVICES_${config.vg}:-}${dev} "
         '';
@@ -946,10 +946,10 @@ rec {
       _create = mkOption {
         internal = true;
         readOnly = true;
-        type = types.str;
-        default = ''
+        type = types.functionTo types.str;
+        default = {}: ''
           vgcreate ${config.name} $LVMDEVICES_${config.name}
-          ${concatMapStrings (lv: lv._create config.name) (attrValues config.lvs)}
+          ${concatMapStrings (lv: lv._create {vg = config.name; }) (attrValues config.lvs)}
         '';
         description = "Creation script";
       };
@@ -1025,7 +1025,7 @@ rec {
         internal = true;
         readOnly = true;
         type = types.functionTo types.str;
-        default = vg: ''
+        default = {vg}: ''
           lvcreate \
             --yes \
             ${if hasInfix "%" config.size then "-l" else "-L"} ${config.size} \
@@ -1033,7 +1033,7 @@ rec {
             ${optionalString (!isNull config.lvm_type) "--type=${config.lvm_type}"} \
             ${config.extraArgs} \
             ${vg}
-          ${optionalString (!isNull config.content) (config.content._create "/dev/${vg}/${config.name}")}
+          ${optionalString (!isNull config.content) (config.content._create {dev = "/dev/${vg}/${config.name}";})}
         '';
         description = "Creation script";
       };
@@ -1091,7 +1091,7 @@ rec {
         internal = true;
         readOnly = true;
         type = types.functionTo types.str;
-        default = dev: ''
+        default = {dev}: ''
           ZFSDEVICES_${config.pool}="''${ZFSDEVICES_${config.pool}:-}${dev} "
         '';
         description = "Creation script";
@@ -1174,14 +1174,14 @@ rec {
       _create = mkOption {
         internal = true;
         readOnly = true;
-        type = types.str;
-        default = ''
+        type = types.functionTo types.str;
+        default = {}: ''
           zpool create ${config.name} \
             ${config.mode} \
             ${concatStringsSep " " (mapAttrsToList (n: v: "-o ${n}=${v}") config.options)} \
             ${concatStringsSep " " (mapAttrsToList (n: v: "-O ${n}=${v}") config.rootFsOptions)} \
             ''${ZFSDEVICES_${config.name}}
-          ${concatMapStrings (dataset: dataset._create config.name) (attrValues config.datasets)}
+          ${concatMapStrings (dataset: dataset._create {zpool = config.name;}) (attrValues config.datasets)}
         '';
         description = "Creation script";
       };
@@ -1290,13 +1290,13 @@ rec {
         internal = true;
         readOnly = true;
         type = types.functionTo types.str;
-        default = zpool: ''
+        default = {zpool}: ''
           zfs create ${zpool}/${config.name} \
             ${concatStringsSep " " (mapAttrsToList (n: v: "-o ${n}=${v}") config.options)} \
             ${optionalString (config.zfs_type == "volume") "-V ${config.size}"}
           ${optionalString (config.zfs_type == "volume") ''
             udevadm trigger --subsystem-match=block; udevadm settle
-            ${optionalString (!isNull config.content) (config.content._create "/dev/zvol/${zpool}/${config.name}")}
+            ${optionalString (!isNull config.content) (config.content._create {dev = "/dev/zvol/${zpool}/${config.name}";})}
           ''}
         '';
         description = "Creation script";
@@ -1377,8 +1377,8 @@ rec {
       _create = mkOption {
         internal = true;
         readOnly = true;
-        type = types.str;
-        default = ''
+        type = types.functionTo types.str;
+        default = {}: ''
           echo 'y' | mdadm --create /dev/md/${config.name} \
             --level=${toString config.level} \
             --raid-devices=''${RAIDDEVICES_N_${config.name}} \
@@ -1387,7 +1387,7 @@ rec {
             --homehost=any \
             ''${RAIDDEVICES_${config.name}}
           udevadm trigger --subsystem-match=block; udevadm settle
-          ${optionalString (!isNull config.content) (config.content._create "/dev/md/${config.name}")}
+          ${optionalString (!isNull config.content) (config.content._create {dev = "/dev/md/${config.name}";})}
         '';
         description = "Creation script";
       };
@@ -1442,7 +1442,7 @@ rec {
         internal = true;
         readOnly = true;
         type = types.functionTo types.str;
-        default = dev: ''
+        default = {dev}: ''
           RAIDDEVICES_N_${config.name}=$((''${RAIDDEVICES_N_${config.name}:-0}+1))
           RAIDDEVICES_${config.name}="''${RAIDDEVICES_${config.name}:-}${dev} "
         '';
@@ -1506,10 +1506,10 @@ rec {
         internal = true;
         readOnly = true;
         type = types.functionTo types.str;
-        default = dev: ''
+        default = {dev}: ''
           cryptsetup -q luksFormat ${dev} ${diskoLib.maybeStr config.keyFile} ${toString config.extraArgs}
           cryptsetup luksOpen ${dev} ${config.name} ${optionalString (!isNull config.keyFile) "--key-file ${config.keyFile}"}
-          ${optionalString (!isNull config.content) (config.content._create "/dev/mapper/${config.name}")}
+          ${optionalString (!isNull config.content) (config.content._create {dev = "/dev/mapper/${config.name}";})}
         '';
         description = "Creation script";
       };
@@ -1580,8 +1580,8 @@ rec {
       _create = mkOption {
         internal = true;
         readOnly = true;
-        type = types.str;
-        default = config.content._create config.device;
+        type = types.functionTo types.str;
+        default = {}: config.content._create {dev = config.device;};
         description = "Creation script";
       };
       _mount = mkOption {
