@@ -162,12 +162,12 @@ rec {
        mount :: types.devices -> str
     */
     mount = devices: let
-      fsMounts = diskoLib.deepMergeMap (dev: dev._mount.fs or {}) (flatten (map attrValues (attrValues devices)));
+      fsMounts = diskoLib.deepMergeMap (dev: (dev._mount {}).fs or {}) (flatten (map attrValues (attrValues devices)));
       sortedDeviceList = diskoLib.sortDevicesByDependencies ((diskoLib.meta devices).deviceDependencies or {}) devices;
     in ''
       set -efux
       # first create the necessary devices
-      ${concatMapStrings (dev: attrByPath (dev ++ [ "_mount" "dev" ]) "" devices) sortedDeviceList}
+      ${concatMapStrings (dev: ((attrByPath (dev ++ [ "_mount" ]) "" devices) {}).dev ) sortedDeviceList}
 
       # and then mount the filesystems in alphabetical order
       # attrValues returns values sorted by name.  This is important, because it
@@ -314,8 +314,8 @@ rec {
       _mount = mkOption {
         internal = true;
         readOnly = true;
-        type = diskoLib.jsonType;
-        default = {
+        type = types.functionTo diskoLib.jsonType;
+        default = {}: {
           fs.${config.mountpoint} = ''
             if ! findmnt ${config.fsType} "/mnt${config.mountpoint}" > /dev/null 2>&1; then
               mount -t ${config.fsType} ${config.device} "/mnt${config.mountpoint}" \
@@ -397,9 +397,9 @@ rec {
         internal = true;
         readOnly = true;
         type = types.functionTo diskoLib.jsonType;
-        default = dev:
+        default = {dev}:
           let
-            subvolMounts = diskoLib.deepMergeMap (subvol: subvol._mount dev config.mountpoint) (attrValues config.subvolumes);
+            subvolMounts = diskoLib.deepMergeMap (subvol: subvol._mount {inherit dev; parent = config.mountpoint;}) (attrValues config.subvolumes);
           in {
             fs = subvolMounts.fs // optionalAttrs (!isNull config.mountpoint) {
               ${config.mountpoint} = ''
@@ -492,8 +492,8 @@ rec {
       _mount = mkOption {
         internal = true;
         readOnly = true;
-        type = types.functionTo (types.functionTo diskoLib.jsonType);
-        default = dev: parent: let
+        type = types.functionTo diskoLib.jsonType;
+        default = {dev, parent}: let
           mountpoint = if (!isNull config.mountpoint) then config.mountpoint
                        else if (isNull parent) then config.name
                        else null;
@@ -582,7 +582,7 @@ rec {
         internal = true;
         readOnly = true;
         type = types.functionTo diskoLib.jsonType;
-        default = dev: {
+        default = {dev}: {
           fs.${config.mountpoint} = ''
             if ! findmnt ${dev} "/mnt${config.mountpoint}" > /dev/null 2>&1; then
               mount ${dev} "/mnt${config.mountpoint}" \
@@ -666,9 +666,9 @@ rec {
         internal = true;
         readOnly = true;
         type = types.functionTo diskoLib.jsonType;
-        default = dev:
+        default = {dev}:
           let
-            partMounts = diskoLib.deepMergeMap (partition: partition._mount dev) config.partitions;
+            partMounts = diskoLib.deepMergeMap (partition: partition._mount {inherit dev;}) config.partitions;
           in {
             dev = ''
               ${concatMapStrings (x: x.dev or "") (attrValues partMounts)}
@@ -780,8 +780,8 @@ rec {
         internal = true;
         readOnly = true;
         type = types.functionTo diskoLib.jsonType;
-        default = dev:
-          optionalAttrs (!isNull config.content) (config.content._mount (diskoLib.deviceNumbering dev config.index));
+        default = {dev}:
+          optionalAttrs (!isNull config.content) (config.content._mount {dev = (diskoLib.deviceNumbering dev config.index);});
         description = "Mount script";
       };
       _config = mkOption {
@@ -834,7 +834,7 @@ rec {
         internal = true;
         readOnly = true;
         type = types.functionTo diskoLib.jsonType;
-        default = dev: {
+        default = {dev}: {
           fs.${dev} = ''
             if ! swapon --show | grep -q '^${dev} '; then
               swapon ${dev}
@@ -898,7 +898,7 @@ rec {
         internal = true;
         readOnly = true;
         type = types.functionTo diskoLib.jsonType;
-        default = dev:
+        default = {dev}:
           {};
         description = "Mount script";
       };
@@ -956,9 +956,9 @@ rec {
       _mount = mkOption {
         internal = true;
         readOnly = true;
-        type = diskoLib.jsonType;
-        default = let
-          lvMounts = diskoLib.deepMergeMap (lv: lv._mount config.name) (attrValues config.lvs);
+        type = types.functionTo diskoLib.jsonType;
+        default = {}: let
+          lvMounts = diskoLib.deepMergeMap (lv: lv._mount {vg = config.name;}) (attrValues config.lvs);
         in {
           dev = ''
             vgchange -a y
@@ -1041,8 +1041,8 @@ rec {
         internal = true;
         readOnly = true;
         type = types.functionTo diskoLib.jsonType;
-        default = vg:
-          optionalAttrs (!isNull config.content) (config.content._mount "/dev/${vg}/${config.name}");
+        default = {vg}:
+          optionalAttrs (!isNull config.content) (config.content._mount {dev = "/dev/${vg}/${config.name}";});
         description = "Mount script";
       };
       _config = mkOption {
@@ -1100,7 +1100,7 @@ rec {
         internal = true;
         readOnly = true;
         type = types.functionTo diskoLib.jsonType;
-        default = dev:
+        default = {dev}:
           {};
         description = "Mount script";
       };
@@ -1188,9 +1188,9 @@ rec {
       _mount = mkOption {
         internal = true;
         readOnly = true;
-        type = diskoLib.jsonType;
-        default = let
-          datasetMounts = diskoLib.deepMergeMap (dataset: dataset._mount config.name) (attrValues config.datasets);
+        type = types.functionTo diskoLib.jsonType;
+        default = {}: let
+          datasetMounts = diskoLib.deepMergeMap (dataset: dataset._mount {zpool = config.name;}) (attrValues config.datasets);
         in {
           dev = ''
             zpool list '${config.name}' >/dev/null 2>/dev/null || zpool import '${config.name}'
@@ -1305,8 +1305,8 @@ rec {
         internal = true;
         readOnly = true;
         type = types.functionTo diskoLib.jsonType;
-        default = zpool:
-          optionalAttrs (config.zfs_type == "volume" && !isNull config.content) (config.content._mount "/dev/zvol/${zpool}/${config.name}") //
+        default = {zpool}:
+          optionalAttrs (config.zfs_type == "volume" && !isNull config.content) (config.content._mount {dev = "/dev/zvol/${zpool}/${config.name}";}) //
             optionalAttrs (config.zfs_type == "filesystem" && config.options.mountpoint or "" != "none") { fs.${config.mountpoint} = ''
               if ! findmnt ${zpool}/${config.name} "/mnt${config.mountpoint}" > /dev/null 2>&1; then
                 mount ${zpool}/${config.name} "/mnt${config.mountpoint}" \
@@ -1394,9 +1394,9 @@ rec {
       _mount = mkOption {
         internal = true;
         readOnly = true;
-        type = diskoLib.jsonType;
-        default =
-          optionalAttrs (!isNull config.content) (config.content._mount "/dev/md/${config.name}");
+        type = types.functionTo diskoLib.jsonType;
+        default = {}:
+          optionalAttrs (!isNull config.content) (config.content._mount {dev = "/dev/md/${config.name}";});
         # TODO we probably need to assemble the mdadm somehow
         description = "Mount script";
       };
@@ -1452,7 +1452,7 @@ rec {
         internal = true;
         readOnly = true;
         type = types.functionTo diskoLib.jsonType;
-        default = dev:
+        default = {dev}:
           {};
         description = "Mount script";
       };
@@ -1517,9 +1517,9 @@ rec {
         internal = true;
         readOnly = true;
         type = types.functionTo diskoLib.jsonType;
-        default = dev:
+        default = {dev}:
           let
-            contentMount = config.content._mount "/dev/mapper/${config.name}";
+            contentMount = config.content._mount {dev = "/dev/mapper/${config.name}";};
           in
             {
               dev = ''
@@ -1587,9 +1587,9 @@ rec {
       _mount = mkOption {
         internal = true;
         readOnly = true;
-        type = diskoLib.jsonType;
-        default =
-          optionalAttrs (!isNull config.content) (config.content._mount config.device);
+        type = types.functionTo diskoLib.jsonType;
+        default = {}:
+          optionalAttrs (!isNull config.content) (config.content._mount {dev = config.device;});
         description = "Mount script";
       };
       _config = mkOption {
