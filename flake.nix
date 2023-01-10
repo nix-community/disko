@@ -25,14 +25,20 @@
       default = self.packages.${system}.disko;
     });
     # TODO: disable bios-related tests on aarch64...
+    # Run checks: nix flake check -L
     checks = forAllSystems (system: let
       pkgs = nixpkgs.legacyPackages.${system};
-    in
-      # Run tests: nix flake check -L
-      import ./tests {
+      nixosTests = import ./tests {
         inherit pkgs;
         makeTest = import (pkgs.path + "/nixos/tests/make-test-python.nix");
         eval-config = import (pkgs.path + "/nixos/lib/eval-config.nix");
-      });
+      };
+      shellcheck = pkgs.runCommand "shellcheck" { nativeBuildInputs =  [ pkgs.shellcheck ]; } ''
+        cd ${./.}
+        shellcheck disk-deactivate/disk-deactivate disko
+        touch $out
+      '';
+    in
+      nixosTests // { inherit shellcheck; });
   };
 }

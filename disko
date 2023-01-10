@@ -6,9 +6,6 @@ readonly libexec_dir="${0%/*}"
 # a file with the disko config
 declare disko_config
 
-# a flake uri, if present disko config is relative to the flake root
-declare from_flake
-
 # mount was chosen as the default mode because it's less destructive
 mode=mount
 nix_args=()
@@ -90,11 +87,11 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
-if ! ([[ $mode = "create" ]] || [[ $mode = "mount" ]] || [[ $mode = "zap_create_mount" ]]); then
+if ! { [[ $mode = "create" ]] || [[ $mode = "mount" ]] || [[ $mode = "zap_create_mount" ]]; }; then
   abort "mode must be either create, mount or zap_create_mount"
 fi
 
-if [[ ! -z "${flake+x}" ]]; then
+if [[ -n "${flake+x}" ]]; then
   if [[ $flake =~ ^(.*)\#([^\#\"]*)$ ]]; then
    flake="${BASH_REMATCH[1]}"
    flakeAttr="${BASH_REMATCH[2]}"
@@ -107,7 +104,7 @@ if [[ ! -z "${flake+x}" ]]; then
   nix_args+=("--arg" "flake" "$flake")
   nix_args+=("--argstr" "flakeAttr" "$flakeAttr")
   nix_args+=(--extra-experimental-features flakes)
-elif [[ ! -z "${disko_config+x}" ]] && [[ -e "$disko_config" ]]; then
+elif [[ -n "${disko_config+x}" ]] && [[ -e "$disko_config" ]]; then
   nix_args+=("--arg" "diskoFile" "$disko_config")
 else
   abort "disko config must be an existing file or flake must be set"
@@ -118,7 +115,7 @@ script=$(nix-build "${libexec_dir}"/cli.nix \
   --argstr mode "$mode" \
   "${nix_args[@]}"
 )
-if [[ ! -z "${dry_run+x}" ]]; then
+if [[ -n "${dry_run+x}" ]]; then
   echo "$script"
 else
   exec "$script"
