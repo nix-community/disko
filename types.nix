@@ -155,11 +155,13 @@ rec {
         readOnly = true;
         type = types.functionTo types.str;
         default = args:
-          lib.concatStrings [
+          lib.concatStringsSep "\n" [
+            "(" # subshell for namespacing
             (diskoLib.defineHookVariables { inherit config options; })
             config.preCreateHook
             (default args)
             config.postCreateHook
+            ")"
           ];
         description = "Creation script";
       };
