@@ -141,6 +141,16 @@ rec {
       };
     };
 
+    mkCreateOption = { config, options, default }:
+      mkOption {
+        internal = true;
+        readOnly = true;
+        type = types.functionTo types.str;
+        default = {}: "";
+        description = "Creation script";
+      };
+
+
     /* Takes a disko device specification, returns an attrset with metadata
 
        meta :: types.devices -> AttrSet
@@ -304,12 +314,9 @@ rec {
         };
         description = "Metadata";
       };
-      _create = mkOption {
-        internal = true;
-        readOnly = true;
-        type = types.functionTo types.str;
+      _create = diskoLib.mkCreateOption {
+        inherit config options;
         default = {}: "";
-        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -383,15 +390,12 @@ rec {
           diskoLib.deepMergeMap (subvol: subvol._meta dev) (attrValues config.subvolumes);
         description = "Metadata";
       };
-      _create = mkOption {
-        internal = true;
-        readOnly = true;
-        type = types.functionTo types.str;
+      _create = diskoLib.mkCreateOption {
+        inherit config options;
         default = {dev}: ''
           mkfs.btrfs ${dev} ${config.extraArgs}
           ${concatMapStrings (subvol: subvol._create { inherit dev; }) (attrValues config.subvolumes)}
         '';
-        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -475,10 +479,8 @@ rec {
         };
         description = "Metadata";
       };
-      _create = mkOption {
-        internal = true;
-        readOnly = true;
-        type = types.functionTo types.str;
+      _create = diskoLib.mkCreateOption {
+        inherit config options;
         default = {dev}: ''
           MNTPOINT=$(mktemp -d)
           (
@@ -487,7 +489,6 @@ rec {
             btrfs subvolume create "$MNTPOINT"/${config.name} ${config.extraArgs}
           )
         '';
-        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -567,16 +568,13 @@ rec {
         };
         description = "Metadata";
       };
-      _create = mkOption {
-        internal = true;
-        readOnly = true;
-        type = types.functionTo types.str;
+      _create = diskoLib.mkCreateOption {
+        inherit config options;
         default = {dev}: ''
           mkfs.${config.format} \
             ${config.extraArgs} \
             ${dev}
         '';
-        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -652,15 +650,12 @@ rec {
           diskoLib.deepMergeMap (partition: partition._meta dev) config.partitions;
         description = "Metadata";
       };
-      _create = mkOption {
-        internal = true;
-        readOnly = true;
-        type = types.functionTo types.str;
+      _create = diskoLib.mkCreateOption {
+        inherit config options;
         default = {dev}: ''
           parted -s ${dev} -- mklabel ${config.format}
           ${concatMapStrings (partition: partition._create {inherit dev; type = config.format;} ) config.partitions}
         '';
-        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -751,10 +746,8 @@ rec {
           optionalAttrs (!isNull config.content) (config.content._meta dev);
         description = "Metadata";
       };
-      _create = mkOption {
-        internal = true;
-        readOnly = true;
-        type = types.functionTo types.str;
+      _create = diskoLib.mkCreateOption {
+        inherit config options;
         default = {dev, type}: ''
           ${optionalString (type == "gpt") ''
             parted -s ${dev} -- mkpart ${config.name} ${diskoLib.maybeStr config.fs-type} ${config.start} ${config.end}
@@ -774,7 +767,6 @@ rec {
           udevadm trigger --subsystem-match=block; udevadm settle
           ${optionalString (!isNull config.content) (config.content._create {dev = (diskoLib.deviceNumbering dev config.index);})}
         '';
-        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -821,14 +813,11 @@ rec {
         };
         description = "Metadata";
       };
-      _create = mkOption {
-        internal = true;
-        readOnly = true;
-        type = types.functionTo types.str;
+      _create = diskoLib.mkCreateOption {
+        inherit config options;
         default = {dev}: ''
           mkswap ${dev}
         '';
-        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -884,15 +873,12 @@ rec {
         };
         description = "Metadata";
       };
-      _create = mkOption {
-        internal = true;
-        readOnly = true;
-        type = types.functionTo types.str;
+      _create = diskoLib.mkCreateOption {
+        inherit config options;
         default = {dev}: ''
           pvcreate ${dev}
           LVMDEVICES_${config.vg}="''${LVMDEVICES_${config.vg}:-}${dev} "
         '';
-        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -943,15 +929,12 @@ rec {
           diskoLib.deepMergeMap (lv: lv._meta [ "lvm_vg" config.name ]) (attrValues config.lvs);
         description = "Metadata";
       };
-      _create = mkOption {
-        internal = true;
-        readOnly = true;
-        type = types.functionTo types.str;
+      _create = diskoLib.mkCreateOption {
+        inherit config options;
         default = {}: ''
           vgcreate ${config.name} $LVMDEVICES_${config.name}
           ${concatMapStrings (lv: lv._create {vg = config.name; }) (attrValues config.lvs)}
         '';
-        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -1021,10 +1004,8 @@ rec {
           optionalAttrs (!isNull config.content) (config.content._meta dev);
         description = "Metadata";
       };
-      _create = mkOption {
-        internal = true;
-        readOnly = true;
-        type = types.functionTo types.str;
+      _create = diskoLib.mkCreateOption {
+        inherit config options;
         default = {vg}: ''
           lvcreate \
             --yes \
@@ -1035,7 +1016,6 @@ rec {
             ${vg}
           ${optionalString (!isNull config.content) (config.content._create {dev = "/dev/${vg}/${config.name}";})}
         '';
-        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -1087,14 +1067,11 @@ rec {
         };
         description = "Metadata";
       };
-      _create = mkOption {
-        internal = true;
-        readOnly = true;
-        type = types.functionTo types.str;
+      _create = diskoLib.mkCreateOption {
+        inherit config options;
         default = {dev}: ''
           ZFSDEVICES_${config.pool}="''${ZFSDEVICES_${config.pool}:-}${dev} "
         '';
-        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -1171,10 +1148,8 @@ rec {
           diskoLib.deepMergeMap (dataset: dataset._meta [ "zpool" config.name ]) (attrValues config.datasets);
         description = "Metadata";
       };
-      _create = mkOption {
-        internal = true;
-        readOnly = true;
-        type = types.functionTo types.str;
+      _create = diskoLib.mkCreateOption {
+        inherit config options;
         default = {}: ''
           zpool create ${config.name} \
             ${config.mode} \
@@ -1183,7 +1158,6 @@ rec {
             ''${ZFSDEVICES_${config.name}}
           ${concatMapStrings (dataset: dataset._create {zpool = config.name;}) (attrValues config.datasets)}
         '';
-        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -1286,10 +1260,8 @@ rec {
           optionalAttrs (!isNull config.content) (config.content._meta dev);
         description = "Metadata";
       };
-      _create = mkOption {
-        internal = true;
-        readOnly = true;
-        type = types.functionTo types.str;
+      _create = diskoLib.mkCreateOption {
+        inherit config options;
         default = {zpool}: ''
           zfs create ${zpool}/${config.name} \
             ${concatStringsSep " " (mapAttrsToList (n: v: "-o ${n}=${v}") config.options)} \
@@ -1299,7 +1271,6 @@ rec {
             ${optionalString (!isNull config.content) (config.content._create {dev = "/dev/zvol/${zpool}/${config.name}";})}
           ''}
         '';
-        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -1374,10 +1345,8 @@ rec {
           optionalAttrs (!isNull config.content) (config.content._meta [ "mdadm" config.name ]);
         description = "Metadata";
       };
-      _create = mkOption {
-        internal = true;
-        readOnly = true;
-        type = types.functionTo types.str;
+      _create = diskoLib.mkCreateOption {
+        inherit config options;
         default = {}: ''
           echo 'y' | mdadm --create /dev/md/${config.name} \
             --level=${toString config.level} \
@@ -1389,7 +1358,6 @@ rec {
           udevadm trigger --subsystem-match=block; udevadm settle
           ${optionalString (!isNull config.content) (config.content._create {dev = "/dev/md/${config.name}";})}
         '';
-        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -1438,15 +1406,12 @@ rec {
         };
         description = "Metadata";
       };
-      _create = mkOption {
-        internal = true;
-        readOnly = true;
-        type = types.functionTo types.str;
+      _create = diskoLib.mkCreateOption {
+        inherit config options;
         default = {dev}: ''
           RAIDDEVICES_N_${config.name}=$((''${RAIDDEVICES_N_${config.name}:-0}+1))
           RAIDDEVICES_${config.name}="''${RAIDDEVICES_${config.name}:-}${dev} "
         '';
-        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -1502,16 +1467,13 @@ rec {
           optionalAttrs (!isNull config.content) (config.content._meta dev);
         description = "Metadata";
       };
-      _create = mkOption {
-        internal = true;
-        readOnly = true;
-        type = types.functionTo types.str;
+      _create = diskoLib.mkCreateOption {
+        inherit config options;
         default = {dev}: ''
           cryptsetup -q luksFormat ${dev} ${diskoLib.maybeStr config.keyFile} ${toString config.extraArgs}
           cryptsetup luksOpen ${dev} ${config.name} ${optionalString (!isNull config.keyFile) "--key-file ${config.keyFile}"}
           ${optionalString (!isNull config.content) (config.content._create {dev = "/dev/mapper/${config.name}";})}
         '';
-        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
@@ -1577,12 +1539,9 @@ rec {
           optionalAttrs (!isNull config.content) (config.content._meta [ "disk" config.device ]);
         description = "Metadata";
       };
-      _create = mkOption {
-        internal = true;
-        readOnly = true;
-        type = types.functionTo types.str;
+      _create = diskoLib.mkCreateOption {
+        inherit config options;
         default = {}: config.content._create {dev = config.device;};
-        description = "Creation script";
       };
       _mount = mkOption {
         internal = true;
