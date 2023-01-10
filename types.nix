@@ -120,12 +120,20 @@ rec {
        subset of config variables as a shell script snippet.
     */
     defineHookVariables = {config, options}:
+      let
+        sanitizeName = lib.replaceStrings ["-"] ["_"];
+        isAttrsOfSubmodule = o: o.type.name == "attrsOf" && o.type.nestedTypes.elemType.name == "submodule";
+        isSerializable = n: o: !(
+          lib.hasPrefix "_" n
+          || lib.hasSuffix "Hook" n
+          || isAttrsOfSubmodule o
+          # TODO don't hardcode diskoLib.subType options.
+          || n == "content" || n == "partitions");
+      in
       lib.toShellVars
-        (lib.mapAttrs
-          (n: o: o.value)
-          (lib.filterAttrs diskoLib.isSerializable options));
-    isSerializable = n: o: !(lib.hasPrefix "_" n || lib.hasSuffix "Hook" n || diskoLib.isAttrsOfSubmodule o);
-    isAttrsOfSubmodule = o: o.type.name == "attrsOf" && o.type.nestedTypes.elemType.name == "submodule";
+        (lib.mapAttrs'
+          (n: o: lib.nameValuePair (sanitizeName n) o.value)
+          (lib.filterAttrs isSerializable options));
 
     hookMixin = { config, options,... }: {
       options = let
@@ -146,7 +154,13 @@ rec {
         internal = true;
         readOnly = true;
         type = types.functionTo types.str;
-        default = {}: "";
+        default = args:
+          lib.concatStrings [
+            (diskoLib.defineHookVariables { inherit config options; })
+            config.preCreateHook
+            (default args)
+            config.postCreateHook
+          ];
         description = "Creation script";
       };
 
