@@ -1,0 +1,18 @@
+name: test
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+jobs:
+  lint:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3.2.0
+      - name: Install Nix
+        uses: cachix/install-nix-action@v18
+        with:
+          extra_nix_config: access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+      - name: ShellCheck
+        run: nix-shell --packages git shellcheck --pure --run 'shellcheck disk-deactivate/disk-deactivate disko'
