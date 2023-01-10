@@ -1,4 +1,3 @@
-
 cut_body_after = "" # don't include text from the PR body in the merge commit message
 status = [
   "Evaluate flake.nix",
