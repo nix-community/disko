@@ -95,7 +95,7 @@ $ niv add nix-community/disko
   As root run:
 
 ```console
-$ nix-channel --add https://github.com/nix-community/disko/archive/main.tar.gz disko
+$ nix-channel --add https://github.com/nix-community/disko/archive/master.tar.gz disko
 $ nix-channel --update
 ```
 
