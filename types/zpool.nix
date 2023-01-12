@@ -56,7 +56,7 @@
           ${config.mode} \
           ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") config.options)} \
           ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-O ${n}=${v}") config.rootFsOptions)} \
-          $(tr '\n' ' ' < $disko_devices_dir/zfs_${config.name})
+          $(tr '\n' ' ' < "$disko_devices_dir/zfs_${config.name}")
         ${lib.concatMapStrings (dataset: dataset._create {zpool = config.name;}) (lib.attrValues config.datasets)}
       '';
     };

@@ -20,6 +20,16 @@
       default = [ ];
       description = "Extra arguments";
     };
+    extraArgsFormat = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = config.extraArgs;
+      description = "Extra arguments for `cryptsetup luksFormat`";
+    };
+    extraArgsOpen = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "Extra arguments for `cryptsetup luksOpen`";
+    };
     content = diskoLib.deviceType;
     _meta = lib.mkOption {
       internal = true;
@@ -32,8 +42,12 @@
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = { dev }: ''
-        cryptsetup -q luksFormat ${dev} ${diskoLib.maybeStr config.keyFile} ${toString config.extraArgs}
-        cryptsetup luksOpen ${dev} ${config.name} ${lib.optionalString (!isNull config.keyFile) "--key-file ${config.keyFile}"}
+        cryptsetup -q luksFormat ${dev} \
+          ${diskoLib.maybeStr config.keyFile} \
+          ${lib.strings.escapeShellArgs config.extraArgsFormat}
+        cryptsetup luksOpen ${dev} ${config.name} \
+          ${lib.optionalString (!isNull config.keyFile) "--key-file ${config.keyFile}"} \
+          ${lib.strings.escapeShellArgs config.extraArgsOpen}
         ${lib.optionalString (!isNull config.content) (config.content._create {dev = "/dev/mapper/${config.name}";})}
       '';
     };
@@ -46,7 +60,9 @@
         {
           dev = ''
             cryptsetup status ${config.name} >/dev/null 2>/dev/null ||
-              cryptsetup luksOpen ${dev} ${config.name} ${lib.optionalString (!isNull config.keyFile) "--key-file ${config.keyFile}"}
+              cryptsetup luksOpen ${dev} ${config.name} \
+                ${lib.optionalString (!isNull config.keyFile) "--key-file ${config.keyFile}"} \
+                ${lib.strings.escapeShellArgs config.extraArgsOpen}
             ${lib.optionalString (!isNull config.content) contentMount.dev or ""}
           '';
           fs = lib.optionalAttrs (!isNull config.content) contentMount.fs or { };
