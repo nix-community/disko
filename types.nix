@@ -205,8 +205,10 @@ rec {
           # trailing slashes.  It also removes leading slashes, thus we have to
           # check for "/" explicitly below.
           xs = filter (s: stringLength s > 0) (splitString "/" x);
+          # /dev/disk/by-id can have valid entries containing `:` for usb drives which do not pass filename validation
+          isDiskRefByID = (builtins.length xs == 4) && (sublist 0 3 xs) == ["dev" "disk" "by-id"];
         in
-          isString x && (x == "/" || (length xs > 0 && all filename.check xs));
+          isString x && (x == "/" || isDiskRefByID || (length xs > 0 && all filename.check xs));
       merge = mergeOneOption;
       description = "A path name";
     };
