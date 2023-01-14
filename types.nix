@@ -137,15 +137,15 @@ rec {
 
     hookMixin = { config, options,... }: {
       options = let
-        mkHook = mkOption {
+        mkHook = default: mkOption {
           type = types.str;
-          default = "";
+          default = default;
         };
       in {
-        preCreateHook = mkHook;
-        postCreateHook = mkHook;
-        preMountHook = mkHook;
-        postMountHook = mkHook;
+        preCreateHook = mkHook "echo 'DEBUG preCreate: ${config.type}'";
+        postCreateHook = mkHook "echo 'DEBUG postCreate: ${config.type}'";
+        preMountHook = mkHook "echo 'DEBUG preMount: ${config.type}'";
+        postMountHook = mkHook "echo 'DEBUG postMount: ${config.type}'";
       };
     };
 
@@ -155,14 +155,17 @@ rec {
         readOnly = true;
         type = types.functionTo types.str;
         default = args:
-          lib.concatStringsSep "\n" [
-            "(" # subshell for namespacing
-            (diskoLib.defineHookVariables { inherit config options; })
-            config.preCreateHook
-            (attrs.default args)
-            config.postCreateHook
-            ")"
-          ];
+          let name = "format";
+              test = lib.optionalString (config ? name) "${config.${name}}";
+          in
+          ''
+          ( # ${config.type} ${concatMapStringsSep " " (n: toString (config.${n} or "")) ["name" "device" "format" "mountpoint"]}
+            ${diskoLib.defineHookVariables { inherit config options; }}
+            ${config.preCreateHook}
+            ${attrs.default args}
+            ${config.postCreateHook}
+          )
+          '';
         description = "Creation script";
       };
 
