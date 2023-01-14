@@ -159,12 +159,12 @@ rec {
               test = lib.optionalString (config ? name) "${config.${name}}";
           in
           ''
-          ( # ${config.type} ${concatMapStringsSep " " (n: toString (config.${n} or "")) ["name" "device" "format" "mountpoint"]}
+          { # ${config.type} ${concatMapStringsSep " " (n: toString (config.${n} or "")) ["name" "device" "format" "mountpoint"]}
             ${diskoLib.defineHookVariables { inherit config options; }}
             ${config.preCreateHook}
             ${attrs.default args}
             ${config.postCreateHook}
-          )
+          }
           '';
         description = "Creation script";
       };
