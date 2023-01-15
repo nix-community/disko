@@ -28,17 +28,31 @@
     # Run checks: nix flake check -L
     checks = forAllSystems (system: let
       pkgs = nixpkgs.legacyPackages.${system};
+      lib = nixpkgs.lib;
       nixosTests = import ./tests {
         inherit pkgs;
         makeTest = import (pkgs.path + "/nixos/tests/make-test-python.nix");
         eval-config = import (pkgs.path + "/nixos/lib/eval-config.nix");
       };
+      documentation = (import (pkgs.path + "/nixos/doc/manual") rec {
+        inherit pkgs;
+        config = lib.evalModules {
+          modules = [
+            { inherit (import ./module.nix { inherit config lib pkgs; }) options; }
+          ];
+        };
+        version = self.rev or "dirty";
+        revision = version;
+        options = config.options;
+        allowDocBook = true;
+        prefix = ./.;
+      }).optionsJSON;
       shellcheck = pkgs.runCommand "shellcheck" { nativeBuildInputs =  [ pkgs.shellcheck ]; } ''
         cd ${./.}
         shellcheck disk-deactivate/disk-deactivate disko
         touch $out
       '';
     in
-      nixosTests // { inherit shellcheck; });
+      nixosTests // { inherit documentation shellcheck; });
   };
 }
