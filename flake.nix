@@ -22,6 +22,7 @@
       pkgs = nixpkgs.legacyPackages.${system};
     in {
       disko = pkgs.callPackage ./package.nix {};
+      disko-doc = pkgs.callPackage ./doc.nix { };
       default = self.packages.${system}.disko;
     });
     # TODO: disable bios-related tests on aarch64...
