@@ -5,7 +5,7 @@
       type = "lvm_vg";
       lvs = {
         root = {
-          type = "lv";
+          type = "lvm_lv";
           size = "10G";
           content = {
             type = "filesystem";
@@ -14,7 +14,7 @@
           };
         };
         home = {
-          type = "lv";
+          type = "lvm_lv";
           size = "10G";
           content = {
             type = "filesystem";
@@ -33,9 +33,8 @@
         format = "gpt";
         partitions = [
           {
-            name = "boot";
+            name = "ESP";
             type = "partition";
-            part-type = "ESP";
             start = "1MiB";
             end = "1024MiB";
             fs-type = "fat32";

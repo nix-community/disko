@@ -18,7 +18,7 @@
     disk = {
       sda = {
         device = "/dev/sda";
-        type = "device";
+        type = "disk";
         content = {
           type = "table";
           format = "msdos";
