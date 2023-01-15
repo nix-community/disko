@@ -193,6 +193,11 @@ rec {
       sortedDeviceList = diskoLib.sortDevicesByDependencies ((diskoLib.meta devices).deviceDependencies or {}) devices;
     in ''
       set -efux
+
+      disko_devices_dir=$(mktemp -d)
+      trap 'rm -rf "$disko_devices_dir"' EXIT
+      mkdir -p "$disko_devices_dir"
+
       ${concatMapStrings (dev: (attrByPath (dev ++ [ "_create" ]) ({}: {}) devices) {}) sortedDeviceList}
     '';
     /* Takes a disko device specification and returns a string which mounts the disks
@@ -882,7 +887,7 @@ rec {
         inherit config options;
         default = {dev}: ''
           pvcreate ${dev}
-          LVMDEVICES_${config.vg}="''${LVMDEVICES_${config.vg}:-}${dev} "
+          echo "${dev}" >> $disko_devices_dir/lvm_${config.vg}
         '';
       };
       _mount = diskoLib.mkMountOption {
@@ -934,7 +939,7 @@ rec {
       _create = diskoLib.mkCreateOption {
         inherit config options;
         default = {}: ''
-          vgcreate ${config.name} $LVMDEVICES_${config.name}
+          vgcreate ${config.name} $(tr '\n' ' ' < $disko_devices_dir/lvm_${config.name})
           ${concatMapStrings (lv: lv._create {vg = config.name; }) (attrValues config.lvs)}
         '';
       };
@@ -1066,7 +1071,7 @@ rec {
       _create = diskoLib.mkCreateOption {
         inherit config options;
         default = {dev}: ''
-          ZFSDEVICES_${config.pool}="''${ZFSDEVICES_${config.pool}:-}${dev} "
+          echo "${dev}" >> $disko_devices_dir/zfs_${config.pool}
         '';
       };
       _mount = diskoLib.mkMountOption {
@@ -1148,7 +1153,7 @@ rec {
             ${config.mode} \
             ${concatStringsSep " " (mapAttrsToList (n: v: "-o ${n}=${v}") config.options)} \
             ${concatStringsSep " " (mapAttrsToList (n: v: "-O ${n}=${v}") config.rootFsOptions)} \
-            ''${ZFSDEVICES_${config.name}}
+            $(tr '\n' ' ' < $disko_devices_dir/zfs_${config.name})
           ${concatMapStrings (dataset: dataset._create {zpool = config.name;}) (attrValues config.datasets)}
         '';
       };
@@ -1337,11 +1342,11 @@ rec {
         default = {}: ''
           echo 'y' | mdadm --create /dev/md/${config.name} \
             --level=${toString config.level} \
-            --raid-devices=''${RAIDDEVICES_N_${config.name}} \
+            --raid-devices=$(wc -l $disko_devices_dir/raid_${config.name} | cut -f 1 -d " ") \
             --metadata=${config.metadata} \
             --force \
             --homehost=any \
-            ''${RAIDDEVICES_${config.name}}
+            $(tr '\n' ' ' < $disko_devices_dir/raid_${config.name})
           udevadm trigger --subsystem-match=block; udevadm settle
           ${optionalString (!isNull config.content) (config.content._create {dev = "/dev/md/${config.name}";})}
         '';
@@ -1393,8 +1398,7 @@ rec {
       _create = diskoLib.mkCreateOption {
         inherit config options;
         default = {dev}: ''
-          RAIDDEVICES_N_${config.name}=$((''${RAIDDEVICES_N_${config.name}:-0}+1))
-          RAIDDEVICES_${config.name}="''${RAIDDEVICES_${config.name}:-}${dev} "
+          echo "${dev}" >> $disko_devices_dir/raid_${config.name}
         '';
       };
       _mount = diskoLib.mkMountOption {
