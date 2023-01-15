@@ -174,7 +174,7 @@ rec {
         internal = true;
         readOnly = true;
         type = types.functionTo diskoLib.jsonType;
-        default = args: let v = attrs.default args; in lib.traceSeqN 3 [(config.name or "unnamed") (v.fs or "")] v;
+        default = args: attrs.default args;
         description = "Mount script";
       };
 
