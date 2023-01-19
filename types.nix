@@ -137,15 +137,16 @@ rec {
 
     hookMixin = { config, options,... }: {
       options = let
-        mkHook = mkOption {
+        mkHook = description: mkOption {
+          inherit description;
           type = types.str;
           default = "";
         };
       in {
-        preCreateHook = mkHook;
-        postCreateHook = mkHook;
-        preMountHook = mkHook;
-        postMountHook = mkHook;
+        preCreateHook = mkHook "shell commands to run before create";
+        postCreateHook = mkHook "shell commands to run after create";
+        preMountHook = mkHook "shell commands to run before mount";
+        postMountHook = mkHook "shell commands to run after mount";
       };
     };
 
