@@ -137,15 +137,15 @@ rec {
 
     hookMixin = { config, options,... }: {
       options = let
-        mkHook = default: mkOption {
+        mkHook = mkOption {
           type = types.str;
-          default = default;
+          default = "";
         };
       in {
-        preCreateHook = mkHook "echo 'DEBUG preCreate: ${config.type}'";
-        postCreateHook = mkHook "echo 'DEBUG postCreate: ${config.type}'";
-        preMountHook = mkHook "echo 'DEBUG preMount: ${config.type}'";
-        postMountHook = mkHook "echo 'DEBUG postMount: ${config.type}'";
+        preCreateHook = mkHook;
+        postCreateHook = mkHook;
+        preMountHook = mkHook;
+        postMountHook = mkHook;
       };
     };
 
