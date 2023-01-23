@@ -24,5 +24,7 @@ status = [
   "check zfs [x86_64-linux]",
   "check zfs-over-legacy [x86_64-linux]",
   "package default [x86_64-linux]",
-  "package disko [x86_64-linux]"
+  "package disko [x86_64-linux]",
+  "package disko-doc [x86_64-linux]",
+  "package linux-bcachefs [x86_64-linux]"
 ]

@@ -28,6 +28,10 @@
       # That's why we need to maintain a fork here:
       # https://github.com/NixOS/nixpkgs/issues/212086
       linux-bcachefs = pkgs.callPackage ./linux-testing-bcachefs.nix {};
+    });
+    legacyPackages = forAllSystems (system: let
+      pkgs = nixpkgs.legacyPackages.${system};
+    in {
       linuxPackages_bcachefs = pkgs.linuxPackagesFor self.packages.${pkgs.system}.linux-bcachefs;
     });
     # TODO: disable bios-related tests on aarch64...
