@@ -1,6 +1,8 @@
-{ lib ? import <nixpkgs/lib> }:
+{ lib ? import <nixpkgs/lib>
+, rootMountPoint ? "/mnt"
+}:
 let
-  types = import ./types.nix { inherit lib; };
+  types = import ./types.nix { inherit lib rootMountPoint; };
   eval = cfg: lib.evalModules {
     modules = lib.singleton {
       # _file = toString input;

@@ -1,6 +1,9 @@
 { config, lib, pkgs, ... }:
 let
-  types = import ./types.nix { inherit lib; };
+  types = import ./types.nix {
+    inherit lib;
+    rootMountPoint = config.disko.rootMountPoint;
+  };
   cfg = config.disko;
 in {
   options.disko = {
@@ -8,6 +11,11 @@ in {
       type = types.devices;
       default = {};
       description = "The devices to set up";
+    };
+    rootMountPoint = lib.mkOption {
+      type = lib.types.str;
+      default = "/mnt";
+      description = "Where the device tree should be mounted by the mountScript";
     };
     enableConfig = lib.mkOption {
       description = ''
