@@ -247,25 +247,22 @@ rec {
   };
 
   optionTypes = rec {
-    # POSIX.1‐2017, 3.281 Portable Filename
     filename = mkOptionType {
-      name = "POSIX portable filename";
-      check = x: isString x && builtins.match "[0-9A-Za-z._][0-9A-Za-z._-]*" x != null;
+      name = "filename";
+      check = x: isString x;
       merge = mergeOneOption;
       description = "A filename";
     };
 
-    # POSIX.1‐2017, 3.2 Absolute Pathname
     absolute-pathname = mkOptionType {
-      name = "POSIX absolute pathname";
+      name = "absolute pathname";
       check = x: isString x && substring 0 1 x == "/" && pathname.check x;
       merge = mergeOneOption;
       description = "An absolute path";
     };
 
-    # POSIX.1-2017, 3.271 Pathname
     pathname = mkOptionType {
-      name = "POSIX pathname";
+      name = "pathname";
       check = x:
         let
           # The filter is used to normalize paths, i.e. to remove duplicated and
