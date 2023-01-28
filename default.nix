@@ -2,7 +2,7 @@
 , rootMountPoint ? "/mnt"
 }:
 let
-  types = import ./types.nix { inherit lib rootMountPoint; };
+  types = import ./types { inherit lib rootMountPoint; };
   eval = cfg: lib.evalModules {
     modules = lib.singleton {
       # _file = toString input;

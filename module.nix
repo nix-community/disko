@@ -1,6 +1,6 @@
 { config, lib, pkgs, ... }:
 let
-  types = import ./types.nix {
+  types = import ./types {
     inherit lib;
     rootMountPoint = config.disko.rootMountPoint;
   };
