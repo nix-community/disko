@@ -25,6 +25,8 @@ Options:
   pass value to nix-build. can be used to set disk-names for example
 * --argstr name value
   pass value to nix-build as string
+* --root-mountpoint /mnt
+  where to mount the device tree
 * --dry-run
   just show the path to the script instead of running it
 * --debug
@@ -54,7 +56,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     -f | --flake)
-      flake="$2"
+      flake=$2
       shift
       ;;
     --argstr | --arg)
@@ -68,6 +70,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --dry-run)
       dry_run=y
+      ;;
+    --root-mountpoint)
+      nix_args+=(--arg rootMountPoint "$2")
+      shift
       ;;
     --no-deps)
       nix_args+=(--arg noDeps true)

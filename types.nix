@@ -1,4 +1,4 @@
-{ lib }:
+{ lib, rootMountPoint }:
 with lib;
 with builtins;
 
@@ -211,7 +211,7 @@ rec {
     in ''
       set -efux
       # first create the necessary devices
-      ${concatMapStrings (dev: ((attrByPath (dev ++ [ "_mount" ]) "" devices) {}).dev or "") sortedDeviceList}
+      ${concatMapStrings (dev: ((attrByPath (dev ++ [ "_mount" ]) {} devices) {}).dev or "") sortedDeviceList}
 
       # and then mount the filesystems in alphabetical order
       ${concatStrings (attrValues fsMounts)}
@@ -223,7 +223,7 @@ rec {
     */
     zapCreateMount = devices: ''
       set -efux
-      umount -Rv /mnt || :
+      umount -Rv "${rootMountPoint}" mnt || :
 
       for dev in ${toString (lib.catAttrs "device" (lib.attrValues devices.disk))}; do
         ${./disk-deactivate}/disk-deactivate "$dev" | bash -x
@@ -247,25 +247,22 @@ rec {
   };
 
   optionTypes = rec {
-    # POSIX.1‐2017, 3.281 Portable Filename
     filename = mkOptionType {
-      name = "POSIX portable filename";
-      check = x: isString x && builtins.match "[0-9A-Za-z._][0-9A-Za-z._-]*" x != null;
+      name = "filename";
+      check = x: isString x;
       merge = mergeOneOption;
       description = "A filename";
     };
 
-    # POSIX.1‐2017, 3.2 Absolute Pathname
     absolute-pathname = mkOptionType {
-      name = "POSIX absolute pathname";
+      name = "absolute pathname";
       check = x: isString x && substring 0 1 x == "/" && pathname.check x;
       merge = mergeOneOption;
       description = "An absolute path";
     };
 
-    # POSIX.1-2017, 3.271 Pathname
     pathname = mkOptionType {
-      name = "POSIX pathname";
+      name = "pathname";
       check = x:
         let
           # The filter is used to normalize paths, i.e. to remove duplicated and
@@ -354,8 +351,8 @@ rec {
         inherit config options;
         default = {}: {
           fs.${config.mountpoint} = ''
-            if ! findmnt ${config.fsType} "/mnt${config.mountpoint}" > /dev/null 2>&1; then
-              mount -t ${config.fsType} ${config.device} "/mnt${config.mountpoint}" \
+            if ! findmnt ${config.fsType} "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
+              mount -t ${config.fsType} ${config.device} "${rootMountPoint}${config.mountpoint}" \
               ${concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
               -o X-mount.mkdir
             fi
@@ -434,8 +431,8 @@ rec {
           in {
             fs = subvolMounts.fs // optionalAttrs (!isNull config.mountpoint) {
               ${config.mountpoint} = ''
-                if ! findmnt ${dev} "/mnt${config.mountpoint}" > /dev/null 2>&1; then
-                  mount ${dev} "/mnt${config.mountpoint}" \
+                if ! findmnt ${dev} "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
+                  mount ${dev} "${rootMountPoint}${config.mountpoint}" \
                   ${concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
                   -o X-mount.mkdir
                 fi
@@ -524,8 +521,8 @@ rec {
                        else null;
         in optionalAttrs (!isNull mountpoint) {
           fs.${mountpoint} = ''
-            if ! findmnt ${dev} "/mnt${mountpoint}" > /dev/null 2>&1; then
-              mount ${dev} "/mnt${mountpoint}" \
+            if ! findmnt ${dev} "${rootMountPoint}${mountpoint}" > /dev/null 2>&1; then
+              mount ${dev} "${rootMountPoint}${mountpoint}" \
               ${concatMapStringsSep " " (opt: "-o ${opt}") (config.mountOptions ++ [ "subvol=${config.name}" ])} \
               -o X-mount.mkdir
             fi
@@ -603,8 +600,8 @@ rec {
         inherit config options;
         default = {dev}: {
           fs.${config.mountpoint} = ''
-            if ! findmnt ${dev} "/mnt${config.mountpoint}" > /dev/null 2>&1; then
-              mount ${dev} "/mnt${config.mountpoint}" \
+            if ! findmnt ${dev} "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
+              mount ${dev} "${rootMountPoint}${config.mountpoint}" \
                 -t "${config.format}" \
                 ${concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
                 -o X-mount.mkdir
@@ -683,9 +680,7 @@ rec {
           let
             partMounts = diskoLib.deepMergeMap (partition: partition._mount {inherit dev;}) config.partitions;
           in {
-            dev = ''
-              ${concatMapStrings (x: x.dev or "") (attrValues partMounts)}
-            '';
+            dev = partMounts.dev or "";
             fs = partMounts.fs or {};
         };
       };
@@ -1169,8 +1164,8 @@ rec {
           '';
           fs = datasetMounts.fs // optionalAttrs (!isNull config.mountpoint) {
             ${config.mountpoint} = ''
-              if ! findmnt ${config.name} "/mnt${config.mountpoint}" > /dev/null 2>&1; then
-                mount ${config.name} "/mnt${config.mountpoint}" \
+              if ! findmnt ${config.name} "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
+                mount ${config.name} "${rootMountPoint}${config.mountpoint}" \
                 ${optionalString ((config.options.mountpoint or "") != "legacy") "-o zfsutil"} \
                 ${concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
                 -o X-mount.mkdir \
@@ -1273,8 +1268,8 @@ rec {
         default = {zpool}:
           optionalAttrs (config.zfs_type == "volume" && !isNull config.content) (config.content._mount {dev = "/dev/zvol/${zpool}/${config.name}";}) //
             optionalAttrs (config.zfs_type == "filesystem" && config.options.mountpoint or "" != "none") { fs.${config.mountpoint} = ''
-              if ! findmnt ${zpool}/${config.name} "/mnt${config.mountpoint}" > /dev/null 2>&1; then
-                mount ${zpool}/${config.name} "/mnt${config.mountpoint}" \
+              if ! findmnt ${zpool}/${config.name} "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
+                mount ${zpool}/${config.name} "${rootMountPoint}${config.mountpoint}" \
                 -o X-mount.mkdir \
                 ${concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
                 ${optionalString ((config.options.mountpoint or "") != "legacy") "-o zfsutil"} \

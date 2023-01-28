@@ -3,10 +3,12 @@
 , flake ? null
 , flakeAttr ? null
 , diskoFile ? null
+, rootMountPoint ? "/mnt"
 , noDeps ? false
 , ... }@args:
 let
   disko = import ./. {
+    inherit rootMountPoint;
     lib = pkgs.lib;
   };
 
