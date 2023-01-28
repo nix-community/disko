@@ -211,7 +211,7 @@ rec {
     in ''
       set -efux
       # first create the necessary devices
-      ${concatMapStrings (dev: ((attrByPath (dev ++ [ "_mount" ]) "" devices) {}).dev or "") sortedDeviceList}
+      ${concatMapStrings (dev: ((attrByPath (dev ++ [ "_mount" ]) {} devices) {}).dev or "") sortedDeviceList}
 
       # and then mount the filesystems in alphabetical order
       ${concatStrings (attrValues fsMounts)}
@@ -680,9 +680,7 @@ rec {
           let
             partMounts = diskoLib.deepMergeMap (partition: partition._mount {inherit dev;}) config.partitions;
           in {
-            dev = ''
-              ${concatMapStrings (x: x.dev or "") (attrValues partMounts)}
-            '';
+            dev = partMounts.dev or "";
             fs = partMounts.fs or {};
         };
       };
