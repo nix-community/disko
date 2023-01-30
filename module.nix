@@ -5,6 +5,7 @@ let
     rootMountPoint = config.disko.rootMountPoint;
   };
   cfg = config.disko;
+  checked = cfg.checkScripts;
 in
 {
   options.disko = {
@@ -27,26 +28,32 @@ in
       type = lib.types.bool;
       default = true;
     };
+    checkScripts = lib.mkOption {
+      description = ''
+        Whether to run shellcheck on script outputs
+      '';
+      type = lib.types.bool;
+      default = false;
+    };
   };
   config = lib.mkIf (cfg.devices.disk != { }) {
-    system.build.formatScript = pkgs.writers.writeBash "disko-create" ''
+    system.build.formatScript = (types.diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-create" ''
       export PATH=${lib.makeBinPath (types.diskoLib.packages cfg.devices pkgs)}:$PATH
       ${types.diskoLib.create cfg.devices}
     '';
 
-    system.build.mountScript = pkgs.writers.writeBash "disko-mount" ''
+    system.build.mountScript = (types.diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-mount" ''
       export PATH=${lib.makeBinPath (types.diskoLib.packages cfg.devices pkgs)}:$PATH
       ${types.diskoLib.mount cfg.devices}
     '';
 
-    system.build.disko = pkgs.writers.writeBash "disko" ''
+    system.build.disko = (types.diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko" ''
       export PATH=${lib.makeBinPath (types.diskoLib.packages cfg.devices pkgs)}:$PATH
       ${types.diskoLib.zapCreateMount cfg.devices}
     '';
 
     # This is useful to skip copying executables uploading a script to an in-memory installer
-    system.build.diskoNoDeps = pkgs.writeScript "disko" ''
-      #!/usr/bin/env bash
+    system.build.diskoNoDeps = (types.diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko" ''
       ${types.diskoLib.zapCreateMount cfg.devices}
     '';
 

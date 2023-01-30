@@ -24,10 +24,11 @@
           inherit (pkgs) system;
         };
       disks = [ "/dev/vda" "/dev/vdb" "/dev/vdc" "/dev/vdd" "/dev/vde" "/dev/vdf" ];
-      tsp-create = pkgs.writeScript "create" ((pkgs.callPackage ../. { }).create (import disko-config { disks = builtins.tail disks; inherit lib; }));
-      tsp-mount = pkgs.writeScript "mount" ((pkgs.callPackage ../. { }).mount (import disko-config { disks = builtins.tail disks; inherit lib; }));
-      tsp-config = (pkgs.callPackage ../. { }).config (import disko-config { inherit disks; inherit lib; });
-      tsp-disko = pkgs.writeScript "disko" ((pkgs.callPackage ../. { }).zapCreateMount (import disko-config { disks = builtins.tail disks; inherit lib; }));
+      tsp-generator = pkgs.callPackage ../. { checked = true; };
+      tsp-create = (tsp-generator.createScript (import disko-config { disks = builtins.tail disks; inherit lib; })) pkgs;
+      tsp-mount = (tsp-generator.mountScript (import disko-config { disks = builtins.tail disks; inherit lib; })) pkgs;
+      tsp-disko = (tsp-generator.zapCreateMountScript (import disko-config { disks = builtins.tail disks; inherit lib; })) pkgs;
+      tsp-config = tsp-generator.config (import disko-config { inherit disks; inherit lib; });
       num-disks = builtins.length (lib.attrNames (import disko-config { inherit lib; }).disk);
       installed-system = { modulesPath, ... }: {
         imports = [
@@ -78,14 +79,15 @@
             imports = [ ../module.nix ];
             disko = {
               enableConfig = false;
+              checkScripts = true;
               devices = import disko-config { disks = builtins.tail disks; inherit lib; };
             };
           })
           (lib.optionalAttrs (testMode == "cli") {
             imports = [ (modulesPath + "/installer/cd-dvd/channel.nix") ];
             system.extraDependencies = [
-              ((pkgs.callPackage ../. { }).createScript (import disko-config { disks = builtins.tail disks; inherit lib; }) pkgs)
-              ((pkgs.callPackage ../. { }).mountScript (import disko-config { disks = builtins.tail disks; inherit lib; }) pkgs)
+              ((pkgs.callPackage ../. { checked = true; }).createScript (import disko-config { disks = builtins.tail disks; inherit lib; }) pkgs)
+              ((pkgs.callPackage ../. { checked = true; }).mountScript (import disko-config { disks = builtins.tail disks; inherit lib; }) pkgs)
             ];
           })
           (modulesPath + "/profiles/base.nix")

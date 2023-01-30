@@ -11,8 +11,8 @@ let
       disko-config = import configFile;
     in
     {
-      "${name}-tsp-create" = pkgs.writeScript "create" ((pkgs.callPackage ../. { }).create disko-config);
-      "${name}-tsp-mount" = pkgs.writeScript "mount" ((pkgs.callPackage ../. { }).mount disko-config);
+      "${name}-tsp-create" = (pkgs.callPackage ../. { checked = true; }).createScript disko-config pkgs;
+      "${name}-tsp-mount" = (pkgs.callPackage ../. { checked = true; }).mountScript disko-config pkgs;
     };
 
   allTestFilenames =
