@@ -1,7 +1,7 @@
 { lib, nixosOptionsDoc, runCommand, fetchurl, pandoc }:
 
 let
-  types = import ./types.nix {
+  types = import ./types {
     inherit lib;
     rootMountPoint = "/mnt";
   };
