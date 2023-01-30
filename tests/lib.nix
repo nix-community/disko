@@ -132,10 +132,10 @@
           machine.succeed("${tsp-disko}") # verify that we can destroy and recreate
         ''}
         ${lib.optionalString (testMode == "module") ''
-          machine.succeed("${nodes.machine.system.build.formatScript}")
-          machine.succeed("${nodes.machine.system.build.mountScript}")
-          machine.succeed("${nodes.machine.system.build.mountScript}") # verify that the command is idempotent
-          machine.succeed("${nodes.machine.system.build.disko}") # verify that we can destroy and recreate again
+          machine.succeed("${nodes.machine.system.build.formatScript}/bin/disko-create")
+          machine.succeed("${nodes.machine.system.build.mountScript}/bin/disko-mount")
+          machine.succeed("${nodes.machine.system.build.mountScript}/bin/disko-mount") # verify that the command is idempotent
+          machine.succeed("${nodes.machine.system.build.disko}/bin/disko") # verify that we can destroy and recreate again
         ''}
         ${lib.optionalString (testMode == "cli") ''
           # TODO use the disko cli here
