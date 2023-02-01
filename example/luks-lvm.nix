@@ -57,18 +57,19 @@
             ];
           };
         };
-        home = {
+        raw = {
           type = "lvm_lv";
           size = "10M";
+        };
+        # lv's are created in alphabetical order, you must consider this if you want to use a relative size
+        zhome = {
+          type = "lvm_lv";
+          size = "+100%FREE";
           content = {
             type = "filesystem";
             format = "ext4";
             mountpoint = "/home";
           };
-        };
-        raw = {
-          type = "lvm_lv";
-          size = "10M";
         };
       };
     };
