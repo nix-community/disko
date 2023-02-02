@@ -199,7 +199,7 @@ rec {
     */
     writeCheckedBash = { pkgs, checked ? false, noDeps ? false }: pkgs.writers.makeScriptWriter {
       interpreter = if noDeps then "/usr/bin/env bash" else "${pkgs.bash}/bin/bash";
-      check = lib.optionalString checked "${pkgs.shellcheck}/bin/shellcheck";
+      check = lib.optionalString checked "${pkgs.shellcheck}/bin/shellcheck -e SC2034";
     };
 
 
@@ -252,6 +252,7 @@ rec {
       set -efux
       umount -Rv "${rootMountPoint}" || :
 
+      # shellcheck disable=SC2043
       for dev in ${toString (lib.catAttrs "device" (lib.attrValues devices.disk))}; do
         ${../disk-deactivate}/disk-deactivate "$dev" | bash -x
       done
