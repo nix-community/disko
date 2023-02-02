@@ -1,4 +1,5 @@
 { pkgs ? import <nixpkgs> {}
+, lib ? pkgs.lib
 , mode ? "mount"
 , flake ? null
 , flakeAttr ? null
@@ -9,13 +10,13 @@
 let
   disko = import ./. {
     inherit rootMountPoint;
-    lib = pkgs.lib;
+    inherit lib;
   };
 
   diskFormat = if flake != null then
     (pkgs.lib.attrByPath [ "diskoConfigurations" flakeAttr ] (builtins.abort "${flakeAttr} does not exist") (builtins.getFlake flake)) args
   else
-    import diskoFile args;
+    import diskoFile ({ inherit lib; } // args);
 
   diskoEval = if noDeps then
     if (mode == "create") then
