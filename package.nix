@@ -8,7 +8,7 @@ stdenvNoCC.mkDerivation rec {
   ];
   installPhase = ''
     mkdir -p $out/bin $out/share/disko
-    cp -r cli.nix default.nix types.nix disk-deactivate types $out/share/disko
+    cp -r cli.nix default.nix disk-deactivate types $out/share/disko
     sed \
       -e "s|libexec_dir=\".*\"|libexec_dir=\"$out/share/disko\"|" \
       -e "s|#!/usr/bin/env.*|#!/usr/bin/env bash|" \
