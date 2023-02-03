@@ -3,12 +3,16 @@
 This tutorial will guide you through the process of installing NixOS on a single
 disk system using Disko.
 
-- 1. Download NixOS ISO images from the NixOS download page
+1. Booting the installer
+
+Download NixOS ISO images from the NixOS download page
 (https://nixos.org/download.html#nixos-iso) and create a bootable USB drive
 following the instructions in [Section 2.4.1 "Booting from a USB flash drive"](https://nixos.org/manual/nixos/stable/index.html#sec-booting-from-usb)
 of the NixOS manual.
 
-- 2. Identify the name of your system disk by using the lsblk command.
+2. The disk name
+
+Identify the name of your system disk by using the lsblk command.
 
 ```
 $ lsblk
@@ -21,15 +25,18 @@ Please note that Disko will reformat the entire disk and overwrite any existing
 partitions. Dual booting with other operating systems is not supported.
 
 
-- 3. Choose a disk layout from the [examples directory](https://github.com/nix-community/disko/tree/master/example)
+3. Disk layout
+
+Choose a disk layout from the [examples directory](https://github.com/nix-community/disko/tree/master/example)
 
 For those who are unsure of which layout to pick, use the hybrid configuration
 found at https://github.com/nix-community/disko/blob/master/example/hybrid.nix
 and save it as `/tmp/disko-config.nix`. This layout is compatible with both BIOS
 and EFI systems.
 
-- 4. The following step will reformat your disk and mount it to `/mnt`. Replace
-   `<disk-name>` with the name of your disk obtained in step 1.
+4. Formatting
+
+The following step will reformat your disk and mount it to `/mnt`. Replace `<disk-name>` with the name of your disk obtained in step 1.
 
 Please note: This will erase any existing data on your disk.
 
@@ -53,7 +60,9 @@ $ mount | grep /mnt
 /dev/nvme0n1p2 on /mnt/boot type vfat (rw,relatime,fmask=0022,dmask=0022,codepage=437,iocharset=iso8859-1,shortname=mixed,errors=remount-ro)
 ```
 
-- 5. Generate and modify the NixOS configuration:
+5. Rest of the NixOS installation:
+
+Generate and modify the NixOS configuration.
 
 You now need to create a file `/mnt/etc/nixos/configuration.nix` that specifies
 the intended configuration of the system. This is because NixOS has a
