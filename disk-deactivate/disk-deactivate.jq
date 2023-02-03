@@ -54,7 +54,7 @@ def deactivate:
 
 def walk:
   [
-    (.mountpoints[] | "umount -R \(.)"),
+    (.mountpoints[] | select(. != null) | "umount -R \(.)"),
     ((.children // []) | map(walk)),
     remove,
     deactivate
