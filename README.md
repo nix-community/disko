@@ -18,15 +18,7 @@ system itself is declarative, but the actual formatting of disks is manual.
 
 ### NixOS installation
 
-During the NixOS installation process, replace the [Partitioning and
-formatting](https://nixos.org/manual/nixos/stable/index.html#sec-installation-partitioning)
-steps with the following:
-
-1. Find a disk layout in ./examples that you like.
-2. Write the config based on the example and your disk layout.
-4. Run the CLI (`nix run github:nix-community/disko`) to apply the changes.
-5. FIXME: Copy the disko module and disk layout around.
-6. Continue the NixOS installation.
+For a NixOS installation follow this [quickstart guid](./docs/quickstart.md).
 
 ### Using without NixOS
 
