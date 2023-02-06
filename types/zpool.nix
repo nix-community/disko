@@ -52,7 +52,7 @@
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = {}: ''
-        zpool create ${config.name} \
+        zpool create ${config.name} -R /mnt \
           ${config.mode} \
           ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") config.options)} \
           ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-O ${n}=${v}") config.rootFsOptions)} \
@@ -68,7 +68,7 @@
         in
         {
           dev = ''
-            zpool list '${config.name}' >/dev/null 2>/dev/null || zpool import '${config.name}'
+            zpool list '${config.name}' >/dev/null 2>/dev/null || zpool import -R /mnt '${config.name}'
             ${lib.concatMapStrings (x: x.dev or "") (lib.attrValues datasetMounts)}
           '';
           fs = datasetMounts.fs // lib.optionalAttrs (!isNull config.mountpoint) {
