@@ -48,7 +48,7 @@
           subvolMounts = diskoLib.deepMergeMap (subvol: subvol._mount { inherit dev; parent = config.mountpoint; }) (lib.attrValues config.subvolumes);
         in
         {
-          fs = subvolMounts.fs // lib.optionalAttrs (!isNull config.mountpoint) {
+          fs = subvolMounts.fs // lib.optionalAttrs (config.mountpoint != null) {
             ${config.mountpoint} = ''
               if ! findmnt ${dev} "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
                 mount ${dev} "${rootMountPoint}${config.mountpoint}" \
@@ -64,7 +64,7 @@
       readOnly = true;
       default = dev: [
         (map (subvol: subvol._config dev config.mountpoint) (lib.attrValues config.subvolumes))
-        (lib.optional (!isNull config.mountpoint) {
+        (lib.optional (config.mountpoint != null) {
           fileSystems.${config.mountpoint} = {
             device = dev;
             fsType = "btrfs";

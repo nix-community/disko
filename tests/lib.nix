@@ -17,7 +17,7 @@
     , testBoot ? true # if we actually want to test booting or just create/mount
     }:
     let
-      lib = pkgs.lib;
+      inherit (pkgs) lib;
       makeTest' = args:
         makeTest args {
           inherit pkgs;

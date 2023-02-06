@@ -14,8 +14,9 @@ let
       };
     };
   };
-in {
-  types = types;
+in
+{
+  inherit types;
   create = cfg: types.diskoLib.create (eval cfg).config.devices;
   createScript = cfg: pkgs: pkgs.writeScript "disko-create" ''
     #!/usr/bin/env bash

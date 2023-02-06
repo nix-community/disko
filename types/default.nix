@@ -11,8 +11,7 @@ rec {
       name = "subType";
       description = "one of ${concatStringsSep "," (attrNames typeAttr)}";
       check = x: if x ? type then typeAttr.${x.type}.check x else throw "No type option set in:\n${generators.toPretty {} x}";
-      merge = loc: defs:
-        foldl' (res: def: typeAttr.${def.value.type}.merge loc [ def ]) { } defs;
+      merge = loc: foldl' (res: def: typeAttr.${def.value.type}.merge loc [ def ]) { };
       nestedTypes = typeAttr;
     };
 
@@ -38,8 +37,7 @@ rec {
          deepMergeMap (x: x.t = "test") [ { x = { y = 1; z = 3; }; } { x = { bla = 234; }; } ]
          => { x = { y = 1; z = 3; bla = 234; t = "test"; }; }
     */
-    deepMergeMap = f: listOfAttrs:
-      foldr (attr: acc: (recursiveUpdate acc (f attr))) { } listOfAttrs;
+    deepMergeMap = f: foldr (attr: acc: (recursiveUpdate acc (f attr))) { };
 
     /* get a device and an index to get the matching device name
 
@@ -119,7 +117,7 @@ rec {
          maybeSTr "hello world"
          => "hello world"
     */
-    maybeStr = x: optionalString (!isNull x) x;
+    maybeStr = x: optionalString (x != null) x;
 
     /* Takes a Submodules config and options argument and returns a serializable
        subset of config variables as a shell script snippet.
@@ -147,7 +145,7 @@ rec {
       default = "";
     };
 
-    mkSubType = module: lib.types.submodule ([
+    mkSubType = module: lib.types.submodule [
       module
 
       {
@@ -161,7 +159,7 @@ rec {
           inherit diskoLib optionTypes subTypes rootMountPoint;
         };
       }
-    ]);
+    ];
 
     mkCreateOption = { config, options, default }@attrs:
       lib.mkOption {
@@ -189,7 +187,7 @@ rec {
         internal = true;
         readOnly = true;
         type = lib.types.functionTo diskoLib.jsonType;
-        default = args: attrs.default args;
+        inherit (attrs) default;
         description = "Mount script";
       };
 
@@ -215,7 +213,7 @@ rec {
         trap 'rm -rf "$disko_devices_dir"' EXIT
         mkdir -p "$disko_devices_dir"
 
-        ${concatMapStrings (dev: (attrByPath (dev ++ [ "_create" ]) ({}: {}) devices) {}) sortedDeviceList}
+        ${concatMapStrings (dev: (attrByPath (dev ++ [ "_create" ]) (_: {}) devices) {}) sortedDeviceList}
       '';
     /* Takes a disko device specification and returns a string which mounts the disks
 
@@ -326,7 +324,7 @@ rec {
     };
   };
 
-  subTypes = lib.mapAttrs (_: module: diskoLib.mkSubType module) {
+  subTypes = lib.mapAttrs (_: diskoLib.mkSubType) {
     nodev =  ./nodev.nix;
     btrfs = ./btrfs.nix;
     btrfs_subvol = ./btrfs_subvol.nix;

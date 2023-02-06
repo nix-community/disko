@@ -18,11 +18,11 @@ buildLinux (args // {
     sha256 = "sha256-n00qPtHHEHt3FSIRMoP9IJFAdQJNNwabg+WAKppSAS8=";
   };
 
-  kernelPatches = (args.kernelPatches or []) ++ [{
+  kernelPatches = (args.kernelPatches or [ ]) ++ [{
     name = "bcachefs-config";
     patch = null;
     extraConfig = ''
       BCACHEFS_FS m
     '';
   }];
-} // (args.argsOverride or {}))
+} // (args.argsOverride or { }))

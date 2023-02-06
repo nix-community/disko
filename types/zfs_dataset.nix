@@ -47,7 +47,7 @@
       readOnly = true;
       type = lib.types.functionTo diskoLib.jsonType;
       default = dev:
-        lib.optionalAttrs (!isNull config.content) (config.content._meta dev);
+        lib.optionalAttrs (config.content != null) (config.content._meta dev);
       description = "Metadata";
     };
     _create = diskoLib.mkCreateOption {
@@ -58,14 +58,14 @@
           ${lib.optionalString (config.zfs_type == "volume") "-V ${config.size}"}
         ${lib.optionalString (config.zfs_type == "volume") ''
           udevadm trigger --subsystem-match=block; udevadm settle
-          ${lib.optionalString (!isNull config.content) (config.content._create {dev = "/dev/zvol/${zpool}/${config.name}";})}
+          ${lib.optionalString (config.content != null) (config.content._create {dev = "/dev/zvol/${zpool}/${config.name}";})}
         ''}
       '';
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
       default = { zpool }:
-        lib.optionalAttrs (config.zfs_type == "volume" && !isNull config.content) (config.content._mount { dev = "/dev/zvol/${zpool}/${config.name}"; }) //
+        lib.optionalAttrs (config.zfs_type == "volume" && config.content != null) (config.content._mount { dev = "/dev/zvol/${zpool}/${config.name}"; }) //
         lib.optionalAttrs (config.zfs_type == "filesystem" && config.options.mountpoint or "" != "none") {
           fs.${config.mountpoint} = ''
             if ! findmnt ${zpool}/${config.name} "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
@@ -82,7 +82,7 @@
       internal = true;
       readOnly = true;
       default = zpool:
-        (lib.optional (config.zfs_type == "volume" && !isNull config.content) (config.content._config "/dev/zvol/${zpool}/${config.name}")) ++
+        (lib.optional (config.zfs_type == "volume" && config.content != null) (config.content._config "/dev/zvol/${zpool}/${config.name}")) ++
         (lib.optional (config.zfs_type == "filesystem" && config.options.mountpoint or "" != "none") {
           fileSystems.${config.mountpoint} = {
             device = "${zpool}/${config.name}";
@@ -96,7 +96,7 @@
       internal = true;
       readOnly = true;
       type = lib.types.functionTo (lib.types.listOf lib.types.package);
-      default = pkgs: [ pkgs.util-linux ] ++ lib.optionals (!isNull config.content) (config.content._pkgs pkgs);
+      default = pkgs: [ pkgs.util-linux ] ++ lib.optionals (config.content != null) (config.content._pkgs pkgs);
       description = "Packages";
     };
   };

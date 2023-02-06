@@ -22,30 +22,30 @@
       readOnly = true;
       type = diskoLib.jsonType;
       default =
-        lib.optionalAttrs (!isNull config.content) (config.content._meta [ "disk" config.device ]);
+        lib.optionalAttrs (config.content != null) (config.content._meta [ "disk" config.device ]);
       description = "Metadata";
     };
     _create = diskoLib.mkCreateOption {
       inherit config options;
-      default = {}: config.content._create { dev = config.device; };
+      default = _: config.content._create { dev = config.device; };
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
-      default = {}:
-        lib.optionalAttrs (!isNull config.content) (config.content._mount { dev = config.device; });
+      default = _:
+        lib.optionalAttrs (config.content != null) (config.content._mount { dev = config.device; });
     };
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
       default =
-        lib.optional (!isNull config.content) (config.content._config config.device);
+        lib.optional (config.content != null) (config.content._config config.device);
       description = "NixOS configuration";
     };
     _pkgs = lib.mkOption {
       internal = true;
       readOnly = true;
       type = lib.types.functionTo (lib.types.listOf lib.types.package);
-      default = pkgs: [ pkgs.jq ] ++ lib.optionals (!isNull config.content) (config.content._pkgs pkgs);
+      default = pkgs: [ pkgs.jq ] ++ lib.optionals (config.content != null) (config.content._pkgs pkgs);
       description = "Packages";
     };
   };
