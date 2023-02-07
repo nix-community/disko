@@ -1,0 +1,4 @@
+disabled = [
+    "manual_inherit",  # Prefer `inherit types;` instead of `types = types;`
+    "manual_inherit_from",  # Prefer `inherit (eval) options;` instead of `options = eval.options`.
+]

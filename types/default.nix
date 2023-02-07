@@ -187,7 +187,7 @@ rec {
         internal = true;
         readOnly = true;
         type = lib.types.functionTo diskoLib.jsonType;
-        inherit (attrs) default;
+        default = attrs.default;
         description = "Mount script";
       };
 

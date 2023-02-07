@@ -1,7 +1,7 @@
 # Example to create a bios compatible gpt partition
 { disks ? [ "/dev/vdb" ], lib, ... }: {
   disk = lib.genAttrs [ (lib.head disks) ] (device: {
-    inherit device;
+    device = device;
     type = "disk";
     content = {
       type = "table";

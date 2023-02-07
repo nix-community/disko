@@ -19,7 +19,7 @@ let
     ];
   };
   options = nixosOptionsDoc {
-    inherit (eval) options;
+    options = eval.options;
   };
   md = (runCommand "disko-options.md" { } ''
     cat >$out <<EOF

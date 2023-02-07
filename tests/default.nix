@@ -3,8 +3,8 @@
 , pkgs ? (import <nixpkgs> { })
 }@args:
 let
-  inherit (pkgs) lib;
-  inherit ((pkgs.callPackage ./lib.nix { inherit makeTest eval-config; })) makeDiskoTest;
+  lib = pkgs.lib;
+  makeDiskoTest = (pkgs.callPackage ./lib.nix { inherit makeTest eval-config; }).makeDiskoTest;
 
   evalTest = name: configFile: let
     disko-config = import configFile;

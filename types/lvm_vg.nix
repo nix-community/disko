@@ -42,7 +42,7 @@
             vgchange -a y
             ${lib.concatMapStrings (x: x.dev or "") (lib.attrValues lvMounts)}
           '';
-          inherit (lvMounts) fs;
+          fs = lvMounts.fs;
         };
     };
     _config = lib.mkOption {
