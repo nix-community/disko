@@ -13,7 +13,7 @@
             type = "partition";
             start = "0";
             end = "1M";
-            flags = ["bios_grub"];
+            flags = [ "bios_grub" ];
           }
           {
             type = "partition";

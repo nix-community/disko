@@ -14,7 +14,7 @@
             start = "0";
             end = "1M";
             part-type = "primary";
-            flags = ["bios_grub"];
+            flags = [ "bios_grub" ];
           }
           {
             name = "root";

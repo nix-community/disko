@@ -1,8 +1,8 @@
-{
-  pkgs,
-  lib,
-  ...
-}: let
+{ pkgs
+, lib
+, ...
+}:
+let
   # We just import from the repository for testing here:
   disko = import ../../. {
     inherit lib;
@@ -41,7 +41,8 @@
       };
     };
   };
-in {
+in
+{
   imports = [
     (disko.config cfg)
   ];

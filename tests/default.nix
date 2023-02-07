@@ -6,12 +6,14 @@ let
   lib = pkgs.lib;
   makeDiskoTest = (pkgs.callPackage ./lib.nix { inherit makeTest eval-config; }).makeDiskoTest;
 
-  evalTest = name: configFile: let
-    disko-config = import configFile;
-  in {
-    "${name}-tsp-create" = pkgs.writeScript "create" ((pkgs.callPackage ../. { }).create disko-config);
-    "${name}-tsp-mount" = pkgs.writeScript "mount" ((pkgs.callPackage ../. { }).mount disko-config);
-  };
+  evalTest = name: configFile:
+    let
+      disko-config = import configFile;
+    in
+    {
+      "${name}-tsp-create" = pkgs.writeScript "create" ((pkgs.callPackage ../. { }).create disko-config);
+      "${name}-tsp-mount" = pkgs.writeScript "mount" ((pkgs.callPackage ../. { }).mount disko-config);
+    };
 
   allTestFilenames =
     builtins.map (lib.removeSuffix ".nix") (
@@ -21,8 +23,8 @@ let
     );
 
   allTests = lib.genAttrs allTestFilenames (test: import (./. + "/${test}.nix") { inherit makeDiskoTest pkgs; }) //
-             evalTest "lvm-luks-example" ../example/config.nix // {
-               standalone = (pkgs.nixos [ ../example/stand-alone/configuration.nix ]).config.system.build.toplevel;
-             };
+    evalTest "lvm-luks-example" ../example/config.nix // {
+    standalone = (pkgs.nixos [ ../example/stand-alone/configuration.nix ]).config.system.build.toplevel;
+  };
 in
 allTests

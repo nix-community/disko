@@ -100,7 +100,7 @@
         documentation.enable = false;
 
         nix.settings = {
-          substituters = lib.mkForce [];
+          substituters = lib.mkForce [ ];
           hashed-mirrors = null;
           connect-timeout = 1;
         };
