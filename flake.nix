@@ -57,5 +57,22 @@
           '';
         in
         nixosTests // { inherit shellcheck; });
+      formatter = forAllSystems (system:
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+        in
+        pkgs.writeShellApplication {
+          name = "normalise_nix";
+          runtimeInputs = with pkgs; [
+            nixpkgs-fmt
+            statix
+          ];
+          text = ''
+            set -o xtrace
+            nixpkgs-fmt "$@"
+            statix fix "$@"
+          '';
+        }
+      );
     };
 }
