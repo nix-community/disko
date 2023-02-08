@@ -2,14 +2,15 @@
 let
   types = import ./types {
     inherit lib;
-    rootMountPoint = config.disko.rootMountPoint;
+    inherit (config.disko) rootMountPoint;
   };
   cfg = config.disko;
-in {
+in
+{
   options.disko = {
     devices = lib.mkOption {
       type = types.devices;
-      default = {};
+      default = { };
       description = "The devices to set up";
     };
     rootMountPoint = lib.mkOption {
@@ -27,7 +28,7 @@ in {
       default = true;
     };
   };
-  config = lib.mkIf (cfg.devices.disk != {}) {
+  config = lib.mkIf (cfg.devices.disk != { }) {
     system.build.formatScript = pkgs.writers.writeBash "disko-create" ''
       export PATH=${lib.makeBinPath (types.diskoLib.packages cfg.devices pkgs)}:$PATH
       ${types.diskoLib.create cfg.devices}

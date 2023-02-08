@@ -50,11 +50,11 @@
       default = { dev, parent }:
         let
           mountpoint =
-            if (!isNull config.mountpoint) then config.mountpoint
-            else if (isNull parent) then config.name
+            if (config.mountpoint != null) then config.mountpoint
+            else if (parent == null) then config.name
             else null;
         in
-        lib.optionalAttrs (!isNull mountpoint) {
+        lib.optionalAttrs (mountpoint != null) {
           fs.${mountpoint} = ''
             if ! findmnt ${dev} "${rootMountPoint}${mountpoint}" > /dev/null 2>&1; then
               mount ${dev} "${rootMountPoint}${mountpoint}" \
@@ -70,11 +70,11 @@
       default = dev: parent:
         let
           mountpoint =
-            if (!isNull config.mountpoint) then config.mountpoint
-            else if (isNull parent) then config.name
+            if (config.mountpoint != null) then config.mountpoint
+            else if (parent == null) then config.name
             else null;
         in
-        lib.optional (!isNull mountpoint) {
+        lib.optional (mountpoint != null) {
           fileSystems.${mountpoint} = {
             device = dev;
             fsType = "btrfs";

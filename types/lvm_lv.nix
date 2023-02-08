@@ -32,7 +32,7 @@
       readOnly = true;
       type = lib.types.functionTo diskoLib.jsonType;
       default = dev:
-        lib.optionalAttrs (!isNull config.content) (config.content._meta dev);
+        lib.optionalAttrs (config.content != null) (config.content._meta dev);
       description = "Metadata";
     };
     _create = diskoLib.mkCreateOption {
@@ -42,24 +42,24 @@
           --yes \
           ${if lib.hasInfix "%" config.size then "-l" else "-L"} ${config.size} \
           -n ${config.name} \
-          ${lib.optionalString (!isNull config.lvm_type) "--type=${config.lvm_type}"} \
+          ${lib.optionalString (config.lvm_type != null) "--type=${config.lvm_type}"} \
           ${config.extraArgs} \
           ${vg}
-        ${lib.optionalString (!isNull config.content) (config.content._create {dev = "/dev/${vg}/${config.name}";})}
+        ${lib.optionalString (config.content != null) (config.content._create {dev = "/dev/${vg}/${config.name}";})}
       '';
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
       default = { vg }:
-        lib.optionalAttrs (!isNull config.content) (config.content._mount { dev = "/dev/${vg}/${config.name}"; });
+        lib.optionalAttrs (config.content != null) (config.content._mount { dev = "/dev/${vg}/${config.name}"; });
     };
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
       default = vg:
         [
-          (lib.optional (!isNull config.content) (config.content._config "/dev/${vg}/${config.name}"))
-          (lib.optional (!isNull config.lvm_type) {
+          (lib.optional (config.content != null) (config.content._config "/dev/${vg}/${config.name}"))
+          (lib.optional (config.lvm_type != null) {
             boot.initrd.kernelModules = [ "dm-${config.lvm_type}" ];
           })
         ];
@@ -69,7 +69,7 @@
       internal = true;
       readOnly = true;
       type = lib.types.functionTo (lib.types.listOf lib.types.package);
-      default = pkgs: lib.optionals (!isNull config.content) (config.content._pkgs pkgs);
+      default = pkgs: lib.optionals (config.content != null) (config.content._pkgs pkgs);
       description = "Packages";
     };
   };

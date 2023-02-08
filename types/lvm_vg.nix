@@ -26,14 +26,14 @@
     };
     _create = diskoLib.mkCreateOption {
       inherit config options;
-      default = {}: ''
+      default = _: ''
         vgcreate ${config.name} $(tr '\n' ' ' < $disko_devices_dir/lvm_${config.name})
         ${lib.concatMapStrings (lv: lv._create {vg = config.name; }) (lib.attrValues config.lvs)}
       '';
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
-      default = {}:
+      default = _:
         let
           lvMounts = diskoLib.deepMergeMap (lv: lv._mount { vg = config.name; }) (lib.attrValues config.lvs);
         in
@@ -42,7 +42,7 @@
             vgchange -a y
             ${lib.concatMapStrings (x: x.dev or "") (lib.attrValues lvMounts)}
           '';
-          fs = lvMounts.fs;
+          inherit (lvMounts) fs;
         };
     };
     _config = lib.mkOption {

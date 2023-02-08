@@ -52,7 +52,7 @@
       readOnly = true;
       type = lib.types.functionTo diskoLib.jsonType;
       default = dev:
-        lib.optionalAttrs (!isNull config.content) (config.content._meta dev);
+        lib.optionalAttrs (config.content != null) (config.content._meta dev);
       description = "Metadata";
     };
     _create = diskoLib.mkCreateOption {
@@ -66,7 +66,7 @@
         ''}
         # ensure /dev/disk/by-path/..-partN exists before continuing
         udevadm trigger --subsystem-match=block; udevadm settle
-        ${lib.optionalString (config.bootable) ''
+        ${lib.optionalString config.bootable ''
           parted -s ${dev} -- set ${toString config.index} boot on
         ''}
         ${lib.concatMapStringsSep "" (flag: ''
@@ -74,26 +74,26 @@
         '') config.flags}
         # ensure further operations can detect new partitions
         udevadm trigger --subsystem-match=block; udevadm settle
-        ${lib.optionalString (!isNull config.content) (config.content._create {dev = (diskoLib.deviceNumbering dev config.index);})}
+        ${lib.optionalString (config.content != null) (config.content._create {dev = diskoLib.deviceNumbering dev config.index;})}
       '';
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
       default = { dev }:
-        lib.optionalAttrs (!isNull config.content) (config.content._mount { dev = (diskoLib.deviceNumbering dev config.index); });
+        lib.optionalAttrs (config.content != null) (config.content._mount { dev = diskoLib.deviceNumbering dev config.index; });
     };
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
       default = dev:
-        lib.optional (!isNull config.content) (config.content._config (diskoLib.deviceNumbering dev config.index));
+        lib.optional (config.content != null) (config.content._config (diskoLib.deviceNumbering dev config.index));
       description = "NixOS configuration";
     };
     _pkgs = lib.mkOption {
       internal = true;
       readOnly = true;
       type = lib.types.functionTo (lib.types.listOf lib.types.package);
-      default = pkgs: lib.optionals (!isNull config.content) (config.content._pkgs pkgs);
+      default = pkgs: lib.optionals (config.content != null) (config.content._pkgs pkgs);
       description = "Packages";
     };
   };

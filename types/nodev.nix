@@ -35,11 +35,11 @@
     };
     _create = diskoLib.mkCreateOption {
       inherit config options;
-      default = {}: "";
+      default = _: "";
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
-      default = {}: {
+      default = _: {
         fs.${config.mountpoint} = ''
           if ! findmnt ${config.fsType} "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
             mount -t ${config.fsType} ${config.device} "${rootMountPoint}${config.mountpoint}" \
@@ -54,8 +54,8 @@
       readOnly = true;
       default = [{
         fileSystems.${config.mountpoint} = {
-          device = config.device;
-          fsType = config.fsType;
+          inherit (config) device;
+          inherit (config) fsType;
           options = config.mountOptions;
         };
       }];

@@ -3,8 +3,8 @@
 , pkgs ? (import <nixpkgs> { })
 }@args:
 let
-  lib = pkgs.lib;
-  makeDiskoTest = (pkgs.callPackage ./lib.nix { inherit makeTest eval-config; }).makeDiskoTest;
+  inherit (pkgs) lib;
+  inherit ((pkgs.callPackage ./lib.nix { inherit makeTest eval-config; })) makeDiskoTest;
 
   evalTest = name: configFile: let
     disko-config = import configFile;
@@ -20,7 +20,7 @@ let
         (lib.attrNames (builtins.readDir ./.))
     );
 
-  allTests = lib.genAttrs (allTestFilenames) (test: import (./. + "/${test}.nix") { inherit makeDiskoTest pkgs; }) //
+  allTests = lib.genAttrs allTestFilenames (test: import (./. + "/${test}.nix") { inherit makeDiskoTest pkgs; }) //
              evalTest "lvm-luks-example" ../example/config.nix // {
                standalone = (pkgs.nixos [ ../example/stand-alone/configuration.nix ]).config.system.build.toplevel;
              };
