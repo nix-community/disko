@@ -55,8 +55,10 @@ rec {
         dev + toString index  # /dev/{s,v}da style
       else if match "/dev/(disk|zvol)/.+" dev != null then
         "${dev}-part${toString index}" # /dev/disk/by-id/xxx style, also used by zfs's zvolumes
-      else if match "/dev/(nvme|md/|mmcblk).+" dev != null then
+      else if match "/dev/((nvme|mmcblk).+|md/.*[[:digit:]])" dev != null then
         "${dev}p${toString index}" # /dev/nvme0n1p1 style
+      else if match "/dev/md/.+" dev != null then
+        "${dev}${toString index}" # /dev/md/raid1 style
       else
         abort ''
           ${dev} seems not to be a supported disk format. Please add this to disko in https://github.com/nix-community/disko/blob/master/types/default.nix
