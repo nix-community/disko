@@ -11,10 +11,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Install Nix
-        uses: cachix/install-nix-action@v18
-        with:
-          extra_nix_config: |
-            access-tokens = github.com=${{ secrets.GITHUB_TOKEN }}
+        uses: cachix/install-nix-action@v19
       - name: Update flake.lock
         uses: DeterminateSystems/update-flake-lock@v16
         with:
