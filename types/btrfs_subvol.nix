@@ -13,9 +13,9 @@
       description = "Type";
     };
     extraArgs = lib.mkOption {
-      type = lib.types.str;
-      default = "";
-      description = "Extra arguments to pass";
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "Extra arguments";
     };
     mountOptions = lib.mkOption {
       type = lib.types.listOf lib.types.str;
@@ -41,7 +41,7 @@
         (
           mount ${dev} "$MNTPOINT" -o subvol=/
           trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-          btrfs subvolume create "$MNTPOINT"/${config.name} ${config.extraArgs}
+          btrfs subvolume create "$MNTPOINT"/${config.name} ${toString config.extraArgs}
         )
       '';
     };

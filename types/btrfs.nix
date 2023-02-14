@@ -7,9 +7,9 @@
       description = "Type";
     };
     extraArgs = lib.mkOption {
-      type = lib.types.str;
-      default = "";
-      description = "Arguments to pass to BTRFS";
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "Extra arguments";
     };
     mountOptions = lib.mkOption {
       type = lib.types.listOf lib.types.str;
@@ -37,7 +37,7 @@
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = { dev }: ''
-        mkfs.btrfs ${dev} ${config.extraArgs}
+        mkfs.btrfs ${dev} ${toString config.extraArgs}
         ${lib.concatMapStrings (subvol: subvol._create { inherit dev; }) (lib.attrValues config.subvolumes)}
       '';
     };

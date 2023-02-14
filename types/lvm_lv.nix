@@ -22,8 +22,8 @@
       description = "LVM type";
     };
     extraArgs = lib.mkOption {
-      type = lib.types.str;
-      default = "";
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
       description = "Extra arguments";
     };
     content = diskoLib.partitionType;
@@ -43,7 +43,7 @@
           ${if lib.hasInfix "%" config.size then "-l" else "-L"} ${config.size} \
           -n ${config.name} \
           ${lib.optionalString (config.lvm_type != null) "--type=${config.lvm_type}"} \
-          ${config.extraArgs} \
+          ${toString config.extraArgs} \
           ${vg}
         ${lib.optionalString (config.content != null) (config.content._create {dev = "/dev/${vg}/${config.name}";})}
       '';

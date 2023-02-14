@@ -7,9 +7,9 @@
       description = "Type";
     };
     extraArgs = lib.mkOption {
-      type = lib.types.str;
-      default = "";
-      description = "Arguments to pass";
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "Extra arguments";
     };
     mountOptions = lib.mkOption {
       type = lib.types.listOf lib.types.str;
@@ -35,7 +35,7 @@
       inherit config options;
       default = { dev }: ''
         mkfs.${config.format} \
-          ${config.extraArgs} \
+          ${toString config.extraArgs} \
           ${dev}
       '';
     };
