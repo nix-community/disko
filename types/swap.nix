@@ -40,7 +40,7 @@
       default = dev: [{
         swapDevices = [{
           device = dev;
-          inherit (config) randomEncryption;
+          randomEncryption = config.randomEncryption;
         }];
       }];
       description = "NixOS configuration";

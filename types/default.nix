@@ -189,7 +189,7 @@ rec {
         internal = true;
         readOnly = true;
         type = lib.types.functionTo diskoLib.jsonType;
-        inherit (attrs) default;
+        default = attrs.default;
         description = "Mount script";
       };
 
@@ -327,7 +327,7 @@ rec {
   };
 
   subTypes = lib.mapAttrs (_: diskoLib.mkSubType) {
-    nodev =  ./nodev.nix;
+    nodev = ./nodev.nix;
     btrfs = ./btrfs.nix;
     btrfs_subvol = ./btrfs_subvol.nix;
     filesystem = ./filesystem.nix;
@@ -343,6 +343,6 @@ rec {
     mdadm = ./mdadm.nix;
     mdraid = ./mdraid.nix;
     luks = ./luks.nix;
-    disk =  ./disk.nix;
+    disk = ./disk.nix;
   };
 }

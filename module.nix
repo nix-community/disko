@@ -2,7 +2,7 @@
 let
   types = import ./types {
     inherit lib;
-    inherit (config.disko) rootMountPoint;
+    rootMountPoint = config.disko.rootMountPoint;
   };
   cfg = config.disko;
 in

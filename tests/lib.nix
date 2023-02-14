@@ -17,7 +17,7 @@
     , testBoot ? true # if we actually want to test booting or just create/mount
     }:
     let
-      inherit (pkgs) lib;
+      lib = pkgs.lib;
       makeTest' = args:
         makeTest args {
           inherit pkgs;
@@ -100,7 +100,7 @@
         documentation.enable = false;
 
         nix.settings = {
-          substituters = lib.mkForce [];
+          substituters = lib.mkForce [ ];
           hashed-mirrors = null;
           connect-timeout = 1;
         };

@@ -1,7 +1,7 @@
 # Example to create a bios compatible gpt partition
 { disks ? [ "/dev/vdb" ], lib, ... }: {
   disk = lib.genAttrs [ (lib.head disks) ] (device: {
-    inherit device;
+    device = device;
     type = "disk";
     content = {
       type = "table";
@@ -13,7 +13,7 @@
           start = "0";
           end = "1M";
           part-type = "primary";
-          flags = ["bios_grub"];
+          flags = [ "bios_grub" ];
         }
         {
           name = "root";

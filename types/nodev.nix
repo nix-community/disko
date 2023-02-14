@@ -54,8 +54,8 @@
       readOnly = true;
       default = [{
         fileSystems.${config.mountpoint} = {
-          inherit (config) device;
-          inherit (config) fsType;
+          device = config.device;
+          fsType = config.fsType;
           options = config.mountOptions;
         };
       }];
