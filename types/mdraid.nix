@@ -23,7 +23,7 @@
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = { dev }: ''
-        echo "${dev}" >> $disko_devices_dir/raid_${config.name}
+        echo "${dev}" >> "$disko_devices_dir"/raid_${config.name}
       '';
     };
     _mount = diskoLib.mkMountOption {
