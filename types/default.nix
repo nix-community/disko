@@ -193,6 +193,15 @@ rec {
         description = "Mount script";
       };
 
+    /* Writer for optionally checking bash scripts before writing them to the store
+
+       writeCheckedBash :: AttrSet -> str -> str -> derivation
+    */
+    writeCheckedBash = { pkgs, checked ? false, noDeps ? false }: pkgs.writers.makeScriptWriter {
+      interpreter = if noDeps then "/usr/bin/env bash" else "${pkgs.bash}/bin/bash";
+      check = lib.optionalString checked "${pkgs.shellcheck}/bin/shellcheck -e SC2034";
+    };
+
 
     /* Takes a disko device specification, returns an attrset with metadata
 
@@ -243,6 +252,7 @@ rec {
       set -efux
       umount -Rv "${rootMountPoint}" || :
 
+      # shellcheck disable=SC2043
       for dev in ${toString (lib.catAttrs "device" (lib.attrValues devices.disk))}; do
         ${../disk-deactivate}/disk-deactivate "$dev" | bash -x
       done

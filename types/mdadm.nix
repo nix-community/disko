@@ -34,13 +34,14 @@
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = _: ''
+        readarray -t disk_devices < <(cat "$disko_devices_dir"/raid_${config.name})
         echo 'y' | mdadm --create /dev/md/${config.name} \
           --level=${toString config.level} \
-          --raid-devices=$(wc -l $disko_devices_dir/raid_${config.name} | cut -f 1 -d " ") \
+          --raid-devices="$(wc -l "$disko_devices_dir"/raid_${config.name} | cut -f 1 -d " ")" \
           --metadata=${config.metadata} \
           --force \
           --homehost=any \
-          $(tr '\n' ' ' < $disko_devices_dir/raid_${config.name})
+          "''${disk_devices[@]}"
         udevadm trigger --subsystem-match=block; udevadm settle
         ${lib.optionalString (config.content != null) (config.content._create {dev = "/dev/md/${config.name}";})}
       '';

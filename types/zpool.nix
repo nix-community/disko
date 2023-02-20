@@ -52,11 +52,12 @@
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = _: ''
+        readarray -t zfs_devices < <(cat "$disko_devices_dir"/zfs_${config.name})
         zpool create ${config.name} \
           ${config.mode} \
           ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") config.options)} \
           ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-O ${n}=${v}") config.rootFsOptions)} \
-          $(tr '\n' ' ' < $disko_devices_dir/zfs_${config.name})
+          "''${zfs_devices[@]}"
         ${lib.concatMapStrings (dataset: dataset._create {zpool = config.name;}) (lib.attrValues config.datasets)}
       '';
     };

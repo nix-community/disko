@@ -23,7 +23,7 @@
       inherit config options;
       default = { dev }: ''
         pvcreate ${dev}
-        echo "${dev}" >> $disko_devices_dir/lvm_${config.vg}
+        echo "${dev}" >> "$disko_devices_dir"/lvm_${config.vg}
       '';
     };
     _mount = diskoLib.mkMountOption {
