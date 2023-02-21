@@ -2,6 +2,7 @@
 , makeDiskoTest ? (pkgs.callPackage ./lib.nix { }).makeDiskoTest
 }:
 makeDiskoTest {
+  name = "swap";
   disko-config = ../example/swap.nix;
   extraTestScript = ''
     machine.succeed("mountpoint /");

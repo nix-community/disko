@@ -5,6 +5,7 @@ let
   linux-bcachefs = pkgs.callPackage ../linux-testing-bcachefs.nix { };
 in
 makeDiskoTest {
+  name = "bcachefs";
   disko-config = ../example/bcachefs.nix;
   extraTestScript = ''
     machine.succeed("mountpoint /");

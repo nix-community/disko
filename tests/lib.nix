@@ -5,7 +5,8 @@
 }:
 {
   makeDiskoTest =
-    { disko-config
+    { name
+    , disko-config
     , extraTestScript ? ""
     , bootCommands ? ""
     , extraConfig ? { }
@@ -70,7 +71,7 @@
       }).config.system.build.toplevel;
     in
     makeTest' {
-      name = "disko";
+      name = "disko-${name}";
 
       inherit enableOCR;
       nodes.machine = { config, pkgs, modulesPath, ... }: {

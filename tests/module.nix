@@ -2,6 +2,7 @@
 , makeDiskoTest ? (pkgs.callPackage ./lib.nix { }).makeDiskoTest
 }:
 makeDiskoTest {
+  name = "module";
   disko-config = ../example/complex.nix;
   extraConfig = {
     fileSystems."/zfs_legacy_fs".options = [ "nofail" ]; # TODO find out why we need this!

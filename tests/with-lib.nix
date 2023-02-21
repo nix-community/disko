@@ -2,6 +2,7 @@
 , makeDiskoTest ? (pkgs.callPackage ./lib.nix { }).makeDiskoTest
 }:
 makeDiskoTest {
+  name = "with-lib";
   disko-config = ../example/with-lib.nix;
   extraTestScript = ''
     machine.succeed("mountpoint /");

@@ -2,6 +2,7 @@
 , makeDiskoTest ? (pkgs.callPackage ./lib.nix { }).makeDiskoTest
 }:
 makeDiskoTest {
+  name = "lvm-raid";
   disko-config = ../example/lvm-raid.nix;
   extraTestScript = ''
     machine.succeed("mountpoint /home");
