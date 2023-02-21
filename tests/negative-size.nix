@@ -3,6 +3,7 @@
 , makeDiskoTest ? (pkgs.callPackage ./lib.nix { }).makeDiskoTest
 }:
 makeDiskoTest {
+  name = "negative-size";
   disko-config = ../example/negative-size.nix;
   testBoot = false;
   extraTestScript = ''

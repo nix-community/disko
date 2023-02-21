@@ -2,6 +2,7 @@
 , makeDiskoTest ? (pkgs.callPackage ./lib.nix { }).makeDiskoTest
 }:
 makeDiskoTest {
+  name = "hybrid-tmpfs-on-root";
   disko-config = ../example/hybrid-tmpfs-on-root.nix;
   extraTestScript = ''
     machine.succeed("mountpoint /");

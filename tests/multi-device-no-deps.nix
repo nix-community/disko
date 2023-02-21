@@ -3,6 +3,7 @@
 , makeDiskoTest ? (pkgs.callPackage ./lib.nix { }).makeDiskoTest
 }:
 makeDiskoTest {
+  name = "multi-device-no-deps";
   disko-config = ../example/multi-device-no-deps.nix;
   testBoot = false;
   extraTestScript = ''

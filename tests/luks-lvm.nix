@@ -2,6 +2,7 @@
 , makeDiskoTest ? (pkgs.callPackage ./lib.nix { }).makeDiskoTest
 }:
 makeDiskoTest {
+  name = "luks-lvm";
   disko-config = ../example/luks-lvm.nix;
   extraTestScript = ''
     machine.succeed("cryptsetup isLuks /dev/vda2");
