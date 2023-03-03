@@ -7,9 +7,9 @@ let
   eval = cfg: lib.evalModules {
     modules = lib.singleton {
       # _file = toString input;
-      imports = lib.singleton { devices = cfg; };
+      imports = lib.singleton { disko.devices = cfg.disko.devices; };
       options = {
-        devices = lib.mkOption {
+        disko.devices = lib.mkOption {
           type = types.devices;
         };
       };
@@ -18,30 +18,30 @@ let
 in
 {
   types = types;
-  create = cfg: types.diskoLib.create (eval cfg).config.devices;
+  create = cfg: types.diskoLib.create (eval cfg).config.disko.devices;
   createScript = cfg: pkgs: (types.diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-create" ''
-    export PATH=${lib.makeBinPath (types.diskoLib.packages (eval cfg).config.devices pkgs)}:$PATH
-    ${types.diskoLib.create (eval cfg).config.devices}
+    export PATH=${lib.makeBinPath (types.diskoLib.packages (eval cfg).config.disko.devices pkgs)}:$PATH
+    ${types.diskoLib.create (eval cfg).config.disko.devices}
   '';
   createScriptNoDeps = cfg: pkgs: (types.diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko-create" ''
-    ${types.diskoLib.create (eval cfg).config.devices}
+    ${types.diskoLib.create (eval cfg).config.disko.devices}
   '';
-  mount = cfg: types.diskoLib.mount (eval cfg).config.devices;
+  mount = cfg: types.diskoLib.mount (eval cfg).config.disko.devices;
   mountScript = cfg: pkgs: (types.diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-mount" ''
-    export PATH=${lib.makeBinPath (types.diskoLib.packages (eval cfg).config.devices pkgs)}:$PATH
-    ${types.diskoLib.mount (eval cfg).config.devices}
+    export PATH=${lib.makeBinPath (types.diskoLib.packages (eval cfg).config.disko.devices pkgs)}:$PATH
+    ${types.diskoLib.mount (eval cfg).config.disko.devices}
   '';
   mountScriptNoDeps = cfg: pkgs: (types.diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko-mount" ''
-    ${types.diskoLib.mount (eval cfg).config.devices}
+    ${types.diskoLib.mount (eval cfg).config.disko.devices}
   '';
-  zapCreateMount = cfg: types.diskoLib.zapCreateMount (eval cfg).config.devices;
+  zapCreateMount = cfg: types.diskoLib.zapCreateMount (eval cfg).config.disko.devices;
   zapCreateMountScript = cfg: pkgs: (types.diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-zap-create-mount" ''
-    export PATH=${lib.makeBinPath (types.diskoLib.packages (eval cfg).config.devices pkgs)}:$PATH
-    ${types.diskoLib.zapCreateMount (eval cfg).config.devices}
+    export PATH=${lib.makeBinPath (types.diskoLib.packages (eval cfg).config.disko.devices pkgs)}:$PATH
+    ${types.diskoLib.zapCreateMount (eval cfg).config.disko.devices}
   '';
   zapCreateMountScriptNoDeps = cfg: pkgs: (types.diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko-zap-create-mount" ''
-    ${types.diskoLib.zapCreateMount (eval cfg).config.devices}
+    ${types.diskoLib.zapCreateMount (eval cfg).config.disko.devices}
   '';
-  config = cfg: { imports = types.diskoLib.config (eval cfg).config.devices; };
-  packages = cfg: types.diskoLib.packages (eval cfg).config.devices;
+  config = cfg: { imports = types.diskoLib.config (eval cfg).config.disko.devices; };
+  packages = cfg: types.diskoLib.packages (eval cfg).config.disko.devices;
 }

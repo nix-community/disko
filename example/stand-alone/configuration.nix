@@ -14,7 +14,7 @@ let
   #}) {
   #  inherit lib;
   #};
-  cfg = {
+  cfg.disko.devices = {
     disk = {
       sda = {
         device = "/dev/sda";
