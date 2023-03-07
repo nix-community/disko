@@ -24,7 +24,7 @@ rec {
 
     # option for valid contents of devices
     deviceType = lib.mkOption {
-      type = lib.types.nullOr (diskoLib.subType { inherit (subTypes) table btrfs filesystem zfs mdraid luks lvm_pv swap; });
+      type = lib.types.nullOr (diskoLib.subType { inherit (subTypes) table hybrid_table btrfs filesystem zfs mdraid luks lvm_pv swap; });
       default = null;
       description = "The type of device";
     };
@@ -133,7 +133,7 @@ rec {
           || lib.hasSuffix "Hook" n
           || isAttrsOfSubmodule o
           # TODO don't hardcode diskoLib.subType options.
-          || n == "content" || n == "partitions"
+          || n == "content" || n == "partitions" || n == "hybrid_partitions"
         );
       in
       lib.toShellVars
@@ -342,7 +342,9 @@ rec {
     btrfs_subvol = ./btrfs_subvol.nix;
     filesystem = ./filesystem.nix;
     table = ./table.nix;
+    hybrid_table = ./hybrid_table.nix;
     partition = ./partition.nix;
+    hybrid_partition = ./hybrid_partition.nix;
     swap = ./swap.nix;
     lvm_pv = ./lvm_pv.nix;
     lvm_vg = ./lvm_vg.nix;
