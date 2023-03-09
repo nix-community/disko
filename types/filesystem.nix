@@ -17,7 +17,8 @@
       description = "Options to pass to mount";
     };
     mountpoint = lib.mkOption {
-      type = optionTypes.absolute-pathname;
+      type = lib.types.nullOr optionTypes.absolute-pathname;
+      default = null;
       description = "Path to mount the filesystem to";
     };
     format = lib.mkOption {
@@ -41,7 +42,7 @@
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
-      default = { dev }: {
+      default = { dev }: lib.optionalAttrs (config.mountpoint != null) {
         fs.${config.mountpoint} = ''
           if ! findmnt ${dev} "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
             mount ${dev} "${rootMountPoint}${config.mountpoint}" \
@@ -55,13 +56,13 @@
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
-      default = dev: [{
+      default = dev: lib.optional (config.mountpoint != null) {
         fileSystems.${config.mountpoint} = {
           device = dev;
           fsType = config.format;
           options = config.mountOptions;
         };
-      }];
+      };
       description = "NixOS configuration";
     };
     _pkgs = lib.mkOption {
