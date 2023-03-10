@@ -18,7 +18,7 @@ system itself is declarative, but the actual formatting of disks is manual.
 
 ### NixOS installation
 
-For a NixOS installation follow this [quickstart guid](./docs/quickstart.md).
+For a NixOS installation follow this [quickstart guide](./docs/quickstart.md).
 
 ### Using without NixOS
 
