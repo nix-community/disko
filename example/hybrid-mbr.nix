@@ -28,7 +28,7 @@
               content = {
                 type = "filesystem";
                 format = "vfat";
-                mountpoint = "/boot/firmware";
+                mountpoint = null;
               };
             }
             {
