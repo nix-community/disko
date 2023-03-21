@@ -38,9 +38,7 @@
           partMounts = diskoLib.deepMergeMap (partition: partition._mount { inherit dev; }) config.partitions;
         in
         {
-          dev = ''
-            ${lib.concatMapStrings (x: x.dev or "") (lib.attrValues partMounts)}
-          '';
+          dev = partMounts.dev or "";
           fs = partMounts.fs or { };
         };
     };
