@@ -15,6 +15,16 @@
       default = null;
       description = "Path to the key for encryption";
     };
+    keyFileSize = lib.mkOption {
+      type = lib.types.nullOr lib.types.int;
+      default = null;
+      description = "Size of the key file, in bytes";
+    };
+    keyFileOffset = lib.mkOption {
+      type = lib.types.nullOr lib.types.int;
+      default = null;
+      description = "Offset of the key file, in bytes";
+    };
     extraFormatArgs = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];
@@ -37,22 +47,42 @@
     };
     _create = diskoLib.mkCreateOption {
       inherit config options;
-      default = { dev }: ''
-        cryptsetup -q luksFormat ${dev} ${diskoLib.maybeStr config.keyFile} ${toString config.extraFormatArgs}
-        cryptsetup luksOpen ${dev} ${config.name} ${toString config.extraOpenArgs} ${lib.optionalString (config.keyFile != null) "--key-file ${config.keyFile}"}
-        ${lib.optionalString (config.content != null) (config.content._create {dev = "/dev/mapper/${config.name}";})}
-      '';
+      default = { dev }:
+        let
+          hasKeyFile = config.keyFile != null;
+          hasKeyFileSize = hasKeyFile && (config.keyFileSize != null);
+          hasKeyFileOffset = hasKeyFile && (config.keyFileOffset != null);
+        in
+        ''
+          cryptsetup -q luksFormat ${dev} \
+            ${diskoLib.maybeStr config.keyFile} \
+            ${lib.optionalString hasKeyFileSize "--keyfile-size ${toString config.keyFileSize}"} \
+            ${lib.optionalString hasKeyFileOffset "--keyfile-offset ${toString config.keyFileOffset}"} \
+            ${toString config.extraFormatArgs}
+          cryptsetup luksOpen ${dev} ${config.name} \
+            ${lib.optionalString hasKeyFile "--key-file ${config.keyFile}"} \
+            ${lib.optionalString hasKeyFileSize "--keyfile-size ${toString config.keyFileSize}"} \
+            ${lib.optionalString hasKeyFileOffset "--keyfile-offset ${toString config.keyFileOffset}"} \
+            ${toString config.extraOpenArgs}
+          ${lib.optionalString (config.content != null) (config.content._create {dev = "/dev/mapper/${config.name}";})}
+        '';
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
       default = { dev }:
         let
           contentMount = config.content._mount { dev = "/dev/mapper/${config.name}"; };
+          hasKeyFile = config.keyFile != null;
+          hasKeyFileSize = hasKeyFile && (config.keyFileSize != null);
+          hasKeyFileOffset = hasKeyFile && (config.keyFileOffset != null);
         in
         {
           dev = ''
             cryptsetup status ${config.name} >/dev/null 2>/dev/null ||
-              cryptsetup luksOpen ${dev} ${config.name} ${lib.optionalString (config.keyFile != null) "--key-file ${config.keyFile}"}
+              cryptsetup luksOpen ${dev} ${config.name} \
+                ${lib.optionalString hasKeyFile "--key-file ${config.keyFile}"} \
+                ${lib.optionalString hasKeyFileSize "--keyfile-size ${toString config.keyFileSize}"} \
+                ${lib.optionalString hasKeyFileOffset "--keyfile-offset ${toString config.keyFileOffset}"}
             ${lib.optionalString (config.content != null) contentMount.dev or ""}
           '';
           fs = lib.optionalAttrs (config.content != null) contentMount.fs or { };
