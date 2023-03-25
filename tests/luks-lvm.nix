@@ -8,9 +8,8 @@ makeDiskoTest {
     machine.succeed("cryptsetup isLuks /dev/vda2");
     machine.succeed("mountpoint /home");
   '';
-  enableOCR = true;
   bootCommands = ''
-    machine.wait_for_text("[Pp]assphrase for")
-    machine.send_chars("secretsecret\n")
+    machine.wait_for_console_text("vda")
+    machine.send_console("secretsecret\n")
   '';
 }

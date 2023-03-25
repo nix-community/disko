@@ -55,7 +55,7 @@
         documentation.enable = false;
         hardware.enableAllFirmware = lib.mkForce false;
         networking.hostId = "8425e349"; # from profiles/base.nix, needed for zfs
-        boot.kernelParams = lib.mkAfter [ "console=tty0" ]; # needed to have serial interaction during boot
+        boot.kernelParams = lib.mkIf enableOCR [ "console=tty0" ]; # needed for OCR
         boot.zfs.devNodes = "/dev/disk/by-uuid"; # needed because /dev/disk/by-id is empty in qemu-vms
 
         boot.consoleLogLevel = lib.mkForce 100;
