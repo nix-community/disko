@@ -95,6 +95,9 @@
         [
           # TODO do we need this always in initrd and only there?
           { boot.initrd.luks.devices.${config.name}.device = dev; }
+          (lib.optional (config.keyFile != null) { boot.initrd.luks.devices.${config.name} = {inherit (config) keyFile; };})
+          (lib.optional (config.keyFileSize != null) { boot.initrd.luks.devices.${config.name} = {inherit (config) keyFileSize; };})
+          (lib.optional (config.keyFileOffset != null) { boot.initrd.luks.devices.${config.name} = { inherit (config) keyFileOffset; };})
         ] ++ (lib.optional (config.content != null) (config.content._config "/dev/mapper/${config.name}"));
       description = "NixOS configuration";
     };
