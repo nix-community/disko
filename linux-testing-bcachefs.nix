@@ -14,7 +14,6 @@ buildLinux (args // {
   src = fetchFromGitHub {
     owner = "koverstreet";
     repo = "bcachefs";
-
     rev = "169b584fb4c8e51aa36e4b3284f9e2e5ce6f30e4";
     sha256 = "sha256-dHKyh5sI+uZ+lSQQRIuicW9ae6uFaJosLtUbiJuMMrI=";
   };

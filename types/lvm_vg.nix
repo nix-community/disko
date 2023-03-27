@@ -44,7 +44,7 @@
             vgchange -a y
             ${lib.concatMapStrings (x: x.dev or "") (lib.attrValues lvMounts)}
           '';
-          fs = lvMounts.fs;
+          fs = lvMounts.fs or { };
         };
     };
     _config = lib.mkOption {

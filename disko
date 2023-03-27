@@ -72,7 +72,7 @@ while [[ $# -gt 0 ]]; do
       dry_run=y
       ;;
     --root-mountpoint)
-      nix_args+=(--arg rootMountPoint "$2")
+      nix_args+=(--argstr rootMountPoint "$2")
       shift
       ;;
     --no-deps)

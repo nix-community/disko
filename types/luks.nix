@@ -15,10 +15,16 @@
       default = null;
       description = "Path to the key for encryption";
     };
-    extraArgs = lib.mkOption {
+    extraFormatArgs = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];
-      description = "Extra arguments";
+      description = "Extra arguments to pass to `cryptsetup luksFormat` when formatting";
+    };
+    extraOpenArgs = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      description = "Extra arguments to pass to `cryptsetup luksOpen` when opening";
+      example = [ "--allow-discards" ];
     };
     content = diskoLib.deviceType;
     _meta = lib.mkOption {
@@ -32,8 +38,8 @@
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = { dev }: ''
-        cryptsetup -q luksFormat ${dev} ${diskoLib.maybeStr config.keyFile} ${toString config.extraArgs}
-        cryptsetup luksOpen ${dev} ${config.name} ${lib.optionalString (config.keyFile != null) "--key-file ${config.keyFile}"}
+        cryptsetup -q luksFormat ${dev} ${diskoLib.maybeStr config.keyFile} ${toString config.extraFormatArgs}
+        cryptsetup luksOpen ${dev} ${config.name} ${toString config.extraOpenArgs} ${lib.optionalString (config.keyFile != null) "--key-file ${config.keyFile}"}
         ${lib.optionalString (config.content != null) (config.content._create {dev = "/dev/mapper/${config.name}";})}
       '';
     };
