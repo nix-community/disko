@@ -8,14 +8,14 @@
 } @ args:
 buildLinux (args // {
   # NOTE: bcachefs-tools should be updated simultaneously to preserve compatibility
-  version = "6.2.0-2023-03-13";
+  version = "6.2.0-2023-03-22";
   modDirVersion = "6.2.0";
 
   src = fetchFromGitHub {
     owner = "koverstreet";
     repo = "bcachefs";
-    rev = "dc2c35d5b4638fc3c569f7630da8782b096fb819";
-    sha256 = "sha256-UsSEMeP/itLBzQR/mwt4lAR2rBmqJI9cKjZFI+Lb9cY=";
+    rev = "169b584fb4c8e51aa36e4b3284f9e2e5ce6f30e4";
+    sha256 = "sha256-dHKyh5sI+uZ+lSQQRIuicW9ae6uFaJosLtUbiJuMMrI=";
   };
 
   kernelPatches = (args.kernelPatches or [ ]) ++ [{
