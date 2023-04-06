@@ -30,16 +30,16 @@
       tsp-mount = (tsp-generator.mountScript (import disko-config { disks = builtins.tail disks; inherit lib; })) pkgs;
       tsp-disko = (tsp-generator.zapCreateMountScript (import disko-config { disks = builtins.tail disks; inherit lib; })) pkgs;
       tsp-config = tsp-generator.config (import disko-config { inherit disks; inherit lib; });
-      num-disks = builtins.length (lib.attrNames (import disko-config { inherit lib; }).disk);
+      num-disks = builtins.length (lib.attrNames (import disko-config { inherit lib; }).disko.devices.disk);
       installed-system = { modulesPath, ... }: {
         imports = [
           (lib.optionalAttrs (testMode == "direct" || testMode == "cli") tsp-config)
           (lib.optionalAttrs (testMode == "module") {
-            imports = [ ../module.nix ];
-            disko = {
-              enableConfig = true;
-              devices = import disko-config { inherit disks lib; };
-            };
+            disko.enableConfig = true;
+            imports = [
+              ../module.nix
+              (import disko-config { inherit disks lib; })
+            ];
           })
           (modulesPath + "/testing/test-instrumentation.nix")
           (modulesPath + "/profiles/qemu-guest.nix")
@@ -55,7 +55,7 @@
         documentation.enable = false;
         hardware.enableAllFirmware = lib.mkForce false;
         networking.hostId = "8425e349"; # from profiles/base.nix, needed for zfs
-        boot.kernelParams = lib.mkAfter [ "console=tty0" ]; # needed to have serial interaction during boot
+        boot.kernelParams = lib.mkIf enableOCR [ "console=tty0" ]; # needed for OCR
         boot.zfs.devNodes = "/dev/disk/by-uuid"; # needed because /dev/disk/by-id is empty in qemu-vms
 
         boot.consoleLogLevel = lib.mkForce 100;
@@ -77,11 +77,13 @@
       nodes.machine = { config, pkgs, modulesPath, ... }: {
         imports = [
           (lib.optionalAttrs (testMode == "module") {
-            imports = [ ../module.nix ];
+            imports = [
+              ../module.nix
+            ];
             disko = {
               enableConfig = false;
               checkScripts = true;
-              devices = import disko-config { disks = builtins.tail disks; inherit lib; };
+              devices = (import disko-config { disks = builtins.tail disks; inherit lib; }).disko.devices;
             };
           })
           (lib.optionalAttrs (testMode == "cli") {

@@ -106,10 +106,10 @@ imports =
  [ # Include the results of the hardware scan.
    ./hardware-configuration.nix
    "${builtins.fetchTarball "https://github.com/nix-community/disko/archive/master.tar.gz"}/module.nix"
+   (import ./disko-config.nix {
+     disks = [ "/dev/<disk-name>" ]; # replace this with your disk name i.e. /dev/nvme0n1
+   })
  ];
- disko.devices = pkgs.callPackage ./disko-config.nix {
-   disks = [ "/dev/<disk-name>" ]; # replace this with your disk name i.e. /dev/nvme0n1
- };
 ```
 
 If you went for the hybrid-partition scheme, than choose grub as a bootloader.

@@ -13,7 +13,7 @@ makeDiskoTest {
   '';
   enableOCR = true;
   bootCommands = ''
-    machine.wait_for_text("(?:passphrase|key) for")
+    machine.wait_for_text("passphrase for")
     machine.send_chars("secretsecret\n")
   '';
   extraTestScript = ''

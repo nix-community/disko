@@ -17,10 +17,9 @@ makeDiskoTest {
     machine.succeed("mountpoint /ext4onzfs");
     machine.succeed("mountpoint /ext4_on_lvm");
   '';
-  enableOCR = true;
   bootCommands = ''
-    machine.wait_for_text("[Pp]assphrase for")
-    machine.send_chars("secretsecret\n")
+    machine.wait_for_console_text("vda")
+    machine.send_console("secretsecret\n")
   '';
   extraConfig = {
     boot.kernelModules = [ "dm-raid" "dm-mirror" ];
