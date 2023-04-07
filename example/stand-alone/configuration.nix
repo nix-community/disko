@@ -25,7 +25,6 @@ let
           partitions = [
             {
               name = "root";
-              type = "partition";
               part-type = "primary";
               start = "1M";
               end = "100%";

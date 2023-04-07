@@ -10,7 +10,6 @@
           partitions = [
             {
               name = "boot";
-              type = "partition";
               start = "0";
               end = "100M";
               fs-type = "fat32";
@@ -21,7 +20,6 @@
               };
             }
             {
-              type = "partition";
               name = "primary";
               start = "100M";
               end = "100%";
@@ -42,7 +40,6 @@
           partitions = [
             {
               name = "boot";
-              type = "partition";
               start = "0";
               end = "100M";
               fs-type = "fat32";
@@ -53,7 +50,6 @@
               };
             }
             {
-              type = "partition";
               name = "primary";
               start = "100M";
               end = "100%";

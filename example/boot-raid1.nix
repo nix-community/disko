@@ -10,14 +10,12 @@
           partitions = [
             {
               name = "boot";
-              type = "partition";
               start = "0";
               end = "1M";
               part-type = "primary";
               flags = [ "bios_grub" ];
             }
             {
-              type = "partition";
               name = "ESP";
               start = "1MiB";
               end = "128MiB";
@@ -29,7 +27,6 @@
               };
             }
             {
-              type = "partition";
               name = "mdadm";
               start = "128MiB";
               end = "100%";
@@ -50,14 +47,12 @@
           partitions = [
             {
               name = "boot";
-              type = "partition";
               start = "0";
               end = "1M";
               part-type = "primary";
               flags = [ "bios_grub" ];
             }
             {
-              type = "partition";
               name = "ESP";
               start = "1MiB";
               end = "128MiB";
@@ -69,7 +64,6 @@
               };
             }
             {
-              type = "partition";
               name = "mdadm";
               start = "128MiB";
               end = "100%";
@@ -101,7 +95,6 @@
           format = "gpt";
           partitions = [
             {
-              type = "partition";
               name = "primary";
               start = "1MiB";
               end = "100%";

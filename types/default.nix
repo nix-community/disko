@@ -342,7 +342,6 @@ rec {
     btrfs_subvol = ./btrfs_subvol.nix;
     filesystem = ./filesystem.nix;
     table = ./table.nix;
-    partition = ./partition.nix;
     swap = ./swap.nix;
     lvm_pv = ./lvm_pv.nix;
     lvm_vg = ./lvm_vg.nix;

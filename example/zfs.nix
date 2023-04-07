@@ -9,7 +9,6 @@
           format = "gpt";
           partitions = [
             {
-              type = "partition";
               name = "ESP";
               start = "0";
               end = "64MiB";
@@ -22,7 +21,6 @@
               };
             }
             {
-              type = "partition";
               name = "zfs";
               start = "128MiB";
               end = "100%";
@@ -42,7 +40,6 @@
           format = "gpt";
           partitions = [
             {
-              type = "partition";
               name = "zfs";
               start = "128MiB";
               end = "100%";
