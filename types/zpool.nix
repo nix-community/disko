@@ -38,7 +38,8 @@
       description = "Options to pass to mount";
     };
     datasets = lib.mkOption {
-      type = lib.types.attrsOf subTypes.zfs_dataset;
+      type = lib.types.attrsOf (diskoLib.subType { inherit (subTypes) zfs_fs zfs_volume; });
+      # type = lib.types.attrsOf subTypes.zfs_fs;
       description = "List of datasets to define";
     };
     _meta = lib.mkOption {
@@ -72,7 +73,7 @@
             zpool list '${config.name}' >/dev/null 2>/dev/null || zpool import '${config.name}'
             ${lib.concatMapStrings (x: x.dev or "") (lib.attrValues datasetMounts)}
           '';
-          fs = datasetMounts.fs // lib.optionalAttrs (config.mountpoint != null) {
+          fs = (datasetMounts.fs or {}) // lib.optionalAttrs (config.mountpoint != null) {
             ${config.mountpoint} = ''
               if ! findmnt ${config.name} "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
                 mount ${config.name} "${rootMountPoint}${config.mountpoint}" \

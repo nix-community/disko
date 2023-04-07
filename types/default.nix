@@ -133,7 +133,7 @@ rec {
           || lib.hasSuffix "Hook" n
           || isAttrsOfSubmodule o
           # TODO don't hardcode diskoLib.subType options.
-          || n == "content" || n == "partitions"
+          || n == "content" || n == "partitions" || n == "datasets"
         );
       in
       lib.toShellVars
@@ -348,6 +348,8 @@ rec {
     zfs = ./zfs.nix;
     zpool = ./zpool.nix;
     zfs_dataset = ./zfs_dataset.nix;
+    zfs_fs = ./zfs_fs.nix;
+    zfs_volume = ./zfs_volume.nix;
     mdadm = ./mdadm.nix;
     mdraid = ./mdraid.nix;
     luks = ./luks.nix;

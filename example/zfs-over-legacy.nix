@@ -50,11 +50,11 @@
         type = "zpool";
         datasets = {
           "root" = {
-            zfs_type = "filesystem";
+            type = "zfs_fs";
             options.mountpoint = "none";
           };
           "root/zfs_fs" = {
-            zfs_type = "filesystem";
+            type = "zfs_fs";
             mountpoint = "/zfs_fs";
             options."com.sun:auto-snapshot" = "true";
           };

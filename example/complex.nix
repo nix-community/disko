@@ -163,21 +163,21 @@
 
         datasets = {
           zfs_fs = {
-            zfs_type = "filesystem";
+            type = "zfs_fs";
             mountpoint = "/zfs_fs";
             options."com.sun:auto-snapshot" = "true";
           };
           zfs_unmounted_fs = {
-            zfs_type = "filesystem";
+            type = "zfs_fs";
             options.mountpoint = "none";
           };
           zfs_legacy_fs = {
-            zfs_type = "filesystem";
+            type = "zfs_fs";
             options.mountpoint = "legacy";
             mountpoint = "/zfs_legacy_fs";
           };
           zfs_testvolume = {
-            zfs_type = "volume";
+            type = "zfs_volume";
             size = "10M";
             content = {
               type = "filesystem";
