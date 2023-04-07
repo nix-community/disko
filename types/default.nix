@@ -345,7 +345,6 @@ rec {
     swap = ./swap.nix;
     lvm_pv = ./lvm_pv.nix;
     lvm_vg = ./lvm_vg.nix;
-    lvm_lv = ./lvm_lv.nix;
     zfs = ./zfs.nix;
     zpool = ./zpool.nix;
     zfs_dataset = ./zfs_dataset.nix;

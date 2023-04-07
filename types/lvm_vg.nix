@@ -12,7 +12,30 @@
       description = "Type";
     };
     lvs = lib.mkOption {
-      type = lib.types.attrsOf subTypes.lvm_lv;
+      type = lib.types.attrsOf (lib.types.submodule ({ config, ... }: {
+        options = {
+          name = lib.mkOption {
+            type = lib.types.str;
+            default = config._module.args.name;
+            description = "Name of the logical volume";
+          };
+          size = lib.mkOption {
+            type = lib.types.str; # TODO lvm size type
+            description = "Size of the logical volume";
+          };
+          lvm_type = lib.mkOption {
+            type = lib.types.nullOr (lib.types.enum [ "mirror" "raid0" "raid1" ]); # TODO add all lib.types
+            default = null; # maybe there is always a default type?
+            description = "LVM type";
+          };
+          extraArgs = lib.mkOption {
+            type = lib.types.listOf lib.types.str;
+            default = [ ];
+            description = "Extra arguments";
+          };
+          content = diskoLib.partitionType;
+        };
+      }));
       default = { };
       description = "LVS for the volume group";
     };
@@ -21,7 +44,9 @@
       readOnly = true;
       type = diskoLib.jsonType;
       default =
-        diskoLib.deepMergeMap (lv: lv._meta [ "lvm_vg" config.name ]) (lib.attrValues config.lvs);
+        diskoLib.deepMergeMap (lv:
+          lib.optionalAttrs (lv.content != null) (lv.content._meta [ "lvm_vg" config.name ])
+        ) (lib.attrValues config.lvs);
       description = "Metadata";
     };
     _create = diskoLib.mkCreateOption {
@@ -30,14 +55,25 @@
         readarray -t lvm_devices < <(cat "$disko_devices_dir"/lvm_${config.name})
         vgcreate ${config.name} \
         "''${lvm_devices[@]}"
-        ${lib.concatMapStrings (lv: lv._create {vg = config.name; }) (lib.attrValues config.lvs)}
+        ${lib.concatMapStrings (lv: ''
+          lvcreate \
+            --yes \
+            ${if lib.hasInfix "%" lv.size then "-l" else "-L"} ${lv.size} \
+            -n ${lv.name} \
+            ${lib.optionalString (lv.lvm_type != null) "--type=${lv.lvm_type}"} \
+            ${toString lv.extraArgs} \
+            ${config.name}
+          ${lib.optionalString (lv.content != null) (lv.content._create {dev = "/dev/${config.name}/${lv.name}";})}
+        '') (lib.attrValues config.lvs)}
       '';
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
       default = _:
         let
-          lvMounts = diskoLib.deepMergeMap (lv: lv._mount { vg = config.name; }) (lib.attrValues config.lvs);
+          lvMounts = diskoLib.deepMergeMap (lv:
+            lib.optionalAttrs (lv.content != null) (lv.content._mount { dev = "/dev/${config.name}/${lv.name}"; })
+          ) (lib.attrValues config.lvs);
         in
         {
           dev = ''
@@ -51,14 +87,21 @@
       internal = true;
       readOnly = true;
       default =
-        map (lv: lv._config config.name) (lib.attrValues config.lvs);
+        map (lv: [
+          (lib.optional (lv.content != null) (lv.content._config "/dev/${config.name}/${lv.name}"))
+          (lib.optional (lv.lvm_type != null) {
+            boot.initrd.kernelModules = [ "dm-${lv.lvm_type}" ];
+          })
+        ]) (lib.attrValues config.lvs);
       description = "NixOS configuration";
     };
     _pkgs = lib.mkOption {
       internal = true;
       readOnly = true;
       type = lib.types.functionTo (lib.types.listOf lib.types.package);
-      default = pkgs: lib.flatten (map (lv: lv._pkgs pkgs) (lib.attrValues config.lvs));
+      default = pkgs: lib.flatten (map (lv:
+        lib.optional (lv.content != null) (lv.content._pkgs pkgs)
+      ) (lib.attrValues config.lvs));
       description = "Packages";
     };
   };

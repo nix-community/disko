@@ -79,7 +79,6 @@
         type = "lvm_vg";
         lvs = {
           root = {
-            type = "lvm_lv";
             size = "100M";
             lvm_type = "mirror";
             content = {
@@ -92,7 +91,6 @@
             };
           };
           home = {
-            type = "lvm_lv";
             size = "10M";
             lvm_type = "raid0";
             content = {

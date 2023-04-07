@@ -105,7 +105,6 @@
         type = "lvm_vg";
         lvs = {
           root = {
-            type = "lvm_lv";
             size = "10M";
             lvm_type = "mirror";
             content = {
@@ -118,7 +117,6 @@
             };
           };
           raid1 = {
-            type = "lvm_lv";
             size = "30M";
             lvm_type = "raid0";
             content = {
@@ -127,7 +125,6 @@
             };
           };
           raid2 = {
-            type = "lvm_lv";
             size = "30M";
             lvm_type = "raid0";
             content = {
@@ -136,7 +133,6 @@
             };
           };
           zfs1 = {
-            type = "lvm_lv";
             size = "128M";
             lvm_type = "raid0";
             content = {
@@ -145,7 +141,6 @@
             };
           };
           zfs2 = {
-            type = "lvm_lv";
             size = "128M";
             lvm_type = "raid0";
             content = {
