@@ -64,6 +64,7 @@
           "com.sun:auto-snapshot" = "false";
         };
         mountpoint = "/";
+        postCreateHook = "zfs snapshot zroot@blank";
 
         datasets = {
           zfs_fs = {
@@ -98,6 +99,9 @@
               keyformat = "passphrase";
               keylocation = "file:///tmp/secret.key";
             };
+            postCreateHook = ''
+              zfs set keylocation="prompt" "zroot/$name";
+            '';
           };
           "encrypted/test" = {
             zfs_type = "filesystem";
