@@ -22,6 +22,10 @@ For a NixOS installation follow this [quickstart guide](./docs/quickstart.md).
 
 ### Using without NixOS
 
+### Upgrading from older disko versions
+
+Read our [upgrade guide](/docs/upgrade-guide.md) when updating from older versions.
+
 ## Reference
 
 ### Module options
