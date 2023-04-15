@@ -1,4 +1,4 @@
-2023-04-07 7d70009
+# 2023-04-07 7d70009
 
 Changes:
 
@@ -9,6 +9,7 @@ Changes:
 Updated example/zfs.nix file:
 
 ```nix
+{
 datasets = {
   zfs_fs = {
     type = "zfs_fs";
@@ -29,17 +30,18 @@ datasets = {
     size = "10M";
     content = {
       type = "filesystem";
-      ...
-
-Note: The `zfs_type` attribute has been replaced with a type attribute for each dataset, and the `size` attribute is only available for `zfs_volume`.
-These changes have been reflected in the example/zfs.nix file.
+      # ...
+}
 ```
 
-2023-04-07 654ecb3
+Note: The `zfs_type` attribute has been replaced with a type attribute for each dataset, and the `size` attribute is only available for `zfs_volume`.
+These changes have been reflected in the `example/zfs.nix` file.
+
+# 2023-04-07 654ecb3
 
 The `lvm_lv` type is always part of an `lvm_vg` and it is no longer necessary to specify the type.
 
-This means that if you were using the `lvm_lv` type in your code, you should remove it and make sure to only use the `lvm_vg` type. 
+This means that if you were using the `lvm_lv` type in your code, you should remove it. 
 For example, if you were defining an `lvm_lv` type like this:
 
 ```nix
@@ -48,6 +50,7 @@ For example, if you were defining an `lvm_lv` type like this:
   size = "10G";
   # ...
 }
+```
 
 You should now define it like this:
 
@@ -92,14 +95,14 @@ After:
 
 Note that the `type` field is no longer necessary and should be removed from your code.
 
-2023-03-22 2624af6
+# 2023-03-22 2624af6
 
 disk config now needs to be inside a disko.devices attrset always
 
-2023-03-22 0577409
+# 2023-03-22 0577409
 
 the extraArgs option in the luks type was renamed to extraFormatArgs
 
-2023-02-14 6d630b8
+# 2023-02-14 6d630b8
 
-btrfs, btrfs_subvol filesystem and lvm_lv extraArgs are now lists
+btrfs, `btrfs_subvol` filesystem and `lvm_lv` extraArgs are now lists
