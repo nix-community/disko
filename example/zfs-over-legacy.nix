@@ -9,7 +9,6 @@
           format = "gpt";
           partitions = [
             {
-              type = "partition";
               name = "ESP";
               start = "1MiB";
               end = "100MiB";
@@ -24,7 +23,6 @@
               };
             }
             {
-              type = "partition";
               start = "100MiB";
               end = "100%";
               name = "primary";
@@ -52,11 +50,11 @@
         type = "zpool";
         datasets = {
           "root" = {
-            zfs_type = "filesystem";
+            type = "zfs_fs";
             options.mountpoint = "none";
           };
           "root/zfs_fs" = {
-            zfs_type = "filesystem";
+            type = "zfs_fs";
             mountpoint = "/zfs_fs";
             options."com.sun:auto-snapshot" = "true";
           };

@@ -9,7 +9,6 @@
           format = "gpt";
           partitions = [
             {
-              type = "partition";
               name = "ESP";
               start = "1MiB";
               end = "128MiB";
@@ -32,7 +31,6 @@
           format = "gpt";
           partitions = [
             {
-              type = "partition";
               start = "1M";
               end = "100%";
               name = "luks";
@@ -60,7 +58,6 @@
           format = "gpt";
           partitions = [
             {
-              type = "partition";
               start = "1M";
               end = "100%";
               name = "luks";
@@ -90,7 +87,6 @@
           format = "gpt";
           partitions = [
             {
-              type = "partition";
               name = "bla";
               start = "1MiB";
               end = "100%";
@@ -109,7 +105,6 @@
         type = "lvm_vg";
         lvs = {
           root = {
-            type = "lvm_lv";
             size = "10M";
             lvm_type = "mirror";
             content = {
@@ -122,7 +117,6 @@
             };
           };
           raid1 = {
-            type = "lvm_lv";
             size = "30M";
             lvm_type = "raid0";
             content = {
@@ -131,7 +125,6 @@
             };
           };
           raid2 = {
-            type = "lvm_lv";
             size = "30M";
             lvm_type = "raid0";
             content = {
@@ -140,7 +133,6 @@
             };
           };
           zfs1 = {
-            type = "lvm_lv";
             size = "128M";
             lvm_type = "raid0";
             content = {
@@ -149,7 +141,6 @@
             };
           };
           zfs2 = {
-            type = "lvm_lv";
             size = "128M";
             lvm_type = "raid0";
             content = {
@@ -172,21 +163,21 @@
 
         datasets = {
           zfs_fs = {
-            zfs_type = "filesystem";
+            type = "zfs_fs";
             mountpoint = "/zfs_fs";
             options."com.sun:auto-snapshot" = "true";
           };
           zfs_unmounted_fs = {
-            zfs_type = "filesystem";
+            type = "zfs_fs";
             options.mountpoint = "none";
           };
           zfs_legacy_fs = {
-            zfs_type = "filesystem";
+            type = "zfs_fs";
             options.mountpoint = "legacy";
             mountpoint = "/zfs_legacy_fs";
           };
           zfs_testvolume = {
-            zfs_type = "volume";
+            type = "zfs_volume";
             size = "10M";
             content = {
               type = "filesystem";

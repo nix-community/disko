@@ -10,7 +10,6 @@
           partitions = [
             {
               name = "nix";
-              type = "partition";
               part-type = "primary";
               start = "0%";
               end = "100%";
@@ -33,7 +32,6 @@
           partitions = [
             {
               name = "root";
-              type = "partition";
               part-type = "primary";
               start = "0%";
               end = "100%";

@@ -10,7 +10,6 @@
         partitions = [
           {
             name = "boot";
-            type = "partition";
             start = "0";
             end = "1M";
             part-type = "primary";
@@ -18,7 +17,6 @@
           }
           {
             name = "root";
-            type = "partition";
             # leave space for the grub aka BIOS boot
             start = "1M";
             end = "100%";

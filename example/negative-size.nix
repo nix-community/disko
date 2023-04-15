@@ -10,7 +10,6 @@
           partitions = [
             {
               name = "nix";
-              type = "partition";
               part-type = "primary";
               start = "0%";
               end = "-10MiB";

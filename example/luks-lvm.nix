@@ -9,7 +9,6 @@
           format = "gpt";
           partitions = [
             {
-              type = "partition";
               name = "ESP";
               start = "1MiB";
               end = "100MiB";
@@ -24,7 +23,6 @@
               };
             }
             {
-              type = "partition";
               name = "luks";
               start = "100MiB";
               end = "100%";
@@ -48,7 +46,6 @@
         type = "lvm_vg";
         lvs = {
           root = {
-            type = "lvm_lv";
             size = "100M";
             content = {
               type = "filesystem";
@@ -60,7 +57,6 @@
             };
           };
           home = {
-            type = "lvm_lv";
             size = "10M";
             content = {
               type = "filesystem";
@@ -69,7 +65,6 @@
             };
           };
           raw = {
-            type = "lvm_lv";
             size = "10M";
           };
         };

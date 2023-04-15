@@ -10,7 +10,6 @@
           partitions = [
             {
               name = "boot";
-              type = "partition";
               start = "0";
               end = "100M";
               fs-type = "fat32";
@@ -21,7 +20,6 @@
               };
             }
             {
-              type = "partition";
               name = "primary";
               start = "100M";
               end = "100%";
@@ -42,7 +40,6 @@
           partitions = [
             {
               name = "boot";
-              type = "partition";
               start = "0";
               end = "100M";
               fs-type = "fat32";
@@ -53,7 +50,6 @@
               };
             }
             {
-              type = "partition";
               name = "primary";
               start = "100M";
               end = "100%";
@@ -83,7 +79,6 @@
         type = "lvm_vg";
         lvs = {
           root = {
-            type = "lvm_lv";
             size = "100M";
             lvm_type = "mirror";
             content = {
@@ -96,7 +91,6 @@
             };
           };
           home = {
-            type = "lvm_lv";
             size = "10M";
             lvm_type = "raid0";
             content = {
