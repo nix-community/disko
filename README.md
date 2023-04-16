@@ -1,5 +1,8 @@
 # disko - declarative disk partitioning
 
+<!-- Generated with bing image generator (which uses dall-e-2): edge-gpt-image --prompt "Disco ball shooting a laser beam at one hard drive" -->
+![Project logo](./docs/logo.jpeg)
+
 Disko takes the NixOS module system and makes it work for disk partitioning
 as well.
 
