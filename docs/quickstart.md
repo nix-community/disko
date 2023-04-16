@@ -112,7 +112,7 @@ imports =
  ];
 ```
 
-If you went for the hybrid-partition scheme, than choose grub as a bootloader.
+If you went for the hybrid-partition scheme, then choose grub as a bootloader.
 Otherwise consult the NixOS manual. The following configuration for Grub works
 both EFI and BIOS systems. Add it to your configuration.nix while commenting out
 the existing lines about `systemd-boot`:
@@ -130,7 +130,7 @@ the existing lines about `systemd-boot`:
 # ...
 ```
 
-Than finish the installation and reboot your machine
+Then finish the installation and reboot your machine
 
 ```
 $ nixos-install
