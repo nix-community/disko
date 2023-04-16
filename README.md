@@ -171,7 +171,6 @@ $ nix-channel --update
         format = "gpt";
         partitions = [
           {
-            type = "partition";
             name = "ESP";
             start = "1MiB";
             end = "100MiB";
@@ -184,7 +183,6 @@ $ nix-channel --update
           }
           {
             name = "root";
-            type = "partition";
             start = "100MiB";
             end = "100%";
             part-type = "primary";
