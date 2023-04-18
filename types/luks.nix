@@ -14,11 +14,13 @@
       type = lib.types.nullOr optionTypes.absolute-pathname;
       default = null;
       description = "Path to the key for encryption";
+      example = "/tmp/disk.key";
     };
     extraFormatArgs = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];
       description = "Extra arguments to pass to `cryptsetup luksFormat` when formatting";
+      example = [ "--pbkdf argon2id" ];
     };
     extraOpenArgs = lib.mkOption {
       type = lib.types.listOf lib.types.str;
