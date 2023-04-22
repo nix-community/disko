@@ -127,6 +127,8 @@ the existing lines about `systemd-boot`:
    boot.loader.grub.version = 2;
    boot.loader.grub.efiSupport = true;
    boot.loader.grub.efiInstallAsRemovable = true;
+   # uncomment below line if you use luks
+   #boot.loader.grub.enableCryptodisk = true; 
 # ...
 ```
 
