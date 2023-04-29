@@ -38,8 +38,11 @@
     };
     _create = diskoLib.mkCreateOption {
       inherit config options;
+      # -u prevents mounting newly created datasets, which is
+      # important to prevent accidental shadowing of mount points
+      # since (create order != mount order)
       default = { zpool }: ''
-        zfs create ${zpool}/${config.name} \
+        zfs create -u ${zpool}/${config.name} \
           ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") config.options)}
       '';
     };
