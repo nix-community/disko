@@ -82,7 +82,7 @@
         {
           dev = ''
             zpool list '${config.name}' >/dev/null 2>/dev/null || \
-              zpool import -R ${config.mountRoot} '${config.name}'
+              zpool import -l -R ${config.mountRoot} '${config.name}'
             ${lib.concatMapStrings (x: x.dev or "") (lib.attrValues datasetMounts)}
           '';
           fs = (datasetMounts.fs or {}) // lib.optionalAttrs (config.mountpoint != null) {
