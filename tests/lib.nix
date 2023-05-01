@@ -100,6 +100,7 @@
         environment.systemPackages = [
           pkgs.jq
         ];
+        networking.hostId = "8425e349"; # from profiles/base.nix, needed for zfs
 
         # speed-up eval
         documentation.enable = false;
