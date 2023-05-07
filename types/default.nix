@@ -59,6 +59,8 @@ rec {
         "${dev}p${toString index}" # /dev/nvme0n1p1 style
       else if match "/dev/md/.+" dev != null then
         "${dev}${toString index}" # /dev/md/raid1 style
+      else if match "/dev/mapper/.+" dev != null then
+        "${dev}${toString index}" # /dev/mapper/vg-lv1 style
       else
         abort ''
           ${dev} seems not to be a supported disk format. Please add this to disko in https://github.com/nix-community/disko/blob/master/types/default.nix
