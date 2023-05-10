@@ -26,7 +26,7 @@ in
         should be false on an installer image etc.
       '';
       type = lib.types.bool;
-      default = true;
+      default = false;
     };
     checkScripts = lib.mkOption {
       description = ''
