@@ -4,7 +4,7 @@
     name = lib.mkOption {
       type = lib.types.str;
       default = config._module.args.name;
-      description = "Name of the volume gorup";
+      description = "Name of the volume group";
     };
     type = lib.mkOption {
       type = lib.types.enum [ "lvm_vg" ];
