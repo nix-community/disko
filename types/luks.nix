@@ -68,13 +68,9 @@
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
-      default = dev:
-        [ ]
+      default = dev: [ ]
         # If initrdUnlock is true, then add a device entry to the initrd.luks.devices config.
-        ++ (lib.optional (config.initrdUnlock)
-          [
-            { boot.initrd.luks.devices.${config.name}.device = dev; }
-          ])
+        ++ (lib.optional (config.initrdUnlock) [{ boot.initrd.luks.devices.${config.name}.device = dev; }])
         ++ (lib.optional (config.content != null) (config.content._config "/dev/mapper/${config.name}"));
       description = "NixOS configuration";
     };
