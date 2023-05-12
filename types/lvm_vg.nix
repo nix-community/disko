@@ -53,21 +53,25 @@
     };
     _create = diskoLib.mkCreateOption {
       inherit config options;
-      default = _: ''
-        readarray -t lvm_devices < <(cat "$disko_devices_dir"/lvm_${config.name})
-        vgcreate ${config.name} \
-        "''${lvm_devices[@]}"
-        ${lib.concatMapStrings (lv: ''
-          lvcreate \
-            --yes \
-            ${if lib.hasInfix "%" lv.size then "-l" else "-L"} ${lv.size} \
-            -n ${lv.name} \
-            ${lib.optionalString (lv.lvm_type != null) "--type=${lv.lvm_type}"} \
-            ${toString lv.extraArgs} \
-            ${config.name}
-          ${lib.optionalString (lv.content != null) (lv.content._create {dev = "/dev/${config.name}/${lv.name}";})}
-        '') (lib.attrValues config.lvs)}
-      '';
+      default = _:
+        let
+          sortedLvs = lib.sort (a: _: !lib.hasInfix "100%" a.size) (lib.attrValues config.lvs);
+        in
+        ''
+          readarray -t lvm_devices < <(cat "$disko_devices_dir"/lvm_${config.name})
+          vgcreate ${config.name} \
+          "''${lvm_devices[@]}"
+          ${lib.concatMapStrings (lv: ''
+            lvcreate \
+              --yes \
+              ${if lib.hasInfix "%" lv.size then "-l" else "-L"} ${lv.size} \
+              -n ${lv.name} \
+              ${lib.optionalString (lv.lvm_type != null) "--type=${lv.lvm_type}"} \
+              ${toString lv.extraArgs} \
+              ${config.name}
+            ${lib.optionalString (lv.content != null) (lv.content._create {dev = "/dev/${config.name}/${lv.name}";})}
+          '') sortedLvs}
+        '';
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
