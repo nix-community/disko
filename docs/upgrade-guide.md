@@ -64,7 +64,7 @@ You should now define it like this:
 
 Note that the `type` field is no longer necessary and should be removed from your code.
 
-2023-04-07 d6f062e
+# 2023-04-07 d6f062e
 
 Partition types are now always part of a table and cannot be specified individually anymore. This change makes the library more consistent and easier to use.
 
