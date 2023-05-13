@@ -16,6 +16,11 @@
       description = "Path to the key for encryption";
       example = "/tmp/disk.key";
     };
+    initrdUnlock = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Whether to add a boot.initrd.luks.devices entry for the specified disk.";
+    };
     extraFormatArgs = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];
@@ -63,11 +68,10 @@
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
-      default = dev:
-        [
-          # TODO do we need this always in initrd and only there?
-          { boot.initrd.luks.devices.${config.name}.device = dev; }
-        ] ++ (lib.optional (config.content != null) (config.content._config "/dev/mapper/${config.name}"));
+      default = dev: [ ]
+        # If initrdUnlock is true, then add a device entry to the initrd.luks.devices config.
+        ++ (lib.optional config.initrdUnlock [{ boot.initrd.luks.devices.${config.name}.device = dev; }])
+        ++ (lib.optional (config.content != null) (config.content._config "/dev/mapper/${config.name}"));
       description = "NixOS configuration";
     };
     _pkgs = lib.mkOption {
