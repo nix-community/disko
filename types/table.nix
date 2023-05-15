@@ -65,9 +65,11 @@
       readOnly = true;
       type = lib.types.functionTo diskoLib.jsonType;
       default = dev:
-        lib.foldr lib.recursiveUpdate {} (lib.imap (index: partition:
-          lib.optionalAttrs (partition.content != null) (partition.content._meta dev)
-        ) config.partitions);
+        lib.foldr lib.recursiveUpdate { } (lib.imap
+          (index: partition:
+            lib.optionalAttrs (partition.content != null) (partition.content._meta dev)
+          )
+          config.partitions);
       description = "Metadata";
     };
     _create = diskoLib.mkCreateOption {
@@ -99,9 +101,11 @@
       inherit config options;
       default = { dev }:
         let
-          partMounts = lib.foldr lib.recursiveUpdate {} (lib.imap (index: partition:
-            lib.optionalAttrs (partition.content != null) (partition.content._mount { dev = diskoLib.deviceNumbering dev index; })
-          ) config.partitions);
+          partMounts = lib.foldr lib.recursiveUpdate { } (lib.imap
+            (index: partition:
+              lib.optionalAttrs (partition.content != null) (partition.content._mount { dev = diskoLib.deviceNumbering dev index; })
+            )
+            config.partitions);
         in
         {
           dev = partMounts.dev or "";
@@ -112,9 +116,11 @@
       internal = true;
       readOnly = true;
       default = dev:
-        lib.imap (index: partition:
-          lib.optional (partition.content != null) (partition.content._config (diskoLib.deviceNumbering dev index))
-        ) config.partitions;
+        lib.imap
+          (index: partition:
+            lib.optional (partition.content != null) (partition.content._config (diskoLib.deviceNumbering dev index))
+          )
+          config.partitions;
       description = "NixOS configuration";
     };
     _pkgs = lib.mkOption {
@@ -122,9 +128,11 @@
       readOnly = true;
       type = lib.types.functionTo (lib.types.listOf lib.types.package);
       default = pkgs:
-        [ pkgs.parted pkgs.systemdMinimal ] ++ lib.flatten (map (partition:
-          lib.optional (partition.content != null) (partition.content._pkgs pkgs)
-        ) config.partitions);
+        [ pkgs.parted pkgs.systemdMinimal ] ++ lib.flatten (map
+          (partition:
+            lib.optional (partition.content != null) (partition.content._pkgs pkgs)
+          )
+          config.partitions);
       description = "Packages";
     };
   };

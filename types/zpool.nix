@@ -85,7 +85,7 @@
               zpool import -l -R ${config.mountRoot} '${config.name}'
             ${lib.concatMapStrings (x: x.dev or "") (lib.attrValues datasetMounts)}
           '';
-          fs = (datasetMounts.fs or {}) // lib.optionalAttrs (config.mountpoint != null) {
+          fs = (datasetMounts.fs or { }) // lib.optionalAttrs (config.mountpoint != null) {
             ${config.mountpoint} = ''
               if ! findmnt ${config.name} "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
                 mount ${config.name} "${rootMountPoint}${config.mountpoint}" \

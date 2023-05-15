@@ -8,7 +8,7 @@
 buildLinux (args // {
   # NOTE: bcachefs-tools should be updated simultaneously to preserve compatibility
   version = "6.3.0-2023-05-02";
-  
+
   modDirVersion = "6.3.0";
 
   src = fetchFromGitHub {

@@ -44,36 +44,44 @@
       readOnly = true;
       type = diskoLib.jsonType;
       default =
-        diskoLib.deepMergeMap (lv:
-          lib.optionalAttrs (lv.content != null) (lv.content._meta [ "lvm_vg" config.name ])
-        ) (lib.attrValues config.lvs);
+        diskoLib.deepMergeMap
+          (lv:
+            lib.optionalAttrs (lv.content != null) (lv.content._meta [ "lvm_vg" config.name ])
+          )
+          (lib.attrValues config.lvs);
       description = "Metadata";
     };
     _create = diskoLib.mkCreateOption {
       inherit config options;
-      default = _: ''
-        readarray -t lvm_devices < <(cat "$disko_devices_dir"/lvm_${config.name})
-        vgcreate ${config.name} \
-        "''${lvm_devices[@]}"
-        ${lib.concatMapStrings (lv: ''
-          lvcreate \
-            --yes \
-            ${if lib.hasInfix "%" lv.size then "-l" else "-L"} ${lv.size} \
-            -n ${lv.name} \
-            ${lib.optionalString (lv.lvm_type != null) "--type=${lv.lvm_type}"} \
-            ${toString lv.extraArgs} \
-            ${config.name}
-          ${lib.optionalString (lv.content != null) (lv.content._create {dev = "/dev/${config.name}/${lv.name}";})}
-        '') (lib.attrValues config.lvs)}
-      '';
+      default = _:
+        let
+          sortedLvs = lib.sort (a: _: !lib.hasInfix "100%" a.size) (lib.attrValues config.lvs);
+        in
+        ''
+          readarray -t lvm_devices < <(cat "$disko_devices_dir"/lvm_${config.name})
+          vgcreate ${config.name} \
+          "''${lvm_devices[@]}"
+          ${lib.concatMapStrings (lv: ''
+            lvcreate \
+              --yes \
+              ${if lib.hasInfix "%" lv.size then "-l" else "-L"} ${lv.size} \
+              -n ${lv.name} \
+              ${lib.optionalString (lv.lvm_type != null) "--type=${lv.lvm_type}"} \
+              ${toString lv.extraArgs} \
+              ${config.name}
+            ${lib.optionalString (lv.content != null) (lv.content._create {dev = "/dev/${config.name}/${lv.name}";})}
+          '') sortedLvs}
+        '';
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
       default = _:
         let
-          lvMounts = diskoLib.deepMergeMap (lv:
-            lib.optionalAttrs (lv.content != null) (lv.content._mount { dev = "/dev/${config.name}/${lv.name}"; })
-          ) (lib.attrValues config.lvs);
+          lvMounts = diskoLib.deepMergeMap
+            (lv:
+              lib.optionalAttrs (lv.content != null) (lv.content._mount { dev = "/dev/${config.name}/${lv.name}"; })
+            )
+            (lib.attrValues config.lvs);
         in
         {
           dev = ''
@@ -87,21 +95,25 @@
       internal = true;
       readOnly = true;
       default =
-        map (lv: [
-          (lib.optional (lv.content != null) (lv.content._config "/dev/${config.name}/${lv.name}"))
-          (lib.optional (lv.lvm_type != null) {
-            boot.initrd.kernelModules = [ "dm-${lv.lvm_type}" ];
-          })
-        ]) (lib.attrValues config.lvs);
+        map
+          (lv: [
+            (lib.optional (lv.content != null) (lv.content._config "/dev/${config.name}/${lv.name}"))
+            (lib.optional (lv.lvm_type != null) {
+              boot.initrd.kernelModules = [ "dm-${lv.lvm_type}" ];
+            })
+          ])
+          (lib.attrValues config.lvs);
       description = "NixOS configuration";
     };
     _pkgs = lib.mkOption {
       internal = true;
       readOnly = true;
       type = lib.types.functionTo (lib.types.listOf lib.types.package);
-      default = pkgs: lib.flatten (map (lv:
-        lib.optional (lv.content != null) (lv.content._pkgs pkgs)
-      ) (lib.attrValues config.lvs));
+      default = pkgs: lib.flatten (map
+        (lv:
+          lib.optional (lv.content != null) (lv.content._pkgs pkgs)
+        )
+        (lib.attrValues config.lvs));
       description = "Packages";
     };
   };
