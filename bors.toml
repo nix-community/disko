@@ -11,6 +11,7 @@ status = [
   "check hybrid-tmpfs-on-root [x86_64-linux]",
   "check luks-lvm [x86_64-linux]",
   "check lvm-raid [x86_64-linux]",
+  "check lvm-sizes-sort [x86_64-linux]",
   "check mdadm [x86_64-linux]",
   "check module [x86_64-linux]",
   "check multi-device-no-deps [x86_64-linux]",
