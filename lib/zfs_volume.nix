@@ -1,4 +1,4 @@
-{ config, options, lib, diskoLib, optionTypes, rootMountPoint, ... }:
+{ config, options, lib, diskoLib, rootMountPoint, ... }:
 {
   options = {
     name = lib.mkOption {

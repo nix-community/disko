@@ -1,4 +1,4 @@
-({ config, options, diskoLib, lib, subTypes, optionTypes, rootMountPoint, ... }:
+{ config, options, diskoLib, lib, rootMountPoint, ... }:
 {
   options = {
     type = lib.mkOption {
@@ -17,12 +17,12 @@
       description = "A list of options to pass to mount.";
     };
     subvolumes = lib.mkOption {
-      type = lib.types.attrsOf subTypes.btrfs_subvol;
+      type = lib.types.attrsOf diskoLib.types.btrfs_subvol;
       default = { };
       description = "Subvolumes to define for BTRFS.";
     };
     mountpoint = lib.mkOption {
-      type = lib.types.nullOr optionTypes.absolute-pathname;
+      type = lib.types.nullOr diskoLib.optionTypes.absolute-pathname;
       default = null;
       description = "A path to mount the BTRFS filesystem to.";
     };
@@ -83,4 +83,4 @@
       description = "Packages";
     };
   };
-})
+}

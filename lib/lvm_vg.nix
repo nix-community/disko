@@ -1,4 +1,4 @@
-{ config, options, lib, diskoLib, subTypes, ... }:
+{ config, options, lib, diskoLib, ... }:
 {
   options = {
     name = lib.mkOption {

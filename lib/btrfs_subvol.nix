@@ -1,4 +1,4 @@
-{ config, options, diskoLib, lib, optionTypes, rootMountPoint, ... }:
+{ config, options, diskoLib, lib, rootMountPoint, ... }:
 {
   options = {
     name = lib.mkOption {
@@ -23,7 +23,7 @@
       description = "Options to pass to mount";
     };
     mountpoint = lib.mkOption {
-      type = lib.types.nullOr optionTypes.absolute-pathname;
+      type = lib.types.nullOr diskoLib.optionTypes.absolute-pathname;
       default = null;
       description = "Location to mount the subvolume to.";
     };
