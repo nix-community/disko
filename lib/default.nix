@@ -337,25 +337,16 @@ let
       };
     };
 
-    types = lib.mapAttrs (_: diskoLib.mkSubType) {
-      nodev = ./nodev.nix;
-      btrfs = ./btrfs.nix;
-      btrfs_subvol = ./btrfs_subvol.nix;
-      filesystem = ./filesystem.nix;
-      table = ./table.nix;
-      swap = ./swap.nix;
-      lvm_pv = ./lvm_pv.nix;
-      lvm_vg = ./lvm_vg.nix;
-      zfs = ./zfs.nix;
-      zpool = ./zpool.nix;
-      zfs_dataset = ./zfs_dataset.nix;
-      zfs_fs = ./zfs_fs.nix;
-      zfs_volume = ./zfs_volume.nix;
-      mdadm = ./mdadm.nix;
-      mdraid = ./mdraid.nix;
-      luks = ./luks.nix;
-      disk = ./disk.nix;
-    };
+    # import all tge types from the types directory
+    types = lib.listToAttrs (
+      map
+        (file: lib.nameValuePair
+          (lib.removeSuffix ".nix" file)
+          (diskoLib.mkSubType ./types/${file})
+        )
+        (lib.attrNames (builtins.readDir ./types))
+    );
+
   };
 in
 diskoLib
