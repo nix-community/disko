@@ -37,17 +37,6 @@
       default = [ "defaults" ];
       description = "Options to pass to mount";
     };
-    mountRoot = lib.mkOption {
-      type = lib.types.str;
-      default = "/";
-      example = "/mnt";
-      description = ''
-        The root location where the zpool should be mounted.
-
-        Note:
-        Leaving this at the default "/" might break your live system.
-      '';
-    };
     datasets = lib.mkOption {
       type = lib.types.attrsOf (diskoLib.subType {
         types = { inherit (diskoLib.types) zfs_fs zfs_volume; };
@@ -68,7 +57,7 @@
       default = ''
         readarray -t zfs_devices < <(cat "$disko_devices_dir"/zfs_${config.name})
         zpool create -f ${config.name} \
-          -R ${config.mountRoot} ${config.mode} \
+          -R ${rootMountPoint} ${config.mode} \
           ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") config.options)} \
           ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-O ${n}=${v}") config.rootFsOptions)} \
           "''${zfs_devices[@]}"
@@ -84,7 +73,7 @@
         {
           dev = ''
             zpool list '${config.name}' >/dev/null 2>/dev/null ||
-              zpool import -l -R ${config.mountRoot} '${config.name}'
+              zpool import -l -R ${rootMountPoint} '${config.name}'
             ${lib.concatMapStrings (x: x.dev or "") (lib.attrValues datasetMounts)}
           '';
           fs = (datasetMounts.fs or { }) // lib.optionalAttrs (config.mountpoint != null) {
