@@ -16,7 +16,7 @@ let
 
   diskFormat =
     if flake != null then
-      (pkgs.lib.attrByPath [ "diskoConfigurations" flakeAttr ] (builtins.abort "${flakeAttr} does not exist") (builtins.getFlake flake)) args
+      (lib.attrByPath [ "diskoConfigurations" flakeAttr ] (builtins.abort "${flakeAttr} does not exist") (builtins.getFlake flake)) args
     else
       import diskoFile ({ inherit lib; } // args);
 
