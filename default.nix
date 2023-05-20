@@ -34,12 +34,12 @@ in
   mountScriptNoDeps = cfg: pkgs: (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko-mount" ''
     ${diskoLib.mount (eval cfg).config.disko.devices}
   '';
-  zapCreateMount = cfg: diskoLib.zapCreateMount (eval cfg).config.disko.devices;
-  zapCreateMountScript = cfg: pkgs: (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-zap-create-mount" ''
+  disko = cfg: diskoLib.zapCreateMount (eval cfg).config.disko.devices;
+  diskoScript = cfg: pkgs: (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-zap-create-mount" ''
     export PATH=${lib.makeBinPath (diskoLib.packages (eval cfg).config.disko.devices pkgs)}:$PATH
     ${diskoLib.zapCreateMount (eval cfg).config.disko.devices}
   '';
-  zapCreateMountScriptNoDeps = cfg: pkgs: (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko-zap-create-mount" ''
+  diskoNoDeps = cfg: pkgs: (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko-zap-create-mount" ''
     ${diskoLib.zapCreateMount (eval cfg).config.disko.devices}
   '';
   config = cfg: { imports = diskoLib.config (eval cfg).config.disko.devices; };

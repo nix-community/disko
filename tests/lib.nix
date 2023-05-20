@@ -28,7 +28,7 @@
       tsp-generator = pkgs.callPackage ../. { checked = true; };
       tsp-create = (tsp-generator.createScript (import disko-config { disks = builtins.tail disks; inherit lib; })) pkgs;
       tsp-mount = (tsp-generator.mountScript (import disko-config { disks = builtins.tail disks; inherit lib; })) pkgs;
-      tsp-disko = (tsp-generator.zapCreateMountScript (import disko-config { disks = builtins.tail disks; inherit lib; })) pkgs;
+      tsp-disko = (tsp-generator.diskoScript (import disko-config { disks = builtins.tail disks; inherit lib; })) pkgs;
       tsp-config = tsp-generator.config (import disko-config { inherit disks; inherit lib; });
       num-disks = builtins.length (lib.attrNames (import disko-config { inherit lib; }).disko.devices.disk);
       installed-system = { modulesPath, ... }: {

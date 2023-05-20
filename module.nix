@@ -52,7 +52,15 @@ in
       ${diskoLib.zapCreateMount cfg.devices}
     '';
 
-    # This is useful to skip copying executables uploading a script to an in-memory installer
+    # These are useful to skip copying executables uploading a script to an in-memory installer
+    system.build.formatScriptNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko-create" ''
+      ${diskoLib.create cfg.devices}
+    '';
+
+    system.build.mountScriptNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko-mount" ''
+      ${diskoLib.mount cfg.devices}
+    '';
+
     system.build.diskoNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko" ''
       ${diskoLib.zapCreateMount cfg.devices}
     '';
