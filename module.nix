@@ -47,7 +47,15 @@ in
       ${diskoLib.mount cfg.devices}
     '';
 
-    system.build.disko = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko" ''
+    # we keep this old output for compatibility
+    system.build.disko = builtins.trace "this output is deprecated, plase use .diskoScript instead" (
+      (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko" ''
+        export PATH=${lib.makeBinPath (diskoLib.packages cfg.devices pkgs)}:$PATH
+        ${diskoLib.zapCreateMount cfg.devices}
+      ''
+    );
+
+    system.build.diskoScript = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko" ''
       export PATH=${lib.makeBinPath (diskoLib.packages cfg.devices pkgs)}:$PATH
       ${diskoLib.zapCreateMount cfg.devices}
     '';
