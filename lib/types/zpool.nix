@@ -1,4 +1,4 @@
-{ config, options, lib, diskoLib, optionTypes, subTypes, rootMountPoint, ... }:
+{ config, options, lib, diskoLib, rootMountPoint, ... }:
 {
   options = {
     name = lib.mkOption {
@@ -28,7 +28,7 @@
       description = "Options for the root filesystem";
     };
     mountpoint = lib.mkOption {
-      type = lib.types.nullOr optionTypes.absolute-pathname;
+      type = lib.types.nullOr diskoLib.optionTypes.absolute-pathname;
       default = null;
       description = "The mountpoint of the pool";
     };
@@ -49,8 +49,7 @@
       '';
     };
     datasets = lib.mkOption {
-      type = lib.types.attrsOf (diskoLib.subType { inherit (subTypes) zfs_fs zfs_volume; });
-      # type = lib.types.attrsOf subTypes.zfs_fs;
+      type = lib.types.attrsOf (diskoLib.subType { inherit (diskoLib.types) zfs_fs zfs_volume; });
       description = "List of datasets to define";
     };
     _meta = lib.mkOption {

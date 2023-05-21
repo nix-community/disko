@@ -2,7 +2,7 @@
 with lib;
 with builtins;
 
-rec {
+let
 
   diskoLib = {
     # like lib.types.oneOf but instead of a list takes an attrset
@@ -17,14 +17,14 @@ rec {
 
     # option for valid contents of partitions (basically like devices, but without tables)
     partitionType = lib.mkOption {
-      type = lib.types.nullOr (diskoLib.subType { inherit (subTypes) btrfs filesystem zfs mdraid luks lvm_pv swap; });
+      type = lib.types.nullOr (diskoLib.subType { inherit (diskoLib.types) btrfs filesystem zfs mdraid luks lvm_pv swap; });
       default = null;
       description = "The type of partition";
     };
 
     # option for valid contents of devices
     deviceType = lib.mkOption {
-      type = lib.types.nullOr (diskoLib.subType { inherit (subTypes) table btrfs filesystem zfs mdraid luks lvm_pv swap; });
+      type = lib.types.nullOr (diskoLib.subType { inherit (diskoLib.types) table btrfs filesystem zfs mdraid luks lvm_pv swap; });
       default = null;
       description = "The type of device";
     };
@@ -160,7 +160,7 @@ rec {
           postMountHook = diskoLib.mkHook "shell commands to run after mount";
         };
         config._module.args = {
-          inherit diskoLib optionTypes subTypes rootMountPoint;
+          inherit diskoLib rootMountPoint;
         };
       }
     ];
@@ -274,87 +274,79 @@ rec {
        packages :: lib.types.devices -> pkgs -> [ derivation ]
     */
     packages = devices: pkgs: unique (flatten (map (dev: dev._pkgs pkgs) (flatten (map attrValues (attrValues devices)))));
-  };
 
-  optionTypes = rec {
-    filename = lib.mkOptionType {
-      name = "filename";
-      check = isString;
-      merge = mergeOneOption;
-      description = "A filename";
-    };
+    optionTypes = rec {
+      filename = lib.mkOptionType {
+        name = "filename";
+        check = isString;
+        merge = mergeOneOption;
+        description = "A filename";
+      };
 
-    absolute-pathname = lib.mkOptionType {
-      name = "absolute pathname";
-      check = x: isString x && substring 0 1 x == "/" && pathname.check x;
-      merge = mergeOneOption;
-      description = "An absolute path";
-    };
+      absolute-pathname = lib.mkOptionType {
+        name = "absolute pathname";
+        check = x: isString x && substring 0 1 x == "/" && pathname.check x;
+        merge = mergeOneOption;
+        description = "An absolute path";
+      };
 
-    pathname = lib.mkOptionType {
-      name = "pathname";
-      check = x:
-        let
-          # The filter is used to normalize paths, i.e. to remove duplicated and
-          # trailing slashes.  It also removes leading slashes, thus we have to
-          # check for "/" explicitly below.
-          xs = filter (s: stringLength s > 0) (splitString "/" x);
-        in
-        isString x && (x == "/" || (length xs > 0 && all filename.check xs));
-      merge = mergeOneOption;
-      description = "A path name";
-    };
-  };
-
-  /* topLevel type of the disko config, takes attrsets of disks, mdadms, zpools, nodevs, and lvm vgs.
-  */
-  devices = lib.types.submodule {
-    options = {
-      disk = lib.mkOption {
-        type = lib.types.attrsOf subTypes.disk;
-        default = { };
-        description = "Block device";
-      };
-      mdadm = lib.mkOption {
-        type = lib.types.attrsOf subTypes.mdadm;
-        default = { };
-        description = "mdadm device";
-      };
-      zpool = lib.mkOption {
-        type = lib.types.attrsOf subTypes.zpool;
-        default = { };
-        description = "ZFS pool device";
-      };
-      lvm_vg = lib.mkOption {
-        type = lib.types.attrsOf subTypes.lvm_vg;
-        default = { };
-        description = "LVM VG device";
-      };
-      nodev = lib.mkOption {
-        type = lib.types.attrsOf subTypes.nodev;
-        default = { };
-        description = "A non-block device";
+      pathname = lib.mkOptionType {
+        name = "pathname";
+        check = x:
+          let
+            # The filter is used to normalize paths, i.e. to remove duplicated and
+            # trailing slashes.  It also removes leading slashes, thus we have to
+            # check for "/" explicitly below.
+            xs = filter (s: stringLength s > 0) (splitString "/" x);
+          in
+          isString x && (x == "/" || (length xs > 0 && all filename.check xs));
+        merge = mergeOneOption;
+        description = "A path name";
       };
     };
-  };
 
-  subTypes = lib.mapAttrs (_: diskoLib.mkSubType) {
-    nodev = ./nodev.nix;
-    btrfs = ./btrfs.nix;
-    btrfs_subvol = ./btrfs_subvol.nix;
-    filesystem = ./filesystem.nix;
-    table = ./table.nix;
-    swap = ./swap.nix;
-    lvm_pv = ./lvm_pv.nix;
-    lvm_vg = ./lvm_vg.nix;
-    zfs = ./zfs.nix;
-    zpool = ./zpool.nix;
-    zfs_dataset = ./zfs_dataset.nix;
-    zfs_fs = ./zfs_fs.nix;
-    zfs_volume = ./zfs_volume.nix;
-    mdadm = ./mdadm.nix;
-    mdraid = ./mdraid.nix;
-    luks = ./luks.nix;
-    disk = ./disk.nix;
+    /* topLevel type of the disko config, takes attrsets of disks, mdadms, zpools, nodevs, and lvm vgs.
+    */
+    devices = lib.types.submodule {
+      options = {
+        disk = lib.mkOption {
+          type = lib.types.attrsOf diskoLib.types.disk;
+          default = { };
+          description = "Block device";
+        };
+        mdadm = lib.mkOption {
+          type = lib.types.attrsOf diskoLib.types.mdadm;
+          default = { };
+          description = "mdadm device";
+        };
+        zpool = lib.mkOption {
+          type = lib.types.attrsOf diskoLib.types.zpool;
+          default = { };
+          description = "ZFS pool device";
+        };
+        lvm_vg = lib.mkOption {
+          type = lib.types.attrsOf diskoLib.types.lvm_vg;
+          default = { };
+          description = "LVM VG device";
+        };
+        nodev = lib.mkOption {
+          type = lib.types.attrsOf diskoLib.types.nodev;
+          default = { };
+          description = "A non-block device";
+        };
+      };
+    };
+
+    # import all tge types from the types directory
+    types = lib.listToAttrs (
+      map
+        (file: lib.nameValuePair
+          (lib.removeSuffix ".nix" file)
+          (diskoLib.mkSubType ./types/${file})
+        )
+        (lib.attrNames (builtins.readDir ./types))
+    );
+
   };
-}
+in
+diskoLib

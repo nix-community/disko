@@ -1,4 +1,4 @@
-{ config, options, lib, diskoLib, optionTypes, ... }:
+{ config, options, lib, diskoLib, ... }:
 {
   options = {
     name = lib.mkOption {
@@ -13,7 +13,7 @@
       description = "Type";
     };
     device = lib.mkOption {
-      type = optionTypes.absolute-pathname; # TODO check if subpath of /dev ? - No! eg: /.swapfile
+      type = diskoLib.optionTypes.absolute-pathname; # TODO check if subpath of /dev ? - No! eg: /.swapfile
       description = "Device path";
     };
     content = diskoLib.deviceType;

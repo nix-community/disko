@@ -1,4 +1,4 @@
-{ config, options, lib, diskoLib, optionTypes, rootMountPoint, ... }:
+{ config, options, lib, diskoLib, rootMountPoint, ... }:
 {
   options = {
     name = lib.mkOption {
@@ -24,7 +24,7 @@
     };
 
     mountpoint = lib.mkOption {
-      type = lib.types.nullOr optionTypes.absolute-pathname;
+      type = lib.types.nullOr diskoLib.optionTypes.absolute-pathname;
       default = null;
       description = "Path to mount the dataset to";
     };

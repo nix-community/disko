@@ -1,4 +1,4 @@
-{ config, options, lib, diskoLib, optionTypes, rootMountPoint, ... }:
+{ config, options, lib, diskoLib, rootMountPoint, ... }:
 {
   options = {
     type = lib.mkOption {
@@ -17,7 +17,7 @@
       description = "Options to pass to mount";
     };
     mountpoint = lib.mkOption {
-      type = lib.types.nullOr optionTypes.absolute-pathname;
+      type = lib.types.nullOr diskoLib.optionTypes.absolute-pathname;
       default = null;
       description = "Path to mount the filesystem to";
     };

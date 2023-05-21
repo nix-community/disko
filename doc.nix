@@ -1,7 +1,7 @@
 { lib, nixosOptionsDoc, runCommand, fetchurl, pandoc }:
 
 let
-  types = import ./types {
+  diskoLib = import ./lib {
     inherit lib;
     rootMountPoint = "/mnt";
   };
@@ -10,7 +10,7 @@ let
       {
         options.disko = {
           devices = lib.mkOption {
-            type = types.devices;
+            type = diskoLib.devices;
             default = { };
             description = "The devices to set up";
           };

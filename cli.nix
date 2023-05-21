@@ -14,31 +14,51 @@ let
     inherit lib;
   };
 
-  diskFormat =
-    if flake != null then
-      (lib.attrByPath [ "diskoConfigurations" flakeAttr ] (builtins.abort "${flakeAttr} does not exist") (builtins.getFlake flake)) args
+  diskoAttr =
+    if noDeps then
+      {
+        create = "createScriptNoDeps";
+        mount = "mountScriptNoDeps";
+        zap_create_mount = "diskoNoDeps";
+        disko = "diskoNoDeps";
+      }.${mode}
     else
-      import diskoFile ({ inherit lib; } // args);
+      {
+        create = "createScript";
+        mount = "mountScript";
+        zap_create_mount = "diskoScript";
+        disko = "diskoScript";
+      }.${mode};
+
+  hasDiskoConfigFlake =
+    diskoFile != null || lib.hasAttrByPath [ "diskoConfigurations" flakeAttr ] (builtins.getFlake flake);
+
+  hasDiskoModuleFlake =
+    lib.hasAttrByPath [ "nixosConfigurations" flakeAttr "config" "disko" "devices" ] (builtins.getFlake flake);
+
+  diskFormat =
+    let
+      diskoConfig =
+        if diskoFile != null then
+          import diskoFile
+        else
+          (builtins.getFlake flake).diskoConfigurations.${flakeAttr};
+    in
+    if builtins.isFunction diskoConfig then
+      diskoConfig ({ inherit lib; } // args)
+    else
+      diskoConfig;
 
   diskoEval =
-    if noDeps then
-      if (mode == "create") then
-        disko.createScriptNoDeps diskFormat pkgs
-      else if (mode == "mount") then
-        disko.mountScriptNoDeps diskFormat pkgs
-      else if (mode == "zap_create_mount") then
-        disko.zapCreateMountScriptNoDeps diskFormat pkgs
-      else
-        builtins.abort "invalid mode"
+    disko.${diskoAttr} diskFormat pkgs;
+
+  diskoScript =
+    if hasDiskoConfigFlake then
+      diskoEval
+    else if (lib.traceValSeq hasDiskoModuleFlake) then
+      (builtins.getFlake flake).nixosConfigurations.${flakeAttr}.config.system.build.${diskoAttr}
     else
-      if (mode == "create") then
-        disko.createScript diskFormat pkgs
-      else if (mode == "mount") then
-        disko.mountScript diskFormat pkgs
-      else if (mode == "zap_create_mount") then
-        disko.zapCreateMountScript diskFormat pkgs
-      else
-        builtins.abort "invalid mode"
-  ;
+      (builtins.abort "neither diskoConfigurations.${flakeAttr} nor nixosConfigurations.${flakeAttr} found");
+
 in
-diskoEval
+diskoScript

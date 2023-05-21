@@ -1,4 +1,4 @@
-{ config, options, lib, diskoLib, optionTypes, ... }:
+{ config, options, lib, diskoLib, ... }:
 {
   options = {
     type = lib.mkOption {
@@ -11,7 +11,7 @@
       description = "Name of the LUKS";
     };
     keyFile = lib.mkOption {
-      type = lib.types.nullOr optionTypes.absolute-pathname;
+      type = lib.types.nullOr diskoLib.optionTypes.absolute-pathname;
       default = null;
       description = "Path to the key for encryption";
       example = "/tmp/disk.key";

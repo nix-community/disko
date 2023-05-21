@@ -1,4 +1,4 @@
-{ lib, config, options, diskoLib, optionTypes, rootMountPoint, ... }:
+{ lib, config, options, diskoLib, rootMountPoint, ... }:
 {
   options = {
     type = lib.mkOption {
@@ -17,7 +17,7 @@
       description = "Device to use";
     };
     mountpoint = lib.mkOption {
-      type = lib.types.nullOr optionTypes.absolute-pathname;
+      type = lib.types.nullOr diskoLib.optionTypes.absolute-pathname;
       default = config._module.args.name;
       description = "Location to mount the file system at";
     };
