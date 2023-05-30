@@ -48,7 +48,7 @@ in
     '';
 
     # we keep this old output for compatibility
-    system.build.disko = builtins.trace "this output is deprecated, plase use .diskoScript instead" (
+    system.build.disko = builtins.trace "the .disko output is deprecated, plase use .diskoScript instead" (
       (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko" ''
         export PATH=${lib.makeBinPath (diskoLib.packages cfg.devices pkgs)}:$PATH
         ${diskoLib.zapCreateMount cfg.devices}
