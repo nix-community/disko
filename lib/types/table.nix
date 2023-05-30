@@ -38,12 +38,6 @@
             default = "100%";
             description = "End of the partition";
           };
-          index = lib.mkOption {
-            type = lib.types.int;
-            # TODO find a better way to get the index
-            default = lib.toInt (lib.head (builtins.match ".*entry ([[:digit:]]+)]" config._module.args.name));
-            description = "Index of the partition";
-          };
           flags = lib.mkOption {
             type = lib.types.listOf lib.types.str;
             default = [ ];
