@@ -41,7 +41,7 @@
           partitions = [
             {
               name = "zfs";
-              start = "128MiB";
+              start = "0";
               end = "100%";
               content = {
                 type = "zfs";
