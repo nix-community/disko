@@ -51,8 +51,8 @@ let
        => "/dev/disk/by-id/xxx-part2"
     */
     deviceNumbering = dev: index:
-      if match "/dev/[vs]d.+" dev != null then
-        dev + toString index  # /dev/{s,v}da style
+      if match "/dev/([vs]|(xv)d).+" dev != null then
+        dev + toString index  # /dev/{s,v,xv}da style
       else if match "/dev/(disk|zvol)/.+" dev != null then
         "${dev}-part${toString index}" # /dev/disk/by-id/xxx style, also used by zfs's zvolumes
       else if match "/dev/((nvme|mmcblk).+|md/.*[[:digit:]])" dev != null then
