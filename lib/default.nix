@@ -347,6 +347,70 @@ let
         (lib.attrNames (builtins.readDir ./types))
     );
 
+
+    # render types into an json serializable format
+    serializeType = type:
+      let
+        options = lib.filter (x: !lib.hasPrefix "_" x) (lib.attrNames type.options);
+      in
+      lib.listToAttrs (
+        map
+          (option: lib.nameValuePair
+            option
+            type.options.${option}
+          )
+          options
+      );
+
+    typesSerializerLib = {
+      rootMountPoint = "";
+      options = null;
+      config._module.args.name = "self.name";
+      lib = {
+        mkOption = option: {
+          inherit (option) type description;
+          default = option.default or null;
+        };
+        types = {
+          attrsOf = subType: {
+            type = "attrsOf";
+            inherit subType;
+          };
+          listOf = subType: {
+            type = "listOf";
+            inherit subType;
+          };
+          nullOr = subType: {
+            type = "nullOr";
+            inherit subType;
+          };
+          enum = choices: {
+            type = "enum";
+            inherit choices;
+          };
+          str = "str";
+          bool = "bool";
+          int = "int";
+          submodule = x: x { inherit (diskoLib.typesSerializerLib) lib config options; };
+        };
+      };
+      diskoLib = {
+        optionTypes.absolute-pathname = "absolute-pathname";
+        deviceType = "devicetype";
+        partitionType = "partitiontype";
+        subType = types: "onOf ${toString (lib.attrNames types)}";
+      };
+    };
+
+    jsonTypes = lib.listToAttrs (
+      map
+        (file: lib.nameValuePair
+          (lib.removeSuffix ".nix" file)
+          (diskoLib.serializeType (import ./types/${file} diskoLib.typesSerializerLib))
+        )
+        (lib.attrNames (builtins.readDir ./types))
+    );
+
   };
 in
 diskoLib
