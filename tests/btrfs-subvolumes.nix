@@ -7,6 +7,8 @@ makeDiskoTest {
   extraTestScript = ''
     machine.succeed("test -e /test");
     machine.succeed("btrfs subvolume list / | grep -qs 'path test$'");
+    machine.succeed("btrfs subvolume list / | grep -qs 'path nix$'");
+    machine.succeed("btrfs subvolume list / | grep -qs 'path home$'");
   '';
 }
 

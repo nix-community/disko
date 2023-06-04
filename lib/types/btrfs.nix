@@ -67,8 +67,8 @@
       default = { dev }: ''
         mkfs.btrfs ${dev} ${toString config.extraArgs}
         ${lib.concatMapStrings (subvol: ''
-          MNTPOINT=$(mktemp -d)
           (
+            MNTPOINT=$(mktemp -d)
             mount ${dev} "$MNTPOINT" -o subvol=/
             trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
             btrfs subvolume create "$MNTPOINT"/${subvol.name} ${toString subvol.extraArgs}
@@ -89,7 +89,7 @@
                   else null;
               in
               lib.optionalAttrs (mountpoint != null) {
-                fs.${mountpoint} = ''
+                ${mountpoint} = ''
                   if ! findmnt ${dev} "${rootMountPoint}${mountpoint}" > /dev/null 2>&1; then
                     mount ${dev} "${rootMountPoint}${mountpoint}" \
                     ${lib.concatMapStringsSep " " (opt: "-o ${opt}") (subvol.mountOptions ++ [ "subvol=${subvol.name}" ])} \
@@ -101,7 +101,7 @@
             config.subvolumes;
         in
         {
-          fs = subvolMounts.fs // lib.optionalAttrs (config.mountpoint != null) {
+          fs = subvolMounts // lib.optionalAttrs (config.mountpoint != null) {
             ${config.mountpoint} = ''
               if ! findmnt ${dev} "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
                 mount ${dev} "${rootMountPoint}${config.mountpoint}" \
