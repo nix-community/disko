@@ -1,10 +1,16 @@
-# Quickstart: disko
+# disko - Declarative disk partitioning
+
+<img src="./logo.jpeg" title="" alt="Project logo" width="247"> 
+
+[Documentation Index](./INDEX.md)
+
+## Quickstart Guide
 
 This tutorial describes how to install NixOS on a single disk system using `disko`. You will also need to refer to the NixOS manual, which is available [here.](https://nixos.org/manual/nixos/stable/index.html#ex-config)
 
 Please note that `disko` will reformat the entire disk and overwrite any existing partitions. Dual booting with other operating systems is not supported.
 
-## Step 1: Choose a Disk Configuration
+### Step 1: Choose a Disk Configuration
 
 Configurations for the most common disk layouts are provided in  the [examples directory](https://github.com/nix-community/disko/tree/master/example) of the `disko` repository. Decide which of these layouts best suits your requirements. If you're not sure which layout to pick, use the [hybrid](https://github.com/nix-community/disko/blob/master/example/hybrid.nix) configuration. This layout is compatible with both BIOS and EFI systems.
 
@@ -16,11 +22,11 @@ Once you've chosen your layout, you'll need to make a note of the URL to the raw
 https://raw.githubusercontent.com/nix-community/disko/master/example/hybrid.nix
 ```
 
-## Step 2: Boot the installer
+### Step 2: Boot the installer
 
 Download the NixOS ISO image from the NixOS [download page](https://nixos.org/download.html#nixos-iso), and create a bootable USB drive following the instructions in [Section 2.4.1 "Booting from a USB flash drive"](https://nixos.org/manual/nixos/stable/index.html#sec-booting-from-usb) of the NixOS manual. Boot the machine from this USB drive.
 
-## Step 3: Retrieve the disk name
+### Step 3: Retrieve the disk name
 
 Identify the name of your system disk by using the ```lsblk``` command as follows:
 
@@ -37,7 +43,7 @@ nvme0n1     259:0    0   1,8T  0 disk
 
 In this example, an empty NVME SSD with 2TB space is shown with the disk name "nvme0n1".  Make a note of the disk name as you will need it later.
 
-## Step 4: Copy the disk configuration to your machine
+### Step 4: Copy the disk configuration to your machine
 
 In Step 1, you chose a disk layout configuration from the  [examples directory](https://github.com/nix-community/disko/tree/master/example), and made a note of its URL.
 
@@ -48,7 +54,7 @@ cd /tmp
 $ curl https://raw.githubusercontent.com/nix-community/disko/master/example/hybrid.nix -o disko-config.nix
 ```
 
-## Step 5: Run disko to partition, format and mount your disks
+### Step 5: Run disko to partition, format and mount your disks
 
 The following step will partition and format your disk, and mount it to `/mnt`. Replace `<disk-name>` with the name of your disk obtained in Step 1.
 
@@ -77,7 +83,7 @@ The output should look like this if your disk name is `nvme0n1`.
 /dev/nvme0n1p2 on /mnt/boot type vfat (rw,relatime,fmask=0022,dmask=0022,codepage=437,iocharset=iso8859-1,shortname=mixed,errors=remount-ro)
 ```
 
-## Step 6: Complete the  NixOS installation.
+### Step 6: Complete the  NixOS installation.
 
 Your disks have now been formatted and mounted, and you are ready to complete the NixOS installation as described in the [NixOS manual](https://nixos.org/manual/nixos/stable/index.html#sec-installation) - see the section headed "**Installing**", Steps 3 onwards. However, you will need to include the partitioning and formatting configurations that you copied into `/tmp/disko-config.nix` in your configuration, rather than allowing NixOS to generate information about your file systems. When you are configuring the system as per Step 4 of the manual, you should:
 

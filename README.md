@@ -1,7 +1,10 @@
 # disko - Declarative disk partitioning
 
 <!-- Generated with bing image generator (which uses dall-e-2): edge-gpt-image --prompt "Disco ball shooting a laser beam at one hard drive" -->
-![Project logo](./docs/logo.jpeg)
+
+<img title="" src="./docs/logo.jpeg" alt="Project logo" width="274">
+
+[Documentation Index](./docs/INDEX.md)
 
 NixOS is a Linux distribution where everything is described as code, with one exception: during installation, the disk partitioning and formatting are manual steps. **disko** aims to correct this sad 🤡 omission.
 
@@ -22,7 +25,6 @@ You can keep your configuration and re-use it for other installations, or for a 
 - Filesystems: ext4, btrfs, ZFS, bcachefs, tmpfs, and others.
 
 It can work with these in various configurations and orders, and supports recursive layouts.
-
 
 ## How to use disko
 
