@@ -18,7 +18,7 @@ or $0 [options] --flake github:somebody/somewhere
 Options:
 
 * -m, --mode mode
-  set the mode, either create or mount
+  set the mode, either create, mount, zap_create_mount or disko
 * -f, --flake uri
   fetch the disko config relative to this flake's root
 * --arg name value
@@ -93,8 +93,8 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
-if ! { [[ $mode = "create" ]] || [[ $mode = "mount" ]] || [[ $mode = "zap_create_mount" ]]; }; then
-  abort "mode must be either create, mount or zap_create_mount"
+if ! { [[ $mode = "create" ]] || [[ $mode = "mount" ]] || [[ $mode = "zap_create_mount" ]] || [[ $mode = "disko" ]]; }; then
+  abort "mode must be either create, mount, zap_create_mount or disko"
 fi
 
 if [[ -n "${flake+x}" ]]; then
