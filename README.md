@@ -1,210 +1,115 @@
-# disko - declarative disk partitioning
+# disko - Declarative disk partitioning
 
 <!-- Generated with bing image generator (which uses dall-e-2): edge-gpt-image --prompt "Disco ball shooting a laser beam at one hard drive" -->
-![Project logo](./docs/logo.jpeg)
 
-Disko takes the NixOS module system and makes it work for disk partitioning
-as well.
+<img title="" src="./docs/logo.jpeg" alt="Project logo" width="274">
 
-I wanted to write a curses NixOS installer, and that was the first step that I
-hit; the disk formatting is a manual process. Once that's done, the NixOS
-system itself is declarative, but the actual formatting of disks is manual.
+[Documentation Index](./docs/INDEX.md)
 
-## Features
+NixOS is a Linux distribution where everything is described as code, with one exception: during installation, the disk partitioning and formatting are manual steps. **disko** aims to correct this sad 🤡 omission.
 
-* supports LVM, ZFS, btrfs, GPT, mdadm, ext4, ...
-* supports recursive layouts
-* outputs a NixOS-compatible module
-* CLI
+This is especially useful for unattended installations, re-installation after a system crash or for setting up more than one identical server.
 
-## How-to guides
+## Overview
 
-### NixOS installation
+**disko** can either be used after booting from a Nixos installer, or in conjunction with [nixos-anywhere](https://github.com/numtide/nixos-anywhere) if you're installing remotely.
 
-For a NixOS installation follow this [quickstart guide](./docs/quickstart.md).
+Before using **disko**, the specifications of the disks, partitions, type of formatting and the mount points must be defined in a Nix configuration. You can find [examples](./example) of typical configurations in the Nix community repository, and use one of these as the basis of your own configuration.
 
-### Using without NixOS
+You can keep your configuration and re-use it for other installations, or for a system rebuild.
 
-### Upgrading from older disko versions
+**disko** is flexible, in that it supports most of the common formatting and partitioning options, including:
 
-Read our [upgrade guide](/docs/upgrade-guide.md) when updating from older versions.
+- Disk layouts: GPT, MBR, and mixed.
+- Partition tools: LVM, mdadm, LUKS, and more.
+- Filesystems: ext4, btrfs, ZFS, bcachefs, tmpfs, and others.
 
-## Reference
+It can work with these in various configurations and orders, and supports recursive layouts.
 
-### Module options
+## How to use disko
 
-TODO: link to generated module options
+Disko doesn't require installation: it can be run directly from nix-community repository. The [Quickstart Guide](./docs/quickstart.md) documents how to run Disko in its simplest form when installing NixOS.
 
-### Examples
+For information on other use cases, including upgrading from an older version of **disko**, using **disko** without NixOS and downloading the module, see the [How To Guide](./docs/quickstart.md)
 
-./examples
+For more detailed options, such as command line switches, see the [Reference Guide](./docs/reference.md)
 
-### CLI
+To access sample configurations for commonly-used disk layouts, refer to the [examples](./examples) provided.
 
-```
-$ nix run github:nix-community/disko --
+## Sample Configuration and CLI command
 
-disko [options] disk-config.nix
-or disko [options] --flake github:somebody/somewhere
-
-Options:
-
-* -m, --mode mode
-  set the mode, either create or mount
-* -f, --flake uri
-  fetch the disko config relative to this flake's root
-* --arg name value
-  pass value to nix-build. can be used to set disk-names for example
-* --argstr name value
-  pass value to nix-build as string
-* --root-mountpoint /mnt
-  where to mount the device tree
-* --dry-run
-  just show the path to the script instead of running it
-* --debug
-  run with set -x
+A simple disko configuration may look like this:
 
 ```
-
-
-
-## Installing NixOS module
-
-You can use the NixOS module in one of the following ways:
-
-<details>
-  <summary>Flakes (Current recommendation)</summary>
-
-If you use nix flakes support:
-
-``` nix
-{
-  inputs.disko.url = "github:nix-community/disko";
-  inputs.disko.inputs.nixpkgs.follows = "nixpkgs";
-
-  outputs = { self, nixpkgs, disko }: {
-    # change `yourhostname` to your actual hostname
-    nixosConfigurations.yourhostname = nixpkgs.lib.nixosSystem {
-      # change to your system:
-      system = "x86_64-linux";
-      modules = [
-        ./configuration.nix
-        disko.nixosModules.disko
-      ];
-    };
-  };
-}
-```
-</details>
-<details>
-  <summary>niv</summary>
-  
-  First add it to [niv](https://github.com/nmattia/niv):
-
-```console
-$ niv add nix-community/disko
-```
-
-  Then add the following to your configuration.nix in the `imports` list:
-
-```nix
-{
-  imports = [ "${(import ./nix/sources.nix).disko}/modules/disko.nix" ];
-}
-```
-</details>
-<details>
-  <summary>nix-channel</summary>
-
-  As root run:
-
-```console
-$ nix-channel --add https://github.com/nix-community/disko/archive/master.tar.gz disko
-$ nix-channel --update
-```
-
-  Then add the following to your configuration.nix in the `imports` list:
-
-```nix
-{
-  imports = [ <disko/modules/disko.nix> ];
-}
-```
-</details>
-<details>
-  <summary>fetchTarball</summary>
-
-  Add the following to your configuration.nix:
-
-``` nix
-{
-  imports = [ "${builtins.fetchTarball "https://github.com/nix-community/disko/archive/master.tar.gz"}/module.nix" ];
+{ disks ? [ "/dev/vdb" ], ... }: {  
+ disk = {  
+  vdb = {  
+   device = builtins.elemAt disks 0;  
+   type = "disk";  
+   content = {  
+    type = "table";  
+    format = "gpt";  
+    partitions = [  
+     {  
+      type = "partition";  
+      name = "ESP";  
+      start = "1MiB";  
+      end = "100MiB";  
+      bootable = true;  
+      content = {  
+       type = "filesystem";  
+       format = "vfat";  
+       mountpoint = "/boot";  
+      };  
+     }  
+     {  
+      name = "root";  
+      type = "partition";  
+      start = "100MiB";  
+      end = "100%";  
+      part-type = "primary";  
+      bootable = true;  
+      content = {  
+       type = "filesystem";  
+       format = "ext4";  
+       mountpoint = "/";  
+      };  
+     }  
+    ];  
+   };  
+  };  
+ };  
 }
 ```
 
-  or with pinning:
+If you'd saved this configuration in /tmp/disko-config.nix, and wanted to create a disk named /dev/nvme0n1, you would run the following command to partition, format and mount the disk.
 
-```nix
-{
-  imports = let
-    # replace this with an actual commit id or tag
-    commit = "f2783a8ef91624b375a3cf665c3af4ac60b7c278";
-  in [ 
-    "${builtins.fetchTarball {
-      url = "https://github.com/nix-community/disko/archive/${commit}.tar.gz";
-      # replace this with an actual hash
-      sha256 = "0000000000000000000000000000000000000000000000000000";
-    }}/module.nix"
-  ];
-}
 ```
-</details>
-
-## Using the NixOS module
-
-```nix
-{
-  # checkout the example folder for how to configure different disko layouts
-  disko.devices = {
-    disk.sda = {
-      device = "/dev/sda";
-      type = "disk";
-      content = {
-        type = "table";
-        format = "gpt";
-        partitions = [
-          {
-            name = "ESP";
-            start = "1MiB";
-            end = "100MiB";
-            bootable = true;
-            content = {
-              type = "filesystem";
-              format = "vfat";
-              mountpoint = "/boot";
-            };
-          }
-          {
-            name = "root";
-            start = "100MiB";
-            end = "100%";
-            part-type = "primary";
-            bootable = true;
-            content = {
-              type = "filesystem";
-              format = "ext4";
-              mountpoint = "/";
-            };
-          }
-        ];
-      };
-    };
-  };
-}
+$ sudo nix run github:nix-community/disko -- --mode zap_create_mount /tmp/disko-config.nix --arg disks '[ "/dev/nvme0n1" ]'
 ```
 
-this will configure `fileSystems` and other required NixOS options to boot the specified configuration.
+## Related Tools
 
-If you are on an installer, you probably want to disable `enableConfig`.
+This tool is used by [nixos-anywhere](https://github.com/numtide/nixos-anywhere), which carries out a fully-automated remote install of NixOS.
 
-disko will create the scripts `disko-create` and `disko-mount` which can be used to create/mount the configured disk layout.
+We also acknowledge https://github.com/NixOS/nixpart, the conceptual ancestor of this project.
+
+## Licensing and Contribution details
+
+This software is provided free under the [MIT Licence](https://opensource.org/licenses/MIT).
+
+If you would like to become a contributor, please see our [contribution guidelines.](https://github.com/numtide/docs/contribution-guidelines.md)
+
+---
+
+This project is supported by [Numtide](https://numtide.com/).  ![Untitledpng](https://codahosted.io/docs/6FCIMTRM0p/blobs/bl-sgSunaXYWX/077f3f9d7d76d6a228a937afa0658292584dedb5b852a8ca370b6c61dabb7872b7f617e603f1793928dc5410c74b3e77af21a89e435fa71a681a868d21fd1f599dd10a647dd855e14043979f1df7956f67c3260c0442e24b34662307204b83ea34de929d)    
+
+We are a team of independent freelancers that love open source.  We help our customers make their project lifecycles more efficient by:
+
+- Providing and supporting useful tools such as this one
+- Building and deploying infrastructure, and offering dedicated DevOps support
+- Building their in-house Nix skills, and integrating Nix with their workflows
+- Developing additional features and tools
+- Carrying out custom research and development.
+
+[Contact us](https://numtide.com/contact) if you have a project in mind, or if you need help with any of our supported tools, including this one. We'd love to hear from you.
