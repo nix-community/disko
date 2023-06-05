@@ -2,8 +2,8 @@
 
 <img title="" src="./logo.jpeg" alt="" width="220">
 
-[Documentation Index](./INDEX.md) 
+[Documentation Index](./INDEX.md)
 
 ## System Requirements
 
-TODO: Populate this 
+TODO: Populate this

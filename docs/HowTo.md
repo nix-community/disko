@@ -40,7 +40,7 @@ If you use nix flakes support:
 </details>
 <details>
   <summary>niv</summary>
-  
+
   First add it to [niv](https://github.com/nmattia/niv):
 
 ```console
@@ -91,7 +91,7 @@ $ nix-channel --update
   imports = let
     # replace this with an actual commit id or tag
     commit = "f2783a8ef91624b375a3cf665c3af4ac60b7c278";
-  in [ 
+  in [
     "${builtins.fetchTarball {
       url = "https://github.com/nix-community/disko/archive/${commit}.tar.gz";
       # replace this with an actual hash
