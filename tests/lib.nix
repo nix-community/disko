@@ -74,7 +74,7 @@
       name = "disko-${name}";
 
       inherit enableOCR;
-      nodes.machine = { config, pkgs, modulesPath, ... }: {
+      nodes.machine = { pkgs, modulesPath, ... }: {
         imports = [
           (lib.optionalAttrs (testMode == "module") {
             imports = [

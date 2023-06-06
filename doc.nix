@@ -27,7 +27,7 @@ let
 
     EOF
     cat ${options.optionsCommonMark} >>$out
-  '').overrideAttrs (o: {
+  '').overrideAttrs (_o: {
     # Work around https://github.com/hercules-ci/hercules-ci-agent/issues/168
     allowSubstitutes = true;
   });

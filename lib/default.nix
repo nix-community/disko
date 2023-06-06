@@ -11,7 +11,7 @@ let
       name = "subType";
       description = "one of ${concatStringsSep "," (attrNames typeAttr)}";
       check = x: if x ? type then typeAttr.${x.type}.check x else throw "No type option set in:\n${generators.toPretty {} x}";
-      merge = loc: foldl' (res: def: typeAttr.${def.value.type}.merge loc [ def ]) { };
+      merge = loc: foldl' (_res: def: typeAttr.${def.value.type}.merge loc [ def ]) { };
       nestedTypes = typeAttr;
     };
 
@@ -171,10 +171,6 @@ let
         readOnly = true;
         type = lib.types.functionTo lib.types.str;
         default = args:
-          let
-            name = "format";
-            test = lib.optionalString (config ? name) "${config.${name}}";
-          in
           ''
             ( # ${config.type} ${concatMapStringsSep " " (n: toString (config.${n} or "")) ["name" "device" "format" "mountpoint"]}
               ${diskoLib.defineHookVariables { inherit config options; }}

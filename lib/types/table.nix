@@ -12,7 +12,7 @@
       description = "The kind of partition table";
     };
     partitions = lib.mkOption {
-      type = lib.types.listOf (lib.types.submodule ({ config, ... }: {
+      type = lib.types.listOf (lib.types.submodule ({ ... }: {
         options = {
           part-type = lib.mkOption {
             type = lib.types.enum [ "primary" "logical" "extended" ];
@@ -60,7 +60,7 @@
       type = lib.types.functionTo diskoLib.jsonType;
       default = dev:
         lib.foldr lib.recursiveUpdate { } (lib.imap
-          (index: partition:
+          (_index: partition:
             lib.optionalAttrs (partition.content != null) (partition.content._meta dev)
           )
           config.partitions);
