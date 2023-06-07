@@ -16,7 +16,7 @@
       type = diskoLib.optionTypes.absolute-pathname; # TODO check if subpath of /dev ? - No! eg: /.swapfile
       description = "Device path";
     };
-    content = diskoLib.deviceType;
+    content = diskoLib.deviceType { parent = config; };
     _meta = lib.mkOption {
       internal = true;
       readOnly = true;

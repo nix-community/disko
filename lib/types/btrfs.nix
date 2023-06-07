@@ -1,4 +1,4 @@
-{ config, options, diskoLib, lib, rootMountPoint, ... }:
+{ config, options, diskoLib, lib, rootMountPoint, parent, ... }:
 {
   options = {
     type = lib.mkOption {
@@ -54,6 +54,10 @@
       type = lib.types.nullOr diskoLib.optionTypes.absolute-pathname;
       default = null;
       description = "A path to mount the BTRFS filesystem to.";
+    };
+    _parent = lib.mkOption {
+      internal = true;
+      default = parent;
     };
     _meta = lib.mkOption {
       internal = true;

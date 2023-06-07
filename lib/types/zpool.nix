@@ -49,7 +49,10 @@
       '';
     };
     datasets = lib.mkOption {
-      type = lib.types.attrsOf (diskoLib.subType { inherit (diskoLib.types) zfs_fs zfs_volume; });
+      type = lib.types.attrsOf (diskoLib.subType {
+        types = { inherit (diskoLib.types) zfs_fs zfs_volume; };
+        extraArgs.parent = config;
+      });
       description = "List of datasets to define";
     };
     _meta = lib.mkOption {

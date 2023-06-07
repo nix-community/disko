@@ -1,4 +1,4 @@
-{ config, options, lib, diskoLib, rootMountPoint, ... }:
+{ config, options, lib, diskoLib, rootMountPoint, parent, ... }:
 {
   options = {
     name = lib.mkOption {
@@ -29,6 +29,10 @@
       description = "Path to mount the dataset to";
     };
 
+    _parent = lib.mkOption {
+      internal = true;
+      default = parent;
+    };
     _meta = lib.mkOption {
       internal = true;
       readOnly = true;

@@ -7,31 +7,40 @@ let
   diskoLib = {
     # like lib.types.oneOf but instead of a list takes an attrset
     # uses the field "type" to find the correct type in the attrset
-    subType = typeAttr: lib.mkOptionType rec {
+    subType = { types, extraArgs ? { parent = { type = "rootNode"; name = "root"; }; } }: lib.mkOptionType rec {
       name = "subType";
-      description = "one of ${concatStringsSep "," (attrNames typeAttr)}";
-      check = x: if x ? type then typeAttr.${x.type}.check x else throw "No type option set in:\n${generators.toPretty {} x}";
-      merge = loc: foldl' (_res: def: typeAttr.${def.value.type}.merge loc [ def ]) { };
-      nestedTypes = typeAttr;
+      description = "one of ${concatStringsSep "," (attrNames types)}";
+      check = x: if x ? type then types.${x.type}.check x else throw "No type option set in:\n${generators.toPretty {} x}";
+      merge = loc: foldl' (res: def: types.${def.value.type}.merge loc [
+        # we add a dummy root parent node to render documentation
+        (lib.recursiveUpdate { value._module.args = extraArgs; } def)
+      ]) { };
+      nestedTypes = types;
     };
 
     # option for valid contents of partitions (basically like devices, but without tables)
-    partitionType = lib.mkOption {
-      type = lib.types.nullOr (diskoLib.subType { inherit (diskoLib.types) btrfs filesystem zfs mdraid luks lvm_pv swap; });
+    partitionType = extraArgs: lib.mkOption {
+      type = lib.types.nullOr (diskoLib.subType {
+        types = { inherit (diskoLib.types) btrfs filesystem zfs mdraid luks lvm_pv swap; };
+        inherit extraArgs;
+      });
       default = null;
       description = "The type of partition";
     };
 
     # option for valid contents of devices
-    deviceType = lib.mkOption {
-      type = lib.types.nullOr (diskoLib.subType { inherit (diskoLib.types) table btrfs filesystem zfs mdraid luks lvm_pv swap; });
+    deviceType = extraArgs: lib.mkOption {
+      type = lib.types.nullOr (diskoLib.subType {
+        types = { inherit (diskoLib.types) table table_gpt btrfs filesystem zfs mdraid luks lvm_pv swap; };
+        inherit extraArgs;
+      });
       default = null;
       description = "The type of device";
     };
 
     /* deepMergeMap takes a function and a list of attrsets and deep merges them
 
-       deepMergeMap :: -> (AttrSet -> AttrSet ) -> [ AttrSet ] -> Attrset
+       deepMergeMap :: (AttrSet -> AttrSet ) -> [ AttrSet ] -> Attrset
 
        Example:
          deepMergeMap (x: x.t = "test") [ { x = { y = 1; z = 3; }; } { x = { bla = 234; }; } ]

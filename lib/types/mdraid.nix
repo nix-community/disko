@@ -1,4 +1,4 @@
-{ config, options, lib, diskoLib, ... }:
+{ config, options, lib, diskoLib, parent, ... }:
 {
   options = {
     type = lib.mkOption {
@@ -10,6 +10,10 @@
     name = lib.mkOption {
       type = lib.types.str;
       description = "Name";
+    };
+    _parent = lib.mkOption {
+      internal = true;
+      default = parent;
     };
     _meta = lib.mkOption {
       internal = true;

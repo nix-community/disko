@@ -1,4 +1,4 @@
-{ config, options, lib, diskoLib, ... }:
+{ config, options, lib, diskoLib, parent, ... }:
 {
   options = {
     type = lib.mkOption {
@@ -48,11 +48,15 @@
             default = false;
             description = "Whether to make the partition bootable";
           };
-          content = diskoLib.partitionType;
+          content = diskoLib.partitionType { parent = config; };
         };
       }));
       default = [ ];
       description = "List of partitions to add to the partition table";
+    };
+    _parent = lib.mkOption {
+      internal = true;
+      default = parent;
     };
     _meta = lib.mkOption {
       internal = true;

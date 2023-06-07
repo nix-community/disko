@@ -22,7 +22,7 @@
       default = "default";
       description = "Metadata";
     };
-    content = diskoLib.deviceType;
+    content = diskoLib.deviceType { parent = config; };
     _meta = lib.mkOption {
       internal = true;
       readOnly = true;

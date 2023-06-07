@@ -33,7 +33,7 @@
             default = [ ];
             description = "Extra arguments";
           };
-          content = diskoLib.partitionType;
+          content = diskoLib.partitionType { parent = config; };
         };
       }));
       default = { };

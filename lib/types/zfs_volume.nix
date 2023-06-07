@@ -1,4 +1,4 @@
-{ config, options, lib, diskoLib, ... }:
+{ config, options, lib, diskoLib, parent, ... }:
 {
   options = {
     name = lib.mkOption {
@@ -30,8 +30,12 @@
       description = "Size of the dataset";
     };
 
-    content = diskoLib.partitionType;
+    content = diskoLib.partitionType { parent = config; };
 
+    _parent = lib.mkOption {
+      internal = true;
+      default = parent;
+    };
     _meta = lib.mkOption {
       internal = true;
       readOnly = true;
