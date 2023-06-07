@@ -145,7 +145,7 @@
           machine.succeed("${nodes.machine.system.build.formatScript}")
           machine.succeed("${nodes.machine.system.build.mountScript}")
           machine.succeed("${nodes.machine.system.build.mountScript}") # verify that the command is idempotent
-          machine.succeed("${nodes.machine.system.build.disko}") # verify that we can destroy and recreate again
+          machine.succeed("${nodes.machine.system.build.diskoScript}") # verify that we can destroy and recreate again
         ''}
         ${lib.optionalString (testMode == "cli") ''
           # TODO use the disko cli here
