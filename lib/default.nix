@@ -31,7 +31,7 @@ let
     # option for valid contents of devices
     deviceType = extraArgs: lib.mkOption {
       type = lib.types.nullOr (diskoLib.subType {
-        types = { inherit (diskoLib.types) table table_gpt btrfs filesystem zfs mdraid luks lvm_pv swap; };
+        types = { inherit (diskoLib.types) table gpt btrfs filesystem zfs mdraid luks lvm_pv swap; };
         inherit extraArgs;
       });
       default = null;
