@@ -14,7 +14,7 @@
     , efi ? true
     , enableOCR ? false
     , postDisko ? ""
-    , testMode ? "direct" # can be one of direct module cli
+    , testMode ? "module" # can be one of direct module cli
     , testBoot ? true # if we actually want to test booting or just create/mount
     }:
     let
@@ -65,10 +65,12 @@
           efiInstallAsRemovable = efi;
         };
       };
-      installedTopLevel = (eval-config {
+      installed-system-eval = eval-config {
         modules = [ installed-system ];
         inherit (pkgs) system;
-      }).config.system.build.toplevel;
+      };
+
+      installedTopLevel = installed-system-eval.config.system.build.toplevel;
     in
     makeTest' {
       name = "disko-${name}";
@@ -111,6 +113,9 @@
         };
 
         virtualisation.emptyDiskImages = builtins.genList (_: 4096) num-disks;
+
+        # useful for debugging via repl
+        system.build.systemToInstall = installed-system-eval;
       };
 
       testScript = { nodes, ... }: ''
