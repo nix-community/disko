@@ -34,7 +34,7 @@
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
-      default = dev: [ ];
+      default = _dev: [ ];
       description = "NixOS configuration";
     };
     _pkgs = lib.mkOption {

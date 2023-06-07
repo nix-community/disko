@@ -65,7 +65,7 @@
       internal = true;
       readOnly = true;
       type = lib.types.functionTo (lib.types.listOf lib.types.package);
-      default = pkgs: [ ];
+      default = _pkgs: [ ];
       description = "Packages";
     };
   };

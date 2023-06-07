@@ -16,7 +16,7 @@ makeDiskoTest {
     boot.supportedFilesystems = [ "bcachefs" ];
     # disable zfs so we can support latest kernel
     nixpkgs.overlays = [
-      (final: super: {
+      (_final: super: {
         zfs = super.zfs.overrideAttrs (_: {
           meta.platforms = [ ];
         });

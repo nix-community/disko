@@ -29,7 +29,7 @@
       internal = true;
       readOnly = true;
       type = lib.types.functionTo diskoLib.jsonType;
-      default = dev: { };
+      default = _dev: { };
       description = "Metadata";
     };
     _create = diskoLib.mkCreateOption {
