@@ -84,14 +84,14 @@
           # ensure /dev/disk/by-path/..-partN exists before continuing
           udevadm trigger --subsystem-match=block; udevadm settle
           ${lib.optionalString partition.bootable ''
-            parted -s ${dev} -- set ${toString index} boot on
+            parted -s ${dev} -- set ${toString partition.index} boot on
           ''}
           ${lib.concatMapStringsSep "" (flag: ''
-            parted -s ${dev} -- set ${toString index} ${flag} on
+            parted -s ${dev} -- set ${toString partition.index} ${flag} on
           '') partition.flags}
           # ensure further operations can detect new partitions
           udevadm trigger --subsystem-match=block; udevadm settle
-          ${lib.optionalString (partition.content != null) (partition.content._create { dev = diskoLib.deviceNumbering dev index; })}
+          ${lib.optionalString (partition.content != null) (partition.content._create { dev = diskoLib.deviceNumbering dev partition.index; })}
         '') config.partitions)}
       '';
     };
@@ -101,7 +101,7 @@
         let
           partMounts = lib.foldr lib.recursiveUpdate { } (lib.imap
             (index: partition:
-              lib.optionalAttrs (partition.content != null) (partition.content._mount { dev = diskoLib.deviceNumbering dev index; })
+              lib.optionalAttrs (partition.content != null) (partition.content._mount { dev = diskoLib.deviceNumbering dev partition.index; })
             )
             config.partitions);
         in
@@ -116,7 +116,7 @@
       default = dev:
         lib.imap
           (index: partition:
-            lib.optional (partition.content != null) (partition.content._config (diskoLib.deviceNumbering dev index))
+            lib.optional (partition.content != null) (partition.content._config (diskoLib.deviceNumbering dev partition.index))
           )
           config.partitions;
       description = "NixOS configuration";
