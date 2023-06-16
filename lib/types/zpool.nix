@@ -64,7 +64,7 @@
       inherit config options;
       default = _: ''
         readarray -t zfs_devices < <(cat "$disko_devices_dir"/zfs_${config.name})
-        zpool create ${config.name} \
+        zpool create -f ${config.name} \
           -R ${config.mountRoot} ${config.mode} \
           ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") config.options)} \
           ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-O ${n}=${v}") config.rootFsOptions)} \

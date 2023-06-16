@@ -41,8 +41,9 @@
       # -u prevents mounting newly created datasets, which is
       # important to prevent accidental shadowing of mount points
       # since (create order != mount order)
+      # -p creates parents automatically
       default = { zpool }: ''
-        zfs create -u ${zpool}/${config.name} \
+        zfs create -up ${zpool}/${config.name} \
           ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") config.options)}
       '';
     };
