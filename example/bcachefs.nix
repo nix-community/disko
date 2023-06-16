@@ -5,35 +5,29 @@
         device = builtins.elemAt disks 0;
         type = "disk";
         content = {
-          type = "table";
-          format = "gpt";
-          partitions = [
-            {
-              name = "ESP";
-              start = "1MiB";
+          type = "gpt";
+          partitions = {
+            ESP = {
               end = "100MiB";
-              bootable = true;
+              type = "EF00";
               content = {
                 type = "filesystem";
                 format = "vfat";
                 mountpoint = "/boot";
               };
-            }
-            {
+            };
+            root = {
               name = "root";
-              start = "100MiB";
-              end = "100%";
-              part-type = "primary";
+              end = "-0";
               content = {
                 type = "filesystem";
                 format = "bcachefs";
                 mountpoint = "/";
               };
-            }
-          ];
+            };
+          };
         };
       };
     };
   };
 }
-
