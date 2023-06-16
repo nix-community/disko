@@ -1,4 +1,4 @@
-{ config, options, lib, diskoLib, ... }:
+{ config, options, lib, diskoLib, parent, ... }:
 {
   options = {
     type = lib.mkOption {
@@ -33,7 +33,11 @@
       description = "Extra arguments to pass to `cryptsetup luksOpen` when opening";
       example = [ "--allow-discards" ];
     };
-    content = diskoLib.deviceType;
+    content = diskoLib.deviceType { parent = config; };
+    _parent = lib.mkOption {
+      internal = true;
+      default = parent;
+    };
     _meta = lib.mkOption {
       internal = true;
       readOnly = true;

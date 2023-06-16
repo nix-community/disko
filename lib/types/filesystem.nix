@@ -1,4 +1,4 @@
-{ config, options, lib, diskoLib, rootMountPoint, ... }:
+{ config, options, lib, diskoLib, rootMountPoint, parent, ... }:
 {
   options = {
     type = lib.mkOption {
@@ -24,6 +24,10 @@
     format = lib.mkOption {
       type = lib.types.str;
       description = "Format of the filesystem";
+    };
+    _parent = lib.mkOption {
+      internal = true;
+      default = parent;
     };
     _meta = lib.mkOption {
       internal = true;

@@ -1,4 +1,4 @@
-{ diskoLib, config, options, lib, ... }:
+{ diskoLib, config, options, lib, parent, ... }:
 {
   options = {
     type = lib.mkOption {
@@ -10,6 +10,10 @@
       type = lib.types.bool;
       default = false;
       description = "Whether to randomly encrypt the swap";
+    };
+    _parent = lib.mkOption {
+      internal = true;
+      default = parent;
     };
     _meta = lib.mkOption {
       internal = true;
