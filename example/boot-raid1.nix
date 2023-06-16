@@ -5,74 +5,56 @@
         type = "disk";
         device = builtins.elemAt disks 0;
         content = {
-          type = "table";
-          format = "gpt";
-          partitions = [
-            {
-              name = "boot";
-              start = "0";
-              end = "1M";
-              part-type = "primary";
-              flags = [ "bios_grub" ];
-            }
-            {
-              name = "ESP";
-              start = "1MiB";
-              end = "128MiB";
-              fs-type = "fat32";
-              bootable = true;
+          type = "gpt";
+          partitions = {
+            boot = {
+              size = "1M";
+              type = "EF02";
+            };
+            ESP = {
+              size = "128M";
+              type = "EF00";
               content = {
                 type = "mdraid";
                 name = "boot";
               };
-            }
-            {
-              name = "mdadm";
-              start = "128MiB";
-              end = "100%";
+            };
+            mdadm = {
+              size = "100%";
               content = {
                 type = "mdraid";
                 name = "raid1";
               };
-            }
-          ];
+            };
+          };
         };
       };
       two = {
         type = "disk";
         device = builtins.elemAt disks 1;
         content = {
-          type = "table";
-          format = "gpt";
-          partitions = [
-            {
-              name = "boot";
-              start = "0";
-              end = "1M";
-              part-type = "primary";
-              flags = [ "bios_grub" ];
-            }
-            {
-              name = "ESP";
-              start = "1MiB";
-              end = "128MiB";
-              fs-type = "fat32";
-              bootable = true;
+          type = "gpt";
+          partitions = {
+            boot = {
+              size = "1M";
+              type = "EF02";
+            };
+            ESP = {
+              size = "128M";
+              type = "EF00";
               content = {
                 type = "mdraid";
                 name = "boot";
               };
-            }
-            {
-              name = "mdadm";
-              start = "128MiB";
-              end = "100%";
+            };
+            mdadm = {
+              size = "100%";
               content = {
                 type = "mdraid";
                 name = "raid1";
               };
-            }
-          ];
+            };
+          };
         };
       };
     };
