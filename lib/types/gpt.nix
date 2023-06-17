@@ -16,8 +16,8 @@
           };
           priority = lib.mkOption {
             type = lib.types.int;
-            default = 1000;
-            description = "Priority of the partition, higher priority partitions are created first";
+            default = if (partition.config.size or "" == "100%") then 9001 else 1000;
+            description = "Priority of the partition, smaller values are created first";
           };
           name = lib.mkOption {
             type = lib.types.str;
@@ -28,6 +28,15 @@
             type = lib.types.str;
             default = "${config._parent.type}-${config._parent.name}-${partition.name}";
           };
+          size = lib.mkOption {
+            type = lib.types.either (lib.types.enum [ "100%" ]) (lib.types.strMatching "[0-9]+[KMGTP]?");
+            default = "0";
+            description = ''
+              Size of the partition, in sgdisk format.
+              sets end automatically with the + prefix
+              can be 100% for the whole remaining disk, will be done last in that case.
+            '';
+          };
           start = lib.mkOption {
             type = lib.types.str;
             default = "0";
@@ -35,6 +44,7 @@
           };
           end = lib.mkOption {
             type = lib.types.str;
+            default = if partition.config.size == "100%" then "-0" else "+${partition.config.size}";
             description = ''
               End of the partition, in sgdisk format.
               Use + for relative sizes from the partitons start
@@ -75,7 +85,8 @@
           # ensure /dev/disk/by-path/..-partN exists before continuing
           udevadm trigger --subsystem-match=block; udevadm settle
           ${lib.optionalString (partition.content != null) (partition.content._create { dev = "/dev/disk/by-partlabel/${partition.label}"; })}
-        '') (lib.attrValues config.partitions))}
+        '') (lib.sort (x: y: x.priority < y.priority) (lib.attrValues config.partitions)))}
+
       '';
     };
     _mount = diskoLib.mkMountOption {

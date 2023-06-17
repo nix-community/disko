@@ -9,8 +9,7 @@
           partitions = {
             ESP = {
               type = "EF00";
-              start = "1M";
-              end = "+100M";
+              size = "100M";
               content = {
                 type = "filesystem";
                 format = "vfat";
@@ -18,7 +17,7 @@
               };
             };
             root = {
-              end = "-0";
+              size = "100%";
               content = {
                 type = "filesystem";
                 format = "ext4";
