@@ -16,6 +16,11 @@
       default = false;
       description = "Whether to randomly encrypt the swap";
     };
+    resumeDevice = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Whether to use this as a boot.resumeDevice";
+    };
     _parent = lib.mkOption {
       internal = true;
       default = parent;
@@ -51,6 +56,7 @@
           device = config.device;
           randomEncryption = config.randomEncryption;
         }];
+        boot.resumeDevice = lib.mkIf config.resumeDevice dev;
       }];
       description = "NixOS configuration";
     };
