@@ -17,6 +17,7 @@
       forAllSystems = nixpkgs.lib.genAttrs supportedSystems;
     in
     {
+      nixosModules.default = self.nixosModules.disko; # convention
       nixosModules.disko = import ./module.nix;
       lib = import ./. {
         inherit (nixpkgs) lib;
