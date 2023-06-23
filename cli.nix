@@ -19,8 +19,8 @@ let
       {
         create = "createScriptNoDeps";
         mount = "mountScriptNoDeps";
-        zap_create_mount = "diskoNoDeps";
-        disko = "diskoNoDeps";
+        zap_create_mount = "diskoScriptNoDeps";
+        disko = "diskoScriptNoDeps";
       }.${mode}
     else
       {
