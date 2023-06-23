@@ -36,7 +36,7 @@ in
   '';
   disko = cfg: diskoLib.zapCreateMount (eval cfg).config.disko.devices;
   diskoScript = cfg: pkgs: (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-zap-create-mount" ''
-    export PATH=${lib.makeBinPath (diskoLib.packages (eval cfg).config.disko.devices pkgs)}:$PATH
+    export PATH=${lib.makeBinPath ((diskoLib.packages (eval cfg).config.disko.devices pkgs) ++ [ pkgs.bash ])}:$PATH
     ${diskoLib.zapCreateMount (eval cfg).config.disko.devices}
   '';
   # we keep this old output for backwards compatibility
