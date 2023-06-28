@@ -116,8 +116,10 @@ else
   abort "disko config must be an existing file or flake must be set"
 fi
 
+# The "--impure" is still pure, as the path is withing the nix store.
 script=$(nix-build "${libexec_dir}"/cli.nix \
   --no-out-link \
+  --impure \
   --argstr mode "$mode" \
   "${nix_args[@]}"
 )
