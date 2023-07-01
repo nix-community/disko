@@ -83,18 +83,18 @@
         in
         {
           dev = ''
-            zpool list '${config.name}' >/dev/null 2>/dev/null || \
+            zpool list '${config.name}' >/dev/null 2>/dev/null ||
               zpool import -l -R ${config.mountRoot} '${config.name}'
             ${lib.concatMapStrings (x: x.dev or "") (lib.attrValues datasetMounts)}
           '';
           fs = (datasetMounts.fs or { }) // lib.optionalAttrs (config.mountpoint != null) {
             ${config.mountpoint} = ''
-              if ! findmnt ${config.name} "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
+              if ! findmnt ${config.name} "${rootMountPoint}${config.mountpoint}" >/dev/null 2>&1; then
                 mount ${config.name} "${rootMountPoint}${config.mountpoint}" \
-                ${lib.optionalString ((config.options.mountpoint or "") != "legacy") "-o zfsutil"} \
-                ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
-                -o X-mount.mkdir \
-                -t zfs
+                  ${lib.optionalString ((config.options.mountpoint or "") != "legacy") "-o zfsutil"} \
+                  ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
+                  -o X-mount.mkdir \
+                  -t zfs
               fi
             '';
           };

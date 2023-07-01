@@ -42,7 +42,8 @@
           --force \
           --homehost=any \
           "''${disk_devices[@]}"
-        udevadm trigger --subsystem-match=block; udevadm settle
+        udevadm trigger --subsystem-match=block
+        udevadm settle
         ${lib.optionalString (config.content != null) config.content._create}
       '';
     };

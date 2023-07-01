@@ -104,7 +104,8 @@ in
             --typecode=${toString partition._index}:${partition.type} \
             ${config.device}
           # ensure /dev/disk/by-path/..-partN exists before continuing
-          udevadm trigger --subsystem-match=block; udevadm settle
+          udevadm trigger --subsystem-match=block
+          udevadm settle
           ${lib.optionalString (partition.content != null) partition.content._create}
         '') sortedPartitions)}
 

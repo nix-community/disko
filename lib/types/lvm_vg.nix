@@ -60,7 +60,7 @@
         ''
           readarray -t lvm_devices < <(cat "$disko_devices_dir"/lvm_${config.name})
           vgcreate ${config.name} \
-          "''${lvm_devices[@]}"
+            "''${lvm_devices[@]}"
           ${lib.concatMapStrings (lv: ''
             lvcreate \
               --yes \

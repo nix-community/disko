@@ -53,7 +53,7 @@
       inherit config options;
       default = lib.optionalAttrs (config.mountpoint != null) {
         fs.${config.mountpoint} = ''
-          if ! findmnt ${config.device} "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
+          if ! findmnt ${config.device} "${rootMountPoint}${config.mountpoint}" >/dev/null 2>&1; then
             mount ${config.device} "${rootMountPoint}${config.mountpoint}" \
               -t "${config.format}" \
               ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \

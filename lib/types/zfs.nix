@@ -31,7 +31,7 @@
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = ''
-        echo "${config.device}" >> "$disko_devices_dir"/zfs_${config.pool}
+        echo "${config.device}" >>"$disko_devices_dir"/zfs_${config.pool}
       '';
     };
     _mount = diskoLib.mkMountOption {
