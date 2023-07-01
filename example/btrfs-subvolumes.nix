@@ -5,25 +5,21 @@
         type = "disk";
         device = builtins.elemAt disks 0;
         content = {
-          type = "table";
-          format = "gpt";
-          partitions = [
-            {
+          type = "gpt";
+          partitions = {
+            ESP = {
+              priority = 1;
               name = "ESP";
-              start = "1MiB";
+              start = "1M";
               end = "128MiB";
-              fs-type = "fat32";
-              bootable = true;
               content = {
                 type = "filesystem";
                 format = "vfat";
                 mountpoint = "/boot";
               };
-            }
-            {
-              name = "root";
-              start = "128MiB";
-              end = "100%";
+            };
+            root = {
+              size = "100%";
               content = {
                 type = "btrfs";
                 extraArgs = [ "-f" ]; # Override existing partition
@@ -42,8 +38,8 @@
                   "/test" = { };
                 };
               };
-            }
-          ];
+            };
+          };
         };
       };
     };
