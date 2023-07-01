@@ -1,4 +1,7 @@
-{ config, options, lib, diskoLib, parent, device, ... }@args:
+{ config, options, lib, diskoLib, parent, device, ... }:
+let
+  sortedPartitions = lib.sort (x: y: x.priority < y.priority) (lib.attrValues config.partitions);
+in
 {
   options = {
     type = lib.mkOption {
@@ -21,7 +24,11 @@
           };
           device = lib.mkOption {
             type = lib.types.str;
-            default = "/dev/disk/by-partlabel/${partition.config.label}";
+            default = if config._parent.type == "mdadm" then
+              # workaround because mdadm partlabel do not appear in /dev/disk/by-partlabel
+              "/dev/disk/by-id/md-name-any:${config._parent.name}-part${toString partition.config._index}"
+            else
+              "/dev/disk/by-partlabel/${partition.config.label}";
             description = "Device to use for the partition";
           };
           priority = lib.mkOption {
@@ -36,7 +43,7 @@
           };
           label = lib.mkOption {
             type = lib.types.str;
-            default = "${config._parent.type}-${config._parent.name}-${partition.name}";
+            default = "${config._parent.type}-${config._parent.name}-${partition.config.name}";
           };
           size = lib.mkOption {
             type = lib.types.either (lib.types.enum [ "100%" ]) (lib.types.strMatching "[0-9]+[KMGTP]?");
@@ -62,6 +69,10 @@
             '';
           };
           content = diskoLib.partitionType { parent = config; device = partition.config.device; };
+          _index = lib.mkOption {
+            internal = true;
+            default = diskoLib.indexOf (x: x.name == partition.config.name) sortedPartitions 0;
+          };
         };
       }));
       default = [ ];
@@ -76,8 +87,8 @@
       readOnly = true;
       type = lib.types.functionTo diskoLib.jsonType;
       default = dev:
-        lib.foldr lib.recursiveUpdate { } (lib.imap
-          (index: partition:
+        lib.foldr lib.recursiveUpdate { } (map
+          (partition:
             lib.optionalAttrs (partition.content != null) (partition.content._meta dev)
           )
           (lib.attrValues config.partitions));
@@ -86,16 +97,16 @@
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = ''
-        ${lib.concatStrings (lib.imap (index: partition: ''
+        ${lib.concatStrings (map (partition: ''
           sgdisk \
-            --new=${toString index}:${partition.start}:${partition.end} \
-            --change-name=${toString index}:${partition.label} \
-            --typecode=${toString index}:${partition.type} \
+            --new=${toString partition._index}:${partition.start}:${partition.end} \
+            --change-name=${toString partition._index}:${partition.label} \
+            --typecode=${toString partition._index}:${partition.type} \
             ${config.device}
           # ensure /dev/disk/by-path/..-partN exists before continuing
           udevadm trigger --subsystem-match=block; udevadm settle
           ${lib.optionalString (partition.content != null) partition.content._create}
-        '') (lib.sort (x: y: x.priority < y.priority) (lib.attrValues config.partitions)))}
+        '') sortedPartitions)}
 
       '';
     };
@@ -103,8 +114,8 @@
       inherit config options;
       default =
         let
-          partMounts = lib.foldr lib.recursiveUpdate { } (lib.imap
-            (index: partition:
+          partMounts = lib.foldr lib.recursiveUpdate { } (map
+            (partition:
               lib.optionalAttrs (partition.content != null) partition.content._mount
             )
             (lib.attrValues config.partitions));
