@@ -1,10 +1,15 @@
-{ diskoLib, config, options, lib, parent, ... }:
+{ diskoLib, config, options, lib, parent, device, ... }:
 {
   options = {
     type = lib.mkOption {
       type = lib.types.enum [ "swap" ];
       internal = true;
       description = "Type";
+    };
+    device = lib.mkOption {
+      type = lib.types.str;
+      default = device;
+      description = "Device";
     };
     randomEncryption = lib.mkOption {
       type = lib.types.bool;
@@ -24,16 +29,16 @@
     };
     _create = diskoLib.mkCreateOption {
       inherit config options;
-      default = { dev }: ''
-        mkswap ${dev}
+      default = ''
+        mkswap ${config.device}
       '';
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
-      default = { dev }: {
-        fs.${dev} = ''
-          if ! swapon --show | grep -q '^${dev} '; then
-            swapon ${dev}
+      default = {
+        fs.${config.device} = ''
+          if ! swapon --show | grep -q '^${config.device} '; then
+            swapon ${config.device}
           fi
         '';
       };
@@ -41,9 +46,9 @@
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
-      default = dev: [{
+      default = [{
         swapDevices = [{
-          device = dev;
+          device = config.device;
           randomEncryption = config.randomEncryption;
         }];
       }];

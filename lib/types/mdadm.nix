@@ -22,7 +22,7 @@
       default = "default";
       description = "Metadata";
     };
-    content = diskoLib.deviceType { parent = config; };
+    content = diskoLib.deviceType { parent = config; device = "/dev/md/${config.name}"; };
     _meta = lib.mkOption {
       internal = true;
       readOnly = true;
@@ -33,7 +33,7 @@
     };
     _create = diskoLib.mkCreateOption {
       inherit config options;
-      default = _: ''
+      default = ''
         readarray -t disk_devices < <(cat "$disko_devices_dir"/raid_${config.name})
         echo 'y' | mdadm --create /dev/md/${config.name} \
           --level=${toString config.level} \
@@ -43,20 +43,20 @@
           --homehost=any \
           "''${disk_devices[@]}"
         udevadm trigger --subsystem-match=block; udevadm settle
-        ${lib.optionalString (config.content != null) (config.content._create {dev = "/dev/md/${config.name}";})}
+        ${lib.optionalString (config.content != null) config.content._create}
       '';
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
-      default = _:
-        lib.optionalAttrs (config.content != null) (config.content._mount { dev = "/dev/md/${config.name}"; });
+      default =
+        lib.optionalAttrs (config.content != null) config.content._mount;
       # TODO we probably need to assemble the mdadm somehow
     };
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
       default =
-        lib.optional (config.content != null) (config.content._config "/dev/md/${config.name}");
+        lib.optional (config.content != null) config.content._config;
       description = "NixOS configuration";
     };
     _pkgs = lib.mkOption {

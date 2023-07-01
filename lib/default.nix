@@ -178,16 +178,15 @@ let
       lib.mkOption {
         internal = true;
         readOnly = true;
-        type = lib.types.functionTo lib.types.str;
-        default = args:
-          ''
-            ( # ${config.type} ${concatMapStringsSep " " (n: toString (config.${n} or "")) ["name" "device" "format" "mountpoint"]}
-              ${diskoLib.defineHookVariables { inherit config options; }}
-              ${config.preCreateHook}
-              ${attrs.default args}
-              ${config.postCreateHook}
-            )
-          '';
+        type = lib.types.str;
+        default = ''
+          ( # ${config.type} ${concatMapStringsSep " " (n: toString (config.${n} or "")) ["name" "device" "format" "mountpoint"]}
+            ${diskoLib.defineHookVariables { inherit config options; }}
+            ${config.preCreateHook}
+            ${attrs.default}
+            ${config.postCreateHook}
+          )
+        '';
         description = "Creation script";
       };
 
@@ -195,7 +194,7 @@ let
       lib.mkOption {
         internal = true;
         readOnly = true;
-        type = lib.types.functionTo diskoLib.jsonType;
+        type = diskoLib.jsonType;
         default = attrs.default;
         description = "Mount script";
       };
@@ -231,7 +230,7 @@ let
         trap 'rm -rf "$disko_devices_dir"' EXIT
         mkdir -p "$disko_devices_dir"
 
-        ${concatMapStrings (dev: (attrByPath (dev ++ [ "_create" ]) (_: {}) devices) {}) sortedDeviceList}
+        ${concatMapStrings (dev: (attrByPath (dev ++ [ "_create" ]) "" devices)) sortedDeviceList}
       '';
     /* Takes a disko device specification and returns a string which mounts the disks
 
@@ -239,13 +238,13 @@ let
     */
     mount = devices:
       let
-        fsMounts = diskoLib.deepMergeMap (dev: (dev._mount { }).fs or { }) (flatten (map attrValues (attrValues devices)));
+        fsMounts = diskoLib.deepMergeMap (dev: dev._mount.fs or { }) (flatten (map attrValues (attrValues devices)));
         sortedDeviceList = diskoLib.sortDevicesByDependencies ((diskoLib.meta devices).deviceDependencies or { }) devices;
       in
       ''
         set -efux
         # first create the necessary devices
-        ${concatMapStrings (dev: ((attrByPath (dev ++ [ "_mount" ]) {} devices) {}).dev or "") sortedDeviceList}
+        ${concatMapStrings (dev: ((attrByPath (dev ++ [ "_mount" ]) {} devices)).dev or "") sortedDeviceList}
 
         # and then mount the filesystems in alphabetical order
         ${concatStrings (attrValues fsMounts)}

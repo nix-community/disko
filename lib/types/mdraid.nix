@@ -1,10 +1,15 @@
-{ config, options, lib, diskoLib, parent, ... }:
+{ config, options, lib, diskoLib, parent, device, ... }:
 {
   options = {
     type = lib.mkOption {
       type = lib.types.enum [ "mdraid" ];
       internal = true;
       description = "Type";
+    };
+    device = lib.mkOption {
+      type = lib.types.str;
+      description = "Device";
+      default = device;
     };
 
     name = lib.mkOption {
@@ -26,19 +31,18 @@
     };
     _create = diskoLib.mkCreateOption {
       inherit config options;
-      default = { dev }: ''
-        echo "${dev}" >> "$disko_devices_dir"/raid_${config.name}
+      default = ''
+        echo "${config.device}" >> "$disko_devices_dir"/raid_${config.name}
       '';
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
-      default = { dev }:
-        { };
+      default = { };
     };
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
-      default = _dev: [ ];
+      default = [ ];
       description = "NixOS configuration";
     };
     _pkgs = lib.mkOption {
