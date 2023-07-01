@@ -75,6 +75,29 @@ let
           ${dev} seems not to be a supported disk format. Please add this to disko in https://github.com/nix-community/disko/blob/master/types/default.nix
         '';
 
+    /* get the index an item in a list
+
+       indexOf :: (a -> bool) -> [a] -> int -> int
+
+       Example:
+       indexOf (x: x == 2) [ 1 2 3 ] 0
+       => 2
+
+       indexOf (x: x == "x") [ 1 2 3 ] 0
+       => 0
+    */
+    indexOf = f: list: fallback:
+      let
+        iter = index: list:
+          if list == [ ] then
+            fallback
+          else if f (head list) then
+            index
+          else
+            iter (index + 1) (tail list);
+      in
+        iter 1 list;
+
     /* A nix option type representing a json datastructure, vendored from nixpkgs to avoid dependency on pkgs */
     jsonType =
       let
