@@ -65,21 +65,21 @@
     };
     _create = diskoLib.mkCreateOption {
       inherit config options;
-      default = _: ''
+      default = ''
         readarray -t zfs_devices < <(cat "$disko_devices_dir"/zfs_${config.name})
         zpool create -f ${config.name} \
           -R ${config.mountRoot} ${config.mode} \
           ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") config.options)} \
           ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-O ${n}=${v}") config.rootFsOptions)} \
           "''${zfs_devices[@]}"
-        ${lib.concatMapStrings (dataset: dataset._create {zpool = config.name;}) (lib.attrValues config.datasets)}
+        ${lib.concatMapStrings (dataset: dataset._create) (lib.attrValues config.datasets)}
       '';
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
-      default = _:
+      default =
         let
-          datasetMounts = diskoLib.deepMergeMap (dataset: dataset._mount { zpool = config.name; }) (lib.attrValues config.datasets);
+          datasetMounts = diskoLib.deepMergeMap (dataset: dataset._mount) (lib.attrValues config.datasets);
         in
         {
           dev = ''
@@ -104,7 +104,7 @@
       internal = true;
       readOnly = true;
       default = [
-        (map (dataset: dataset._config config.name) (lib.attrValues config.datasets))
+        (map (dataset: dataset._config) (lib.attrValues config.datasets))
         (lib.optional (config.mountpoint != null) {
           fileSystems.${config.mountpoint} = {
             device = config.name;
