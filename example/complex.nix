@@ -5,35 +5,29 @@
         type = "disk";
         device = builtins.elemAt disks 0;
         content = {
-          type = "table";
-          format = "gpt";
-          partitions = [
-            {
-              name = "ESP";
+          type = "gpt";
+          partitions = {
+            ESP = {
               start = "1MiB";
               end = "128MiB";
-              fs-type = "fat32";
-              bootable = true;
               content = {
                 type = "filesystem";
                 format = "vfat";
                 mountpoint = "/boot";
               };
-            }
-          ];
+            };
+          };
         };
       };
       disk1 = {
         type = "disk";
         device = builtins.elemAt disks 1;
         content = {
-          type = "table";
-          format = "gpt";
-          partitions = [
-            {
+          type = "gpt";
+          partitions = {
+            luks = {
               start = "1M";
-              end = "100%";
-              name = "luks";
+              size = "100%";
               content = {
                 type = "luks";
                 name = "crypted1";
@@ -46,21 +40,19 @@
                   vg = "pool";
                 };
               };
-            }
-          ];
+            };
+          };
         };
       };
       disk2 = {
         type = "disk";
         device = builtins.elemAt disks 2;
         content = {
-          type = "table";
-          format = "gpt";
-          partitions = [
-            {
+          type = "gpt";
+          partitions = {
+            luks = {
               start = "1M";
-              end = "100%";
-              name = "luks";
+              size = "100%";
               content = {
                 type = "luks";
                 name = "crypted2";
@@ -73,8 +65,8 @@
                   vg = "pool";
                 };
               };
-            }
-          ];
+            };
+          };
         };
       };
     };
@@ -83,20 +75,18 @@
         type = "mdadm";
         level = 1;
         content = {
-          type = "table";
-          format = "gpt";
-          partitions = [
-            {
-              name = "bla";
+          type = "gpt";
+          partitions = {
+            bla = {
               start = "1MiB";
-              end = "100%";
+              size = "100%";
               content = {
                 type = "filesystem";
                 format = "ext4";
                 mountpoint = "/ext4_mdadm_lvm";
               };
-            }
-          ];
+            };
+          };
         };
       };
     };

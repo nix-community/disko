@@ -56,12 +56,12 @@
       default =
         lib.optionalAttrs (config.options.mountpoint or "" != "none") {
           fs.${config.mountpoint} = ''
-            if ! findmnt ${config._parent.name}/${config.name} "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
+            if ! findmnt ${config._parent.name}/${config.name} "${rootMountPoint}${config.mountpoint}" >/dev/null 2>&1; then
               mount ${config._parent.name}/${config.name} "${rootMountPoint}${config.mountpoint}" \
-              -o X-mount.mkdir \
-              ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
-              ${lib.optionalString ((config.options.mountpoint or "") != "legacy") "-o zfsutil"} \
-              -t zfs
+                -o X-mount.mkdir \
+                ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
+                ${lib.optionalString ((config.options.mountpoint or "") != "legacy") "-o zfsutil"} \
+                -t zfs
             fi
           '';
         };

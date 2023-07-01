@@ -55,7 +55,9 @@
       inherit config options;
       default = ''
         cryptsetup -q luksFormat ${config.device} ${diskoLib.maybeStr config.keyFile} ${toString config.extraFormatArgs}
-        cryptsetup luksOpen ${config.device} ${config.name} ${toString config.extraOpenArgs} ${lib.optionalString (config.keyFile != null) "--key-file ${config.keyFile}"}
+        cryptsetup luksOpen ${config.device} ${config.name} \
+          ${toString config.extraOpenArgs} \
+          ${lib.optionalString (config.keyFile != null) "--key-file ${config.keyFile}"}
         ${lib.optionalString (config.content != null) config.content._create}
       '';
     };

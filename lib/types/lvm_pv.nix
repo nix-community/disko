@@ -32,7 +32,7 @@
       inherit config options;
       default = ''
         pvcreate ${config.device}
-        echo "${config.device}" >> "$disko_devices_dir"/lvm_${config.vg}
+        echo "${config.device}" >>"$disko_devices_dir"/lvm_${config.vg}
       '';
     };
     _mount = diskoLib.mkMountOption {

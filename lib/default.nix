@@ -98,6 +98,17 @@ let
       in
         iter 1 list;
 
+
+    /* indent takes a multiline string and indents it by 2 spaces starting on the second line
+
+       indent :: str -> str
+
+       Example:
+       indent "test\nbla"
+       => "test\n  bla"
+    */
+    indent = replaceStrings ["\n"] ["\n  "];
+
     /* A nix option type representing a json datastructure, vendored from nixpkgs to avoid dependency on pkgs */
     jsonType =
       let
@@ -203,10 +214,10 @@ let
         readOnly = true;
         type = lib.types.str;
         default = ''
-          ( # ${config.type} ${concatMapStringsSep " " (n: toString (config.${n} or "")) ["name" "device" "format" "mountpoint"]}
-            ${diskoLib.defineHookVariables { inherit config options; }}
+          ( # ${config.type} ${concatMapStringsSep " " (n: toString (config.${n} or "")) ["name" "device" "format" "mountpoint"]} #
+            ${diskoLib.indent (diskoLib.defineHookVariables { inherit config options; })}
             ${config.preCreateHook}
-            ${attrs.default}
+            ${diskoLib.indent attrs.default}
             ${config.postCreateHook}
           )
         '';
@@ -228,7 +239,10 @@ let
     */
     writeCheckedBash = { pkgs, checked ? false, noDeps ? false }: pkgs.writers.makeScriptWriter {
       interpreter = if noDeps then "/usr/bin/env bash" else "${pkgs.bash}/bin/bash";
-      check = lib.optionalString checked "${pkgs.shellcheck}/bin/shellcheck -e SC2034";
+      check = lib.optionalString checked (pkgs.writeScript "check" ''
+        set -efu
+        ${pkgs.shellcheck}/bin/shellcheck -e SC2034 "$1"
+      '');
     };
 
 
