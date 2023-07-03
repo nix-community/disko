@@ -1,4 +1,9 @@
 { config, options, lib, diskoLib, ... }:
+let
+  kernelModules = lib.filter (x: x != "") (map
+    (lv: lib.optionalString (lv.lvm_type != null && lv.lvm_type != "thinlv") "dm-${lv.lvm_type}")
+  (lib.attrValues config.lvs));
+in
 {
   options = {
     name = lib.mkOption {
@@ -58,6 +63,7 @@
           sortedLvs = lib.sort (a: _: !lib.hasInfix "100%" a.size) (lib.attrValues config.lvs);
         in
         ''
+          ${lib.concatMapStringsSep "\n" (k: ''modprobe "${k}"'') kernelModules}
           readarray -t lvm_devices < <(cat "$disko_devices_dir"/lvm_${config.name})
           vgcreate ${config.name} \
           "''${lvm_devices[@]}"
@@ -94,13 +100,10 @@
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
-      default =
+      default = [ { boot.initrd.kernelModules = kernelModules; } ] ++
         map
           (lv: [
             (lib.optional (lv.content != null) (lv.content._config "/dev/${config.name}/${lv.name}"))
-            (lib.optional (lv.lvm_type != null) {
-              boot.initrd.kernelModules = [ "dm-${lv.lvm_type}" ];
-            })
           ])
           (lib.attrValues config.lvs);
       description = "NixOS configuration";
