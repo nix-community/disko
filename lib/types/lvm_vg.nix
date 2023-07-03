@@ -1,4 +1,9 @@
 { config, options, lib, diskoLib, ... }:
+let
+  kernelModules = lib.filter (x: x != "") (map
+    (lv: lib.optionalString (lv.lvm_type != null && lv.lvm_type != "thinlv") "dm-${lv.lvm_type}")
+  (lib.attrValues config.lvs));
+in
 {
   options = {
     name = lib.mkOption {
@@ -24,7 +29,7 @@
             description = "Size of the logical volume";
           };
           lvm_type = lib.mkOption {
-            type = lib.types.nullOr (lib.types.enum [ "mirror" "raid0" "raid1" ]); # TODO add all lib.types
+            type = lib.types.nullOr (lib.types.enum [ "mirror" "raid0" "raid1" "thin-pool" "thinlv" ]); # TODO add all lib.types
             default = null; # maybe there is always a default type?
             description = "LVM type";
           };
@@ -32,6 +37,16 @@
             type = lib.types.listOf lib.types.str;
             default = [ ];
             description = "Extra arguments";
+          };
+          pool = lib.mkOption {
+            type = lib.types.nullOr lib.types.str;
+            default = null;
+            description = "Pool LV this LV is part of";
+          };
+          priority = lib.mkOption {
+            type = lib.types.int;
+            default = 1000;
+            description = "Priority when creating LVs. Lower priority gets created first.";
           };
           content = diskoLib.partitionType { parent = config; };
         };
@@ -55,18 +70,22 @@
       inherit config options;
       default = _:
         let
-          sortedLvs = lib.sort (a: _: !lib.hasInfix "100%" a.size) (lib.attrValues config.lvs);
+          sortedLvs = lib.sort (a: b: a.priority < b.priority) (lib.attrValues config.lvs);
         in
         ''
+          ${lib.concatMapStringsSep "\n" (k: ''modprobe "${k}"'') kernelModules}
           readarray -t lvm_devices < <(cat "$disko_devices_dir"/lvm_${config.name})
           vgcreate ${config.name} \
           "''${lvm_devices[@]}"
           ${lib.concatMapStrings (lv: ''
             lvcreate \
               --yes \
-              ${if lib.hasInfix "%" lv.size then "-l" else "-L"} ${lv.size} \
+              ${if (lv.lvm_type != "thinlv") then
+                (if lib.hasInfix "%" lv.size then "-l" else "-L")
+                else "-V"} ${lv.size} \
               -n ${lv.name} \
-              ${lib.optionalString (lv.lvm_type != null) "--type=${lv.lvm_type}"} \
+              ${lib.optionalString (lv.lvm_type == "thinlv") "--thinpool=${lv.pool}"} \
+              ${lib.optionalString (lv.lvm_type != null && lv.lvm_type != "thinlv") "--type=${lv.lvm_type}"} \
               ${toString lv.extraArgs} \
               ${config.name}
             ${lib.optionalString (lv.content != null) (lv.content._create {dev = "/dev/${config.name}/${lv.name}";})}
@@ -94,13 +113,10 @@
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
-      default =
+      default = [ { boot.initrd.kernelModules = kernelModules; } ] ++
         map
           (lv: [
             (lib.optional (lv.content != null) (lv.content._config "/dev/${config.name}/${lv.name}"))
-            (lib.optional (lv.lvm_type != null) {
-              boot.initrd.kernelModules = [ "dm-${lv.lvm_type}" ];
-            })
           ])
           (lib.attrValues config.lvs);
       description = "NixOS configuration";
