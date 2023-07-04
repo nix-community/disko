@@ -1,9 +1,6 @@
 { pkgs ? (import <nixpkgs> { })
 , makeDiskoTest ? (pkgs.callPackage ./lib.nix { }).makeDiskoTest
 }:
-let
-  linux-bcachefs = pkgs.callPackage ../linux-testing-bcachefs.nix { };
-in
 makeDiskoTest {
   name = "bcachefs";
   disko-config = ../example/bcachefs.nix;
@@ -22,6 +19,6 @@ makeDiskoTest {
         });
       })
     ];
-    boot.kernelPackages = pkgs.lib.mkForce (pkgs.recurseIntoAttrs (pkgs.linuxPackagesFor linux-bcachefs));
+    boot.kernelPackages = pkgs.lib.mkForce (pkgs.recurseIntoAttrs pkgs.linuxKernel.packages.linux_testing_bcachefs);
   };
 }
