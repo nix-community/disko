@@ -12,11 +12,11 @@
       description = "Type";
     };
     lvs = lib.mkOption {
-      type = lib.types.attrsOf (lib.types.submodule ({ config, ... }: {
+      type = lib.types.attrsOf (lib.types.submodule ({ name, ... }@lv: {
         options = {
           name = lib.mkOption {
             type = lib.types.str;
-            default = config._module.args.name;
+            default = name;
             description = "Name of the logical volume";
           };
           size = lib.mkOption {
@@ -33,7 +33,7 @@
             default = [ ];
             description = "Extra arguments";
           };
-          content = diskoLib.partitionType { parent = config; };
+          content = diskoLib.partitionType { parent = config; device = "/dev/${config.name}/${lv.config.name}"; };
         };
       }));
       default = { };
@@ -53,14 +53,14 @@
     };
     _create = diskoLib.mkCreateOption {
       inherit config options;
-      default = _:
+      default =
         let
           sortedLvs = lib.sort (a: _: !lib.hasInfix "100%" a.size) (lib.attrValues config.lvs);
         in
         ''
           readarray -t lvm_devices < <(cat "$disko_devices_dir"/lvm_${config.name})
           vgcreate ${config.name} \
-          "''${lvm_devices[@]}"
+            "''${lvm_devices[@]}"
           ${lib.concatMapStrings (lv: ''
             lvcreate \
               --yes \
@@ -69,17 +69,17 @@
               ${lib.optionalString (lv.lvm_type != null) "--type=${lv.lvm_type}"} \
               ${toString lv.extraArgs} \
               ${config.name}
-            ${lib.optionalString (lv.content != null) (lv.content._create {dev = "/dev/${config.name}/${lv.name}";})}
+            ${lib.optionalString (lv.content != null) lv.content._create}
           '') sortedLvs}
         '';
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
-      default = _:
+      default =
         let
           lvMounts = diskoLib.deepMergeMap
             (lv:
-              lib.optionalAttrs (lv.content != null) (lv.content._mount { dev = "/dev/${config.name}/${lv.name}"; })
+              lib.optionalAttrs (lv.content != null) lv.content._mount
             )
             (lib.attrValues config.lvs);
         in
@@ -97,7 +97,7 @@
       default =
         map
           (lv: [
-            (lib.optional (lv.content != null) (lv.content._config "/dev/${config.name}/${lv.name}"))
+            (lib.optional (lv.content != null) lv.content._config)
             (lib.optional (lv.lvm_type != null) {
               boot.initrd.kernelModules = [ "dm-${lv.lvm_type}" ];
             })

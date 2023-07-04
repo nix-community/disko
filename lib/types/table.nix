@@ -1,4 +1,4 @@
-{ config, options, lib, diskoLib, parent, ... }:
+{ config, options, lib, diskoLib, parent, device, ... }:
 {
   options = {
     type = lib.mkOption {
@@ -6,13 +6,18 @@
       internal = true;
       description = "Partition table";
     };
+    device = lib.mkOption {
+      type = lib.types.str;
+      default = device;
+      description = "Device to partition";
+    };
     format = lib.mkOption {
       type = lib.types.enum [ "gpt" "msdos" ];
       default = "gpt";
       description = "The kind of partition table";
     };
     partitions = lib.mkOption {
-      type = lib.types.listOf (lib.types.submodule ({ ... }: {
+      type = lib.types.listOf (lib.types.submodule ({ name, ... }@partition: {
         options = {
           part-type = lib.mkOption {
             type = lib.types.enum [ "primary" "logical" "extended" ];
@@ -48,7 +53,11 @@
             default = false;
             description = "Whether to make the partition bootable";
           };
-          content = diskoLib.partitionType { parent = config; };
+          content = diskoLib.partitionType { parent = config; device = diskoLib.deviceNumbering config.device partition.config._index; };
+          _index = lib.mkOption {
+            internal = true;
+            default = lib.toInt (lib.head (builtins.match ".*entry ([[:digit:]]+)]" name));
+          };
         };
       }));
       default = [ ];
@@ -72,36 +81,38 @@
     };
     _create = diskoLib.mkCreateOption {
       inherit config options;
-      default = { dev }: ''
-        parted -s ${dev} -- mklabel ${config.format}
-        ${lib.concatStrings (lib.imap (index: partition: ''
+      default = ''
+        parted -s ${config.device} -- mklabel ${config.format}
+        ${lib.concatStrings (map (partition: ''
           ${lib.optionalString (config.format == "gpt") ''
-            parted -s ${dev} -- mkpart ${partition.name} ${diskoLib.maybeStr partition.fs-type} ${partition.start} ${partition.end}
+            parted -s ${config.device} -- mkpart ${partition.name} ${diskoLib.maybeStr partition.fs-type} ${partition.start} ${partition.end}
           ''}
           ${lib.optionalString (config.format == "msdos") ''
-            parted -s ${dev} -- mkpart ${partition.part-type} ${diskoLib.maybeStr partition.fs-type} ${diskoLib.maybeStr partition.fs-type} ${partition.start} ${partition.end}
+            parted -s ${config.device} -- mkpart ${partition.part-type} ${diskoLib.maybeStr partition.fs-type} ${diskoLib.maybeStr partition.fs-type} ${partition.start} ${partition.end}
           ''}
           # ensure /dev/disk/by-path/..-partN exists before continuing
-          udevadm trigger --subsystem-match=block; udevadm settle
+          udevadm trigger --subsystem-match=block
+          udevadm settle
           ${lib.optionalString partition.bootable ''
-            parted -s ${dev} -- set ${toString index} boot on
+            parted -s ${config.device} -- set ${toString partition._index} boot on
           ''}
           ${lib.concatMapStringsSep "" (flag: ''
-            parted -s ${dev} -- set ${toString index} ${flag} on
+            parted -s ${config.device} -- set ${toString partition._index} ${flag} on
           '') partition.flags}
           # ensure further operations can detect new partitions
-          udevadm trigger --subsystem-match=block; udevadm settle
-          ${lib.optionalString (partition.content != null) (partition.content._create { dev = diskoLib.deviceNumbering dev index; })}
+          udevadm trigger --subsystem-match=block
+          udevadm settle
+          ${lib.optionalString (partition.content != null) partition.content._create}
         '') config.partitions)}
       '';
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
-      default = { dev }:
+      default =
         let
-          partMounts = lib.foldr lib.recursiveUpdate { } (lib.imap
-            (index: partition:
-              lib.optionalAttrs (partition.content != null) (partition.content._mount { dev = diskoLib.deviceNumbering dev index; })
+          partMounts = lib.foldr lib.recursiveUpdate { } (map
+            (partition:
+              lib.optionalAttrs (partition.content != null) partition.content._mount
             )
             config.partitions);
         in
@@ -113,10 +124,10 @@
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
-      default = dev:
-        lib.imap
-          (index: partition:
-            lib.optional (partition.content != null) (partition.content._config (diskoLib.deviceNumbering dev index))
+      default =
+        map
+          (partition:
+            lib.optional (partition.content != null) partition.content._config
           )
           config.partitions;
       description = "NixOS configuration";

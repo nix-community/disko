@@ -46,22 +46,22 @@
       # important to prevent accidental shadowing of mount points
       # since (create order != mount order)
       # -p creates parents automatically
-      default = { zpool }: ''
-        zfs create -up ${zpool}/${config.name} \
+      default = ''
+        zfs create -up ${config._parent.name}/${config.name} \
           ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") config.options)}
       '';
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
-      default = { zpool }:
+      default =
         lib.optionalAttrs (config.options.mountpoint or "" != "none") {
           fs.${config.mountpoint} = ''
-            if ! findmnt ${zpool}/${config.name} "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
-              mount ${zpool}/${config.name} "${rootMountPoint}${config.mountpoint}" \
-              -o X-mount.mkdir \
-              ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
-              ${lib.optionalString ((config.options.mountpoint or "") != "legacy") "-o zfsutil"} \
-              -t zfs
+            if ! findmnt ${config._parent.name}/${config.name} "${rootMountPoint}${config.mountpoint}" >/dev/null 2>&1; then
+              mount ${config._parent.name}/${config.name} "${rootMountPoint}${config.mountpoint}" \
+                -o X-mount.mkdir \
+                ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
+                ${lib.optionalString ((config.options.mountpoint or "") != "legacy") "-o zfsutil"} \
+                -t zfs
             fi
           '';
         };
@@ -69,10 +69,10 @@
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
-      default = zpool:
+      default =
         lib.optional (config.options.mountpoint or "" != "none") {
           fileSystems.${config.mountpoint} = {
-            device = "${zpool}/${config.name}";
+            device = "${config._parent.name}/${config.name}";
             fsType = "zfs";
             options = config.mountOptions ++ lib.optional ((config.options.mountpoint or "") != "legacy") "zfsutil";
           };

@@ -48,15 +48,10 @@ in
     '';
 
     # we keep this old output for compatibility
-    system.build.disko = builtins.trace "the .disko output is deprecated, plase use .diskoScript instead" (
-      (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko" ''
-        export PATH=${lib.makeBinPath (diskoLib.packages cfg.devices pkgs)}:$PATH
-        ${diskoLib.zapCreateMount cfg.devices}
-      ''
-    );
+    system.build.disko = builtins.trace "the .disko output is deprecated, plase use .diskoScript instead" config.system.build.diskoScript;
 
     system.build.diskoScript = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko" ''
-      export PATH=${lib.makeBinPath (diskoLib.packages cfg.devices pkgs)}:$PATH
+      export PATH=${lib.makeBinPath ((diskoLib.packages cfg.devices pkgs) ++ [ pkgs.bash ])}:$PATH
       ${diskoLib.zapCreateMount cfg.devices}
     '';
 
@@ -69,7 +64,10 @@ in
       ${diskoLib.mount cfg.devices}
     '';
 
-    system.build.diskoNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko" ''
+    # we keep this old output for compatibility
+    system.build.diskoNoDeps = builtins.trace "the .diskoNoDeps output is deprecated, plase use .diskoScriptNoDeps instead" config.system.build.diskoScriptNoDeps;
+
+    system.build.diskoScriptNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko" ''
       ${diskoLib.zapCreateMount cfg.devices}
     '';
 

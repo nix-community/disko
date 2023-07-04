@@ -1,10 +1,15 @@
-{ config, options, lib, diskoLib, parent, ... }:
+{ config, options, lib, diskoLib, parent, device, ... }:
 {
   options = {
     type = lib.mkOption {
       type = lib.types.enum [ "luks" ];
       internal = true;
       description = "Type";
+    };
+    device = lib.mkOption {
+      type = lib.types.str;
+      description = "Device to encrypt";
+      default = device;
     };
     name = lib.mkOption {
       type = lib.types.str;
@@ -33,7 +38,7 @@
       description = "Extra arguments to pass to `cryptsetup luksOpen` when opening";
       example = [ "--allow-discards" ];
     };
-    content = diskoLib.deviceType { parent = config; };
+    content = diskoLib.deviceType { parent = config; device = "/dev/mapper/${config.name}"; };
     _parent = lib.mkOption {
       internal = true;
       default = parent;
@@ -48,22 +53,24 @@
     };
     _create = diskoLib.mkCreateOption {
       inherit config options;
-      default = { dev }: ''
-        cryptsetup -q luksFormat ${dev} ${diskoLib.maybeStr config.keyFile} ${toString config.extraFormatArgs}
-        cryptsetup luksOpen ${dev} ${config.name} ${toString config.extraOpenArgs} ${lib.optionalString (config.keyFile != null) "--key-file ${config.keyFile}"}
-        ${lib.optionalString (config.content != null) (config.content._create {dev = "/dev/mapper/${config.name}";})}
+      default = ''
+        cryptsetup -q luksFormat ${config.device} ${diskoLib.maybeStr config.keyFile} ${toString config.extraFormatArgs}
+        cryptsetup luksOpen ${config.device} ${config.name} \
+          ${toString config.extraOpenArgs} \
+          ${lib.optionalString (config.keyFile != null) "--key-file ${config.keyFile}"}
+        ${lib.optionalString (config.content != null) config.content._create}
       '';
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
-      default = { dev }:
+      default =
         let
-          contentMount = config.content._mount { dev = "/dev/mapper/${config.name}"; };
+          contentMount = config.content._mount;
         in
         {
           dev = ''
             cryptsetup status ${config.name} >/dev/null 2>/dev/null ||
-              cryptsetup luksOpen ${dev} ${config.name} ${lib.optionalString (config.keyFile != null) "--key-file ${config.keyFile}"}
+              cryptsetup luksOpen ${config.device} ${config.name} ${lib.optionalString (config.keyFile != null) "--key-file ${config.keyFile}"}
             ${lib.optionalString (config.content != null) contentMount.dev or ""}
           '';
           fs = lib.optionalAttrs (config.content != null) contentMount.fs or { };
@@ -72,10 +79,10 @@
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
-      default = dev: [ ]
+      default = [ ]
         # If initrdUnlock is true, then add a device entry to the initrd.luks.devices config.
-        ++ (lib.optional config.initrdUnlock [{ boot.initrd.luks.devices.${config.name}.device = dev; }])
-        ++ (lib.optional (config.content != null) (config.content._config "/dev/mapper/${config.name}"));
+        ++ (lib.optional config.initrdUnlock [{ boot.initrd.luks.devices.${config.name}.device = config.device; }])
+        ++ (lib.optional (config.content != null) config.content._config);
       description = "NixOS configuration";
     };
     _pkgs = lib.mkOption {

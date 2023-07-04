@@ -1,10 +1,15 @@
-{ config, options, diskoLib, lib, rootMountPoint, parent, ... }:
+{ config, options, diskoLib, lib, rootMountPoint, parent, device, ... }:
 {
   options = {
     type = lib.mkOption {
       type = lib.types.enum [ "btrfs" ];
       internal = true;
       description = "Type";
+    };
+    device = lib.mkOption {
+      type = lib.types.str;
+      default = device;
+      description = "Device to use";
     };
     extraArgs = lib.mkOption {
       type = lib.types.listOf lib.types.str;
@@ -63,17 +68,17 @@
       internal = true;
       readOnly = true;
       type = lib.types.functionTo diskoLib.jsonType;
-      default = _dev: { };
+      default = dev: { };
       description = "Metadata";
     };
     _create = diskoLib.mkCreateOption {
       inherit config options;
-      default = { dev }: ''
-        mkfs.btrfs ${dev} ${toString config.extraArgs}
+      default = ''
+        mkfs.btrfs ${config.device} ${toString config.extraArgs}
         ${lib.concatMapStrings (subvol: ''
           (
             MNTPOINT=$(mktemp -d)
-            mount ${dev} "$MNTPOINT" -o subvol=/
+            mount ${config.device} "$MNTPOINT" -o subvol=/
             trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
             btrfs subvolume create "$MNTPOINT"/${subvol.name} ${toString subvol.extraArgs}
           )
@@ -82,7 +87,7 @@
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
-      default = { dev }:
+      default =
         let
           subvolMounts = lib.concatMapAttrs
             (_: subvol:
@@ -94,8 +99,8 @@
               in
               lib.optionalAttrs (mountpoint != null) {
                 ${mountpoint} = ''
-                  if ! findmnt ${dev} "${rootMountPoint}${mountpoint}" > /dev/null 2>&1; then
-                    mount ${dev} "${rootMountPoint}${mountpoint}" \
+                  if ! findmnt ${config.device} "${rootMountPoint}${mountpoint}" > /dev/null 2>&1; then
+                    mount ${config.device} "${rootMountPoint}${mountpoint}" \
                     ${lib.concatMapStringsSep " " (opt: "-o ${opt}") (subvol.mountOptions ++ [ "subvol=${subvol.name}" ])} \
                     -o X-mount.mkdir
                   fi
@@ -107,8 +112,8 @@
         {
           fs = subvolMounts // lib.optionalAttrs (config.mountpoint != null) {
             ${config.mountpoint} = ''
-              if ! findmnt ${dev} "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
-                mount ${dev} "${rootMountPoint}${config.mountpoint}" \
+              if ! findmnt ${config.device} "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
+                mount ${config.device} "${rootMountPoint}${config.mountpoint}" \
                 ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
                 -o X-mount.mkdir
               fi
@@ -119,7 +124,7 @@
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
-      default = dev: [
+      default = [
         (map
           (subvol:
             let
@@ -130,7 +135,7 @@
             in
             lib.optional (mountpoint != null) {
               fileSystems.${mountpoint} = {
-                device = dev;
+                device = config.device;
                 fsType = "btrfs";
                 options = subvol.mountOptions ++ [ "subvol=${subvol.name}" ];
               };
@@ -139,7 +144,7 @@
           (lib.attrValues config.subvolumes))
         (lib.optional (config.mountpoint != null) {
           fileSystems.${config.mountpoint} = {
-            device = dev;
+            device = config.device;
             fsType = "btrfs";
             options = config.mountOptions;
           };

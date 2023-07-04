@@ -1,10 +1,18 @@
-{ config, options, lib, diskoLib, parent, ... }@args:
+{ config, options, lib, diskoLib, parent, device, ... }:
+let
+  sortedPartitions = lib.sort (x: y: x.priority < y.priority) (lib.attrValues config.partitions);
+in
 {
   options = {
     type = lib.mkOption {
       type = lib.types.enum [ "gpt" ];
       internal = true;
       description = "Partition table";
+    };
+    device = lib.mkOption {
+      type = lib.types.str;
+      default = device;
+      description = "Device to use for the partition table";
     };
     partitions = lib.mkOption {
       type = lib.types.attrsOf (lib.types.submodule ({ name, ... }@partition: {
@@ -13,6 +21,15 @@
             type = lib.types.strMatching "[A-Fa-f0-9]{4}";
             default = "8300";
             description = "Filesystem type to use, run sgdisk -L to see what is available";
+          };
+          device = lib.mkOption {
+            type = lib.types.str;
+            default = if config._parent.type == "mdadm" then
+              # workaround because mdadm partlabel do not appear in /dev/disk/by-partlabel
+              "/dev/disk/by-id/md-name-any:${config._parent.name}-part${toString partition.config._index}"
+            else
+              "/dev/disk/by-partlabel/${partition.config.label}";
+            description = "Device to use for the partition";
           };
           priority = lib.mkOption {
             type = lib.types.int;
@@ -26,7 +43,7 @@
           };
           label = lib.mkOption {
             type = lib.types.str;
-            default = "${config._parent.type}-${config._parent.name}-${partition.name}";
+            default = "${config._parent.type}-${config._parent.name}-${partition.config.name}";
           };
           size = lib.mkOption {
             type = lib.types.either (lib.types.enum [ "100%" ]) (lib.types.strMatching "[0-9]+[KMGTP]?");
@@ -51,7 +68,11 @@
               or - for relative sizes from the disks end
             '';
           };
-          content = diskoLib.partitionType { parent = config; };
+          content = diskoLib.partitionType { parent = config; device = partition.config.device; };
+          _index = lib.mkOption {
+            internal = true;
+            default = diskoLib.indexOf (x: x.name == partition.config.name) sortedPartitions 0;
+          };
         };
       }));
       default = [ ];
@@ -66,8 +87,8 @@
       readOnly = true;
       type = lib.types.functionTo diskoLib.jsonType;
       default = dev:
-        lib.foldr lib.recursiveUpdate { } (lib.imap
-          (index: partition:
+        lib.foldr lib.recursiveUpdate { } (map
+          (partition:
             lib.optionalAttrs (partition.content != null) (partition.content._meta dev)
           )
           (lib.attrValues config.partitions));
@@ -75,27 +96,28 @@
     };
     _create = diskoLib.mkCreateOption {
       inherit config options;
-      default = { dev }: ''
-        ${lib.concatStrings (lib.imap (index: partition: ''
+      default = ''
+        ${lib.concatStrings (map (partition: ''
           sgdisk \
-            --new=${toString index}:${partition.start}:${partition.end} \
-            --change-name=${toString index}:${partition.label} \
-            --typecode=${toString index}:${partition.type} \
-            ${dev}
+            --new=${toString partition._index}:${partition.start}:${partition.end} \
+            --change-name=${toString partition._index}:${partition.label} \
+            --typecode=${toString partition._index}:${partition.type} \
+            ${config.device}
           # ensure /dev/disk/by-path/..-partN exists before continuing
-          udevadm trigger --subsystem-match=block; udevadm settle
-          ${lib.optionalString (partition.content != null) (partition.content._create { dev = "/dev/disk/by-partlabel/${partition.label}"; })}
-        '') (lib.sort (x: y: x.priority < y.priority) (lib.attrValues config.partitions)))}
+          udevadm trigger --subsystem-match=block
+          udevadm settle
+          ${lib.optionalString (partition.content != null) partition.content._create}
+        '') sortedPartitions)}
 
       '';
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
-      default = { dev }:
+      default =
         let
-          partMounts = lib.foldr lib.recursiveUpdate { } (lib.imap
-            (index: partition:
-              lib.optionalAttrs (partition.content != null) (partition.content._mount { dev = "/dev/disk/by-partlabel/${partition.label}"; })
+          partMounts = lib.foldr lib.recursiveUpdate { } (map
+            (partition:
+              lib.optionalAttrs (partition.content != null) partition.content._mount
             )
             (lib.attrValues config.partitions));
         in
@@ -107,10 +129,9 @@
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
-      default = dev:
-        lib.imap
-          (index: partition:
-            lib.optional (partition.content != null) (partition.content._config "/dev/disk/by-partlabel/${partition.label}")
+      default = map
+          (partition:
+            lib.optional (partition.content != null) partition.content._config
           )
           (lib.attrValues config.partitions);
       description = "NixOS configuration";

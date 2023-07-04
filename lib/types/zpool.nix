@@ -65,36 +65,36 @@
     };
     _create = diskoLib.mkCreateOption {
       inherit config options;
-      default = _: ''
+      default = ''
         readarray -t zfs_devices < <(cat "$disko_devices_dir"/zfs_${config.name})
         zpool create -f ${config.name} \
           -R ${config.mountRoot} ${config.mode} \
           ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") config.options)} \
           ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-O ${n}=${v}") config.rootFsOptions)} \
           "''${zfs_devices[@]}"
-        ${lib.concatMapStrings (dataset: dataset._create {zpool = config.name;}) (lib.attrValues config.datasets)}
+        ${lib.concatMapStrings (dataset: dataset._create) (lib.attrValues config.datasets)}
       '';
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
-      default = _:
+      default =
         let
-          datasetMounts = diskoLib.deepMergeMap (dataset: dataset._mount { zpool = config.name; }) (lib.attrValues config.datasets);
+          datasetMounts = diskoLib.deepMergeMap (dataset: dataset._mount) (lib.attrValues config.datasets);
         in
         {
           dev = ''
-            zpool list '${config.name}' >/dev/null 2>/dev/null || \
+            zpool list '${config.name}' >/dev/null 2>/dev/null ||
               zpool import -l -R ${config.mountRoot} '${config.name}'
             ${lib.concatMapStrings (x: x.dev or "") (lib.attrValues datasetMounts)}
           '';
           fs = (datasetMounts.fs or { }) // lib.optionalAttrs (config.mountpoint != null) {
             ${config.mountpoint} = ''
-              if ! findmnt ${config.name} "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
+              if ! findmnt ${config.name} "${rootMountPoint}${config.mountpoint}" >/dev/null 2>&1; then
                 mount ${config.name} "${rootMountPoint}${config.mountpoint}" \
-                ${lib.optionalString ((config.options.mountpoint or "") != "legacy") "-o zfsutil"} \
-                ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
-                -o X-mount.mkdir \
-                -t zfs
+                  ${lib.optionalString ((config.options.mountpoint or "") != "legacy") "-o zfsutil"} \
+                  ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
+                  -o X-mount.mkdir \
+                  -t zfs
               fi
             '';
           };
@@ -104,7 +104,7 @@
       internal = true;
       readOnly = true;
       default = [
-        (map (dataset: dataset._config config.name) (lib.attrValues config.datasets))
+        (map (dataset: dataset._config) (lib.attrValues config.datasets))
         (lib.optional (config.mountpoint != null) {
           fileSystems.${config.mountpoint} = {
             device = config.name;

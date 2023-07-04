@@ -36,10 +36,16 @@ in
   '';
   disko = cfg: diskoLib.zapCreateMount (eval cfg).config.disko.devices;
   diskoScript = cfg: pkgs: (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-zap-create-mount" ''
-    export PATH=${lib.makeBinPath (diskoLib.packages (eval cfg).config.disko.devices pkgs)}:$PATH
+    export PATH=${lib.makeBinPath ((diskoLib.packages (eval cfg).config.disko.devices pkgs) ++ [ pkgs.bash ])}:$PATH
     ${diskoLib.zapCreateMount (eval cfg).config.disko.devices}
   '';
-  diskoNoDeps = cfg: pkgs: (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko-zap-create-mount" ''
+  # we keep this old output for backwards compatibility
+  diskoNoDeps = cfg: pkgs: builtins.trace "the .diskoNoDeps output is deprecated, plase use .diskoScriptNoDeps instead" (
+    (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko-zap-create-mount" ''
+      ${diskoLib.zapCreateMount (eval cfg).config.disko.devices}
+    ''
+  );
+  diskoScriptNoDeps = cfg: pkgs: (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko-zap-create-mount" ''
     ${diskoLib.zapCreateMount (eval cfg).config.disko.devices}
   '';
   config = cfg: { imports = diskoLib.config (eval cfg).config.disko.devices; };

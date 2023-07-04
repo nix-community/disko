@@ -75,6 +75,40 @@ let
           ${dev} seems not to be a supported disk format. Please add this to disko in https://github.com/nix-community/disko/blob/master/types/default.nix
         '';
 
+    /* get the index an item in a list
+
+       indexOf :: (a -> bool) -> [a] -> int -> int
+
+       Example:
+       indexOf (x: x == 2) [ 1 2 3 ] 0
+       => 2
+
+       indexOf (x: x == "x") [ 1 2 3 ] 0
+       => 0
+    */
+    indexOf = f: list: fallback:
+      let
+        iter = index: list:
+          if list == [ ] then
+            fallback
+          else if f (head list) then
+            index
+          else
+            iter (index + 1) (tail list);
+      in
+        iter 1 list;
+
+
+    /* indent takes a multiline string and indents it by 2 spaces starting on the second line
+
+       indent :: str -> str
+
+       Example:
+       indent "test\nbla"
+       => "test\n  bla"
+    */
+    indent = replaceStrings ["\n"] ["\n  "];
+
     /* A nix option type representing a json datastructure, vendored from nixpkgs to avoid dependency on pkgs */
     jsonType =
       let
@@ -178,16 +212,15 @@ let
       lib.mkOption {
         internal = true;
         readOnly = true;
-        type = lib.types.functionTo lib.types.str;
-        default = args:
-          ''
-            ( # ${config.type} ${concatMapStringsSep " " (n: toString (config.${n} or "")) ["name" "device" "format" "mountpoint"]}
-              ${diskoLib.defineHookVariables { inherit config options; }}
-              ${config.preCreateHook}
-              ${attrs.default args}
-              ${config.postCreateHook}
-            )
-          '';
+        type = lib.types.str;
+        default = ''
+          ( # ${config.type} ${concatMapStringsSep " " (n: toString (config.${n} or "")) ["name" "device" "format" "mountpoint"]} #
+            ${diskoLib.indent (diskoLib.defineHookVariables { inherit config options; })}
+            ${config.preCreateHook}
+            ${diskoLib.indent attrs.default}
+            ${config.postCreateHook}
+          )
+        '';
         description = "Creation script";
       };
 
@@ -195,7 +228,7 @@ let
       lib.mkOption {
         internal = true;
         readOnly = true;
-        type = lib.types.functionTo diskoLib.jsonType;
+        type = diskoLib.jsonType;
         default = attrs.default;
         description = "Mount script";
       };
@@ -206,7 +239,10 @@ let
     */
     writeCheckedBash = { pkgs, checked ? false, noDeps ? false }: pkgs.writers.makeScriptWriter {
       interpreter = if noDeps then "/usr/bin/env bash" else "${pkgs.bash}/bin/bash";
-      check = lib.optionalString checked "${pkgs.shellcheck}/bin/shellcheck -e SC2034";
+      check = lib.optionalString checked (pkgs.writeScript "check" ''
+        set -efu
+        ${pkgs.shellcheck}/bin/shellcheck -e SC2034 "$1"
+      '');
     };
 
 
@@ -231,7 +267,7 @@ let
         trap 'rm -rf "$disko_devices_dir"' EXIT
         mkdir -p "$disko_devices_dir"
 
-        ${concatMapStrings (dev: (attrByPath (dev ++ [ "_create" ]) (_: {}) devices) {}) sortedDeviceList}
+        ${concatMapStrings (dev: (attrByPath (dev ++ [ "_create" ]) "" devices)) sortedDeviceList}
       '';
     /* Takes a disko device specification and returns a string which mounts the disks
 
@@ -239,13 +275,13 @@ let
     */
     mount = devices:
       let
-        fsMounts = diskoLib.deepMergeMap (dev: (dev._mount { }).fs or { }) (flatten (map attrValues (attrValues devices)));
+        fsMounts = diskoLib.deepMergeMap (dev: dev._mount.fs or { }) (flatten (map attrValues (attrValues devices)));
         sortedDeviceList = diskoLib.sortDevicesByDependencies ((diskoLib.meta devices).deviceDependencies or { }) devices;
       in
       ''
         set -efux
         # first create the necessary devices
-        ${concatMapStrings (dev: ((attrByPath (dev ++ [ "_mount" ]) {} devices) {}).dev or "") sortedDeviceList}
+        ${concatMapStrings (dev: ((attrByPath (dev ++ [ "_mount" ]) {} devices)).dev or "") sortedDeviceList}
 
         # and then mount the filesystems in alphabetical order
         ${concatStrings (attrValues fsMounts)}

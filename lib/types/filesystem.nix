@@ -1,10 +1,15 @@
-{ config, options, lib, diskoLib, rootMountPoint, parent, ... }:
+{ config, options, lib, diskoLib, rootMountPoint, parent, device, ... }:
 {
   options = {
     type = lib.mkOption {
       type = lib.types.enum [ "filesystem" ];
       internal = true;
       description = "Type";
+    };
+    device = lib.mkOption {
+      type = lib.types.str;
+      default = device;
+      description = "Device to use";
     };
     extraArgs = lib.mkOption {
       type = lib.types.listOf lib.types.str;
@@ -38,18 +43,18 @@
     };
     _create = diskoLib.mkCreateOption {
       inherit config options;
-      default = { dev }: ''
+      default = ''
         mkfs.${config.format} \
           ${toString config.extraArgs} \
-          ${dev}
+          ${config.device}
       '';
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
-      default = { dev }: lib.optionalAttrs (config.mountpoint != null) {
+      default = lib.optionalAttrs (config.mountpoint != null) {
         fs.${config.mountpoint} = ''
-          if ! findmnt ${dev} "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
-            mount ${dev} "${rootMountPoint}${config.mountpoint}" \
+          if ! findmnt ${config.device} "${rootMountPoint}${config.mountpoint}" >/dev/null 2>&1; then
+            mount ${config.device} "${rootMountPoint}${config.mountpoint}" \
               -t "${config.format}" \
               ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
               -o X-mount.mkdir
@@ -60,9 +65,9 @@
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
-      default = dev: lib.optional (config.mountpoint != null) {
+      default = lib.optional (config.mountpoint != null) {
         fileSystems.${config.mountpoint} = {
-          device = dev;
+          device = config.device;
           fsType = config.format;
           options = config.mountOptions;
         };

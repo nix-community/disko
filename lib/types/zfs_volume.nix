@@ -30,7 +30,7 @@
       description = "Size of the dataset";
     };
 
-    content = diskoLib.partitionType { parent = config; };
+    content = diskoLib.partitionType { parent = config; device = "/dev/zvol/${config._parent.name}/${config.name}"; };
 
     _parent = lib.mkOption {
       internal = true;
@@ -46,23 +46,25 @@
     };
     _create = diskoLib.mkCreateOption {
       inherit config options;
-      default = { zpool }: ''
-        zfs create ${zpool}/${config.name} \
-          ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") config.options)} -V ${config.size}
-        udevadm trigger --subsystem-match=block; udevadm settle
-        ${lib.optionalString (config.content != null) (config.content._create {dev = "/dev/zvol/${zpool}/${config.name}";})}
+      default = ''
+        zfs create ${config._parent.name}/${config.name} \
+          ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") config.options)} \
+          -V ${config.size}
+        udevadm trigger --subsystem-match=block
+        udevadm settle
+        ${lib.optionalString (config.content != null) config.content._create}
       '';
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
-      default = { zpool }:
-        lib.optionalAttrs (config.content != null) (config.content._mount { dev = "/dev/zvol/${zpool}/${config.name}"; });
+      default =
+        lib.optionalAttrs (config.content != null) config.content._mount;
     };
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
-      default = zpool:
-        lib.optional (config.content != null) (config.content._config "/dev/zvol/${zpool}/${config.name}");
+      default =
+        lib.optional (config.content != null) config.content._config;
       description = "NixOS configuration";
     };
     _pkgs = lib.mkOption {

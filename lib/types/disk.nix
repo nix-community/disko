@@ -16,7 +16,7 @@
       type = diskoLib.optionTypes.absolute-pathname; # TODO check if subpath of /dev ? - No! eg: /.swapfile
       description = "Device path";
     };
-    content = diskoLib.deviceType { parent = config; };
+    content = diskoLib.deviceType { parent = config; device = config.device; };
     _meta = lib.mkOption {
       internal = true;
       readOnly = true;
@@ -27,18 +27,17 @@
     };
     _create = diskoLib.mkCreateOption {
       inherit config options;
-      default = _: config.content._create { dev = config.device; };
+      default = config.content._create;
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
-      default = _:
-        lib.optionalAttrs (config.content != null) (config.content._mount { dev = config.device; });
+      default = lib.optionalAttrs (config.content != null) (config.content._mount);
     };
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
       default =
-        lib.optional (config.content != null) (config.content._config config.device);
+        lib.optional (config.content != null) (config.content._config);
       description = "NixOS configuration";
     };
     _pkgs = lib.mkOption {
