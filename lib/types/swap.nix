@@ -56,7 +56,7 @@
           device = config.device;
           randomEncryption = config.randomEncryption;
         }];
-        boot.resumeDevice = lib.mkIf config.resumeDevice dev;
+        boot.resumeDevice = lib.mkIf config.resumeDevice config.device;
       }];
       description = "NixOS configuration";
     };
