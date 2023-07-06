@@ -44,6 +44,12 @@ in
         };
       '';
     };
+    additionalKeyFiles = lib.mkOption {
+      type = lib.types.listOf diskoLib.optionTypes.absolute-pathname;
+      default = [];
+      description = "Path to additional key files for encryption";
+      example = ["/tmp/disk2.key"];
+    };
     initrdUnlock = lib.mkOption {
       type = lib.types.bool;
       default = true;
@@ -82,6 +88,7 @@ in
         cryptsetup luksOpen ${config.device} ${config.name} \
           ${toString config.extraOpenArgs} \
           ${keyFileArgs}
+        ${toString (lib.lists.forEach config.additionalKeyFiles (x: "cryptsetup luksAddKey ${config.device} ${x} ${keyFileArgs}"))}
         ${lib.optionalString (config.content != null) config.content._create}
       '';
     };

@@ -32,6 +32,7 @@
                 type = "luks";
                 name = "crypted1";
                 settings.keyFile = "/tmp/secret.key";
+                additionalKeyFiles = ["/tmp/additionalSecret.key"];
                 extraFormatArgs = [
                   "--iter-time 1" # unsecure but fast for tests
                 ];
