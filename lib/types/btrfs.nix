@@ -91,16 +91,10 @@
         let
           subvolMounts = lib.concatMapAttrs
             (_: subvol:
-              let
-                mountpoint =
-                  if (subvol.mountpoint != null) then subvol.mountpoint
-                  else if (config.mountpoint == null) then subvol.name
-                  else null;
-              in
-              lib.optionalAttrs (mountpoint != null) {
-                ${mountpoint} = ''
-                  if ! findmnt ${config.device} "${rootMountPoint}${mountpoint}" > /dev/null 2>&1; then
-                    mount ${config.device} "${rootMountPoint}${mountpoint}" \
+              lib.optionalAttrs (subvol.mountpoint != null) {
+                ${subvol.mountpoint} = ''
+                  if ! findmnt ${config.device} "${rootMountPoint}${subvol.mountpoint}" > /dev/null 2>&1; then
+                    mount ${config.device} "${rootMountPoint}${subvol.mountpoint}" \
                     ${lib.concatMapStringsSep " " (opt: "-o ${opt}") (subvol.mountOptions ++ [ "subvol=${subvol.name}" ])} \
                     -o X-mount.mkdir
                   fi
