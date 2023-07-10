@@ -1,4 +1,16 @@
 { config, options, lib, diskoLib, parent, device, ... }:
+let
+  keyFile = if lib.hasAttr "keyFile" config.settings
+    then config.settings.keyFile
+    else if config.keyFile != null
+    then lib.warn "The option `keyFile` is deprecated. See the `settings` option." config.keyFile
+    else null;
+  keyFileArgs = ''\
+    ${lib.optionalString (keyFile != null) "--key-file ${keyFile}"} \
+    ${lib.optionalString (lib.hasAttr "keyFileSize" config.settings) "--keyfile-size ${config.settings.keyFileSize}"} \
+    ${lib.optionalString (lib.hasAttr "keyFileOffset" config.settings) "--keyfile-offset ${config.settings.keyFileOffset}"}
+  '';
+in
 {
   options = {
     type = lib.mkOption {
@@ -20,6 +32,17 @@
       default = null;
       description = "Path to the key for encryption";
       example = "/tmp/disk.key";
+    };
+    settings = lib.mkOption {
+      default = { };
+      description = "LUKS settings (as defined in configuration.nix in boot.initrd.luks.devices.<name>)";
+      example = ''{
+          keyFile = "/tmp/disk.key";
+          keyFileSize = 2048;
+          keyFileOffset = 1024;
+          fallbackToPassword = true;
+        };
+      '';
     };
     initrdUnlock = lib.mkOption {
       type = lib.types.bool;
@@ -54,10 +77,11 @@
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = ''
-        cryptsetup -q luksFormat ${config.device} ${diskoLib.maybeStr config.keyFile} ${toString config.extraFormatArgs}
+        cryptsetup -q luksFormat ${config.device} ${toString config.extraFormatArgs} \
+          ${keyFileArgs}
         cryptsetup luksOpen ${config.device} ${config.name} \
           ${toString config.extraOpenArgs} \
-          ${lib.optionalString (config.keyFile != null) "--key-file ${config.keyFile}"}
+          ${keyFileArgs}
         ${lib.optionalString (config.content != null) config.content._create}
       '';
     };
@@ -70,7 +94,8 @@
         {
           dev = ''
             cryptsetup status ${config.name} >/dev/null 2>/dev/null ||
-              cryptsetup luksOpen ${config.device} ${config.name} ${lib.optionalString (config.keyFile != null) "--key-file ${config.keyFile}"}
+              cryptsetup luksOpen ${config.device} ${config.name} \
+              ${keyFileArgs}
             ${lib.optionalString (config.content != null) contentMount.dev or ""}
           '';
           fs = lib.optionalAttrs (config.content != null) contentMount.fs or { };
@@ -81,12 +106,13 @@
       readOnly = true;
       default = [ ]
         # If initrdUnlock is true, then add a device entry to the initrd.luks.devices config.
-        ++ (lib.optional config.initrdUnlock [{
-          boot.initrd.luks.devices.${config.name} = {
-            inherit (config) device keyFile;
-          };
-        }])
-        ++ (lib.optional (config.content != null) config.content._config);
+        ++ (lib.optional config.initrdUnlock [
+          {
+            boot.initrd.luks.devices.${config.name} = {
+              inherit (config) device;
+            } // config.settings;
+          }
+        ]) ++ (lib.optional (config.content != null) config.content._config);
       description = "NixOS configuration";
     };
     _pkgs = lib.mkOption {

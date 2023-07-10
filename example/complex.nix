@@ -31,9 +31,9 @@
               content = {
                 type = "luks";
                 name = "crypted1";
-                keyFile = "/tmp/secret.key";
+                settings.keyFile = "/tmp/secret.key";
                 extraFormatArgs = [
-                  "--iter-time 1"
+                  "--iter-time 1" # unsecure but fast for tests
                 ];
                 content = {
                   type = "lvm_pv";
@@ -56,9 +56,9 @@
               content = {
                 type = "luks";
                 name = "crypted2";
-                keyFile = "/tmp/secret.key";
+                settings.keyFile = "/tmp/secret.key";
                 extraFormatArgs = [
-                  "--iter-time 1"
+                  "--iter-time 1" # unsecure but fast for tests
                 ];
                 content = {
                   type = "lvm_pv";
