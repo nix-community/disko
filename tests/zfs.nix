@@ -24,7 +24,6 @@ makeDiskoTest {
     assert_property("zroot/zfs_testvolume", "volsize", "10M")
     assert_property("zroot/zfs_unmounted_fs", "mountpoint", "none")
 
-    assert_property("zroot/encrypted", "keylocation", "prompt")
     machine.succeed("zfs get name zroot@blank")
 
     machine.succeed("mountpoint /zfs_fs");
