@@ -17,10 +17,6 @@ makeDiskoTest {
     machine.succeed("mountpoint /ext4onzfs");
     machine.succeed("mountpoint /ext4_on_lvm");
   '';
-  bootCommands = ''
-    machine.wait_for_console_text("vda")
-    machine.send_console("secretsecret\n")
-  '';
   extraConfig = {
     boot.kernelModules = [ "dm-raid" "dm-mirror" ];
   };
