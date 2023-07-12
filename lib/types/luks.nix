@@ -81,7 +81,11 @@
       readOnly = true;
       default = [ ]
         # If initrdUnlock is true, then add a device entry to the initrd.luks.devices config.
-        ++ (lib.optional config.initrdUnlock [{ boot.initrd.luks.devices.${config.name}.device = config.device; }])
+        ++ (lib.optional config.initrdUnlock [{
+          boot.initrd.luks.devices.${config.name} = {
+            inherit (config) device keyFile;
+          };
+        }])
         ++ (lib.optional (config.content != null) config.content._config);
       description = "NixOS configuration";
     };

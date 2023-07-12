@@ -28,7 +28,6 @@ queue_rules:
       - check-success=package default [x86_64-linux]
       - check-success=package disko [x86_64-linux]
       - check-success=package disko-doc [x86_64-linux]
-      - check-success=package linux-bcachefs [x86_64-linux]
 defaults:
   actions:
     queue:

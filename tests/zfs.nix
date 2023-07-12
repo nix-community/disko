@@ -8,11 +8,6 @@ makeDiskoTest {
     fileSystems."/zfs_legacy_fs".options = [ "nofail" ]; # TODO find out why we need this!
     boot.zfs.requestEncryptionCredentials = true;
   };
-  enableOCR = true;
-  bootCommands = ''
-    machine.wait_for_text("passphrase for")
-    machine.send_chars("secretsecret\n")
-  '';
   extraTestScript = ''
     machine.succeed("test -b /dev/zvol/zroot/zfs_testvolume");
 
@@ -29,7 +24,6 @@ makeDiskoTest {
     assert_property("zroot/zfs_testvolume", "volsize", "10M")
     assert_property("zroot/zfs_unmounted_fs", "mountpoint", "none")
 
-    assert_property("zroot/encrypted", "keylocation", "prompt")
     machine.succeed("zfs get name zroot@blank")
 
     machine.succeed("mountpoint /zfs_fs");

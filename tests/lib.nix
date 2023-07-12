@@ -12,7 +12,6 @@
     , extraConfig ? { }
     , grub-devices ? [ "nodev" ]
     , efi ? true
-    , enableOCR ? false
     , postDisko ? ""
     , testMode ? "module" # can be one of direct module cli
     , testBoot ? true # if we actually want to test booting or just create/mount
@@ -55,8 +54,10 @@
         documentation.enable = false;
         hardware.enableAllFirmware = lib.mkForce false;
         networking.hostId = "8425e349"; # from profiles/base.nix, needed for zfs
-        boot.kernelParams = lib.mkIf enableOCR [ "console=tty0" ]; # needed for OCR
         boot.zfs.devNodes = "/dev/disk/by-uuid"; # needed because /dev/disk/by-id is empty in qemu-vms
+        boot.initrd.preDeviceCommands = ''
+          echo -n 'secretsecret' > /tmp/secret.key
+        '';
 
         boot.consoleLogLevel = lib.mkForce 100;
         boot.loader.grub = {
@@ -75,7 +76,6 @@
     makeTest' {
       name = "disko-${name}";
 
-      inherit enableOCR;
       nodes.machine = { pkgs, modulesPath, ... }: {
         imports = [
           (lib.optionalAttrs (testMode == "module") {

@@ -95,9 +95,10 @@
               keyformat = "passphrase";
               keylocation = "file:///tmp/secret.key";
             };
-            postCreateHook = ''
-              zfs set keylocation="prompt" "zroot/$name";
-            '';
+            # use this to read the key during boot
+            # postCreateHook = ''
+            #   zfs set keylocation="prompt" "zroot/$name";
+            # '';
           };
           "encrypted/test" = {
             type = "zfs_fs";
