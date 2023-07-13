@@ -18,36 +18,27 @@ let
 in
 {
   lib = diskoLib;
-  create = cfg: diskoLib.create (eval cfg).config.disko.devices;
-  createScript = cfg: pkgs: (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-create" ''
-    export PATH=${lib.makeBinPath (diskoLib.packages (eval cfg).config.disko.devices pkgs)}:$PATH
-    ${diskoLib.create (eval cfg).config.disko.devices}
-  '';
-  createScriptNoDeps = cfg: pkgs: (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko-create" ''
-    ${diskoLib.create (eval cfg).config.disko.devices}
-  '';
-  mount = cfg: diskoLib.mount (eval cfg).config.disko.devices;
-  mountScript = cfg: pkgs: (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-mount" ''
-    export PATH=${lib.makeBinPath (diskoLib.packages (eval cfg).config.disko.devices pkgs)}:$PATH
-    ${diskoLib.mount (eval cfg).config.disko.devices}
-  '';
-  mountScriptNoDeps = cfg: pkgs: (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko-mount" ''
-    ${diskoLib.mount (eval cfg).config.disko.devices}
-  '';
-  disko = cfg: diskoLib.zapCreateMount (eval cfg).config.disko.devices;
-  diskoScript = cfg: pkgs: (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-zap-create-mount" ''
-    export PATH=${lib.makeBinPath ((diskoLib.packages (eval cfg).config.disko.devices pkgs) ++ [ pkgs.bash ])}:$PATH
-    ${diskoLib.zapCreateMount (eval cfg).config.disko.devices}
-  '';
+
+  # legacy alias
+  create = cfg: builtins.trace "the create output is deprecated, use format instead" (eval cfg).config.disko.devices._create;
+  createScript = cfg: pkgs: builtins.trace "the create output is deprecated, use format instead" ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).formatScript;
+  createScriptNoDeps = cfg: pkgs: builtins.trace "the create output is deprecated, use format instead" ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).formatScriptNoDeps;
+
+  format = cfg: (eval cfg).config.disko.devices._create;
+  formatScript = cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).formatScript;
+  formatScriptNoDeps = cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).formatScriptNoDeps;
+
+  mount = cfg: (eval cfg).config.disko.devices._mount;
+  mountScript = cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).mountScript;
+  mountScriptNoDeps = cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).mountScriptNoDeps;
+
+  disko = cfg: (eval cfg).config.disko.devices._disko;
+  diskoScript = cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).diskoScript;
+  diskoScriptNoDeps = cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).diskoScriptNoDeps;
+
   # we keep this old output for backwards compatibility
-  diskoNoDeps = cfg: pkgs: builtins.trace "the .diskoNoDeps output is deprecated, plase use .diskoScriptNoDeps instead" (
-    (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko-zap-create-mount" ''
-      ${diskoLib.zapCreateMount (eval cfg).config.disko.devices}
-    ''
-  );
-  diskoScriptNoDeps = cfg: pkgs: (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko-zap-create-mount" ''
-    ${diskoLib.zapCreateMount (eval cfg).config.disko.devices}
-  '';
-  config = cfg: { imports = diskoLib.config (eval cfg).config.disko.devices; };
-  packages = cfg: diskoLib.packages (eval cfg).config.disko.devices;
+  diskoNoDeps = cfg: pkgs: builtins.trace "the diskoNoDeps output is deprecated, please use disko instead" ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).diskoScriptNoDeps;
+
+  config = cfg: (eval cfg).config.disko.devices._config;
+  packages = cfg: (eval cfg).config.disko.devices._packages;
 }
