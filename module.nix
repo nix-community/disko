@@ -5,12 +5,11 @@ let
     rootMountPoint = config.disko.rootMountPoint;
   };
   cfg = config.disko;
-  checked = cfg.checkScripts;
 in
 {
   options.disko = {
     devices = lib.mkOption {
-      type = diskoLib.devices;
+      type = diskoLib.toplevel;
       default = { };
       description = "The devices to set up";
     };
@@ -37,43 +36,18 @@ in
     };
   };
   config = lib.mkIf (cfg.devices.disk != { }) {
-    system.build.formatScript = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-create" ''
-      export PATH=${lib.makeBinPath (diskoLib.packages cfg.devices pkgs)}:$PATH
-      ${diskoLib.create cfg.devices}
-    '';
+    system.build = (cfg.devices._scripts { inherit pkgs; checked = cfg.checkScripts; }) // {
 
-    system.build.mountScript = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-mount" ''
-      export PATH=${lib.makeBinPath (diskoLib.packages cfg.devices pkgs)}:$PATH
-      ${diskoLib.mount cfg.devices}
-    '';
+      # we keep this old outputs for compatibility
+      disko = builtins.trace "the .disko output is deprecated, plase use .diskoScript instead" cfg.devices._scripts.diskoScript;
+      diskoNoDeps = builtins.trace "the .diskoNoDeps output is deprecated, plase use .diskoScriptNoDeps instead" cfg.devices._scripts.diskoScriptNoDeps;
+    };
 
-    # we keep this old output for compatibility
-    system.build.disko = builtins.trace "the .disko output is deprecated, plase use .diskoScript instead" config.system.build.diskoScript;
 
-    system.build.diskoScript = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko" ''
-      export PATH=${lib.makeBinPath ((diskoLib.packages cfg.devices pkgs) ++ [ pkgs.bash ])}:$PATH
-      ${diskoLib.zapCreateMount cfg.devices}
-    '';
-
-    # These are useful to skip copying executables uploading a script to an in-memory installer
-    system.build.formatScriptNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko-create" ''
-      ${diskoLib.create cfg.devices}
-    '';
-
-    system.build.mountScriptNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko-mount" ''
-      ${diskoLib.mount cfg.devices}
-    '';
-
-    # we keep this old output for compatibility
-    system.build.diskoNoDeps = builtins.trace "the .diskoNoDeps output is deprecated, plase use .diskoScriptNoDeps instead" config.system.build.diskoScriptNoDeps;
-
-    system.build.diskoScriptNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko" ''
-      ${diskoLib.zapCreateMount cfg.devices}
-    '';
-
+    # we need to specify the keys here, so we don't get an infinite recursion error
     # Remember to add config keys here if they are added to types
-    fileSystems = lib.mkIf cfg.enableConfig (lib.mkMerge (lib.catAttrs "fileSystems" (diskoLib.config cfg.devices)));
-    boot = lib.mkIf cfg.enableConfig (lib.mkMerge (lib.catAttrs "boot" (diskoLib.config cfg.devices)));
-    swapDevices = lib.mkIf cfg.enableConfig (lib.mkMerge (lib.catAttrs "swapDevices" (diskoLib.config cfg.devices)));
+    fileSystems = lib.mkIf cfg.enableConfig cfg.devices._config.fileSystems or {};
+    boot = lib.mkIf cfg.enableConfig cfg.devices._config.boot or {};
+    swapDevices = lib.mkIf cfg.enableConfig cfg.devices._config.swapDevices or [];
   };
 }

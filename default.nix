@@ -10,7 +10,7 @@ let
       imports = lib.singleton { disko.devices = cfg.disko.devices; };
       options = {
         disko.devices = lib.mkOption {
-          type = diskoLib.devices;
+          type = diskoLib.toplevel;
         };
       };
     };

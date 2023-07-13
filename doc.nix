@@ -10,7 +10,7 @@ let
       {
         options.disko = {
           devices = lib.mkOption {
-            type = diskoLib.devices;
+            type = diskoLib.toplevel;
             default = { };
             description = "The devices to set up";
           };
