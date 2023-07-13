@@ -17,17 +17,23 @@ let
   diskoAttr =
     if noDeps then
       {
-        create = "createScriptNoDeps";
+        format = "formatScriptNoDeps";
         mount = "mountScriptNoDeps";
-        zap_create_mount = "diskoScriptNoDeps";
         disko = "diskoScriptNoDeps";
+
+        # legacy aliases
+        create = "createScriptNoDeps";
+        zap_create_mount = "diskoScriptNoDeps";
       }.${mode}
     else
       {
-        create = "createScript";
+        format = "formatScript";
         mount = "mountScript";
-        zap_create_mount = "diskoScript";
         disko = "diskoScript";
+
+        # legacy aliases
+        create = "createScript";
+        zap_create_mount = "diskoScript";
       }.${mode};
 
   hasDiskoConfigFlake =

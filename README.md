@@ -85,7 +85,7 @@ A simple disko configuration may look like this:
 If you'd saved this configuration in /tmp/disko-config.nix, and wanted to create a disk named /dev/nvme0n1, you would run the following command to partition, format and mount the disk.
 
 ```
-$ sudo nix run github:nix-community/disko -- --mode zap_create_mount /tmp/disko-config.nix --arg disks '[ "/dev/nvme0n1" ]'
+$ sudo nix run github:nix-community/disko -- --mode disko /tmp/disko-config.nix --arg disks '[ "/dev/nvme0n1" ]'
 ```
 
 ## Related Tools
