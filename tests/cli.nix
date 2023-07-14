@@ -1,7 +1,8 @@
 { pkgs ? (import <nixpkgs> { })
-, makeDiskoTest ? (pkgs.callPackage ./lib.nix { }).makeDiskoTest
+, makeDiskoTest ? (pkgs.callPackage ../lib { }).testLib.makeDiskoTest
 }:
 makeDiskoTest {
+  inherit pkgs;
   name = "cli";
   disko-config = ../example/complex.nix;
   extraConfig = {

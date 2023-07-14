@@ -1,12 +1,10 @@
-{ pkgs ? (import <nixpkgs> { })
-, lib ? pkgs.lib
-, makeTest ? import <nixpkgs/nixos/tests/make-test-python.nix>
-, eval-config ? import <nixpkgs/nixos/lib/eval-config.nix>
+{ lib
+, makeTest
+, eval-config
 , ...
 }:
 
 let
-  diskoLib = import ../lib { inherit pkgs lib; };
   testlib = {
     # this takes a disko toplevel config and changes the disk devices so we can run them inside the qemu test runner
     # basically changes all the disk.*.devices to something like /dev/vda or /dev/vdb etc.
@@ -34,6 +32,7 @@ let
     makeDiskoTest =
       { name
       , disko-config
+      , pkgs ? import <nixpkgs> { }
       , extraTestScript ? ""
       , bootCommands ? ""
       , extraConfig ? { }

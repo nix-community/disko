@@ -1,10 +1,16 @@
-{ lib, rootMountPoint }:
+{ lib ? import <nixpkgs/lib>
+, rootMountPoint ? "/mnt"
+, makeTest ? import <nixpkgs/nixos/tests/make-test-python.nix>
+, eval-config ? import <nixpkgs/nixos/lib/eval-config.nix>
+}:
 with lib;
 with builtins;
 
 let
 
   diskoLib = {
+
+    testLib = import ./tests.nix { inherit lib makeTest eval-config; };
     # like lib.types.oneOf but instead of a list takes an attrset
     # uses the field "type" to find the correct type in the attrset
     subType = { types, extraArgs ? { parent = { type = "rootNode"; name = "root"; }; } }: lib.mkOptionType rec {

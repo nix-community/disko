@@ -4,7 +4,8 @@
 }:
 let
   lib = pkgs.lib;
-  makeDiskoTest = (pkgs.callPackage ./lib.nix { inherit makeTest eval-config; }).makeDiskoTest;
+  diskoLib = import ../lib { inherit lib makeTest eval-config; };
+  makeDiskoTest = diskoLib.testLib.makeDiskoTest;
 
   allTestFilenames =
     builtins.map (lib.removeSuffix ".nix") (
