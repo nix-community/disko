@@ -65,6 +65,8 @@
           efiSupport = efi;
           efiInstallAsRemovable = efi;
         };
+        boot.initrd.systemd.enable = true;
+
       };
       installed-system-eval = eval-config {
         modules = [ installed-system ];
