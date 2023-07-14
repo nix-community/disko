@@ -1,8 +1,9 @@
 # this is a regression test for https://github.com/nix-community/disko/issues/52
 { pkgs ? (import <nixpkgs> { })
-, makeDiskoTest ? (pkgs.callPackage ./lib.nix { }).makeDiskoTest
+, makeDiskoTest ? (pkgs.callPackage ../lib { }).testLib.makeDiskoTest
 }:
 makeDiskoTest {
+  inherit pkgs;
   name = "multi-device-no-deps";
   disko-config = ../example/multi-device-no-deps.nix;
   testBoot = false;

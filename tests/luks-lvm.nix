@@ -1,7 +1,8 @@
 { pkgs ? (import <nixpkgs> { })
-, makeDiskoTest ? (pkgs.callPackage ./lib.nix { }).makeDiskoTest
+, makeDiskoTest ? (pkgs.callPackage ../lib { }).testLib.makeDiskoTest
 }:
 makeDiskoTest {
+  inherit pkgs;
   name = "luks-lvm";
   disko-config = ../example/luks-lvm.nix;
   extraConfig.boot.initrd.luks.devices.crypted.preLVM = false;
