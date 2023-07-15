@@ -10,7 +10,7 @@ let
   allTestFilenames =
     builtins.map (lib.removeSuffix ".nix") (
       builtins.filter
-        (x: lib.hasSuffix ".nix" x && x != "default.nix" && x != "lib.nix")
+        (x: lib.hasSuffix ".nix" x && x != "default.nix")
         (lib.attrNames (builtins.readDir ./.))
     );
 

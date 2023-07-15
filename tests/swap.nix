@@ -18,7 +18,7 @@ makeDiskoTest {
         '
     """);
   '';
-  extraConfig = {
+  extraSystemConfig = {
     environment.systemPackages = [ pkgs.jq ];
   };
 }

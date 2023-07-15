@@ -5,7 +5,7 @@ makeDiskoTest {
   inherit pkgs;
   name = "module";
   disko-config = ../example/complex.nix;
-  extraConfig = {
+  extraSystemConfig = {
     fileSystems."/zfs_legacy_fs".options = [ "nofail" ]; # TODO find out why we need this!
   };
   testMode = "module";
@@ -19,7 +19,7 @@ makeDiskoTest {
     machine.succeed("mountpoint /ext4onzfs");
     machine.succeed("mountpoint /ext4_on_lvm");
   '';
-  extraConfig = {
+  extraInstallerConfig = {
     boot.kernelModules = [ "dm-raid" "dm-mirror" ];
   };
 }

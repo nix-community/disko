@@ -8,7 +8,7 @@ makeDiskoTest {
   extraTestScript = ''
     machine.succeed("mountpoint /home");
   '';
-  extraConfig = {
+  extraInstallerConfig = {
     boot.kernelModules = [ "dm-raid0" "dm-mirror" ];
   };
 }
