@@ -32,10 +32,12 @@ let
     makeDiskoTest =
       { name
       , disko-config
+      , nixos-config ? null
       , pkgs ? import <nixpkgs> { }
       , extraTestScript ? ""
       , bootCommands ? ""
-      , extraConfig ? { }
+      , extraInstallerConfig ? { }
+      , extraSystemConfig ? { }
       , grub-devices ? [ "nodev" ]
       , efi ? true
       , postDisko ? ""
@@ -62,7 +64,17 @@ let
         tsp-config = tsp-generator.config testConfigBooted;
         num-disks = builtins.length (lib.attrNames testConfigBooted.disko.devices.disk);
         installed-system = { modulesPath, ... }: {
-          imports = [
+          # we always want the bind-mounted nix store. otherwise tests take forever
+          fileSystems."/nix/store" = lib.mkForce {
+            device = "nix-store";
+            fsType = "9p";
+            neededForBoot = true;
+            options = [ "trans=virtio" "version=9p2000.L" "cache=loose" ];
+          };
+
+          imports = (if nixos-config != null then [
+            nixos-config
+          ] else [
             (lib.optionalAttrs (testMode == "direct" || testMode == "cli") tsp-config)
             (lib.optionalAttrs (testMode == "module") {
               disko.enableConfig = true;
@@ -71,31 +83,27 @@ let
                 testConfigBooted
               ];
             })
-            (modulesPath + "/testing/test-instrumentation.nix")
-            (modulesPath + "/profiles/qemu-guest.nix")
-            (modulesPath + "/profiles/minimal.nix")
-            extraConfig
-          ];
-          fileSystems."/nix/store" = {
-            device = "nix-store";
-            fsType = "9p";
-            neededForBoot = true;
-            options = [ "trans=virtio" "version=9p2000.L" "cache=loose" ];
-          };
-          documentation.enable = false;
-          hardware.enableAllFirmware = lib.mkForce false;
-          networking.hostId = "8425e349"; # from profiles/base.nix, needed for zfs
-          boot.zfs.devNodes = "/dev/disk/by-uuid"; # needed because /dev/disk/by-id is empty in qemu-vms
-          boot.initrd.preDeviceCommands = ''
-            echo -n 'secretsecret' > /tmp/secret.key
-          '';
+            { # config for tests to make them run faster or work at all
+              documentation.enable = false;
+              hardware.enableAllFirmware = lib.mkForce false;
+              networking.hostId = "8425e349"; # from profiles/base.nix, needed for zfs
+              boot.zfs.devNodes = "/dev/disk/by-uuid"; # needed because /dev/disk/by-id is empty in qemu-vms
+              boot.initrd.preDeviceCommands = ''
+                echo -n 'secretsecret' > /tmp/secret.key
+              '';
 
-          boot.consoleLogLevel = lib.mkForce 100;
-          boot.loader.grub = {
-            devices = grub-devices;
-            efiSupport = efi;
-            efiInstallAsRemovable = efi;
-          };
+              boot.consoleLogLevel = lib.mkForce 100;
+              boot.loader.grub = {
+                devices = grub-devices;
+                efiSupport = efi;
+                efiInstallAsRemovable = efi;
+              };
+            }
+          ]) ++ [
+            (modulesPath + "/testing/test-instrumentation.nix") # we need these 2 modules always to be able to run the tests
+            (modulesPath + "/profiles/qemu-guest.nix")
+            extraSystemConfig
+          ];
         };
         installed-system-eval = eval-config {
           modules = [ installed-system ];
@@ -128,7 +136,7 @@ let
             })
             (modulesPath + "/profiles/base.nix")
             (modulesPath + "/profiles/minimal.nix")
-            extraConfig
+            extraInstallerConfig
           ];
           environment.systemPackages = [
             pkgs.jq

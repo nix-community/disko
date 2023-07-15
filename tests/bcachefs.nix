@@ -10,7 +10,7 @@ makeDiskoTest {
     machine.succeed("lsblk >&2");
   '';
   # so that the installer boots with a bcachefs enabled kernel
-  extraConfig = {
+  extraInstallerConfig = {
     boot.supportedFilesystems = [ "bcachefs" ];
     # disable zfs so we can support latest kernel
     nixpkgs.overlays = [

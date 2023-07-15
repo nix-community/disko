@@ -5,9 +5,8 @@ makeDiskoTest {
   inherit pkgs;
   name = "zfs";
   disko-config = ../example/zfs.nix;
-  extraConfig = {
+  extraSystemConfig = {
     fileSystems."/zfs_legacy_fs".options = [ "nofail" ]; # TODO find out why we need this!
-    boot.zfs.requestEncryptionCredentials = true;
   };
   extraTestScript = ''
     machine.succeed("test -b /dev/zvol/zroot/zfs_testvolume");
