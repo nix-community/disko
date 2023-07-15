@@ -1,41 +1,33 @@
-{ disks ? [ "/dev/sda" ], ... }: {
+{
   disko.devices = {
     disk.main = {
-      device = builtins.elemAt disks 0;
+      device = "/dev/disk/by-id/ata-Samsung_SSD_860_EVO_500GB_S3Z1NB0K303456L";
       type = "disk";
       content = {
-        type = "table";
-        format = "gpt";
-        partitions = [
-          {
-            name = "boot";
-            start = "0";
-            end = "1M";
-            flags = [ "bios_grub" ];
-          }
-          {
+        type = "gpt";
+        partitions = {
+          boot = {
+            size = "1M";
+            type = "EF02";
+          };
+          ESP = {
             name = "ESP";
-            start = "1M";
-            end = "512M";
-            bootable = true;
+            size = "512M";
             content = {
               type = "filesystem";
               format = "vfat";
               mountpoint = "/boot";
             };
-          }
-          {
-            name = "nix";
-            start = "512M";
-            end = "100%";
-            part-type = "primary";
+          };
+          nix = {
+            size = "100%";
             content = {
               type = "filesystem";
               format = "ext4";
               mountpoint = "/nix";
             };
-          }
-        ];
+          };
+        };
       };
     };
     nodev."/" = {

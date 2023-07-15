@@ -1,35 +1,29 @@
-{ disks ? [ "/dev/vdb" "/dev/vdc" ], ... }: {
+{
   disko.devices = {
     disk = {
       one = {
         type = "disk";
-        device = builtins.elemAt disks 0;
+        device = "/dev/disk/by-id/ata-VMware_Virtual_SATA_CDRW_Drive_00000000000000000001";
         content = {
-          type = "table";
-          format = "gpt";
-          partitions = [
-            {
-              name = "boot";
-              start = "0";
-              end = "100M";
-              fs-type = "fat32";
-              bootable = true;
+          type = "gpt";
+          partitions = {
+            boot = {
+              size = "100M";
               content = {
                 type = "filesystem";
                 format = "vfat";
                 mountpoint = "/boot";
               };
-            }
-            {
+            };
+            primary = {
               name = "primary";
-              start = "100M";
-              end = "100%";
+              size = "100%";
               content = {
                 type = "lvm_pv";
                 vg = "pool";
               };
-            }
-          ];
+            };
+          };
         };
       };
     };

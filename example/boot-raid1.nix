@@ -1,9 +1,9 @@
-{ disks ? [ "/dev/vdb" "/dev/vdc" ], ... }: {
+{
   disko.devices = {
     disk = {
       one = {
         type = "disk";
-        device = builtins.elemAt disks 0;
+        device = "/dev/sda";
         content = {
           type = "gpt";
           partitions = {
@@ -12,7 +12,7 @@
               type = "EF02";
             };
             ESP = {
-              size = "128M";
+              size = "100M";
               type = "EF00";
               content = {
                 type = "mdraid";
@@ -31,7 +31,7 @@
       };
       two = {
         type = "disk";
-        device = builtins.elemAt disks 1;
+        device = "/dev/sdb";
         content = {
           type = "gpt";
           partitions = {
@@ -73,20 +73,15 @@
         type = "mdadm";
         level = 1;
         content = {
-          type = "table";
-          format = "gpt";
-          partitions = [
-            {
-              name = "primary";
-              start = "1MiB";
-              end = "100%";
-              content = {
-                type = "filesystem";
-                format = "ext4";
-                mountpoint = "/";
-              };
-            }
-          ];
+          type = "gpt";
+          partitions.primary = {
+            size = "100%";
+            content = {
+              type = "filesystem";
+              format = "ext4";
+              mountpoint = "/";
+            };
+          };
         };
       };
     };

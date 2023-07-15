@@ -1,18 +1,14 @@
-{ disks ? [ "/dev/vdb" "/dev/vdc" ], ... }: {
+{
   disko.devices = {
     disk = {
       vdb = {
         type = "disk";
-        device = builtins.elemAt disks 0;
+        device = "/dev/vdb";
         content = {
-          type = "table";
-          format = "gpt";
-          partitions = [
-            {
-              name = "ESP";
-              start = "1MiB";
-              end = "100MiB";
-              bootable = true;
+          type = "gpt";
+          partitions = {
+            ESP = {
+              size = "100M";
               content = {
                 type = "filesystem";
                 format = "vfat";
@@ -21,24 +17,21 @@
                   "defaults"
                 ];
               };
-            }
-            {
-              start = "100MiB";
-              end = "100%";
-              name = "primary";
-              bootable = true;
+            };
+            primary = {
+              size = "100%";
               content = {
                 type = "filesystem";
                 format = "ext4";
                 mountpoint = "/";
               };
-            }
-          ];
+            };
+          };
         };
       };
       vdc = {
         type = "disk";
-        device = builtins.elemAt disks 1;
+        device = "/dev/vdc";
         content = {
           type = "zfs";
           pool = "zroot";
