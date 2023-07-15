@@ -42,7 +42,7 @@
       inherit config options;
       default = {
         fs.${config.device} = ''
-          if ! swapon --show | grep -q '^${config.device} '; then
+          if ! swapon --show | grep -q "^$(readlink -f ${config.device}) "; then
             swapon ${config.device}
           fi
         '';
