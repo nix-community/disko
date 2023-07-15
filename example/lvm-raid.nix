@@ -1,64 +1,51 @@
-{ disks ? [ "/dev/vdb" "/dev/vdc" ], ... }: {
+{
   disko.devices = {
     disk = {
       one = {
         type = "disk";
-        device = builtins.elemAt disks 0;
+        device = "/dev/sda";
         content = {
-          type = "table";
-          format = "gpt";
-          partitions = [
-            {
-              name = "boot";
-              start = "0";
-              end = "100M";
-              fs-type = "fat32";
-              bootable = true;
+          type = "gpt";
+          partitions = {
+            boot = {
+              size = "100M";
               content = {
                 type = "mdraid";
                 name = "boot";
               };
-            }
-            {
-              name = "primary";
-              start = "100M";
-              end = "100%";
+            };
+            primary = {
+              size = "100%";
               content = {
                 type = "lvm_pv";
                 vg = "pool";
               };
-            }
-          ];
+            };
+          };
         };
       };
       two = {
         type = "disk";
-        device = builtins.elemAt disks 1;
+        device = "/dev/sdb";
         content = {
-          type = "table";
-          format = "gpt";
-          partitions = [
-            {
+          type = "gpt";
+          partitions = {
+            boot = {
               name = "boot";
-              start = "0";
-              end = "100M";
-              fs-type = "fat32";
-              bootable = true;
+              size = "100M";
               content = {
                 type = "mdraid";
                 name = "boot";
               };
-            }
-            {
-              name = "primary";
-              start = "100M";
-              end = "100%";
+            };
+            primary = {
+              size = "100%";
               content = {
                 type = "lvm_pv";
                 vg = "pool";
               };
-            }
-          ];
+            };
+          };
         };
       };
     };

@@ -1,26 +1,21 @@
-{ disks ? [ "/dev/vdb" "/dev/vdc" ], ... }: {
+{
   disko.devices = {
     disk = {
       disk0 = {
-        device = builtins.elemAt disks 0;
+        device = "/dev/disk/by-id/ata-disk0";
         type = "disk";
         content = {
-          type = "table";
-          format = "gpt";
-          partitions = [
-            {
-              name = "nix";
-              part-type = "primary";
-              start = "0%";
-              end = "-10MiB";
-              bootable = true;
+          type = "gpt";
+          partitions = {
+            nix = {
+              end = "-10M";
               content = {
                 type = "filesystem";
                 format = "ext4";
                 mountpoint = "/";
               };
-            }
-          ];
+            };
+          };
         };
       };
     };

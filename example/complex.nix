@@ -1,9 +1,9 @@
-{ disks ? [ "/dev/vdb" "/dev/vdc" "/dev/vdd" ], ... }: {
+{
   disko.devices = {
     disk = {
       disk0 = {
         type = "disk";
-        device = builtins.elemAt disks 0;
+        device = "/dev/disk/by-id/ata-QEMU_HARDDISK_QM00001";
         content = {
           type = "gpt";
           partitions = {
@@ -21,7 +21,7 @@
       };
       disk1 = {
         type = "disk";
-        device = builtins.elemAt disks 1;
+        device = "/dev/disk/by-id/ata-QEMU_HARDDISK_QM00002";
         content = {
           type = "gpt";
           partitions = {
@@ -47,7 +47,7 @@
       };
       disk2 = {
         type = "disk";
-        device = builtins.elemAt disks 2;
+        device = "/dev/disk/by-id/ata-QEMU_HARDDISK_QM00003";
         content = {
           type = "gpt";
           partitions = {

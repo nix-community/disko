@@ -1,54 +1,44 @@
-{ disks ? [ "/dev/vdb" "/dev/vdc" ], ... }: {
+{
   disko.devices = {
     disk = {
       x = {
         type = "disk";
-        device = builtins.elemAt disks 0;
+        device = "/dev/sdx";
         content = {
-          type = "table";
-          format = "gpt";
-          partitions = [
-            {
-              name = "ESP";
-              start = "0";
-              end = "64MiB";
-              fs-type = "fat32";
-              bootable = true;
+          type = "gpt";
+          partitions = {
+            ESP = {
+              size = "64M";
               content = {
                 type = "filesystem";
                 format = "vfat";
                 mountpoint = "/boot";
               };
-            }
-            {
-              name = "zfs";
-              start = "128MiB";
-              end = "100%";
+            };
+            zfs = {
+              size = "100%";
               content = {
                 type = "zfs";
                 pool = "zroot";
               };
-            }
-          ];
+            };
+          };
         };
       };
       y = {
         type = "disk";
-        device = builtins.elemAt disks 1;
+        device = "/dev/sdy";
         content = {
-          type = "table";
-          format = "gpt";
-          partitions = [
-            {
-              name = "zfs";
-              start = "128MiB";
-              end = "100%";
+          type = "gpt";
+          partitions = {
+            zfs = {
+              size = "100%";
               content = {
                 type = "zfs";
                 pool = "zroot";
               };
-            }
-          ];
+            };
+          };
         };
       };
     };

@@ -1,37 +1,29 @@
-{ disks ? [ "/dev/vdb" ], ... }: {
+{
   disko.devices = {
     disk = {
       vdb = {
-        device = builtins.elemAt disks 0;
+        device = "/dev/vdb";
         type = "disk";
         content = {
-          type = "table";
-          format = "gpt";
-          partitions = [
-            {
-              name = "ESP";
-              start = "1MiB";
-              end = "100MiB";
-              bootable = true;
+          type = "gpt";
+          partitions = {
+            ESP = {
+              size = "100M";
               content = {
                 type = "filesystem";
                 format = "vfat";
                 mountpoint = "/boot";
               };
-            }
-            {
-              name = "root";
-              start = "100MiB";
-              end = "100%";
-              part-type = "primary";
-              bootable = true;
+            };
+            root = {
+              size = "100%";
               content = {
                 type = "filesystem";
                 format = "ext4";
                 mountpoint = "/";
               };
-            }
-          ];
+            };
+          };
         };
       };
     };

@@ -52,10 +52,15 @@ let
           };
         devices = [ "/dev/vda" "/dev/vdb" "/dev/vdc" "/dev/vdd" "/dev/vde" "/dev/vdf"];
         # for installation we skip /dev/vda because it is the test runner disk
-        testConfigInstall = testlib.prepareDiskoConfig (import disko-config { inherit lib; }) (lib.tail devices);
+        importedDiskoConfig = import disko-config;
+        diskoConfigWithArgs = if builtins.isFunction importedDiskoConfig then
+          importedDiskoConfig { inherit lib; }
+        else
+          importedDiskoConfig;
+        testConfigInstall = testlib.prepareDiskoConfig diskoConfigWithArgs (lib.tail devices);
         # we need to shift the disks by one because the first disk is the /dev/vda of the test runner
         # so /dev/vdb becomes /dev/vda etc.
-        testConfigBooted = testlib.prepareDiskoConfig (import disko-config { inherit lib; }) devices;
+        testConfigBooted = testlib.prepareDiskoConfig diskoConfigWithArgs devices;
 
         tsp-generator = pkgs.callPackage ../. { checked = true; };
         tsp-create = (tsp-generator.createScript testConfigInstall) pkgs;
