@@ -44,7 +44,7 @@
           "''${disk_devices[@]}"
         udevadm trigger --subsystem-match=block
         udevadm settle
-        # for some reason mdadm devices spwan with an existing partition table, so we need to wipe it
+        # for some reason mdadm devices spawn with an existing partition table, so we need to wipe it
         sgdisk --zap-all /dev/md/${config.name}
         ${lib.optionalString (config.content != null) config.content._create}
       '';
