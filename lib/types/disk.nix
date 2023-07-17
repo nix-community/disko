@@ -3,7 +3,7 @@
   options = {
     name = lib.mkOption {
       type = lib.types.str;
-      default = config._module.args.name;
+      default = lib.replaceStrings ["/"] ["_"] config._module.args.name;
       description = "Device name";
     };
     type = lib.mkOption {
