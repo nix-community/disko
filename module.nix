@@ -3,6 +3,8 @@ let
   diskoLib = import ./lib {
     inherit lib;
     rootMountPoint = config.disko.rootMountPoint;
+    makeTest = import (pkgs.path + "/nixos/tests/make-test-python.nix");
+    eval-config = import (pkgs.path + "/nixos/lib/eval-config.nix");
   };
   cfg = config.disko;
 in

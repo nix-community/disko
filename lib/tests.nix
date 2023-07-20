@@ -46,7 +46,7 @@ let
       , extraSystemConfig ? { }
       , efi ? true
       , postDisko ? ""
-      , testMode ? "module" # can be direct or module
+      , testMode ? "module" # can be one of direct module cli
       , testBoot ? true # if we actually want to test booting or just create/mount
       }:
       let
