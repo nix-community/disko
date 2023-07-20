@@ -8,7 +8,7 @@ makeDiskoTest {
   extraSystemConfig = {
     fileSystems."/zfs_legacy_fs".options = [ "nofail" ]; # TODO find out why we need this!
   };
-  testMode = "cli";
+  testMode = "direct";
   extraTestScript = ''
     machine.succeed("test -b /dev/zroot/zfs_testvolume");
     machine.succeed("test -b /dev/md/raid1p1");
@@ -19,7 +19,15 @@ makeDiskoTest {
     machine.succeed("mountpoint /ext4onzfs");
     machine.succeed("mountpoint /ext4_on_lvm");
   '';
+  extraSystemConfig = {
+    imports = [
+      ../module.nix
+    ];
+  };
   extraInstallerConfig = {
     boot.kernelModules = [ "dm-raid" "dm-mirror" ];
+    imports = [
+      ../module.nix
+    ];
   };
 }

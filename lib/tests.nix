@@ -46,7 +46,7 @@ let
       , extraSystemConfig ? { }
       , efi ? true
       , postDisko ? ""
-      , testMode ? "module" # can be one of direct module cli
+      , testMode ? "module" # can be direct or module
       , testBoot ? true # if we actually want to test booting or just create/mount
       }:
       let
@@ -81,7 +81,7 @@ let
 
         installed-system = { modulesPath, ... }: {
           imports = [
-            (lib.optionalAttrs (testMode == "direct" || testMode == "cli") tsp-config)
+            (lib.optionalAttrs (testMode == "direct") tsp-config)
             (lib.optionalAttrs (testMode == "module") {
               disko.enableConfig = true;
               imports = [
@@ -155,13 +155,6 @@ let
                 devices = testConfigInstall.disko.devices;
               };
             })
-            (lib.optionalAttrs (testMode == "cli") {
-              imports = [ (modulesPath + "/installer/cd-dvd/channel.nix") ];
-              system.extraDependencies = [
-                ((pkgs.callPackage ../. { checked = true; }).createScript testConfigInstall pkgs)
-                ((pkgs.callPackage ../. { checked = true; }).mountScript testConfigInstall pkgs)
-              ];
-            })
             (modulesPath + "/profiles/base.nix")
             (modulesPath + "/profiles/minimal.nix")
             extraInstallerConfig
@@ -218,17 +211,6 @@ let
             machine.succeed("${nodes.machine.system.build.mountScript}")
             machine.succeed("${nodes.machine.system.build.mountScript}") # verify that the command is idempotent
             machine.succeed("${nodes.machine.system.build.diskoScript}") # verify that we can destroy and recreate again
-          ''}
-          ${lib.optionalString (testMode == "cli") ''
-            # TODO use the disko cli here
-            # machine.succeed("${../.}/disko --no-pkgs --mode create ${disko-config}")
-            # machine.succeed("${../.}/disko --no-pkgs --mode mount ${disko-config}")
-            # machine.succeed("${../.}/disko --no-pkgs --mode mount ${disko-config}") # verify that the command is idempotent
-            # machine.succeed("${../.}/disko --no-pkgs --mode zap_create_mount ${disko-config}") # verify that we can destroy and recreate again
-            machine.succeed("${tsp-create}")
-            machine.succeed("${tsp-mount}")
-            machine.succeed("${tsp-mount}") # verify that the command is idempotent
-            machine.succeed("${tsp-disko}") # verify that we can destroy and recreate
           ''}
 
           ${postDisko}
