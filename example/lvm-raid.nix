@@ -9,6 +9,7 @@
           partitions = {
             boot = {
               size = "100M";
+              type = "EF00";
               content = {
                 type = "mdraid";
                 name = "boot";
@@ -33,6 +34,7 @@
             boot = {
               name = "boot";
               size = "100M";
+              type = "EF00";
               content = {
                 type = "mdraid";
                 name = "boot";

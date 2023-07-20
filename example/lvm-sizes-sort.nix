@@ -9,6 +9,7 @@
           partitions = {
             boot = {
               size = "100M";
+              type = "EF00";
               content = {
                 type = "filesystem";
                 format = "vfat";
