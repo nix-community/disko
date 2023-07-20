@@ -44,7 +44,6 @@ let
       , bootCommands ? ""
       , extraInstallerConfig ? { }
       , extraSystemConfig ? { }
-      , grub-devices ? [ "nodev" ]
       , efi ? true
       , postDisko ? ""
       , testMode ? "module" # can be one of direct module cli
