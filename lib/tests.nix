@@ -28,7 +28,7 @@ let
       } cleanedTopLevel.disko.devices.disk;
     in
       cleanedTopLevel // {
-        boot.loader.grub.devices = preparedDisks.grub-devices;
+        boot.loader.grub.devices = if (preparedDisks.grub-devices != []) then preparedDisks.grub-devices else [ "nodev" ];
         disko.devices = cleanedTopLevel.disko.devices // {
           disk = preparedDisks.disks;
         };
