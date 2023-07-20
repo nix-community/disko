@@ -100,7 +100,9 @@ let
             echo -n 'secretsecret' > /tmp/secret.key
           '';
           boot.consoleLogLevel = lib.mkForce 100;
+          boot.loader.systemd-boot.enable = lib.mkDefault efi;
         };
+
         installed-system-eval = eval-config {
           modules = [ installed-system ];
           inherit (pkgs) system;
