@@ -172,7 +172,9 @@ let
             connect-timeout = 1;
           };
 
-          networking.hostId = lib.mkIf (testConfigInstall ? networking.hostId) testConfigInstall.networking.hostId;
+          networking.hostId = lib.mkIf (
+            (testConfigInstall ? networking.hostId) && (testConfigInstall.networking.hostId != null)
+          ) testConfigInstall.networking.hostId;
 
           virtualisation.emptyDiskImages = builtins.genList (_: 4096) num-disks;
 
