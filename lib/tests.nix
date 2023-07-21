@@ -73,7 +73,7 @@ let
         testConfigBooted = testlib.prepareDiskoConfig diskoConfigWithArgs devices;
 
         tsp-generator = pkgs.callPackage ../. { checked = true; };
-        tsp-create = (tsp-generator.createScript testConfigInstall) pkgs;
+        tsp-format = (tsp-generator.formatScript testConfigInstall) pkgs;
         tsp-mount = (tsp-generator.mountScript testConfigInstall) pkgs;
         tsp-disko = (tsp-generator.diskoScript testConfigInstall) pkgs;
         tsp-config = tsp-generator.config testConfigBooted;
@@ -202,7 +202,7 @@ let
           machine.succeed("echo -n 'secretsecret' > /tmp/secret.key")
           ${lib.optionalString (testMode == "direct") ''
             #  running direct mode
-            machine.succeed("${tsp-create}")
+            machine.succeed("${tsp-format}")
             machine.succeed("${tsp-mount}")
             machine.succeed("${tsp-mount}") # verify that the command is idempotent
             machine.succeed("${tsp-disko}") # verify that we can destroy and recreate
