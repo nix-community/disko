@@ -1,3 +1,56 @@
+# 2023-07-09 121df48
+
+Changes:
+ - BTRFS subvolumes are mounted if and only their `mountpoint` is set.
+
+Especially, if you have specific mount options for a subvolume (through `mountOptions`), make sure to set `mountpoint` otherwise the subvolume will not be mounted.
+
+This change allows more flexibility when using BTRFS, giving access to its volume management functionality.
+
+It allows layouts as the following:
+```nix
+content = {
+  type = "btrfs";
+  # BTRFS partition is not mounted as it doesn't set a mountpoint explicitly
+  subvolumes = {
+    # This subvolume will not be mounted
+    "SYSTEM" = { };
+    # mounted as "/"
+    "SYSTEM/rootfs" = {
+      mountpoint = "/";
+    };
+    # mounted as "/nix"
+    "SYSTEM/nix" = {
+      mountOptions = [ "compress=zstd" "noatime" ];
+      mountpoint = "/nix";
+    };
+    # This subvolume will not be mounted
+    "DATA" = { };
+    # mounted as "/home"
+    "DATA/home" = {
+      mountOptions = [ "compress=zstd" ];
+      mountpoint = "/home";
+    };
+    # mounted as "/var/www"
+    "DATA/www" = {
+      mountpoint = "/var/www";
+    };
+  };
+};
+```
+corresponding to the following BTRFS layout:
+```
+BTRFS partition # not mounted
+ |
+ |-SYSTEM       # not mounted
+ |  |-rootfs    # mounted as "/"
+ |  |-nix       # mounted as "/nix"
+ |
+ |-DATA         # not mounted
+    |-home      # mounted as "/home"
+    |-www       # mounted as "/var/www"
+```
+
 # 2023-04-07 7d70009
 
 Changes:
