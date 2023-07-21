@@ -91,6 +91,8 @@
         let
           subvolMounts = lib.concatMapAttrs
             (_: subvol:
+            lib.warnIf (subvol.mountOptions != (options.subvolumes.type.getSubOptions []).mountOptions.default && subvol.mountpoint == null)
+              "Subvolume ${subvol.name} has mountOptions but no mountpoint. See upgrade guide (2023-07-09 121df48)."
               lib.optionalAttrs (subvol.mountpoint != null) {
                 ${subvol.mountpoint} = ''
                   if ! findmnt ${config.device} "${rootMountPoint}${subvol.mountpoint}" > /dev/null 2>&1; then
