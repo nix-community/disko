@@ -7,8 +7,8 @@ let
     else null;
   keyFileArgs = ''\
     ${lib.optionalString (keyFile != null) "--key-file ${keyFile}"} \
-    ${lib.optionalString (lib.hasAttr "keyFileSize" config.settings) "--keyfile-size ${config.settings.keyFileSize}"} \
-    ${lib.optionalString (lib.hasAttr "keyFileOffset" config.settings) "--keyfile-offset ${config.settings.keyFileOffset}"}
+    ${lib.optionalString (lib.hasAttr "keyFileSize" config.settings) "--keyfile-size ${builtins.toString config.settings.keyFileSize}"} \
+    ${lib.optionalString (lib.hasAttr "keyFileOffset" config.settings) "--keyfile-offset ${builtins.toString config.settings.keyFileOffset}"}
   '';
 in
 {
