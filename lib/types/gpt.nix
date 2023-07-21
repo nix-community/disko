@@ -129,11 +129,14 @@ in
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
-      default = map
+      default = (map
           (partition:
             lib.optional (partition.content != null) partition.content._config
           )
-          (lib.attrValues config.partitions);
+          (lib.attrValues config.partitions))
+          ++ (lib.optional (lib.any (part: part.type == "EF02") (lib.attrValues config.partitions)) {
+            boot.loader.grub.devices = [ config.device ];
+          });
       description = "NixOS configuration";
     };
     _pkgs = lib.mkOption {

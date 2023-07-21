@@ -10,21 +10,27 @@ let
     # basically changes all the disk.*.devices to something like /dev/vda or /dev/vdb etc.
     prepareDiskoConfig = toplevel: devices:
     let
+      cleanedTopLevel = lib.filterAttrsRecursive (n: _: !lib.hasPrefix "_" n) toplevel;
+
       preparedDisks = lib.foldlAttrs (acc: n: v: {
         devices = lib.tail acc.devices;
-        value = acc.value // {
-          ${n} = v // {
+        grub-devices = acc.grub-devices ++ (lib.optional (lib.any (part: (part.type or "") == "EF02") (lib.attrValues (v.content.partitions or {}))) (lib.head acc.devices));
+        disks = acc.disks // {
+          "${n}" = v // {
             device = lib.head acc.devices;
+            content = v.content // { device = lib.head acc.devices; };
           };
         };
       }) {
         inherit devices;
-        value = {};
-      } toplevel.disko.devices.disk;
+        grub-devices = [];
+        disks = {};
+      } cleanedTopLevel.disko.devices.disk;
     in
-      toplevel // {
-        disko.devices = toplevel.disko.devices // {
-          disk = preparedDisks.value;
+      cleanedTopLevel // {
+        boot.loader.grub.devices = if (preparedDisks.grub-devices != []) then preparedDisks.grub-devices else [ "nodev" ];
+        disko.devices = cleanedTopLevel.disko.devices // {
+          disk = preparedDisks.disks;
         };
       };
 
@@ -32,13 +38,12 @@ let
     makeDiskoTest =
       { name
       , disko-config
-      , nixos-config ? null
+      , extendModules ? null
       , pkgs ? import <nixpkgs> { }
       , extraTestScript ? ""
       , bootCommands ? ""
       , extraInstallerConfig ? { }
       , extraSystemConfig ? { }
-      , grub-devices ? [ "nodev" ]
       , efi ? true
       , postDisko ? ""
       , testMode ? "module" # can be one of direct module cli
@@ -50,9 +55,14 @@ let
             inherit pkgs;
             inherit (pkgs) system;
           };
-        devices = [ "/dev/vda" "/dev/vdb" "/dev/vdc" "/dev/vdd" "/dev/vde" "/dev/vdf"];
         # for installation we skip /dev/vda because it is the test runner disk
-        importedDiskoConfig = import disko-config;
+        devices = [ "/dev/vda" "/dev/vdb" "/dev/vdc" "/dev/vdd" "/dev/vde" "/dev/vdf"];
+
+        importedDiskoConfig = if builtins.isPath disko-config then
+          import disko-config
+        else
+          disko-config;
+
         diskoConfigWithArgs = if builtins.isFunction importedDiskoConfig then
           importedDiskoConfig { inherit lib; }
         else
@@ -63,24 +73,15 @@ let
         testConfigBooted = testlib.prepareDiskoConfig diskoConfigWithArgs devices;
 
         tsp-generator = pkgs.callPackage ../. { checked = true; };
-        tsp-create = (tsp-generator.createScript testConfigInstall) pkgs;
+        tsp-format = (tsp-generator.formatScript testConfigInstall) pkgs;
         tsp-mount = (tsp-generator.mountScript testConfigInstall) pkgs;
         tsp-disko = (tsp-generator.diskoScript testConfigInstall) pkgs;
         tsp-config = tsp-generator.config testConfigBooted;
         num-disks = builtins.length (lib.attrNames testConfigBooted.disko.devices.disk);
-        installed-system = { modulesPath, ... }: {
-          # we always want the bind-mounted nix store. otherwise tests take forever
-          fileSystems."/nix/store" = lib.mkForce {
-            device = "nix-store";
-            fsType = "9p";
-            neededForBoot = true;
-            options = [ "trans=virtio" "version=9p2000.L" "cache=loose" ];
-          };
 
-          imports = (if nixos-config != null then [
-            nixos-config
-          ] else [
-            (lib.optionalAttrs (testMode == "direct" || testMode == "cli") tsp-config)
+        installed-system = { modulesPath, ... }: {
+          imports = [
+            (lib.optionalAttrs (testMode == "direct") tsp-config)
             (lib.optionalAttrs (testMode == "module") {
               disko.enableConfig = true;
               imports = [
@@ -88,34 +89,56 @@ let
                 testConfigBooted
               ];
             })
-            { # config for tests to make them run faster or work at all
-              documentation.enable = false;
-              hardware.enableAllFirmware = lib.mkForce false;
-              networking.hostId = "8425e349"; # from profiles/base.nix, needed for zfs
-              boot.zfs.devNodes = "/dev/disk/by-uuid"; # needed because /dev/disk/by-id is empty in qemu-vms
-              boot.initrd.preDeviceCommands = ''
-                echo -n 'secretsecret' > /tmp/secret.key
-              '';
-
-              boot.consoleLogLevel = lib.mkForce 100;
-              boot.loader.grub = {
-                devices = grub-devices;
-                efiSupport = efi;
-                efiInstallAsRemovable = efi;
-              };
-            }
-          ]) ++ [
-            (modulesPath + "/testing/test-instrumentation.nix") # we need these 2 modules always to be able to run the tests
-            (modulesPath + "/profiles/qemu-guest.nix")
-            extraSystemConfig
           ];
+
+          # config for tests to make them run faster or work at all
+          documentation.enable = false;
+          hardware.enableAllFirmware = lib.mkForce false;
+          networking.hostId = "8425e349"; # from profiles/base.nix, needed for zfs
+          boot.initrd.preDeviceCommands = ''
+            echo -n 'secretsecret' > /tmp/secret.key
+          '';
+          boot.consoleLogLevel = lib.mkForce 100;
+          boot.loader.systemd-boot.enable = lib.mkDefault efi;
         };
+
         installed-system-eval = eval-config {
           modules = [ installed-system ];
           inherit (pkgs) system;
         };
 
-        installedTopLevel = installed-system-eval.config.system.build.toplevel;
+        installedTopLevel = ((if extendModules != null then extendModules else installed-system-eval.extendModules) {
+          modules = [{
+            imports = [
+              extraSystemConfig
+              ({ modulesPath, ... }: {
+                imports = [
+                  (modulesPath + "/testing/test-instrumentation.nix") # we need these 2 modules always to be able to run the tests
+                  (modulesPath + "/profiles/qemu-guest.nix")
+                ];
+                disko.devices = lib.mkForce testConfigBooted.disko.devices;
+              })
+            ];
+
+            # since we boot on a different machine, the efi payload needs to be portable
+            boot.loader.grub.efiInstallAsRemovable = efi;
+            boot.loader.grub.efiSupport = efi;
+            boot.loader.systemd-boot.graceful = true;
+
+            # we always want the bind-mounted nix store. otherwise tests take forever
+            fileSystems."/nix/store" = lib.mkForce {
+              device = "nix-store";
+              fsType = "9p";
+              neededForBoot = true;
+              options = [ "trans=virtio" "version=9p2000.L" "cache=loose" ];
+            };
+            boot.zfs.devNodes = "/dev/disk/by-uuid"; # needed because /dev/disk/by-id is empty in qemu-vms
+
+            # grub will install to these devices, we need to force those or we are offset by 1
+            boot.loader.grub.devices = lib.mkForce testConfigInstall.boot.loader.grub.devices;
+          }];
+        }).config.system.build.toplevel;
+
       in
       makeTest' {
         name = "disko-${name}";
@@ -131,13 +154,6 @@ let
                 checkScripts = true;
                 devices = testConfigInstall.disko.devices;
               };
-            })
-            (lib.optionalAttrs (testMode == "cli") {
-              imports = [ (modulesPath + "/installer/cd-dvd/channel.nix") ];
-              system.extraDependencies = [
-                ((pkgs.callPackage ../. { checked = true; }).createScript testConfigInstall pkgs)
-                ((pkgs.callPackage ../. { checked = true; }).mountScript testConfigInstall pkgs)
-              ];
             })
             (modulesPath + "/profiles/base.nix")
             (modulesPath + "/profiles/minimal.nix")
@@ -155,6 +171,10 @@ let
             hashed-mirrors = null;
             connect-timeout = 1;
           };
+
+          networking.hostId = lib.mkIf (
+            (testConfigInstall ? networking.hostId) && (testConfigInstall.networking.hostId != null)
+          ) testConfigInstall.networking.hostId;
 
           virtualisation.emptyDiskImages = builtins.genList (_: 4096) num-disks;
 
@@ -181,27 +201,18 @@ let
           machine.succeed("echo -n 'additionalSecret' > /tmp/additionalSecret.key")
           machine.succeed("echo -n 'secretsecret' > /tmp/secret.key")
           ${lib.optionalString (testMode == "direct") ''
-            machine.succeed("${tsp-create}")
+            #  running direct mode
+            machine.succeed("${tsp-format}")
             machine.succeed("${tsp-mount}")
             machine.succeed("${tsp-mount}") # verify that the command is idempotent
             machine.succeed("${tsp-disko}") # verify that we can destroy and recreate
           ''}
           ${lib.optionalString (testMode == "module") ''
+            #  running module mode
             machine.succeed("${nodes.machine.system.build.formatScript}")
             machine.succeed("${nodes.machine.system.build.mountScript}")
             machine.succeed("${nodes.machine.system.build.mountScript}") # verify that the command is idempotent
             machine.succeed("${nodes.machine.system.build.diskoScript}") # verify that we can destroy and recreate again
-          ''}
-          ${lib.optionalString (testMode == "cli") ''
-            # TODO use the disko cli here
-            # machine.succeed("${../.}/disko --no-pkgs --mode create ${disko-config}")
-            # machine.succeed("${../.}/disko --no-pkgs --mode mount ${disko-config}")
-            # machine.succeed("${../.}/disko --no-pkgs --mode mount ${disko-config}") # verify that the command is idempotent
-            # machine.succeed("${../.}/disko --no-pkgs --mode zap_create_mount ${disko-config}") # verify that we can destroy and recreate again
-            machine.succeed("${tsp-create}")
-            machine.succeed("${tsp-mount}")
-            machine.succeed("${tsp-mount}") # verify that the command is idempotent
-            machine.succeed("${tsp-disko}") # verify that we can destroy and recreate
           ''}
 
           ${postDisko}

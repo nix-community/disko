@@ -11,4 +11,8 @@ makeDiskoTest {
   extraInstallerConfig = {
     boot.kernelModules = [ "dm-raid0" "dm-mirror" ];
   };
+  extraSystemConfig = {
+    # sadly systemd-boot fails to install to a raid /boot device
+    boot.loader.systemd-boot.enable = false;
+  };
 }

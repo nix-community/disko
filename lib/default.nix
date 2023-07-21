@@ -407,7 +407,7 @@ let
               ${cfg.config._create}
             '';
 
-            system.build.mountScriptNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko-mount" ''
+            mountScriptNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko-mount" ''
               ${cfg.config._mount}
             '';
 

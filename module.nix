@@ -1,8 +1,10 @@
-{ config, lib, pkgs, ... }:
+{ config, lib, pkgs, extendModules, ... }@args:
 let
   diskoLib = import ./lib {
     inherit lib;
     rootMountPoint = config.disko.rootMountPoint;
+    makeTest = import (pkgs.path + "/nixos/tests/make-test-python.nix");
+    eval-config = import (pkgs.path + "/nixos/lib/eval-config.nix");
   };
   cfg = config.disko;
 in
@@ -34,6 +36,16 @@ in
       type = lib.types.bool;
       default = false;
     };
+    tests = {
+      efi = lib.mkOption {
+        description = ''
+          Whether efi is enabled for the `system.build.installTest`.
+          We try to automatically detect efi based on the configured bootloader.
+        '';
+        type = lib.types.bool;
+        default = config.boot.loader.systemd-boot.enable || config.boot.loader.grub.efiSupport;
+      };
+    };
   };
   config = lib.mkIf (cfg.devices.disk != { }) {
     system.build = (cfg.devices._scripts { inherit pkgs; checked = cfg.checkScripts; }) // {
@@ -41,6 +53,14 @@ in
       # we keep this old outputs for compatibility
       disko = builtins.trace "the .disko output is deprecated, plase use .diskoScript instead" cfg.devices._scripts.diskoScript;
       diskoNoDeps = builtins.trace "the .diskoNoDeps output is deprecated, plase use .diskoScriptNoDeps instead" cfg.devices._scripts.diskoScriptNoDeps;
+
+      installTest = diskoLib.testLib.makeDiskoTest {
+        inherit extendModules pkgs;
+        name = "${config.networking.hostName}-disko";
+        disko-config = builtins.removeAttrs config ["_module"];
+        testMode = "direct";
+        efi = cfg.tests.efi;
+      };
     };
 
 
