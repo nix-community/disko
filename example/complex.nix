@@ -58,7 +58,11 @@
               content = {
                 type = "luks";
                 name = "crypted2";
-                settings.keyFile = "/tmp/secret.key";
+                settings = {
+                  keyFile = "/tmp/secret.key";
+                  keyFileSize = 8;
+                  keyFileOffset = 2;
+                };
                 extraFormatArgs = [
                   "--iter-time 1" # unsecure but fast for tests
                 ];
