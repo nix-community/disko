@@ -123,14 +123,8 @@
       default = [
         (map
           (subvol:
-            let
-              mountpoint =
-                if (subvol.mountpoint != null) then subvol.mountpoint
-                else if (config.mountpoint == null) then subvol.name
-                else null;
-            in
-            lib.optional (mountpoint != null) {
-              fileSystems.${mountpoint} = {
+            lib.optional (subvol.mountpoint != null) {
+              fileSystems.${subvol.mountpoint} = {
                 device = config.device;
                 fsType = "btrfs";
                 options = subvol.mountOptions ++ [ "subvol=${subvol.name}" ];
