@@ -88,7 +88,7 @@
             parted -s ${config.device} -- mkpart ${partition.name} ${diskoLib.maybeStr partition.fs-type} ${partition.start} ${partition.end}
           ''}
           ${lib.optionalString (config.format == "msdos") ''
-            parted -s ${config.device} -- mkpart ${partition.part-type} ${diskoLib.maybeStr partition.fs-type} ${diskoLib.maybeStr partition.fs-type} ${partition.start} ${partition.end}
+            parted -s ${config.device} -- mkpart ${partition.part-type} ${diskoLib.maybeStr partition.fs-type} ${partition.start} ${partition.end}
           ''}
           # ensure /dev/disk/by-path/..-partN exists before continuing
           udevadm trigger --subsystem-match=block
