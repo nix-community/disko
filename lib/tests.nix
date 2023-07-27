@@ -5,12 +5,12 @@
 }:
 
 let
-  testlib = {
-    # this takes a disko toplevel config and changes the disk devices so we can run them inside the qemu test runner
+  testLib = {
+    # this takes a nixos config and changes the disk devices so we can run them inside the qemu test runner
     # basically changes all the disk.*.devices to something like /dev/vda or /dev/vdb etc.
-    prepareDiskoConfig = toplevel: devices:
+    prepareDiskoConfig = cfg: devices:
     let
-      cleanedTopLevel = lib.filterAttrsRecursive (n: _: !lib.hasPrefix "_" n) toplevel;
+      cleanedTopLevel = lib.filterAttrsRecursive (n: _: !lib.hasPrefix "_" n) cfg;
 
       preparedDisks = lib.foldlAttrs (acc: n: v: {
         devices = lib.tail acc.devices;
@@ -34,6 +34,9 @@ let
         };
       };
 
+    # list of devices generated inside qemu
+    devices = [ "/dev/vda" "/dev/vdb" "/dev/vdc" "/dev/vdd" "/dev/vde" "/dev/vdf"];
+
     # This is the test generator for a disko test
     makeDiskoTest =
       { name
@@ -56,7 +59,6 @@ let
             inherit (pkgs) system;
           };
         # for installation we skip /dev/vda because it is the test runner disk
-        devices = [ "/dev/vda" "/dev/vdb" "/dev/vdc" "/dev/vdd" "/dev/vde" "/dev/vdf"];
 
         importedDiskoConfig = if builtins.isPath disko-config then
           import disko-config
@@ -67,10 +69,10 @@ let
           importedDiskoConfig { inherit lib; }
         else
           importedDiskoConfig;
-        testConfigInstall = testlib.prepareDiskoConfig diskoConfigWithArgs (lib.tail devices);
+        testConfigInstall = testLib.prepareDiskoConfig diskoConfigWithArgs (lib.tail testLib.devices);
         # we need to shift the disks by one because the first disk is the /dev/vda of the test runner
         # so /dev/vdb becomes /dev/vda etc.
-        testConfigBooted = testlib.prepareDiskoConfig diskoConfigWithArgs devices;
+        testConfigBooted = testLib.prepareDiskoConfig diskoConfigWithArgs testLib.devices;
 
         tsp-generator = pkgs.callPackage ../. { checked = true; };
         tsp-format = (tsp-generator.formatScript testConfigInstall) pkgs;
@@ -169,6 +171,7 @@ let
             pkgs.jq
           ];
 
+
           # speed-up eval
           documentation.enable = false;
 
@@ -250,5 +253,5 @@ let
         '';
       };
   };
-in testlib
+in testLib
 
