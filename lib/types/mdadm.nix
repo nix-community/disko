@@ -59,6 +59,7 @@
       internal = true;
       readOnly = true;
       default =
+        [{ boot.initrd.services.swraid.enable = true; }] ++
         lib.optional (config.content != null) config.content._config;
       description = "NixOS configuration";
     };
