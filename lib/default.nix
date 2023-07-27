@@ -10,6 +10,9 @@ let
 
   diskoLib = {
 
+    # like make-disk-image.nix from nixpkgs, but with disko config
+    makeDiskImage = args: import ./make-disk-image.nix ({ inherit diskoLib; } // args);
+
     testLib = import ./tests.nix { inherit lib makeTest eval-config; };
     # like lib.types.oneOf but instead of a list takes an attrset
     # uses the field "type" to find the correct type in the attrset
