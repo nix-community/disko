@@ -55,6 +55,7 @@
                   fs-type = lib.mkOption {
                     type = lib.types.nullOr (
                       lib.types.enum [
+                        "bcachefs"
                         "btrfs"
                         "ext2"
                         "ext3"

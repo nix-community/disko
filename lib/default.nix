@@ -44,6 +44,7 @@ let
     # option for valid contents of partitions (basically like devices, but without tables)
     _partitionTypes = {
       inherit (diskoLib.types)
+        bcachefs
         btrfs
         filesystem
         zfs
@@ -69,6 +70,7 @@ let
     # option for valid contents of devices
     _deviceTypes = {
       inherit (diskoLib.types)
+        bcachefs
         table
         gpt
         btrfs
