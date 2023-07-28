@@ -1,7 +1,7 @@
-{ pkgs ? (import <nixpkgs> { })
-, makeDiskoTest ? (pkgs.callPackage ../lib { }).testLib.makeDiskoTest
+{ pkgs ? import <nixpkgs> { }
+, diskoLib ? pkgs.callPackage ../lib { }
 }:
-makeDiskoTest {
+diskoLib.testLib.makeDiskoTest {
   inherit pkgs;
   name = "boot-raid1";
   disko-config = ../example/boot-raid1.nix;
