@@ -22,7 +22,7 @@ pkgs.vmTools.runInLinuxVM (pkgs.runCommand name {
   ];
   preVM = ''
     # TODO: get size either dynamically or from disko config
-    ${lib.concatMapStringsSep "\n" (disk: "truncate -s 15G ${disk.name}.raw") (lib.attrValues nixosConfig.config.disko.devices.disk)}
+    ${lib.concatMapStringsSep "\n" (disk: "truncate -s ${disk.imageSize} ${disk.name}.raw") (lib.attrValues nixosConfig.config.disko.devices.disk)}
   '';
   postVM = ''
     mkdir -p $out

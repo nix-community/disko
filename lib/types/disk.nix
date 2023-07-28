@@ -16,6 +16,14 @@
       type = diskoLib.optionTypes.absolute-pathname; # TODO check if subpath of /dev ? - No! eg: /.swapfile
       description = "Device path";
     };
+    imageSize = lib.mkOption {
+      type = lib.types.strMatching "[0-9]+[KMGTP]?";
+      description = ''
+        size of the image if the makeDiskImage function from diksoLib is used.
+        is used as an argument to truncate -s
+      '';
+      default = "15G";
+    };
     content = diskoLib.deviceType { parent = config; device = config.device; };
     _meta = lib.mkOption {
       internal = true;
