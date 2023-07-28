@@ -22,7 +22,7 @@
         size of the image if the makeDiskImage function from diksoLib is used.
         is used as an argument to truncate -s
       '';
-      default = "15G";
+      default = "2G";
     };
     content = diskoLib.deviceType { parent = config; device = config.device; };
     _meta = lib.mkOption {
