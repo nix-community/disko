@@ -3,6 +3,7 @@
 , pkgs ? nixosConfig.pkgs
 , lib ? pkgs.lib
 , name ? "${nixosConfig.config.networking.hostName}-disko-images"
+, extraPostVM ? ""
 }:
 let
   cleanedConfig = diskoLib.testLib.prepareDiskoConfig nixosConfig.config diskoLib.testLib.devices;
@@ -27,6 +28,7 @@ pkgs.vmTools.runInLinuxVM (pkgs.runCommand name {
   postVM = ''
     mkdir -p $out
     ${lib.concatMapStringsSep "\n" (disk: "cp ${disk.name}.raw $out/${disk.name}.raw") (lib.attrValues nixosConfig.config.disko.devices.disk)}
+    ${extraPostVM}
   '';
   QEMU_OPTS = lib.concatMapStringsSep " " (disk: "-drive file=${disk.name}.raw,if=virtio,cache=unsafe,werror=report") (lib.attrValues nixosConfig.config.disko.devices.disk);
 
