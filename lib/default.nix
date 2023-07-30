@@ -11,7 +11,10 @@ let
   diskoLib = {
 
     # like make-disk-image.nix from nixpkgs, but with disko config
-    makeDiskImage = args: import ./make-disk-image.nix ({ inherit diskoLib; } // args);
+    makeDiskImage = args: (import ./make-disk-image.nix ({ inherit diskoLib; } // args)).pure;
+
+    # a version of makeDiskImage which runs outside of the store
+    makeDiskImageScript = args: (import ./make-disk-image.nix ({ inherit diskoLib; } // args)).impure;
 
     testLib = import ./tests.nix { inherit lib makeTest eval-config; };
     # like lib.types.oneOf but instead of a list takes an attrset
