@@ -64,7 +64,7 @@ in
             default = if partition.config.size == "100%" then "-0" else "+${partition.config.size}";
             description = ''
               End of the partition, in sgdisk format.
-              Use + for relative sizes from the partitons start
+              Use + for relative sizes from the partitions start
               or - for relative sizes from the disks end
             '';
           };
