@@ -41,44 +41,34 @@ To access sample configurations for commonly-used disk layouts, refer to the [ex
 A simple disko configuration may look like this:
 
 ```
-{ disks ? [ "/dev/vdb" ], ... }: {  
- disk = {  
-  vdb = {  
-   device = builtins.elemAt disks 0;  
-   type = "disk";  
-   content = {  
-    type = "table";  
-    format = "gpt";  
-    partitions = [  
-     {  
-      type = "partition";  
-      name = "ESP";  
-      start = "1MiB";  
-      end = "100MiB";  
-      bootable = true;  
-      content = {  
-       type = "filesystem";  
-       format = "vfat";  
-       mountpoint = "/boot";  
-      };  
-     }  
-     {  
-      name = "root";  
-      type = "partition";  
-      start = "100MiB";  
-      end = "100%";  
-      part-type = "primary";  
-      bootable = true;  
-      content = {  
-       type = "filesystem";  
-       format = "ext4";  
-       mountpoint = "/";  
-      };  
-     }  
-    ];  
-   };  
-  };  
- };  
+{ disks ? [ "/dev/vdb" ], ... }: {
+ disk = {
+  vdb = {
+   device = builtins.elemAt disks 0;
+   type = "disk";
+   content = {
+    type = "gpt";
+    partitions = {
+     ESP = {
+      size = "100M";
+      content = {
+       type = "filesystem";
+       format = "vfat";
+       mountpoint = "/boot";
+      };
+     };
+     root = {
+      size = "100%";
+      content = {
+       type = "filesystem";
+       format = "ext4";
+       mountpoint = "/";
+      };
+     };
+    };
+   };
+  };
+ };
 }
 ```
 
