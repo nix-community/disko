@@ -1,4 +1,4 @@
-{ config, lib, pkgs, extendModules, ... }@args:
+{ config, lib, pkgs, extendModules, ... }:
 let
   diskoLib = import ./lib {
     inherit lib;
@@ -55,6 +55,13 @@ in
           machine.succeed("test -e /var/secrets/my.secret")
         '';
       };
+      extraConfig = lib.mkOption {
+        description = ''
+          Extra NixOS config for your test. Can be used to specify a different luks key for tests.
+          A dummy key is in /tmp/secret.key
+        '';
+        default = {};
+      };
     };
   };
   config = lib.mkIf (cfg.devices.disk != { }) {
@@ -70,6 +77,7 @@ in
         disko-config = builtins.removeAttrs config [ "_module" ];
         testMode = "direct";
         efi = cfg.tests.efi;
+        extraSystemConfig = cfg.tests.extraConfig;
         extraTestScript = cfg.tests.extraChecks;
       };
     };
