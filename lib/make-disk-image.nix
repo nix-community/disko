@@ -19,7 +19,6 @@ let
     coreutils
     gnused
     systemdMinimal
-    nixos-install-tools
     nix
     utillinux
   ];
@@ -53,7 +52,7 @@ let
     }}/registration
 
     ${systemToInstall.config.system.build.diskoScript}
-    ${pkgs.nixos-install-tools}/bin/nixos-install --system ${systemToInstall.config.system.build.toplevel} --keep-going --no-channel-copy -v --no-root-password --option binary-caches ""
+    ${systemToInstall.config.system.build.nixos-install}/bin/nixos-install --system ${systemToInstall.config.system.build.toplevel} --keep-going --no-channel-copy -v --no-root-password --option binary-caches ""
   '';
   QEMU_OPTS = lib.concatMapStringsSep " " (disk: "-drive file=${disk.name}.raw,if=virtio,cache=unsafe,werror=report") (lib.attrValues nixosConfig.config.disko.devices.disk);
 in {
