@@ -167,10 +167,13 @@ let
               networking.hostId = "8425e349";
             })
           ];
+
+          boot.initrd.services.swraid.enable = true;
+          systemd.services.mdmonitor.enable = false; # silence some weird warnings
+
           environment.systemPackages = [
             pkgs.jq
           ];
-
 
           # speed-up eval
           documentation.enable = false;
