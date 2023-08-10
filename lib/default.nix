@@ -385,6 +385,8 @@ let
                 mdadm
                 zfs
                 lvm2
+                bash
+                jq
               ])}:$PATH
               ${cfg.config._destroy}
             '';
