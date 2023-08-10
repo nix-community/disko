@@ -13,8 +13,6 @@ let
         (lib.attrNames (builtins.readDir ./.))
     );
 
-  allTests = lib.genAttrs allTestFilenames (test: import (./. + "/${test}.nix") { inherit diskoLib pkgs; }) // {
-    standalone = (pkgs.nixos [ ../example/stand-alone/configuration.nix ]).config.system.build.toplevel;
-  };
+  allTests = lib.genAttrs allTestFilenames (test: import (./. + "/${test}.nix") { inherit diskoLib pkgs; });
 in
 allTests
