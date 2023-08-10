@@ -386,7 +386,8 @@ let
                 zfs
                 lvm2
                 bash
-              ])}:${lib.makeBinPath (cfg.config._packages pkgs)}:$PATH
+                jq
+              ])}:$PATH
               ${cfg.config._destroy}
             '';
 
