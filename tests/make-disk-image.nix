@@ -5,5 +5,6 @@ diskoLib.makeDiskImage {
   nixosConfig = pkgs.nixos [
     ../module.nix
     ../example/simple-efi.nix
+    { documentation.enable = false; }
   ];
 }
