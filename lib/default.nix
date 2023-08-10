@@ -385,7 +385,8 @@ let
                 mdadm
                 zfs
                 lvm2
-              ])}:$PATH
+                bash
+              ])}:${lib.makeBinPath (cfg.config._packages pkgs)}:$PATH
               ${cfg.config._destroy}
             '';
 
