@@ -55,12 +55,15 @@ let
     ${systemToInstall.config.system.build.nixos-install}/bin/nixos-install --system ${systemToInstall.config.system.build.toplevel} --keep-going --no-channel-copy -v --no-root-password --option binary-caches ""
   '';
   QEMU_OPTS = lib.concatMapStringsSep " " (disk: "-drive file=${disk.name}.raw,if=virtio,cache=unsafe,werror=report") (lib.attrValues nixosConfig.config.disko.devices.disk);
-in {
-  pure = pkgs.vmTools.runInLinuxVM (pkgs.runCommand name {
-    buildInputs =dependencies;
-    inherit preVM QEMU_OPTS;
-    memSize = 1024;
-  } builder);
+in
+{
+  pure = pkgs.vmTools.runInLinuxVM (pkgs.runCommand name
+    {
+      buildInputs = dependencies;
+      inherit preVM QEMU_OPTS;
+      memSize = 1024;
+    }
+    builder);
   impure = diskoLib.writeCheckedBash { inherit checked pkgs; } name ''
     set -efu
     export PATH=${lib.makeBinPath dependencies}

@@ -1,6 +1,7 @@
 { config, options, lib, diskoLib, parent, device, ... }:
 let
-  keyFile = if lib.hasAttr "keyFile" config.settings
+  keyFile =
+    if lib.hasAttr "keyFile" config.settings
     then config.settings.keyFile
     else if config.keyFile != null
     then lib.warn "The option `keyFile` is deprecated. See the `settings` option." config.keyFile
@@ -46,9 +47,9 @@ in
     };
     additionalKeyFiles = lib.mkOption {
       type = lib.types.listOf diskoLib.optionTypes.absolute-pathname;
-      default = [];
+      default = [ ];
       description = "Path to additional key files for encryption";
-      example = ["/tmp/disk2.key"];
+      example = [ "/tmp/disk2.key" ];
     };
     initrdUnlock = lib.mkOption {
       type = lib.types.bool;
@@ -114,12 +115,12 @@ in
       default = [ ]
         # If initrdUnlock is true, then add a device entry to the initrd.luks.devices config.
         ++ (lib.optional config.initrdUnlock [
-          {
-            boot.initrd.luks.devices.${config.name} = {
-              inherit (config) device;
-            } // config.settings;
-          }
-        ]) ++ (lib.optional (config.content != null) config.content._config);
+        {
+          boot.initrd.luks.devices.${config.name} = {
+            inherit (config) device;
+          } // config.settings;
+        }
+      ]) ++ (lib.optional (config.content != null) config.content._config);
       description = "NixOS configuration";
     };
     _pkgs = lib.mkOption {

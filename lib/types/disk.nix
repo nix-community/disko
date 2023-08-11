@@ -3,7 +3,7 @@
   options = {
     name = lib.mkOption {
       type = lib.types.str;
-      default = lib.replaceStrings ["/"] ["_"] config._module.args.name;
+      default = lib.replaceStrings [ "/" ] [ "_" ] config._module.args.name;
       description = "Device name";
     };
     type = lib.mkOption {
@@ -39,13 +39,13 @@
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
-      default = lib.optionalAttrs (config.content != null) (config.content._mount);
+      default = lib.optionalAttrs (config.content != null) config.content._mount;
     };
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
       default =
-        lib.optional (config.content != null) (config.content._config);
+        lib.optional (config.content != null) config.content._config;
       description = "NixOS configuration";
     };
     _pkgs = lib.mkOption {

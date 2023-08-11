@@ -24,11 +24,12 @@ in
           };
           device = lib.mkOption {
             type = lib.types.str;
-            default = if config._parent.type == "mdadm" then
+            default =
+              if config._parent.type == "mdadm" then
               # workaround because mdadm partlabel do not appear in /dev/disk/by-partlabel
-              "/dev/disk/by-id/md-name-any:${config._parent.name}-part${toString partition.config._index}"
-            else
-              "/dev/disk/by-partlabel/${partition.config.label}";
+                "/dev/disk/by-id/md-name-any:${config._parent.name}-part${toString partition.config._index}"
+              else
+                "/dev/disk/by-partlabel/${partition.config.label}";
             description = "Device to use for the partition";
           };
           priority = lib.mkOption {
@@ -130,13 +131,13 @@ in
       internal = true;
       readOnly = true;
       default = (map
-          (partition:
-            lib.optional (partition.content != null) partition.content._config
-          )
-          (lib.attrValues config.partitions))
-          ++ (lib.optional (lib.any (part: part.type == "EF02") (lib.attrValues config.partitions)) {
-            boot.loader.grub.devices = [ config.device ];
-          });
+        (partition:
+          lib.optional (partition.content != null) partition.content._config
+        )
+        (lib.attrValues config.partitions))
+      ++ (lib.optional (lib.any (part: part.type == "EF02") (lib.attrValues config.partitions)) {
+        boot.loader.grub.devices = [ config.device ];
+      });
       description = "NixOS configuration";
     };
     _pkgs = lib.mkOption {
