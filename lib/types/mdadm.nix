@@ -59,7 +59,13 @@
       internal = true;
       readOnly = true;
       default =
-        [{ boot.initrd.services.swraid.enable = true; }] ++
+        [
+          (if lib.versionAtLeast (lib.versions.majorMinor lib.version) "23.11" then { 
+            boot.swraid.enable = true;
+          } else {
+            boot.initrd.services.swraid.enable = true;
+          })
+        ] ++
         lib.optional (config.content != null) config.content._config;
       description = "NixOS configuration";
     };

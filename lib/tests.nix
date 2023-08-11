@@ -171,9 +171,14 @@ let
                 lib.optional (lib.meta.availableOn pkgs.stdenv.hostPlatform config.boot.zfs.package) "zfs";
               networking.hostId = "8425e349";
             })
+
+            (if lib.versionAtLeast (lib.versions.majorMinor lib.version) "23.11" then {
+              boot.swraid.enable = true;
+            } else {
+              boot.initrd.services.swraid.enable = true;
+            })
           ];
 
-          boot.initrd.services.swraid.enable = true;
           systemd.services.mdmonitor.enable = false; # silence some weird warnings
 
           environment.systemPackages = [
@@ -265,4 +270,3 @@ let
   };
 in
 testLib
-
