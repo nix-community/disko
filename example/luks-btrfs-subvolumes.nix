@@ -11,7 +11,7 @@
               label = "EFI";
               name = "ESP";
               size = "512M";
-              type = "EF00" ;
+              type = "EF00";
               content = {
                 type = "filesystem";
                 format = "vfat";
@@ -31,7 +31,7 @@
                 # for example use `echo -n "password" > /tmp/secret.key`
                 #keyFile = "/tmp/secret.key"; # Interactive
                 settings.keyFile = "/tmp/secret.key";
-                additionalKeyFiles = ["/tmp/additionalSecret.key"];
+                additionalKeyFiles = [ "/tmp/additionalSecret.key" ];
                 content = {
                   type = "btrfs";
                   extraArgs = [ "-f" ];

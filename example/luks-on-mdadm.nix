@@ -46,7 +46,7 @@
         type = "luks";
         name = "crypted";
         settings.keyFile = "/tmp/secret.key";
-        content= {
+        content = {
           type = "filesystem";
           format = "ext4";
           mountpoint = "/";

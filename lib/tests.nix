@@ -9,33 +9,36 @@ let
     # this takes a nixos config and changes the disk devices so we can run them inside the qemu test runner
     # basically changes all the disk.*.devices to something like /dev/vda or /dev/vdb etc.
     prepareDiskoConfig = cfg: devices:
-    let
-      cleanedTopLevel = lib.filterAttrsRecursive (n: _: !lib.hasPrefix "_" n) cfg;
+      let
+        cleanedTopLevel = lib.filterAttrsRecursive (n: _: !lib.hasPrefix "_" n) cfg;
 
-      preparedDisks = lib.foldlAttrs (acc: n: v: {
-        devices = lib.tail acc.devices;
-        grub-devices = acc.grub-devices ++ (lib.optional (lib.any (part: (part.type or "") == "EF02") (lib.attrValues (v.content.partitions or {}))) (lib.head acc.devices));
-        disks = acc.disks // {
-          "${n}" = v // {
-            device = lib.head acc.devices;
-            content = v.content // { device = lib.head acc.devices; };
-          };
-        };
-      }) {
-        inherit devices;
-        grub-devices = [];
-        disks = {};
-      } cleanedTopLevel.disko.devices.disk;
-    in
+        preparedDisks = lib.foldlAttrs
+          (acc: n: v: {
+            devices = lib.tail acc.devices;
+            grub-devices = acc.grub-devices ++ (lib.optional (lib.any (part: (part.type or "") == "EF02") (lib.attrValues (v.content.partitions or { }))) (lib.head acc.devices));
+            disks = acc.disks // {
+              "${n}" = v // {
+                device = lib.head acc.devices;
+                content = v.content // { device = lib.head acc.devices; };
+              };
+            };
+          })
+          {
+            inherit devices;
+            grub-devices = [ ];
+            disks = { };
+          }
+          cleanedTopLevel.disko.devices.disk;
+      in
       cleanedTopLevel // {
-        boot.loader.grub.devices = if (preparedDisks.grub-devices != []) then preparedDisks.grub-devices else [ "nodev" ];
+        boot.loader.grub.devices = if (preparedDisks.grub-devices != [ ]) then preparedDisks.grub-devices else [ "nodev" ];
         disko.devices = cleanedTopLevel.disko.devices // {
           disk = preparedDisks.disks;
         };
       };
 
     # list of devices generated inside qemu
-    devices = [ "/dev/vda" "/dev/vdb" "/dev/vdc" "/dev/vdd" "/dev/vde" "/dev/vdf"];
+    devices = [ "/dev/vda" "/dev/vdb" "/dev/vdc" "/dev/vdd" "/dev/vde" "/dev/vdf" ];
 
     # This is the test generator for a disko test
     makeDiskoTest =
@@ -60,15 +63,17 @@ let
           };
         # for installation we skip /dev/vda because it is the test runner disk
 
-        importedDiskoConfig = if builtins.isPath disko-config then
-          import disko-config
-        else
-          disko-config;
+        importedDiskoConfig =
+          if builtins.isPath disko-config then
+            import disko-config
+          else
+            disko-config;
 
-        diskoConfigWithArgs = if builtins.isFunction importedDiskoConfig then
-          importedDiskoConfig { inherit lib; }
-        else
-          importedDiskoConfig;
+        diskoConfigWithArgs =
+          if builtins.isFunction importedDiskoConfig then
+            importedDiskoConfig { inherit lib; }
+          else
+            importedDiskoConfig;
         testConfigInstall = testLib.prepareDiskoConfig diskoConfigWithArgs (lib.tail testLib.devices);
         # we need to shift the disks by one because the first disk is the /dev/vda of the test runner
         # so /dev/vdb becomes /dev/vda etc.
@@ -184,9 +189,11 @@ let
             connect-timeout = 1;
           };
 
-          networking.hostId = lib.mkIf (
-            (testConfigInstall ? networking.hostId) && (testConfigInstall.networking.hostId != null)
-          ) testConfigInstall.networking.hostId;
+          networking.hostId = lib.mkIf
+            (
+              (testConfigInstall ? networking.hostId) && (testConfigInstall.networking.hostId != null)
+            )
+            testConfigInstall.networking.hostId;
 
           virtualisation.emptyDiskImages = builtins.genList (_: 4096) num-disks;
 
@@ -256,5 +263,6 @@ let
         '';
       };
   };
-in testLib
+in
+testLib
 
