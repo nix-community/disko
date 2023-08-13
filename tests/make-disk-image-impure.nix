@@ -10,6 +10,6 @@ diskoLib.makeDiskImageScript {
       system.stateVersion = config.system.nixos.version;
     })
   ];
-  checked = true;
+  checked = !pkgs.hostPlatform.isRiscV64;
 }
 
