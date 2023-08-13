@@ -28,8 +28,9 @@
         in
         {
           disko = pkgs.callPackage ./package.nix { };
-          disko-doc = pkgs.callPackage ./doc.nix { };
           default = self.packages.${system}.disko;
+        } // pkgs.lib.optionalAttrs (!pkgs.buildPlatform.isRiscV64) {
+          disko-doc = pkgs.callPackage ./doc.nix { };
         });
       # TODO: disable bios-related tests on aarch64...
       # Run checks: nix flake check -L
@@ -47,7 +48,7 @@
             touch $out
           '';
         in
-        nixosTests // { inherit shellcheck; });
+        nixosTests // pkgs.lib.optionalAttrs (!pkgs.buildPlatform.isRiscV64) { inherit shellcheck; });
       formatter = forAllSystems (system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
