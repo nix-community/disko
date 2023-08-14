@@ -4,9 +4,12 @@ let
     if lib.hasAttr "keyFile" config.settings
     then config.settings.keyFile
     else if config.passwordFile != null
-    then config.passwordFile
+    then ''<(echo -n "$(cat ${config.passwordFile})")''
     else if config.keyFile != null
-    then lib.warn "The option `keyFile` is deprecated. Use passwordFile instead" config.keyFile
+    then lib.warn
+      ("The option `keyFile` is deprecated."
+      + "Use passwordFile instead if you want to use interactive login or settings.keyFile if you want to use key file login")
+      config.keyFile
     else null;
   keyFileArgs = ''\
     ${lib.optionalString (keyFile != null) "--key-file ${keyFile}"} \
@@ -33,13 +36,13 @@ in
     keyFile = lib.mkOption {
       type = lib.types.nullOr diskoLib.optionTypes.absolute-pathname;
       default = null;
-      description = "Path to the key for encryption (Renamed to passwordFile)";
+      description = "DEPRECATED use passwordFile or settings.keyFile. Path to the key for encryption";
       example = "/tmp/disk.key";
     };
     passwordFile = lib.mkOption {
       type = lib.types.nullOr diskoLib.optionTypes.absolute-pathname;
       default = null;
-      description = "Path to the file which contains the password for initial encryption. Make sure it doesn't contain a trailing newline";
+      description = "Path to the file which contains the password for initial encryption";
       example = "/tmp/disk.key";
     };
     settings = lib.mkOption {
