@@ -8,4 +8,8 @@ diskoLib.testLib.makeDiskoTest {
   extraTestScript = ''
     machine.succeed("cryptsetup isLuks /dev/vda2");
   '';
+  bootCommands = ''
+    machine.wait_for_console_text("vda")
+    machine.send_console("secretsecret\n")
+  '';
 }
