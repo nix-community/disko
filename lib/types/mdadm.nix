@@ -65,6 +65,9 @@
           } else {
             boot.initrd.services.swraid.enable = true;
           })
+          {
+            boot.loader.grub.extraConfig = lib.optionalString (config.content._mount == "/boot" && config.metadata != "1") "insmod mdraid1x";
+          }
         ] ++
         lib.optional (config.content != null) config.content._config;
       description = "NixOS configuration";
