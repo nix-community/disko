@@ -51,8 +51,8 @@ in
     system.build = (cfg.devices._scripts { inherit pkgs; checked = cfg.checkScripts; }) // {
 
       # we keep these old outputs for compatibility
-      disko = builtins.trace "the .disko output is deprecated, please use .diskoScript instead" cfg.devices._scripts.diskoScript;
-      diskoNoDeps = builtins.trace "the .diskoNoDeps output is deprecated, please use .diskoScriptNoDeps instead" cfg.devices._scripts.diskoScriptNoDeps;
+      disko = builtins.trace "the .disko output is deprecated, please use .diskoScript instead" (cfg.devices._scripts pkgs).diskoScript;
+      diskoNoDeps = builtins.trace "the .diskoNoDeps output is deprecated, please use .diskoScriptNoDeps instead" (cfg.devices._scripts pkgs).diskoScriptNoDeps;
 
       installTest = diskoLib.testLib.makeDiskoTest {
         inherit extendModules pkgs;
