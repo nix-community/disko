@@ -12,7 +12,7 @@ This is especially useful for unattended installations, re-installation after a 
 
 ## Overview
 
-**disko** can either be used after booting from a Nixos installer, or in conjunction with [nixos-anywhere](https://github.com/numtide/nixos-anywhere) if you're installing remotely.
+**disko** can either be used after booting from a NixOS installer, or in conjunction with [nixos-anywhere](https://github.com/numtide/nixos-anywhere) if you're installing remotely.
 
 Before using **disko**, the specifications of the disks, partitions, type of formatting and the mount points must be defined in a Nix configuration. You can find [examples](./example) of typical configurations in the Nix community repository, and use one of these as the basis of your own configuration.
 
