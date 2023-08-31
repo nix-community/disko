@@ -3,7 +3,7 @@
     disk = {
       main = {
         type = "disk";
-        device = "/dev/disk/by-id/ata-Samsung_SSD_850_EVO_250GB_S21PNXAGB12345";
+        device = "/dev/nvme0n1"; # you may want to replace this by `/dev/disk/by-id/<UUID>`
         content = {
           type = "gpt";
           partitions = {
