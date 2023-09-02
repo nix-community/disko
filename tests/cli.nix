@@ -6,6 +6,7 @@ diskoLib.testLib.makeDiskoTest {
   name = "cli";
   disko-config = ../example/complex.nix;
   extraSystemConfig = {
+    networking.hostId = "8425e349";
     fileSystems."/zfs_legacy_fs".options = [ "nofail" ]; # TODO find out why we need this!
   };
   testMode = "direct";
