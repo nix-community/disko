@@ -167,8 +167,7 @@ let
             ({ config, ... }: {
               boot.supportedFilesystems =
                 [ "btrfs" "cifs" "f2fs" "jfs" "ntfs" "reiserfs" "vfat" "xfs" ] ++
-                lib.optional (lib.meta.availableOn pkgs.stdenv.hostPlatform config.boot.zfs.package) "zfs";
-              networking.hostId = "8425e349";
+                lib.optional (config.networking.hostId != null && lib.meta.availableOn pkgs.stdenv.hostPlatform config.boot.zfs.package) "zfs";
             })
 
             (if lib.versionAtLeast (lib.versions.majorMinor lib.version) "23.11" then {

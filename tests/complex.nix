@@ -5,6 +5,7 @@ diskoLib.testLib.makeDiskoTest {
   inherit pkgs;
   name = "complex";
   disko-config = ../example/complex.nix;
+  extraInstallerConfig.networking.hostId = "8425e349";
   extraSystemConfig = {
     networking.hostId = "8425e349";
     fileSystems."/zfs_legacy_fs".options = [ "nofail" ]; # TODO find out why we need this!

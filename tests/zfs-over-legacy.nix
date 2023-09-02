@@ -4,9 +4,8 @@
 diskoLib.testLib.makeDiskoTest {
   inherit pkgs;
   name = "zfs-over-legacy";
-  extraSystemConfig = {
-    networking.hostId = "8425e349";
-  };
+  extraInstallerConfig.networking.hostId = "8425e349";
+  extraSystemConfig.networking.hostId = "8425e349";
   disko-config = ../example/zfs-over-legacy.nix;
   extraTestScript = ''
     machine.succeed("test -e /zfs_fs");
