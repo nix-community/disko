@@ -60,7 +60,7 @@
       readOnly = true;
       default =
         [
-          (if lib.versionAtLeast (lib.versions.majorMinor lib.version) "23.11" then { 
+          (if lib.versionAtLeast (lib.versions.majorMinor lib.version) "23.11" then {
             boot.swraid.enable = true;
           } else {
             boot.initrd.services.swraid.enable = true;
