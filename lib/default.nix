@@ -253,7 +253,7 @@ let
     */
     writeCheckedBash = { pkgs, checked ? false, noDeps ? false }: pkgs.writers.makeScriptWriter {
       interpreter = if noDeps then "/usr/bin/env bash" else "${pkgs.bash}/bin/bash";
-      check = lib.optionalString checked (pkgs.writeScript "check" ''
+      check = lib.optionalString (checked && !pkgs.hostPlatform.isRiscV64 && !pkgs.hostPlatform.isx86_32) (pkgs.writeScript "check" ''
         set -efu
         ${pkgs.shellcheck}/bin/shellcheck -e SC2034 "$1"
       '');
