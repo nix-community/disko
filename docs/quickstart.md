@@ -125,7 +125,6 @@ e) If you chose the hybrid-partition scheme, then choose `grub` as a bootloader,
    # replace this with your disk i.e. /dev/nvme0n1
    boot.loader.grub.devices = [ "/dev/<disk-name>" ];
    boot.loader.grub.enable = true;
-   boot.loader.grub.version = 2;
    boot.loader.grub.efiSupport = true;
    boot.loader.grub.efiInstallAsRemovable = true;
 # ...
