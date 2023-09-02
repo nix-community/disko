@@ -101,7 +101,6 @@ let
           # config for tests to make them run faster or work at all
           documentation.enable = false;
           hardware.enableAllFirmware = lib.mkForce false;
-          networking.hostId = "8425e349"; # from profiles/base.nix, needed for zfs
           boot.initrd.preDeviceCommands = ''
             echo -n 'secretsecret' > /tmp/secret.key
           '';
