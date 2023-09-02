@@ -45,14 +45,24 @@ in
         type = lib.types.bool;
         default = config.boot.loader.systemd-boot.enable || config.boot.loader.grub.efiSupport;
       };
+      extraChecks = lib.mkOption {
+        description = ''
+          extra checks to run in the `system.build.installTest`.
+        '';
+        type = lib.types.lines;
+        default = "";
+        example = ''
+          machine.succeed("test -e /var/secrets/my.secret")
+        '';
+      };
     };
   };
   config = lib.mkIf (cfg.devices.disk != { }) {
     system.build = (cfg.devices._scripts { inherit pkgs; checked = cfg.checkScripts; }) // {
 
       # we keep these old outputs for compatibility
-      disko = builtins.trace "the .disko output is deprecated, please use .diskoScript instead" cfg.devices._scripts.diskoScript;
-      diskoNoDeps = builtins.trace "the .diskoNoDeps output is deprecated, please use .diskoScriptNoDeps instead" cfg.devices._scripts.diskoScriptNoDeps;
+      disko = builtins.trace "the .disko output is deprecated, please use .diskoScript instead" (cfg.devices._scripts pkgs).diskoScript;
+      diskoNoDeps = builtins.trace "the .diskoNoDeps output is deprecated, please use .diskoScriptNoDeps instead" (cfg.devices._scripts pkgs).diskoScriptNoDeps;
 
       installTest = diskoLib.testLib.makeDiskoTest {
         inherit extendModules pkgs;
@@ -60,6 +70,7 @@ in
         disko-config = builtins.removeAttrs config [ "_module" ];
         testMode = "direct";
         efi = cfg.tests.efi;
+        extraTestScript = cfg.tests.extraChecks;
       };
     };
 

@@ -6,10 +6,11 @@ let
     else if config.passwordFile != null
     then ''<(echo -n "$(cat ${config.passwordFile})")''
     else if config.keyFile != null
-    then lib.warn
-      ("The option `keyFile` is deprecated."
-      + "Use passwordFile instead if you want to use interactive login or settings.keyFile if you want to use key file login")
-      config.keyFile
+    then
+      lib.warn
+        ("The option `keyFile` is deprecated."
+          + "Use passwordFile instead if you want to use interactive login or settings.keyFile if you want to use key file login")
+        config.keyFile
     else null;
   keyFileArgs = ''\
     ${lib.optionalString (keyFile != null) "--key-file ${keyFile}"} \
