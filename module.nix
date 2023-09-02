@@ -45,6 +45,16 @@ in
         type = lib.types.bool;
         default = config.boot.loader.systemd-boot.enable || config.boot.loader.grub.efiSupport;
       };
+      extraChecks = lib.mkOption {
+        description = ''
+          extra checks to run in the `system.build.installTest`.
+        '';
+        type = lib.types.lines;
+        default = "";
+        example = ''
+          machine.succeed("test -e /var/secrets/my.secret")
+        '';
+      };
     };
   };
   config = lib.mkIf (cfg.devices.disk != { }) {
@@ -60,6 +70,7 @@ in
         disko-config = builtins.removeAttrs config [ "_module" ];
         testMode = "direct";
         efi = cfg.tests.efi;
+        extraTestScript = cfg.tests.extraChecks;
       };
     };
 
