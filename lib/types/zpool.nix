@@ -13,7 +13,13 @@
       description = "Type";
     };
     mode = lib.mkOption {
-      type = lib.types.str; # TODO zfs modes
+      type = lib.types.enum [
+        ""
+        "mirror"
+        "raidz"
+        "raidz2"
+        "raidz3"
+      ];
       default = "";
       description = "Mode of the ZFS pool";
     };
