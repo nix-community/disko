@@ -152,7 +152,7 @@
         type = "zpool";
         mode = "mirror";
         rootFsOptions = {
-          compression = "lz4";
+          compression = "zstd";
           "com.sun:auto-snapshot" = "false";
         };
         mountpoint = "/";
