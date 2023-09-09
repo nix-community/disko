@@ -30,11 +30,11 @@ It can work with these in various configurations and orders, and supports recurs
 
 Disko doesn't require installation: it can be run directly from nix-community repository. The [Quickstart Guide](./docs/quickstart.md) documents how to run Disko in its simplest form when installing NixOS.
 
-For information on other use cases, including upgrading from an older version of **disko**, using **disko** without NixOS and downloading the module, see the [How To Guide](./docs/quickstart.md)
+For information on other use cases, including upgrading from an older version of **disko**, using **disko** without NixOS and downloading the module, see the [How To Guide](./docs/HowTo.md)
 
 For more detailed options, such as command line switches, see the [Reference Guide](./docs/reference.md)
 
-To access sample configurations for commonly-used disk layouts, refer to the [examples](./examples) provided.
+To access sample configurations for commonly-used disk layouts, refer to the [examples](./example) provided.
 
 ## Sample Configuration and CLI command
 
