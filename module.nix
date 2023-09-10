@@ -1,4 +1,4 @@
-{ config, lib, pkgs, extendModules, ... }:
+{ config, lib, pkgs, extendModules, ... }@args:
 let
   diskoLib = import ./lib {
     inherit lib;
@@ -70,6 +70,13 @@ in
       # we keep these old outputs for compatibility
       disko = builtins.trace "the .disko output is deprecated, please use .diskoScript instead" (cfg.devices._scripts pkgs).diskoScript;
       diskoNoDeps = builtins.trace "the .diskoNoDeps output is deprecated, please use .diskoScriptNoDeps instead" (cfg.devices._scripts pkgs).diskoScriptNoDeps;
+
+      diskoImages = diskoLib.makeDiskImage {
+        nixosConfig = args;
+      };
+      diskoImageScript = diskoLib.makeDiskImageScript {
+        nixosConfig = args;
+      };
 
       installTest = diskoLib.testLib.makeDiskoTest {
         inherit extendModules pkgs;
