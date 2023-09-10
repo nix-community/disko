@@ -62,6 +62,8 @@
           vgcreate ${config.name} \
             "''${lvm_devices[@]}"
           ${lib.concatMapStrings (lv: ''
+            ${lib.optionalString (lv.lvm_type != null) "modprobe dm-${lv.lvm_type}"}
+
             lvcreate \
               --yes \
               ${if lib.hasInfix "%" lv.size then "-l" else "-L"} ${lv.size} \
