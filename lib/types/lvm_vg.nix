@@ -101,9 +101,16 @@
             (lib.optional ((lv.content.type or "") == "luks") {
               boot.initrd.luks.devices.${lv.content.name}.preLVM = false;
             })
-            (lib.optional (lv.lvm_type != null) {
-              boot.initrd.kernelModules = [ "dm-${lv.lvm_type}" ];
-            })
+            (lib.optionals (lv.lvm_type != null) [
+              {
+                boot.initrd.kernelModules = [ "dm-${lv.lvm_type}" ];
+              }
+              (if lib.versionAtLeast (lib.versions.majorMinor lib.version) "23.11" then {
+                boot.swraid.enable = true;
+              } else {
+                boot.initrd.services.swraid.enable = true;
+              })
+            ])
           ])
           (lib.attrValues config.lvs);
       description = "NixOS configuration";
