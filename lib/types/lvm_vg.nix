@@ -98,6 +98,9 @@
         map
           (lv: [
             (lib.optional (lv.content != null) lv.content._config)
+            (lib.optional ((lv.content.type or "") == "luks") {
+              boot.initrd.luks.devices.${lv.content.name}.preLVM = false;
+            })
             (lib.optional (lv.lvm_type != null) {
               boot.initrd.kernelModules = [ "dm-${lv.lvm_type}" ];
             })
