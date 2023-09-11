@@ -52,6 +52,7 @@
           -V ${config.size}
         udevadm trigger --subsystem-match=block
         udevadm settle
+        partprobe
         ${lib.optionalString (config.content != null) config.content._create}
       '';
     };
