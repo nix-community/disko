@@ -146,7 +146,11 @@ in
       readOnly = true;
       type = lib.types.functionTo (lib.types.listOf lib.types.package);
       default = pkgs:
-        [ pkgs.gptfdisk pkgs.systemdMinimal ] ++ lib.flatten (map
+        [
+          pkgs.gptfdisk
+          pkgs.systemdMinimal
+          pkgs.parted # for partprobe
+        ] ++ lib.flatten (map
           (partition:
             lib.optional (partition.content != null) (partition.content._pkgs pkgs)
           )
