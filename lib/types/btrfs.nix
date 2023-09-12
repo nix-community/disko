@@ -1,4 +1,40 @@
 { config, options, diskoLib, lib, rootMountPoint, parent, device, ... }:
+let
+  swapType = lib.mkOption {
+    type = lib.types.attrsOf (lib.types.submodule ({ name, ... }: {
+      options = {
+        size = lib.mkOption {
+          type = lib.types.strMatching "^([0-9]+[KMGTP])?$";
+          description = "Size of the swap file (e.g. 2G)";
+        };
+
+        path = lib.mkOption {
+          type = lib.types.str;
+          default = name;
+          description = "Path to the swap file (relative to the mountpoint)";
+        };
+      };
+    }));
+    default = { };
+    description = "Swap files";
+  };
+
+  swapConfig = { mountpoint, swap }:
+    {
+      swapDevices = builtins.map
+        (file: {
+          device = "${mountpoint}/${file.path}";
+        })
+        (lib.attrValues swap);
+    };
+
+  swapCreate = mountpoint: swap:
+    lib.concatMapStringsSep
+      "\n"
+      (file: ''btrfs filesystem mkswapfile --size ${file.size} "${mountpoint}/${file.path}"'')
+      (lib.attrValues swap);
+
+in
 {
   options = {
     type = lib.mkOption {
@@ -50,6 +86,7 @@
             default = null;
             description = "Location to mount the subvolume to.";
           };
+          swap = swapType;
         };
       }));
       default = { };
@@ -60,6 +97,7 @@
       default = null;
       description = "A path to mount the BTRFS filesystem to.";
     };
+    swap = swapType;
     _parent = lib.mkOption {
       internal = true;
       default = parent;
@@ -75,12 +113,21 @@
       inherit config options;
       default = ''
         mkfs.btrfs ${config.device} ${toString config.extraArgs}
+        ${lib.optionalString (config.swap != {}) ''
+          (
+            MNTPOINT=$(mktemp -d)
+            mount ${device} "$MNTPOINT" -o subvol=/
+            trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
+            ${swapCreate "$MNTPOINT" config.swap}
+          )
+        ''}
         ${lib.concatMapStrings (subvol: ''
           (
             MNTPOINT=$(mktemp -d)
             mount ${config.device} "$MNTPOINT" -o subvol=/
             trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
             btrfs subvolume create "$MNTPOINT"/${subvol.name} ${toString subvol.extraArgs}
+            ${swapCreate "$MNTPOINT/${subvol.name}" subvol.swap}
           )
         '') (lib.attrValues config.subvolumes)}
       '';
@@ -140,6 +187,14 @@
             fsType = "btrfs";
             options = config.mountOptions;
           };
+        })
+        (map
+          (subvol: swapConfig {
+            inherit (subvol) mountpoint swap;
+          })
+          (lib.attrValues config.subvolumes))
+        (swapConfig {
+          inherit (config) mountpoint swap;
         })
       ];
       description = "NixOS configuration";

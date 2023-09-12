@@ -192,7 +192,7 @@ let
           || lib.hasSuffix "Hook" n
           || isAttrsOfSubmodule o
           # TODO don't hardcode diskoLib.subType options.
-          || n == "content" || n == "partitions" || n == "datasets"
+          || n == "content" || n == "partitions" || n == "datasets" || n == "swap"
         );
       in
       lib.toShellVars
