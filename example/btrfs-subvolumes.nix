@@ -45,6 +45,25 @@
                   };
                   # This subvolume will be created but not mounted
                   "/test" = { };
+                  # Subvolume for the swapfile
+                  "/swap" = {
+                    mountpoint = "/.swapvol";
+                    swap = {
+                      swapfile.size = "20M";
+                      swapfile2.size = "20M";
+                      swapfile2.path = "rel-path";
+                    };
+                  };
+                };
+
+                mountpoint = "/partition-root";
+                swap = {
+                  swapfile = {
+                    size = "20M";
+                  };
+                  swapfile1 = {
+                    size = "20M";
+                  };
                 };
               };
             };
