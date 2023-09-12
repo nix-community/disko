@@ -43,7 +43,7 @@ def deactivate:
     [
       "lvremove -fy \($vgname)/\($lvname)"
     ]
-  elif .type == "raid1" then
+  elif (.type | contains("raid")) then
     [
       "mdadm --stop \(.name)"
     ]
