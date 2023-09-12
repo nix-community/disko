@@ -18,9 +18,10 @@ let
     bash
     coreutils
     gnused
+    parted # for partprobe
     systemdMinimal
     nix
-    utillinux
+    util-linux
   ];
   preVM = ''
     ${lib.concatMapStringsSep "\n" (disk: "truncate -s ${disk.imageSize} ${disk.name}.raw") (lib.attrValues nixosConfig.config.disko.devices.disk)}

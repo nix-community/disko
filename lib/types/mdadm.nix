@@ -74,7 +74,9 @@
       internal = true;
       readOnly = true;
       type = lib.types.functionTo (lib.types.listOf lib.types.package);
-      default = pkgs: (lib.optionals (config.content != null) (config.content._pkgs pkgs));
+      default = pkgs: [
+        pkgs.parted # for partprobe
+      ] ++ (lib.optionals (config.content != null) (config.content._pkgs pkgs));
       description = "Packages";
     };
   };
