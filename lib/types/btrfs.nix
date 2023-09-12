@@ -1,4 +1,52 @@
 { config, options, diskoLib, lib, rootMountPoint, parent, device, ... }:
+let
+  swapType = lib.types.submodule ({ config, ... }: {
+    options = {
+      enable = lib.mkEnableOption "swap";
+
+      size = lib.mkOption {
+        type = lib.types.nullOr (lib.types.strMatching "^([0-9]+[KMGTP])?$");
+        default = null;
+        description = "Size of the swap file (e.g. 2G)";
+      };
+
+      path = lib.mkOption {
+        type = lib.types.str;
+        default = "swapfile";
+        description = "Path to the swap file (relative to the mountpoint)";
+      };
+    };
+  });
+
+  swapConfig = { mountpoint, swap }: lib.optional swap.enable {
+    swapDevices = [{
+      device =
+        assert lib.asserts.assertMsg (mountpoint != null) "swap requires mountpoint to be set";
+        "${mountpoint}/${swap.path}";
+    }];
+  };
+
+  subvolSwapCreate = mountpoint: swap:
+    if !swap.enable
+    then ""
+    else
+      assert lib.asserts.assertMsg (swap.size != null) "swap size must be set";
+      ''btrfs filesystem mkswapfile --size ${swap.size} ${mountpoint}/${swap.path}'';
+
+  partitionSwapCreate = device: swap:
+    if !swap.enable
+    then ""
+    else
+      assert lib.asserts.assertMsg (swap.size != null) "swap size must be set";
+      ''
+        (
+          MNTPOINT=$(mktemp -d)
+          mount ${device} "$MNTPOINT" -o subvol=/
+          trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
+          btrfs filesystem mkswapfile --size ${swap.size} "$MNTPOINT"/${swap.path}
+        )
+      '';
+in
 {
   options = {
     type = lib.mkOption {
@@ -50,6 +98,11 @@
             default = null;
             description = "Location to mount the subvolume to.";
           };
+          swap = lib.mkOption {
+            type = swapType;
+            default = { };
+            description = "Swap file configuration";
+          };
         };
       }));
       default = { };
@@ -59,6 +112,11 @@
       type = lib.types.nullOr diskoLib.optionTypes.absolute-pathname;
       default = null;
       description = "A path to mount the BTRFS filesystem to.";
+    };
+    swap = lib.mkOption {
+      type = swapType;
+      default = { };
+      description = "Swap file configuration";
     };
     _parent = lib.mkOption {
       internal = true;
@@ -75,12 +133,14 @@
       inherit config options;
       default = ''
         mkfs.btrfs ${config.device} ${toString config.extraArgs}
+        ${partitionSwapCreate config.device config.swap}
         ${lib.concatMapStrings (subvol: ''
           (
             MNTPOINT=$(mktemp -d)
             mount ${config.device} "$MNTPOINT" -o subvol=/
             trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
             btrfs subvolume create "$MNTPOINT"/${subvol.name} ${toString subvol.extraArgs}
+            ${subvolSwapCreate ''"$MNTPOINT"/${subvol.name}'' subvol.swap}
           )
         '') (lib.attrValues config.subvolumes)}
       '';
@@ -140,6 +200,14 @@
             fsType = "btrfs";
             options = config.mountOptions;
           };
+        })
+        (map
+          (subvol: swapConfig {
+            inherit (subvol) mountpoint swap;
+          })
+          (lib.attrValues config.subvolumes))
+        (swapConfig {
+          inherit (config) mountpoint swap;
         })
       ];
       description = "NixOS configuration";

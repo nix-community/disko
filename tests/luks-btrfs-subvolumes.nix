@@ -9,5 +9,6 @@ diskoLib.testLib.makeDiskoTest {
     machine.succeed("cryptsetup isLuks /dev/vda2");
     machine.succeed("btrfs subvolume list / | grep -qs 'path nix$'");
     machine.succeed("btrfs subvolume list / | grep -qs 'path home$'");
+    machine.succeed("test -e /.swapvol/swapfile");
   '';
 }
