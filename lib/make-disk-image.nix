@@ -43,9 +43,9 @@ let
     ln -sfn ${systemToInstall.config.system.build.etc}/etc/udev/rules.d /etc/udev/rules.d
     mkdir -p /dev/.mdadm
     ${pkgs.systemdMinimal}/lib/systemd/systemd-udevd --daemon
+    partprobe
     udevadm trigger --action=add
     udevadm settle
-    partprobe
 
     # populate nix db, so nixos-install doesn't complain
     export NIX_STATE_DIR=$TMPDIR/state

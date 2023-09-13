@@ -91,9 +91,9 @@
             parted -s ${config.device} -- mkpart ${partition.part-type} ${diskoLib.maybeStr partition.fs-type} ${partition.start} ${partition.end}
           ''}
           # ensure /dev/disk/by-path/..-partN exists before continuing
+          partprobe
           udevadm trigger --subsystem-match=block
           udevadm settle
-          partprobe
           ${lib.optionalString partition.bootable ''
             parted -s ${config.device} -- set ${toString partition._index} boot on
           ''}
@@ -101,9 +101,9 @@
             parted -s ${config.device} -- set ${toString partition._index} ${flag} on
           '') partition.flags}
           # ensure further operations can detect new partitions
+          partprobe
           udevadm trigger --subsystem-match=block
           udevadm settle
-          partprobe
           ${lib.optionalString (partition.content != null) partition.content._create}
         '') config.partitions)}
       '';
