@@ -71,10 +71,10 @@ in
       disko = builtins.trace "the .disko output is deprecated, please use .diskoScript instead" (cfg.devices._scripts pkgs).diskoScript;
       diskoNoDeps = builtins.trace "the .diskoNoDeps output is deprecated, please use .diskoScriptNoDeps instead" (cfg.devices._scripts pkgs).diskoScriptNoDeps;
 
-      diskoImages = diskoLib.makeDiskImage {
+      diskoImages = diskoLib.makeDiskImages {
         nixosConfig = args;
       };
-      diskoImageScript = diskoLib.makeDiskImageScript {
+      diskoImagesScript = diskoLib.makeDiskImagesScript {
         nixosConfig = args;
       };
 

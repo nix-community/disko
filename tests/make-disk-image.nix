@@ -1,7 +1,7 @@
 { pkgs ? import <nixpkgs> { }
 , diskoLib ? pkgs.callPackage ../lib { }
 }:
-diskoLib.makeDiskImage {
+diskoLib.makeDiskImages {
   nixosConfig = pkgs.nixos [
     ../module.nix
     ../example/simple-efi.nix
