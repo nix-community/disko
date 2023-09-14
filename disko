@@ -15,7 +15,8 @@ showUsage() {
 Usage: $0 [options] disk-config.nix
 or $0 [options] --flake github:somebody/somewhere#disk-config
 
-With flakes, disk-config is discovered under the .diskoConfigurations top level attribute.
+With flakes, disk-config is discovered first under the .diskoConfigurations top level attribute
+or else from the disko module of a NixOS configuration of that name under .nixosConfigurations.
 
 Options:
 
