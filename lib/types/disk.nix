@@ -19,7 +19,7 @@
     imageSize = lib.mkOption {
       type = lib.types.strMatching "[0-9]+[KMGTP]?";
       description = ''
-        size of the image if the makeDiskImage function from diksoLib is used.
+        size of the image if the makeDiskImages function from diksoLib is used.
         is used as an argument to truncate -s
       '';
       default = "2G";
