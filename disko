@@ -37,8 +37,6 @@ Options:
   just show the path to the script instead of running it
 * --no-deps
   avoid adding another dependency closure to an in-memory installer
-    recommended when using flake attributes variant where the flake's
-    nixpkgs and the nixpkgs version of the in-memory installer may diverge
     requires all necessary dependencies to be available in the environment
 * --debug
   run with set -x
