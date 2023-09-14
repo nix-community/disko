@@ -13,7 +13,9 @@ nix_args=()
 showUsage() {
   cat <<USAGE
 Usage: $0 [options] disk-config.nix
-or $0 [options] --flake github:somebody/somewhere
+or $0 [options] --flake github:somebody/somewhere#disk-config
+
+With flakes, disk-config is discovered under the .diskoConfigurations top level attribute.
 
 Options:
 
