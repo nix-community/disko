@@ -24,6 +24,7 @@
               content = {
                 type = "luks";
                 name = "crypted";
+                # extraOpenArgs applied only when partition is created or mounted via disko
                 extraOpenArgs = [ "--allow-discards" ];
                 # if you want to use the key for interactive login be sure there is no trailing newline
                 # for example use `echo -n "password" > /tmp/secret.key`
