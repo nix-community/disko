@@ -57,15 +57,17 @@
           pkgs = nixpkgs.legacyPackages.${system};
         in
         pkgs.writeShellApplication {
-          name = "normalise_nix";
+          name = "format";
           runtimeInputs = with pkgs; [
             nixpkgs-fmt
             statix
+            deno
           ];
           text = ''
             set -o xtrace
             nixpkgs-fmt "$@"
             statix fix "$@"
+            deno fmt "$@"
           '';
         }
       );
