@@ -60,14 +60,14 @@
           name = "format";
           runtimeInputs = with pkgs; [
             nixpkgs-fmt
-            statix
             deno
+            deadnix
           ];
           text = ''
             set -o xtrace
             nixpkgs-fmt "$@"
-            statix fix "$@"
             deno fmt "$@"
+            deadnix --edit "$@"
           '';
         }
       );
