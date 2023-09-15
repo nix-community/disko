@@ -42,7 +42,7 @@
           --force \
           --homehost=any \
           "''${disk_devices[@]}"
-        partprobe
+        partprobe /dev/md/${config.name}
         udevadm trigger --subsystem-match=block
         udevadm settle
         # for some reason mdadm devices spawn with an existing partition table, so we need to wipe it
