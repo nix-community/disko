@@ -2,10 +2,12 @@
 
 ## Module Options
 
-We are currently having issues beeing able to generate proper
-module option documentation for our recursive disko types.
-However you can read the available options [here](https://github.com/nix-community/disko/tree/master/lib/types).
-Combined wit the [examples](https://github.com/nix-community/disko/tree/master/example) this hopefully gives you an overview.
+We are currently having issues beeing able to generate proper module option
+documentation for our recursive disko types. However you can read the available
+options [here](https://github.com/nix-community/disko/tree/master/lib/types).
+Combined wit the
+[examples](https://github.com/nix-community/disko/tree/master/example) this
+hopefully gives you an overview.
 
 ## # Reference Manual: disko
 
@@ -42,4 +44,4 @@ Options:
   run with set -x
 ```
 
-##
+## 
