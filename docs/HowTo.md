@@ -8,7 +8,8 @@ TODO: Still to be documented
 
 TODO: Include documentation here.
 
-For now, see the [upgrade guide](https://github.com/JillThornhill/disko/blob/master/docs/upgrade-guide.md)
+For now, see the
+[upgrade guide](https://github.com/JillThornhill/disko/blob/master/docs/upgrade-guide.md)
 
 ## Installing NixOS module
 
@@ -19,7 +20,7 @@ You can use the NixOS module in one of the following ways:
 
 If you use nix flakes support:
 
-``` nix
+```nix
 {
   inputs.disko.url = "github:nix-community/disko";
   inputs.disko.inputs.nixpkgs.follows = "nixpkgs";
@@ -37,54 +38,57 @@ If you use nix flakes support:
   };
 }
 ```
+
 </details>
 <details>
   <summary>niv</summary>
 
-  First add it to [niv](https://github.com/nmattia/niv):
+First add it to [niv](https://github.com/nmattia/niv):
 
 ```console
 $ niv add nix-community/disko
 ```
 
-  Then add the following to your configuration.nix in the `imports` list:
+Then add the following to your configuration.nix in the `imports` list:
 
 ```nix
 {
   imports = [ "${(import ./nix/sources.nix).disko}/modules/disko.nix" ];
 }
 ```
+
 </details>
 <details>
   <summary>nix-channel</summary>
 
-  As root run:
+As root run:
 
 ```console
 $ nix-channel --add https://github.com/nix-community/disko/archive/master.tar.gz disko
 $ nix-channel --update
 ```
 
-  Then add the following to your configuration.nix in the `imports` list:
+Then add the following to your configuration.nix in the `imports` list:
 
 ```nix
 {
   imports = [ <disko/modules/disko.nix> ];
 }
 ```
+
 </details>
 <details>
   <summary>fetchTarball</summary>
 
-  Add the following to your configuration.nix:
+Add the following to your configuration.nix:
 
-``` nix
+```nix
 {
   imports = [ "${builtins.fetchTarball "https://github.com/nix-community/disko/archive/master.tar.gz"}/module.nix" ];
 }
 ```
 
-  or with pinning:
+or with pinning:
 
 ```nix
 {
@@ -100,6 +104,7 @@ $ nix-channel --update
   ];
 }
 ```
+
 </details>
 
 ## Using the NixOS module
@@ -145,8 +150,10 @@ $ nix-channel --update
 }
 ```
 
-this will configure `fileSystems` and other required NixOS options to boot the specified configuration.
+this will configure `fileSystems` and other required NixOS options to boot the
+specified configuration.
 
 If you are on an installer, you probably want to disable `enableConfig`.
 
-disko will create the scripts `disko-create` and `disko-mount` which can be used to create/mount the configured disk layout.
+disko will create the scripts `disko-create` and `disko-mount` which can be used
+to create/mount the configured disk layout.
