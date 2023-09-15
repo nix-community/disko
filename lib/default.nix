@@ -24,7 +24,7 @@ let
       description = "one of ${concatStringsSep "," (attrNames types)}";
       check = x: if x ? type then types.${x.type}.check x else throw "No type option set in:\n${generators.toPretty {} x}";
       merge = loc: foldl'
-        (res: def: types.${def.value.type}.merge loc [
+        (_res: def: types.${def.value.type}.merge loc [
           # we add a dummy root parent node to render documentation
           (lib.recursiveUpdate { value._module.args = extraArgs; } def)
         ])
@@ -183,7 +183,7 @@ let
     /* Takes a Submodules config and options argument and returns a serializable
        subset of config variables as a shell script snippet.
     */
-    defineHookVariables = { config, options }:
+    defineHookVariables = { options }:
       let
         sanitizeName = lib.replaceStrings [ "-" ] [ "_" ];
         isAttrsOfSubmodule = o: o.type.name == "attrsOf" && o.type.nestedTypes.elemType.name == "submodule";
@@ -229,7 +229,7 @@ let
         type = lib.types.str;
         default = ''
           ( # ${config.type} ${concatMapStringsSep " " (n: toString (config.${n} or "")) ["name" "device" "format" "mountpoint"]} #
-            ${diskoLib.indent (diskoLib.defineHookVariables { inherit config options; })}
+            ${diskoLib.indent (diskoLib.defineHookVariables { inherit options; })}
             ${config.preCreateHook}
             ${diskoLib.indent attrs.default}
             ${config.postCreateHook}
@@ -238,7 +238,7 @@ let
         description = "Creation script";
       };
 
-    mkMountOption = { config, options, default }@attrs:
+    mkMountOption = { default, ... }@attrs:
       lib.mkOption {
         internal = true;
         readOnly = true;

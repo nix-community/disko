@@ -86,7 +86,7 @@ let
         tsp-config = tsp-generator.config testConfigBooted;
         num-disks = builtins.length (lib.attrNames testConfigBooted.disko.devices.disk);
 
-        installed-system = { modulesPath, ... }: {
+        installed-system = { ... }: {
           imports = [
             (lib.optionalAttrs (testMode == "direct") tsp-config)
             (lib.optionalAttrs (testMode == "module") {
@@ -149,7 +149,7 @@ let
       makeTest' {
         name = "disko-${name}";
 
-        nodes.machine = { pkgs, modulesPath, ... }: {
+        nodes.machine = { pkgs, ... }: {
           imports = [
             (lib.optionalAttrs (testMode == "module") {
               imports = [
