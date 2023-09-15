@@ -114,7 +114,7 @@ in
         {
           dev = ''
             cryptsetup status ${config.name} >/dev/null 2>/dev/null ||
-              cryptsetup luksOpen ${config.device} ${config.name} \
+              cryptsetup open ${config.device} ${config.name} \
               ${keyFileArgs}
             ${lib.optionalString (config.content != null) contentMount.dev or ""}
           '';
