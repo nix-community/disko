@@ -50,7 +50,7 @@
         zfs create ${config._parent.name}/${config.name} \
           ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") config.options)} \
           -V ${config.size}
-        partprobe
+        partprobe /dev/zvol/${config._parent.name}/${config.name}
         udevadm trigger --subsystem-match=block
         udevadm settle
         ${lib.optionalString (config.content != null) config.content._create}
