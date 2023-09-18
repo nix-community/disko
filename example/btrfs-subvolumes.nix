@@ -61,6 +61,7 @@
                   };
                 };
 
+                mountpoint = "/partition-root";
                 swap.enable = true;
                 swap.files = [
                   {
@@ -68,7 +69,6 @@
                   }
                   {
                     size = "20M";
-                    path = "rel-path";
                   }
                 ];
               };
