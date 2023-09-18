@@ -1,51 +1,83 @@
 { config, options, diskoLib, lib, rootMountPoint, parent, device, ... }:
 let
+  swapFileType = lib.types.submodule ({ config, ... }: {
+    options = {
+      size = lib.mkOption {
+        type = lib.types.strMatching "^([0-9]+[KMGTP])?$";
+        description = "Size of the swap file (e.g. 2G)";
+      };
+
+      pathPrefix = lib.mkOption {
+        type = lib.types.str;
+        default = "swapfile";
+        description = "Prefix for the swap file";
+      };
+
+      path = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+        description = "Path to the swap file (relative to the mountpoint) - gets the index as an argument, starting at 1";
+      };
+
+      _path = lib.mkOption {
+        internal = true;
+        type = lib.types.functionTo lib.types.str;
+        default = idx:
+          if config.path != null
+          then config.path
+          else "${config.pathPrefix}${lib.optionalString (idx != 1) (toString idx)}";
+      };
+    };
+  });
+
   swapType = lib.types.submodule ({ config, ... }: {
     options = {
       enable = lib.mkEnableOption "swap";
 
-      size = lib.mkOption {
-        type = lib.types.nullOr (lib.types.strMatching "^([0-9]+[KMGTP])?$");
-        default = null;
-        description = "Size of the swap file (e.g. 2G)";
-      };
-
-      path = lib.mkOption {
-        type = lib.types.str;
-        default = "swapfile";
-        description = "Path to the swap file (relative to the mountpoint)";
+      files = lib.mkOption {
+        type = lib.types.listOf swapFileType;
+        default = [ ];
+        description = "Swap files";
       };
     };
   });
 
   swapConfig = { mountpoint, swap }: lib.optional swap.enable {
-    swapDevices = [{
-      device =
-        assert lib.asserts.assertMsg (mountpoint != null) "swap requires mountpoint to be set";
-        "${mountpoint}/${swap.path}";
-    }];
+    swapDevices = lib.imap1
+      (idx: file: {
+        device = "${mountpoint}/${file._path idx}";
+      })
+      swap.files;
   };
 
   subvolSwapCreate = mountpoint: swap:
-    if !swap.enable
-    then ""
-    else
-      assert lib.asserts.assertMsg (swap.size != null) "swap size must be set";
-      ''btrfs filesystem mkswapfile --size ${swap.size} ${mountpoint}/${swap.path}'';
+    lib.optionalString
+      swap.enable
+      (
+        lib.concatImapStringsSep "\n"
+          (idx: file:
+            ''btrfs filesystem mkswapfile --size ${file.size} ${mountpoint}/${file._path idx}''
+          )
+          swap.files
+      );
 
   partitionSwapCreate = device: swap:
-    if !swap.enable
-    then ""
-    else
-      assert lib.asserts.assertMsg (swap.size != null) "swap size must be set";
-      ''
-        (
-          MNTPOINT=$(mktemp -d)
-          mount ${device} "$MNTPOINT" -o subvol=/
-          trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-          btrfs filesystem mkswapfile --size ${swap.size} "$MNTPOINT"/${swap.path}
-        )
-      '';
+    lib.optionalString
+      swap.enable
+      (
+        lib.concatImapStringsSep "\n"
+          (idx: file:
+            ''
+              (
+                MNTPOINT=$(mktemp -d)
+                mount ${device} "$MNTPOINT" -o subvol=/
+                trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
+                btrfs filesystem mkswapfile --size ${file.size} "$MNTPOINT"/${file._path idx}
+              )
+            ''
+          )
+          swap.files
+      );
 in
 {
   options = {
