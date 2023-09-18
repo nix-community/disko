@@ -1,13 +1,18 @@
 # 2023-07-09 121df48
 
 Changes:
- - BTRFS subvolumes are mounted if and only their `mountpoint` is set.
 
-Especially, if you have specific mount options for a subvolume (through `mountOptions`), make sure to set `mountpoint` otherwise the subvolume will not be mounted.
+- BTRFS subvolumes are mounted if and only their `mountpoint` is set.
 
-This change allows more flexibility when using BTRFS, giving access to its volume management functionality.
+Especially, if you have specific mount options for a subvolume (through
+`mountOptions`), make sure to set `mountpoint` otherwise the subvolume will not
+be mounted.
+
+This change allows more flexibility when using BTRFS, giving access to its
+volume management functionality.
 
 It allows layouts as the following:
+
 ```nix
 content = {
   type = "btrfs";
@@ -38,7 +43,9 @@ content = {
   };
 };
 ```
+
 corresponding to the following BTRFS layout:
+
 ```
 BTRFS partition # not mounted
  |
@@ -87,15 +94,17 @@ datasets = {
 }
 ```
 
-Note: The `zfs_type` attribute has been replaced with a type attribute for each dataset, and the `size` attribute is only available for `zfs_volume`.
-These changes have been reflected in the `example/zfs.nix` file.
+Note: The `zfs_type` attribute has been replaced with a type attribute for each
+dataset, and the `size` attribute is only available for `zfs_volume`. These
+changes have been reflected in the `example/zfs.nix` file.
 
 # 2023-04-07 654ecb3
 
-The `lvm_lv` type is always part of an `lvm_vg` and it is no longer necessary to specify the type.
+The `lvm_lv` type is always part of an `lvm_vg` and it is no longer necessary to
+specify the type.
 
-This means that if you were using the `lvm_lv` type in your code, you should remove it. 
-For example, if you were defining an `lvm_lv` type like this:
+This means that if you were using the `lvm_lv` type in your code, you should
+remove it. For example, if you were defining an `lvm_lv` type like this:
 
 ```nix
 {
@@ -107,7 +116,6 @@ For example, if you were defining an `lvm_lv` type like this:
 
 You should now define it like this:
 
-
 ```nix
 {
   size = "10G";
@@ -115,11 +123,14 @@ You should now define it like this:
 }
 ```
 
-Note that the `type` field is no longer necessary and should be removed from your code.
+Note that the `type` field is no longer necessary and should be removed from
+your code.
 
 # 2023-04-07 d6f062e
 
-Partition types are now always part of a table and cannot be specified individually anymore. This change makes the library more consistent and easier to use.
+Partition types are now always part of a table and cannot be specified
+individually anymore. This change makes the library more consistent and easier
+to use.
 
 Example of how to change code:
 
@@ -146,7 +157,8 @@ After:
 }
 ```
 
-Note that the `type` field is no longer necessary and should be removed from your code.
+Note that the `type` field is no longer necessary and should be removed from
+your code.
 
 # 2023-03-22 2624af6
 

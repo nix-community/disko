@@ -60,7 +60,7 @@ in
           Extra NixOS config for your test. Can be used to specify a different luks key for tests.
           A dummy key is in /tmp/secret.key
         '';
-        default = {};
+        default = { };
       };
     };
   };

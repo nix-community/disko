@@ -100,14 +100,16 @@ in
       default = ''
         ${lib.concatStrings (map (partition: ''
           sgdisk \
+            --set-alignment=2048 \
+            --align-end \
             --new=${toString partition._index}:${partition.start}:${partition.end} \
             --change-name=${toString partition._index}:${partition.label} \
             --typecode=${toString partition._index}:${partition.type} \
             ${config.device}
           # ensure /dev/disk/by-path/..-partN exists before continuing
+          partprobe ${config.device}
           udevadm trigger --subsystem-match=block
           udevadm settle
-          partprobe
           ${lib.optionalString (partition.content != null) partition.content._create}
         '') sortedPartitions)}
 
