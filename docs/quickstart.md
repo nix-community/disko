@@ -22,7 +22,7 @@ requirements. If you're not sure which layout to pick, use the
 [hybrid](https://github.com/nix-community/disko/blob/master/example/hybrid.nix)
 configuration. This layout is compatible with both BIOS and EFI systems.
 
-Refer to the [reference manual](./reference) for more information about the
+Refer to the [reference manual](./reference.md) for more information about the
 sample layouts and how to build your own configuration.
 
 Once you've chosen your layout, you'll need to make a note of the URL to the raw
