@@ -48,29 +48,25 @@
                   # Subvolume for the swapfile
                   "/swap" = {
                     mountpoint = "/.swapvol";
-                    swap.enable = true;
-                    swap.files = [
-                      {
-                        size = "20M";
-                      }
-                      {
-                        size = "20M";
-                        path = "rel-path";
-                      }
-                    ];
+                    swap.file = {
+                      swapfile.size = "20M";
+                      swapfile2.size = "20M";
+                      swapfile2.path = "rel-path";
+                      swapfile3.size = "20M";
+                      swapfile3.enable = false;
+                    };
                   };
                 };
 
                 mountpoint = "/partition-root";
-                swap.enable = true;
-                swap.files = [
-                  {
+                swap.file = {
+                  swapfile = {
                     size = "20M";
-                  }
-                  {
+                  };
+                  swapfile1 = {
                     size = "20M";
-                  }
-                ];
+                  };
+                };
               };
             };
           };

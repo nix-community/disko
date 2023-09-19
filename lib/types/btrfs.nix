@@ -1,83 +1,76 @@
 { config, options, diskoLib, lib, rootMountPoint, parent, device, ... }:
 let
-  swapFileType = lib.types.submodule ({ config, ... }: {
+  swapFileType = lib.types.submodule ({ config, name, ... }: {
     options = {
+      # Note: this is by-default enabled, as it will be created by
+      # doing `swap.file.foo.size = "2G";` for instance. The reason
+      # for having this enable option is so that it can be disabled
+      # in separate modules from where the swap is defined.
+      enable = lib.mkOption {
+        default = true;
+        example = true;
+        description = "Whether to enable swapfile '${name}'.";
+        type = lib.types.bool;
+      };
+
       size = lib.mkOption {
         type = lib.types.strMatching "^([0-9]+[KMGTP])?$";
         description = "Size of the swap file (e.g. 2G)";
       };
 
-      pathPrefix = lib.mkOption {
-        type = lib.types.str;
-        default = "swapfile";
-        description = "Prefix for the swap file";
-      };
-
       path = lib.mkOption {
-        type = lib.types.nullOr lib.types.str;
-        default = null;
-        description = "Path to the swap file (relative to the mountpoint) - gets the index as an argument, starting at 1";
-      };
-
-      _path = lib.mkOption {
-        internal = true;
-        type = lib.types.functionTo lib.types.str;
-        default = idx:
-          if config.path != null
-          then config.path
-          else "${config.pathPrefix}${lib.optionalString (idx != 1) (toString idx)}";
+        type = lib.types.str;
+        default = name;
+        description = "Path to the swap file (relative to the mountpoint)";
       };
     };
   });
 
   swapType = lib.types.submodule ({ config, ... }: {
     options = {
-      enable = lib.mkEnableOption "swap";
-
-      files = lib.mkOption {
-        type = lib.types.listOf swapFileType;
-        default = [ ];
+      file = lib.mkOption {
+        type = lib.types.attrsOf swapFileType;
+        default = { };
         description = "Swap files";
       };
     };
   });
 
-  swapConfig = { mountpoint, swap }: lib.optional swap.enable {
-    swapDevices = lib.imap1
-      (idx: file: {
-        device = "${mountpoint}/${file._path idx}";
-      })
-      swap.files;
-  };
+  enabledSwaps = swap:
+    lib.filter (file: file.enable) (lib.attrValues swap.file);
 
-  subvolSwapCreate = mountpoint: swap:
-    lib.optionalString
-      swap.enable
-      (
-        lib.concatImapStringsSep "\n"
-          (idx: file:
-            ''btrfs filesystem mkswapfile --size ${file.size} ${mountpoint}/${file._path idx}''
-          )
-          swap.files
-      );
+  swapConfig = { mountpoint, swap }:
+    let files = enabledSwaps swap;
+    in
+    lib.optional (lib.length files != 0) {
+      swapDevices = builtins.map
+        (file: {
+          device = "${mountpoint}/${file.path}";
+        })
+        files;
+    };
+
+  swapCreate = mountpoint: swap:
+    let files = enabledSwaps swap;
+    in
+    lib.concatMapStringsSep
+      "\n"
+      (file: ''btrfs filesystem mkswapfile --size ${file.size} ${mountpoint}/"${file.path}"'')
+      files;
 
   partitionSwapCreate = device: swap:
+    let files = enabledSwaps swap;
+    in
     lib.optionalString
-      swap.enable
-      (
-        lib.concatImapStringsSep "\n"
-          (idx: file:
-            ''
-              (
-                MNTPOINT=$(mktemp -d)
-                mount ${device} "$MNTPOINT" -o subvol=/
-                trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-                btrfs filesystem mkswapfile --size ${file.size} "$MNTPOINT"/${file._path idx}
-              )
-            ''
-          )
-          swap.files
-      );
+      (lib.length files != 0)
+      ''
+        (
+          MNTPOINT=$(mktemp -d)
+          mount ${device} "$MNTPOINT" -o subvol=/
+          trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
+          ${swapCreate ''"$MNTPOINT"'' swap}
+        )
+      '';
 in
 {
   options = {
@@ -172,7 +165,7 @@ in
             mount ${config.device} "$MNTPOINT" -o subvol=/
             trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
             btrfs subvolume create "$MNTPOINT"/${subvol.name} ${toString subvol.extraArgs}
-            ${subvolSwapCreate ''"$MNTPOINT"/${subvol.name}'' subvol.swap}
+            ${swapCreate ''"$MNTPOINT"/${subvol.name}'' subvol.swap}
           )
         '') (lib.attrValues config.subvolumes)}
       '';

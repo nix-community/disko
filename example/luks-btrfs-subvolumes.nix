@@ -50,10 +50,7 @@
                     };
                     "/swap" = {
                       mountpoint = "/.swapvol";
-                      swap.enable = true;
-                      swap.files = [{
-                        size = "20M";
-                      }];
+                      swap.file.swapfile.size = "20M";
                     };
                   };
                 };

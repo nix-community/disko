@@ -13,6 +13,7 @@ diskoLib.testLib.makeDiskoTest {
     machine.succeed("btrfs subvolume list / | grep -qs 'path home$'");
     machine.succeed("test -e /.swapvol/swapfile");
     machine.succeed("test -e /.swapvol/rel-path");
+    machine.succeed("test ! -e /.swapvol/swapfile3");
     machine.succeed("test -e /partition-root/swapfile");
     machine.succeed("test -e /partition-root/swapfile2");
   '';
