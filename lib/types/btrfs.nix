@@ -55,7 +55,7 @@ let
     in
     lib.concatMapStringsSep
       "\n"
-      (file: ''btrfs filesystem mkswapfile --size ${file.size} ${mountpoint}/"${file.path}"'')
+      (file: ''btrfs filesystem mkswapfile --size ${file.size} "${mountpoint}/${file.path}"'')
       files;
 
   partitionSwapCreate = device: swap:
@@ -68,7 +68,7 @@ let
           MNTPOINT=$(mktemp -d)
           mount ${device} "$MNTPOINT" -o subvol=/
           trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-          ${swapCreate ''"$MNTPOINT"'' swap}
+          ${swapCreate "$MNTPOINT" swap}
         )
       '';
 in
@@ -165,7 +165,7 @@ in
             mount ${config.device} "$MNTPOINT" -o subvol=/
             trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
             btrfs subvolume create "$MNTPOINT"/${subvol.name} ${toString subvol.extraArgs}
-            ${swapCreate ''"$MNTPOINT"/${subvol.name}'' subvol.swap}
+            ${swapCreate "$MNTPOINT/${subvol.name}" subvol.swap}
           )
         '') (lib.attrValues config.subvolumes)}
       '';
