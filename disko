@@ -40,6 +40,8 @@ Options:
     requires all necessary dependencies to be available in the environment
 * --debug
   run with set -x
+* --help
+  show this help
 USAGE
 }
 
@@ -73,7 +75,7 @@ while [[ $# -gt 0 ]]; do
       shift
       shift
       ;;
-    --help)
+    -h | --help)
       showUsage
       exit 0
       ;;
