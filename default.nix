@@ -19,6 +19,8 @@ in
 {
   lib = diskoLib;
 
+  inherit (diskoLib) makeDiskImages makeDiskImagesScript;
+
   # legacy alias
   create = cfg: builtins.trace "the create output is deprecated, use format instead" (eval cfg).config.disko.devices._create;
   createScript = cfg: pkgs: builtins.trace "the create output is deprecated, use format instead" ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).formatScript;
