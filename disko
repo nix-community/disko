@@ -118,7 +118,7 @@ if [[ -n "${flake+x}" ]]; then
     echo "For example, to use the output diskoConfigurations.foo from the flake.nix, append \"#foo\" to the flake-uri."
     exit 1
   fi
-  nix_args+=("--arg" "flake" "$flake")
+  nix_args+=("--arg" "flake" "\"$flake\"")
   nix_args+=("--argstr" "flakeAttr" "$flakeAttr")
   nix_args+=(--extra-experimental-features flakes)
 elif [[ -n "${disko_config+x}" ]] && [[ -e "$disko_config" ]]; then
