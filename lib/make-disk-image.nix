@@ -122,6 +122,7 @@ in
       set -eu
       export PATH=${lib.makeBinPath dependencies}
       for src in /tmp/xchg/copy_before_disko/*; do
+        [ -e "$src" ] || continue
         dst=$(basename "$src" | base64 -d)
         mkdir -p "$(dirname "$dst")"
         cp -r "$src" "$dst"
@@ -129,7 +130,8 @@ in
       set -f
       ${builder}
       set +f
-      for dir in /tmp/xchg/copy_after_disko/*; do
+      for src in /tmp/xchg/copy_after_disko/*; do
+        [ -e "$src" ] || continue
         dst=/mnt/$(basename "$src" | base64 -d)
         mkdir -p "$(dirname "$dst")"
         cp -r "$src" "$dst"
