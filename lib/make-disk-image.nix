@@ -80,8 +80,9 @@ in
       copies the src to the dst on the VM, before disko is run
       This is useful to provide secrets like LUKS keys, or other files you need for formating
     * --post-format-files <src> <dst>
-      copies the src to the dst on the finished image.
+      copies the src to the dst on the finished image
       These end up in the images later and is useful if you want to add some extra stateful files
+      They will have the same permissions but will be owned by root:root
     USAGE
     }
 
