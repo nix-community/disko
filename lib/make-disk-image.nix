@@ -83,6 +83,10 @@ in
       copies the src to the dst on the finished image
       These end up in the images later and is useful if you want to add some extra stateful files
       They will have the same permissions but will be owned by root:root
+    * --build-memory <amt>
+      specify the ammount of memory that gets allocated to the build vm (in mb)
+      This can be usefull if you want to build images with a more involed NixOS config
+      By default the vm will get 1024M/1GB
     USAGE
     }
 
@@ -106,6 +110,15 @@ in
         dst=$3
         cp --reflink=auto -r "$src" copy_after_disko/"$(echo "$dst" | base64)"
         shift 2
+        ;;
+      --build-memory)
+        regex="^[0-9]+$"
+        if ! [[ $2 =~ $regex ]]; then
+          echo "'$2' is not a number"
+          exit 1
+        fi
+        build_memory=$2
+        shift 1
         ;;
       *)
         showUsage
@@ -141,7 +154,12 @@ in
       done
       ${installer}
     ''}
-    export QEMU_OPTS=${lib.escapeShellArg "${QEMU_OPTS} -m 1024"}
+
+    build_memory=''${build_memory:-1024}
+    QEMU_OPTS=${lib.escapeShellArg QEMU_OPTS}
+    QEMU_OPTS+=" -m $build_memory"
+    export QEMU_OPTS
+
     ${pkgs.bash}/bin/sh -e ${pkgs.vmTools.vmRunCommand pkgs.vmTools.qemuCommandLinux}
     cd /
   '';
