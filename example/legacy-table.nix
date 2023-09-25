@@ -5,8 +5,7 @@
         device = "/dev/sda";
         type = "disk";
         content = {
-          type = "table";
-          format = "gpt";
+          type = "gpt";
           partitions = {
             ESP = {
               size = "100MiB";
