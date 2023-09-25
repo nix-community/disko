@@ -4,7 +4,8 @@ let
     if lib.hasAttr "keyFile" config.settings
     then config.settings.keyFile
     else if config.passwordFile != null
-    then ''<(echo -n "$(cat ${config.passwordFile})")''
+    # do not print the password to the console
+    then ''<(set +x; echo -n "$(cat ${config.passwordFile})"; set -x)''
     else if config.keyFile != null
     then
       lib.warn
