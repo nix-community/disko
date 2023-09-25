@@ -17,7 +17,6 @@
               };
             };
             primary = {
-              name = "primary";
               size = "100%";
               content = {
                 type = "lvm_pv";
