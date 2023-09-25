@@ -24,7 +24,7 @@
             description = "Size of the logical volume";
           };
           lvm_type = lib.mkOption {
-            type = lib.types.nullOr (lib.types.enum [ "mirror" "raid0" "raid1" ]); # TODO add all lib.types
+            type = lib.types.nullOr (lib.types.enum [ "mirror" "raid0" "raid1" "raid5" "raid6" ]); # TODO add all lib.types
             default = null; # maybe there is always a default type?
             description = "LVM type";
           };
