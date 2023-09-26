@@ -1,9 +1,9 @@
 { lib ? import <nixpkgs/lib>
 , rootMountPoint ? "/mnt"
 , checked ? false
+, diskoLib ? import ./lib { inherit lib rootMountPoint; }
 }:
 let
-  diskoLib = import ./lib { inherit lib rootMountPoint; };
   eval = cfg: lib.evalModules {
     modules = lib.singleton {
       # _file = toString input;
@@ -17,7 +17,7 @@ let
   };
 in
 {
-  lib = diskoLib;
+  lib = lib.warn "the .lib.lib output is deprecated" diskoLib;
 
   # legacy alias
   create = cfg: builtins.trace "the create output is deprecated, use format instead" (eval cfg).config.disko.devices._create;
