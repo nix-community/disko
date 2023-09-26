@@ -7,7 +7,7 @@
         content = {
           type = "gpt";
           partitions = {
-            Boot = {
+            BOOT = {
               size = "1M";
               type = "EF02"; # for grub MBR
             };
