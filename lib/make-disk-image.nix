@@ -64,7 +64,7 @@ in
   pure = pkgs.vmTools.runInLinuxVM (pkgs.runCommand name
     {
       buildInputs = dependencies;
-      inherit preVM QEMU_OPTS;
+      inherit preVM postVM QEMU_OPTS;
       memSize = 1024;
     }
     (partitioner + installer));
