@@ -19,7 +19,7 @@
     {
       nixosModules.default = self.nixosModules.disko; # convention
       nixosModules.disko = import ./module.nix;
-      lib = import ./. {
+      lib = import ./lib {
         inherit (nixpkgs) lib;
       };
       packages = forAllSystems (system:
