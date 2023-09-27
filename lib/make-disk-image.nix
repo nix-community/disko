@@ -32,7 +32,7 @@ let
     ${lib.concatMapStringsSep "\n" (disk: "cp ${disk.name}.raw \"$out\"/${disk.name}.raw") (lib.attrValues nixosConfig.config.disko.devices.disk)}
     ${extraPostVM}
   '';
-  builder = ''
+  partitioner = ''
     # running udev, stolen from stage-1.sh
     echo "running udev..."
     ln -sfn /proc/self/fd /dev/fd
@@ -54,6 +54,8 @@ let
     }}/registration
 
     ${systemToInstall.config.system.build.diskoScript}
+  '';
+  installer = ''
     ${systemToInstall.config.system.build.nixos-install}/bin/nixos-install --system ${systemToInstall.config.system.build.toplevel} --keep-going --no-channel-copy -v --no-root-password --option binary-caches ""
   '';
   QEMU_OPTS = lib.concatMapStringsSep " " (disk: "-drive file=${disk.name}.raw,if=virtio,cache=unsafe,werror=report") (lib.attrValues nixosConfig.config.disko.devices.disk);
@@ -62,10 +64,10 @@ in
   pure = pkgs.vmTools.runInLinuxVM (pkgs.runCommand name
     {
       buildInputs = dependencies;
-      inherit preVM QEMU_OPTS;
+      inherit preVM postVM QEMU_OPTS;
       memSize = 1024;
     }
-    builder);
+    (partitioner + installer));
   impure = diskoLib.writeCheckedBash { inherit checked pkgs; } name ''
     set -efu
     export PATH=${lib.makeBinPath dependencies}
@@ -128,7 +130,7 @@ in
         cp -r "$src" "$dst"
       done
       set -f
-      ${builder}
+      ${partitioner}
       set +f
       for src in /tmp/xchg/copy_after_disko/*; do
         [ -e "$src" ] || continue
@@ -136,6 +138,7 @@ in
         mkdir -p "$(dirname "$dst")"
         cp -r "$src" "$dst"
       done
+      ${installer}
     ''}
     export QEMU_OPTS=${lib.escapeShellArg "${QEMU_OPTS} -m 1024"}
     ${pkgs.bash}/bin/sh -e ${pkgs.vmTools.vmRunCommand pkgs.vmTools.qemuCommandLinux}

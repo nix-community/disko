@@ -7,7 +7,7 @@ with lib;
 with builtins;
 
 let
-
+  outputs = import ../default.nix { inherit lib diskoLib; };
   diskoLib = {
 
     # like make-disk-image.nix from nixpkgs, but with disko config
@@ -19,7 +19,7 @@ let
     testLib = import ./tests.nix { inherit lib makeTest eval-config; };
     # like lib.types.oneOf but instead of a list takes an attrset
     # uses the field "type" to find the correct type in the attrset
-    subType = { types, extraArgs ? { parent = { type = "rootNode"; name = "root"; }; } }: lib.mkOptionType rec {
+    subType = { types, extraArgs ? { parent = { type = "rootNode"; name = "root"; }; } }: lib.mkOptionType {
       name = "subType";
       description = "one of ${concatStringsSep "," (attrNames types)}";
       check = x: if x ? type then types.${x.type}.check x else throw "No type option set in:\n${generators.toPretty {} x}";
@@ -584,6 +584,6 @@ let
         (lib.attrNames (builtins.readDir ./types))
     );
 
-  };
+  } // outputs;
 in
 diskoLib
