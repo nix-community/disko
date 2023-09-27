@@ -11,7 +11,7 @@
           type = "EF02"; # for grub MBR
         };
         ESP = {
-          size = "100M";
+          size = "500M";
           type = "EF00";
           content = {
             type = "mdraid";
