@@ -9,8 +9,6 @@ Combined wit the
 [examples](https://github.com/nix-community/disko/tree/master/example) this
 hopefully gives you an overview.
 
-## # Reference Manual: disko
-
 ## Command Line Options
 
 ```
@@ -44,14 +42,14 @@ Options:
   run with set -x
 ```
 
-# Generating Disk Images with Secrets Included using Disko
+## Generating Disk Images with Secrets Included using Disko
 
 Using Disko on NixOS allows you to efficiently create `.raw` VM images from a
 system configuration. The generated image can be used as a VM or directly
 written to a physical drive to create a bootable disk. Follow the steps below to
 generate disk images:
 
-## Generating the `.raw` VM Image
+### Generating the `.raw` VM Image
 
 1. **Build the disko image script:** Replace `mySystem` in the command below with your
    specific system configuration name:
@@ -83,7 +81,7 @@ generate disk images:
      There is no check if the specified path is actually a disk so you can also write to another file
    ```
 
-## Additional Configuration
+### Additional Configuration
 
 - For virtual drive use, define the image size in your Disko configuration:
 
@@ -95,7 +93,7 @@ generate disk images:
   directly to a drive. This bypasses the `.raw` file generation, which saves on read/write operations
   and is suitable for single disk setups.
 
-## Understanding the Image Generation Process
+### Understanding the Image Generation Process
 
 1. Files specified in `--pre-format-files` and `--post-format-files` are
    temporarily copied to `/tmp`.
