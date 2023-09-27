@@ -10,8 +10,8 @@
           partitions = [
             {
               name = "ESP";
-              start = "1MiB";
-              end = "100MiB";
+              start = "1M";
+              end = "100M";
               bootable = true;
               content = {
                 type = "filesystem";
@@ -21,7 +21,7 @@
             }
             {
               name = "root";
-              start = "100MiB";
+              start = "100M";
               end = "100%";
               part-type = "primary";
               bootable = true;

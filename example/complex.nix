@@ -8,8 +8,8 @@
           type = "gpt";
           partitions = {
             ESP = {
-              start = "1MiB";
-              end = "128MiB";
+              start = "1M";
+              end = "128M";
               type = "EF00";
               content = {
                 type = "filesystem";
@@ -84,7 +84,7 @@
           type = "gpt";
           partitions = {
             bla = {
-              start = "1MiB";
+              start = "1M";
               size = "100%";
               content = {
                 type = "filesystem";
