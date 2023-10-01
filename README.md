@@ -68,7 +68,7 @@ A simple disko configuration may look like this:
      type = "gpt";
      partitions = {
       ESP = {
-       size = "100M";
+       size = "500M";
        content = {
         type = "filesystem";
         format = "vfat";
