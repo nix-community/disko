@@ -137,6 +137,13 @@ in
         {
           dev = ''
             if ! cryptsetup status ${config.name} >/dev/null 2>/dev/null; then
+              ${lib.optionalString config.askPassword ''
+                set +x
+                echo "Enter password for ${config.device}"
+                read -s password
+                export password
+                set -x
+              ''}
               cryptsetup open ${config.device} ${config.name} \
               ${keyFileArgs}
             fi
