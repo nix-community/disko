@@ -43,6 +43,7 @@ in
           We try to automatically detect efi based on the configured bootloader.
         '';
         type = lib.types.bool;
+        defaultText = "config.boot.loader.systemd-boot.enable || config.boot.loader.grub.efiSupport";
         default = config.boot.loader.systemd-boot.enable || config.boot.loader.grub.efiSupport;
       };
       extraChecks = lib.mkOption {
