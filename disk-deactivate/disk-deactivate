@@ -1,5 +1,5 @@
-#!/bin/sh
-set -efux
+#!/usr/bin/env bash
+set -efux -o pipefail
 # dependencies: bash jq util-linux lvm2 mdadm zfs
 disk=$(realpath "$1")
 
