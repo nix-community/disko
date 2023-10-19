@@ -169,12 +169,13 @@ of the NixOS manual. The following configuration for `grub` works for both EFI
 and BIOS systems. Add this to your configuration.nix, commenting out the
 existing lines that configure `systemd-boot`. The entries will look like this:
 
+**Note:** Its not necessary to set `boot.loader.grub.device` here, since Disko will
+take care of that automatically.
+
 ```
 # ...
    #boot.loader.systemd-boot.enable = true;
    #boot.loader.efi.canTouchEfiVariables = true;
-   # replace this with your disk i.e. /dev/nvme0n1
-   boot.loader.grub.devices = [ "/dev/<disk-name>" ];
    boot.loader.grub.enable = true;
    boot.loader.grub.efiSupport = true;
    boot.loader.grub.efiInstallAsRemovable = true;
