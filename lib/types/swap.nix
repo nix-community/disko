@@ -47,13 +47,7 @@
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
-      default = {
-        fs.${config.device} = ''
-          if ! swapon --show | grep -q "^$(readlink -f ${config.device}) "; then
-            swapon ${config.device}
-          fi
-        '';
-      };
+      default = { };
     };
     _config = lib.mkOption {
       internal = true;
