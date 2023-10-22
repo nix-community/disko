@@ -108,9 +108,9 @@ in
           set +x
           askPassword() {
             echo "Enter password for ${config.device}: "
-            read -s password
+            IFS= read -r -s password
             echo "Enter password for ${config.device} again to be safe: "
-            read -s password_check
+            IFS= read -r -s password_check
             export password
             [ "$password" = "$password_check" ]
           }
@@ -140,7 +140,7 @@ in
               ${lib.optionalString config.askPassword ''
                 set +x
                 echo "Enter password for ${config.device}"
-                read -s password
+                IFS= read -r -s password
                 export password
                 set -x
               ''}
