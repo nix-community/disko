@@ -56,7 +56,7 @@
       default =
         lib.optionalAttrs (config.options.mountpoint or "" != "none") {
           fs.${config.mountpoint} = ''
-            if ! findmnt ${config._parent.name}/${config.name} "${rootMountPoint}${config.mountpoint}" >/dev/null 2>&1; then
+            if ! findmnt --source ${config._parent.name}/${config.name} --mountpoint "${rootMountPoint}${config.mountpoint}" >/dev/null 2>&1; then
               mount ${config._parent.name}/${config.name} "${rootMountPoint}${config.mountpoint}" \
                 -o X-mount.mkdir \
                 ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \

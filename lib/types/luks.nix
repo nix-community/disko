@@ -102,6 +102,38 @@ in
         lib.optionalAttrs (config.content != null) (config.content._meta dev);
       description = "Metadata";
     };
+    _update = diskoLib.mkCreateOption {
+      inherit config options;
+      default = ''
+        if ! (blkid ${config.device} -o export | grep -q '^TYPE=crypto_LUKS$'); then
+          ${lib.optionalString config.askPassword ''
+            set +x
+            askPassword() {
+              echo "Enter password for ${config.device}: "
+              read -s password
+              echo "Enter password for ${config.device} again to be safe: "
+              read -s password_check
+              export password
+              [ "$password" = "$password_check" ]
+            }
+            until askPassword; do
+              echo "Passwords did not match, please try again."
+            done
+            set -x
+          ''}
+          cryptsetup -q luksFormat ${config.device} ${toString config.extraFormatArgs} \
+            ${keyFileArgs}
+          cryptsetup open ${config.device} ${config.name} \
+            ${toString config.extraOpenArgs} \
+            ${keyFileArgs}
+          ${toString (lib.lists.forEach config.additionalKeyFiles (x: "cryptsetup luksAddKey ${config.device} ${x} ${keyFileArgs}"))}
+          ${lib.optionalString (config.content != null) config.content._create}
+        else
+          echo "WARNING: ${config.device} is already formatted as btrfs, skipping encryption"
+          ${lib.optionalString (config.content != null) config.content._update}
+        fi
+      '';
+    };
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = ''

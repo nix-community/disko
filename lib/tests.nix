@@ -233,6 +233,11 @@ let
             #  running module mode
             machine.succeed("${nodes.machine.system.build.formatScript}")
             machine.succeed("${nodes.machine.system.build.mountScript}")
+            machine.succeed("echo test > /mnt/test")
+            machine.succeed("${nodes.machine.system.build.updateScript}")
+            machine.succeed("${nodes.machine.system.build.updateScript}") # updateScript should be idempotent
+            machine.succeed("cat /mnt/test | grep -q '^test$'") # updateScript should be idempotent
+            machine.succeed("${nodes.machine.system.build.mountScript}")
             machine.succeed("${nodes.machine.system.build.mountScript}") # verify that the command is idempotent
             machine.succeed("${nodes.machine.system.build.diskoScript}") # verify that we can destroy and recreate again
           ''}

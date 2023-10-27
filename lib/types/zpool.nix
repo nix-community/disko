@@ -84,7 +84,7 @@
           '';
           fs = (datasetMounts.fs or { }) // lib.optionalAttrs (config.mountpoint != null) {
             ${config.mountpoint} = ''
-              if ! findmnt ${config.name} "${rootMountPoint}${config.mountpoint}" >/dev/null 2>&1; then
+              if ! findmnt --source ${config.name} --mountpoint "${rootMountPoint}${config.mountpoint}" >/dev/null 2>&1; then
                 mount ${config.name} "${rootMountPoint}${config.mountpoint}" \
                   ${lib.optionalString ((config.options.mountpoint or "") != "legacy") "-o zfsutil"} \
                   ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \

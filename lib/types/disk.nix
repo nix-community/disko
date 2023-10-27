@@ -33,6 +33,10 @@
         lib.optionalAttrs (config.content != null) (config.content._meta [ "disk" config.device ]);
       description = "Metadata";
     };
+    _update = diskoLib.mkCreateOption {
+      inherit config options;
+      default = config.content._update;
+    };
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = config.content._create;

@@ -40,9 +40,11 @@
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = ''
-        mkswap \
-          ${toString config.extraArgs} \
-          ${config.device}
+        if ! blkid -o export ${config.device} | grep -q '^TYPE=swap$'; then
+          mkswap \
+            ${toString config.extraArgs} \
+            ${config.device}
+        fi
       '';
     };
     _mount = diskoLib.mkMountOption {

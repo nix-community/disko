@@ -79,6 +79,42 @@
           config.partitions);
       description = "Metadata";
     };
+    _update = diskoLib.mkCreateOption {
+      inherit config options;
+      default = ''
+        if ! sgdisk -d ${config.device}; then
+          parted -s ${config.device} -- mklabel ${config.format}
+          ${lib.concatStrings (map (partition: ''
+            ${lib.optionalString (config.format == "gpt") ''
+              parted -s ${config.device} -- mkpart ${partition.name} ${diskoLib.maybeStr partition.fs-type} ${partition.start} ${partition.end}
+            ''}
+            ${lib.optionalString (config.format == "msdos") ''
+              parted -s ${config.device} -- mkpart ${partition.part-type} ${diskoLib.maybeStr partition.fs-type} ${partition.start} ${partition.end}
+            ''}
+            # ensure /dev/disk/by-path/..-partN exists before continuing
+            partprobe ${config.device}
+            udevadm trigger --subsystem-match=block
+            udevadm settle
+            ${lib.optionalString partition.bootable ''
+              parted -s ${config.device} -- set ${toString partition._index} boot on
+            ''}
+            ${lib.concatMapStringsSep "" (flag: ''
+              parted -s ${config.device} -- set ${toString partition._index} ${flag} on
+            '') partition.flags}
+            # ensure further operations can detect new partitions
+            partprobe ${config.device}
+            udevadm trigger --subsystem-match=block
+            udevadm settle
+            ${lib.optionalString (partition.content != null) partition.content._create}
+          '') config.partitions)}
+        else
+          echo "Partition table already exists, skipping partition creation"
+          ${lib.concatStrings (map (partition: ''
+            ${lib.optionalString (partition.content != null) partition.content._update}
+          '') config.partitions)}
+        fi
+      '';
+    };
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = ''
@@ -139,7 +175,11 @@
       readOnly = true;
       type = lib.types.functionTo (lib.types.listOf lib.types.package);
       default = pkgs:
-        [ pkgs.parted pkgs.systemdMinimal ] ++ lib.flatten (map
+        [
+          pkgs.parted
+          pkgs.systemdMinimal
+          pkgs.gptfdisk
+        ] ++ lib.flatten (map
           (partition:
             lib.optional (partition.content != null) (partition.content._pkgs pkgs)
           )

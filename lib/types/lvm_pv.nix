@@ -28,6 +28,18 @@
       };
       description = "Metadata";
     };
+    _update = diskoLib.mkCreateOption {
+      inherit config options;
+      default = ''
+        if ! (blkid ${config.device} -o export | grep -q '^TYPE=LVM2_member$'); then
+          pvcreate ${config.device}
+          echo "${config.device}" >>"$disko_devices_dir"/lvm_${config.vg}
+        else
+          echo "Device ${config.device} is already a PV"
+          echo "${config.device}" >>"$disko_devices_dir"/lvm_${config.vg}
+        fi
+      '';
+    };
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = ''

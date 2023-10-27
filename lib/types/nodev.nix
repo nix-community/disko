@@ -33,6 +33,10 @@
       default = { };
       description = "Metadata";
     };
+    _update = diskoLib.mkCreateOption {
+      inherit config options;
+      default = "";
+    };
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = "";
@@ -41,7 +45,7 @@
       inherit config options;
       default = lib.optionalAttrs (config.mountpoint != null) {
         fs.${config.mountpoint} = ''
-          if ! findmnt ${config.fsType} "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
+          if ! findmnt --types ${config.fsType} --mountpoint "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
             mount -t ${config.fsType} ${config.device} "${rootMountPoint}${config.mountpoint}" \
             ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
             -o X-mount.mkdir
@@ -65,7 +69,7 @@
       internal = true;
       readOnly = true;
       type = lib.types.functionTo (lib.types.listOf lib.types.package);
-      default = _pkgs: [ ];
+      default = pkgs: [ pkgs.util-linux ];
       description = "Packages";
     };
   };

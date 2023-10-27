@@ -41,6 +41,20 @@
       default = _dev: { };
       description = "Metadata";
     };
+    _update = diskoLib.mkCreateOption {
+      inherit config options;
+      default = ''
+        if (blkid -o export ${config.device} | grep -q '^TYPE=${config.format}$'); then
+          echo "Filesystem already exists, skipping"
+        elif (blkid -o export ${config.device} | grep -q '^TYPE='); then
+          echo "Filesystem type mismatch, skipping"
+        else
+          mkfs.${config.format} \
+            ${toString config.extraArgs} \
+            ${config.device}
+        fi
+      '';
+    };
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = ''
@@ -53,7 +67,7 @@
       inherit config options;
       default = lib.optionalAttrs (config.mountpoint != null) {
         fs.${config.mountpoint} = ''
-          if ! findmnt ${config.device} "${rootMountPoint}${config.mountpoint}" >/dev/null 2>&1; then
+          if ! findmnt --source ${config.device} --mountpoint "${rootMountPoint}${config.mountpoint}" >/dev/null 2>&1; then
             mount ${config.device} "${rootMountPoint}${config.mountpoint}" \
               -t "${config.format}" \
               ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \

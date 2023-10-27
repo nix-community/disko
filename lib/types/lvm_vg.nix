@@ -51,6 +51,35 @@
           (lib.attrValues config.lvs);
       description = "Metadata";
     };
+    _update = diskoLib.mkCreateOption {
+      inherit config options;
+      default =
+        let
+          sortedLvs = lib.sort (a: _: !lib.hasInfix "100%" a.size) (lib.attrValues config.lvs);
+        in
+        ''
+          if ! vgdisplay ${config.name} >/dev/null 2>&1; then
+            readarray -t lvm_devices < <(cat "$disko_devices_dir"/lvm_${config.name})
+            vgcreate ${config.name} \
+              "''${lvm_devices[@]}"
+          fi
+          ${lib.concatMapStrings (lv: ''
+            if ! lvdisplay ${config.name}/${lv.name} >/dev/null 2>&1; then
+              lvcreate \
+                --yes \
+                ${if lib.hasInfix "%" lv.size then "-l" else "-L"} ${lv.size} \
+                -n ${lv.name} \
+                ${lib.optionalString (lv.lvm_type != null) "--type=${lv.lvm_type}"} \
+                ${toString lv.extraArgs} \
+                ${config.name}
+              ${lib.optionalString (lv.content != null) lv.content._create}
+            else
+              : # empty op in case content is empty
+              ${lib.optionalString (lv.content != null) lv.content._update}
+            fi
+          '') sortedLvs}
+        '';
+    };
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default =

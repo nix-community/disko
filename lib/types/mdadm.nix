@@ -31,6 +31,29 @@
         lib.optionalAttrs (config.content != null) (config.content._meta [ "mdadm" config.name ]);
       description = "Metadata";
     };
+    _update = diskoLib.mkCreateOption {
+      inherit config options;
+      default = ''
+        if ! [ -e /dev/md/${config.name} ]; then
+          readarray -t disk_devices < <(cat "$disko_devices_dir"/raid_${config.name})
+          echo 'y' | mdadm --create /dev/md/${config.name} \
+            --level=${toString config.level} \
+            --raid-devices="$(wc -l "$disko_devices_dir"/raid_${config.name} | cut -f 1 -d " ")" \
+            --metadata=${config.metadata} \
+            --force \
+            --homehost=any \
+            "''${disk_devices[@]}"
+          partprobe /dev/md/${config.name}
+          udevadm trigger --subsystem-match=block
+          udevadm settle
+          # for some reason mdadm devices spawn with an existing partition table, so we need to wipe it
+          sgdisk --zap-all /dev/md/${config.name}
+          ${lib.optionalString (config.content != null) config.content._update}
+        else
+          ${lib.optionalString (config.content != null) config.content._update}
+        fi
+      '';
+    };
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = ''

@@ -29,6 +29,12 @@
       };
       description = "Metadata";
     };
+    _update = diskoLib.mkCreateOption {
+      inherit config options;
+      default = ''
+        echo "${config.device}" >>"$disko_devices_dir"/raid_${config.name}
+      '';
+    };
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = ''

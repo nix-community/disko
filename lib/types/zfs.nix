@@ -28,6 +28,12 @@
       };
       description = "Metadata";
     };
+    _update = diskoLib.mkCreateOption {
+      inherit config options;
+      default = ''
+        echo "${config.device}" >>"$disko_devices_dir"/zfs_${config.pool}
+      '';
+    };
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = ''

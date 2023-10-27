@@ -395,6 +395,11 @@ let
                 ${cfg.config._destroy}
               '';
 
+              updateScript = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-update" ''
+                export PATH=${lib.makeBinPath (cfg.config._packages pkgs)}:$PATH
+                ${cfg.config._update}
+              '';
+
               formatScript = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-format" ''
                 export PATH=${lib.makeBinPath (cfg.config._packages pkgs)}:$PATH
                 ${cfg.config._create}
@@ -442,6 +447,26 @@ let
                 ${../disk-deactivate}/disk-deactivate "$dev"
               done
             '';
+          };
+          _update = lib.mkOption {
+            internal = true;
+            type = lib.types.str;
+            description = ''
+              The script to update all devices defined by disko.devices
+            '';
+            default =
+              let
+                sortedDeviceList = diskoLib.sortDevicesByDependencies (cfg.config._meta.deviceDependencies or { }) devices;
+              in
+              ''
+                set -efux
+
+                disko_devices_dir=$(mktemp -d)
+                trap 'rm -rf "$disko_devices_dir"' EXIT
+                mkdir -p "$disko_devices_dir"
+
+                ${concatMapStrings (dev: (attrByPath (dev ++ [ "_update" ]) {} devices)) sortedDeviceList}
+              '';
           };
           _create = lib.mkOption {
             internal = true;
