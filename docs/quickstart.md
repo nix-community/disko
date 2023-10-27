@@ -67,7 +67,7 @@ In Step 1, you chose a disk layout configuration from the
 [examples directory](https://github.com/nix-community/disko/tree/master/example),
 and made a note of its URL.
 
-Your configuration needs to be saved on the new machine
+Your configuration needs to be saved on the new machine for example
 as /tmp/disko-config.nix. You can do this using the `curl` command to download
 from the url you noted above, using the `-o` option to save the file as
 disko-config.nix. Your commands would look like this if you had chosen the
@@ -75,25 +75,41 @@ hybrid layout:
 
 ```
 cd /tmp
-$ curl https://raw.githubusercontent.com/nix-community/disko/master/example/hybrid.nix -o disko-config.nix
+$ curl https://raw.githubusercontent.com/nix-community/disko/master/example/hybrid.nix -o /tmp/disko-config.nix
 ```
 
-### Step 5: Run disko to partition, format and mount your disks
+### Step 5: Adjust the device in the disk configuration
 
-The following step will partition and format your disk, and mount it to `/mnt`.
+Inside the disko-config.nix the device needs to point to the correct disk name.
+
+Open the configuration in your favorite editor i.e.:
+
+```
+nano /tmp/disko-config.nix
+```
+
 Replace `<disk-name>` with the name of your disk obtained in Step 1.
 
-Please note: This will erase any existing data on your disk.
+```
+...
+      main = {
+        type = "disk";
+        device = "<disk-name>";
+        content = {
+          type = "gpt";
+...
+```
+
+### Step 6: Run disko to partition, format and mount your disks
+
+The following step will partition and format your disk, and mount it to `/mnt`.
+
+**Please note: This will erase any existing data on your disk.**
 
 ```
-$ sudo nix run github:nix-community/disko -- --mode disko /tmp/disko-config.nix --arg disks '[ "/dev/<disk-name>" ]'
+$ sudo nix run github:nix-community/disko -- --mode disko /tmp/disko-config.nix
 ```
 
-For example, if the disk name is `nvme0n1`, the command would be:
-
-```
-$ sudo nix run github:nix-community/disko -- --mode disko /tmp/disko-config.nix --arg disks '[ "/dev/nvme0n1" ]'
-```
 
 After the command has run, your file system should have been formatted and
 mounted. You can verify this by running the following command:
@@ -109,7 +125,7 @@ The output should look like this if your disk name is `nvme0n1`.
 /dev/nvme0n1p2 on /mnt/boot type vfat (rw,relatime,fmask=0022,dmask=0022,codepage=437,iocharset=iso8859-1,shortname=mixed,errors=remount-ro)
 ```
 
-### Step 6: Complete the NixOS installation.
+### Step 7: Complete the NixOS installation.
 
 Your disks have now been formatted and mounted, and you are ready to complete
 the NixOS installation as described in the
@@ -157,10 +173,8 @@ imports =
  [ # Include the results of the hardware scan.
    ./hardware-configuration.nix
    "${builtins.fetchTarball "https://github.com/nix-community/disko/archive/master.tar.gz"}/module.nix"
+   ./disko-config.nix
  ];
- disko.devices = pkgs.callPackage ./disko-config.nix {
-   disks = [ "/dev/<disk-name>" ]; # replace this with your disk name i.e. /dev/nvme0n1
- };
 ```
 
 e) If you chose the hybrid-partition scheme, then choose `grub` as a bootloader,
