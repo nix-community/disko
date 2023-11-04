@@ -62,6 +62,7 @@ in
           keyFileSize = 2048;
           keyFileOffset = 1024;
           fallbackToPassword = true;
+          allowDiscards = true;
         };
       '';
     };
@@ -86,7 +87,7 @@ in
       type = lib.types.listOf lib.types.str;
       default = [ ];
       description = "Extra arguments to pass to `cryptsetup luksOpen` when opening";
-      example = [ "--allow-discards" ];
+      example = [ "--timeout 10" ];
     };
     content = diskoLib.deviceType { parent = config; device = "/dev/mapper/${config.name}"; };
     _parent = lib.mkOption {
