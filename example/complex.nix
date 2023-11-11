@@ -110,6 +110,9 @@
               mountOptions = [
                 "defaults"
               ];
+              postMountHook = ''
+                touch /mnt/ext4_on_lvm/file-from-postMountHook
+              '';
             };
           };
           raid1 = {
