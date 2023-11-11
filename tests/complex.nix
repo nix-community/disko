@@ -20,6 +20,9 @@ diskoLib.testLib.makeDiskoTest {
     machine.succeed("mountpoint /zfs_legacy_fs");
     machine.succeed("mountpoint /ext4onzfs");
     machine.succeed("mountpoint /ext4_on_lvm");
+
+
+    machine.succeed("test -e /ext4_on_lvm/file-from-postMountHook");
   '';
   extraInstallerConfig = {
     boot.kernelModules = [ "dm-raid" "dm-mirror" ];

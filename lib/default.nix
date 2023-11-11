@@ -238,12 +238,19 @@ let
         description = "Creation script";
       };
 
-    mkMountOption = { default, ... }@attrs:
+    mkMountOption = { config, options, default }@attrs:
       lib.mkOption {
         internal = true;
         readOnly = true;
         type = diskoLib.jsonType;
-        default = attrs.default;
+        default = lib.mapAttrsRecursive (name: value: if builtins.isString value then ''
+          (
+            ${diskoLib.indent (diskoLib.defineHookVariables { inherit options; })}
+            ${config.preMountHook}
+            ${diskoLib.indent value}
+            ${config.postMountHook}
+          )
+        '' else value) attrs.default;
         description = "Mount script";
       };
 
