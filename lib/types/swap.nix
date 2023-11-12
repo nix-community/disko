@@ -47,7 +47,8 @@
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
-      default = {
+      # TODO: we don't support encrypted swap yet
+      default = lib.optionalAttrs (!config.randomEncryption) {
         fs.${config.device} = ''
           if ! swapon --show | grep -q "^$(readlink -f ${config.device}) "; then
             swapon ${config.device}
