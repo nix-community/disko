@@ -2,16 +2,16 @@
   "nodes": {
     "nixpkgs": {
       "locked": {
-        "lastModified": 1697915759,
-        "narHash": "sha256-WyMj5jGcecD+KC8gEs+wFth1J1wjisZf8kVZH13f1Zo=",
-        "owner": "NixOS",
+        "lastModified": 1700144402,
+        "narHash": "sha256-canGMRB0mVoVCfK0oqg/XI5PYFFc31B+gWdz+quf3N8=",
+        "owner": "RaitoBezarius",
         "repo": "nixpkgs",
-        "rev": "51d906d2341c9e866e48c2efcaac0f2d70bfd43e",
+        "rev": "75daf9a06568e97701092828a0570755b905f96f",
         "type": "github"
       },
       "original": {
-        "owner": "NixOS",
-        "ref": "nixpkgs-unstable",
+        "owner": "RaitoBezarius",
+        "ref": "bcachefs-tools",
         "repo": "nixpkgs",
         "type": "github"
       }
