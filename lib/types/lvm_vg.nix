@@ -62,6 +62,8 @@
           vgcreate ${config.name} \
             "''${lvm_devices[@]}"
           ${lib.concatMapStrings (lv: ''
+            ${lib.optionalString (lv.lvm_type != null) "modprobe dm-${lv.lvm_type}"}
+
             lvcreate \
               --yes \
               ${if lib.hasInfix "%" lv.size then "-l" else "-L"} ${lv.size} \
@@ -98,9 +100,19 @@
         map
           (lv: [
             (lib.optional (lv.content != null) lv.content._config)
-            (lib.optional (lv.lvm_type != null) {
-              boot.initrd.kernelModules = [ "dm-${lv.lvm_type}" ];
+            (lib.optional ((lv.content.type or "") == "luks") {
+              boot.initrd.luks.devices.${lv.content.name}.preLVM = false;
             })
+            (lib.optionals (lv.lvm_type != null) [
+              {
+                boot.initrd.kernelModules = [ "dm-${lv.lvm_type}" ];
+              }
+              (if lib.versionAtLeast (lib.versions.majorMinor lib.version) "23.11" then {
+                boot.swraid.enable = true;
+              } else {
+                boot.initrd.services.swraid.enable = true;
+              })
+            ])
           ])
           (lib.attrValues config.lvs);
       description = "NixOS configuration";
