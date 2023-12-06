@@ -24,7 +24,8 @@
             description = "Size of the logical volume";
           };
           lvm_type = lib.mkOption {
-            type = lib.types.nullOr (lib.types.enum [ "mirror" "raid0" "raid1" "raid5" "raid6" ]); # TODO add all lib.types
+            # TODO: add raid10
+            type = lib.types.nullOr (lib.types.enum [ "mirror" "raid0" "raid1" "raid4" "raid5" "raid6" ]); # TODO add all lib.types
             default = null; # maybe there is always a default type?
             description = "LVM type";
           };
@@ -99,7 +100,14 @@
           (lv: [
             (lib.optional (lv.content != null) lv.content._config)
             (lib.optional (lv.lvm_type != null) {
-              boot.initrd.kernelModules = [ "dm-${lv.lvm_type}" ];
+              boot.initrd.kernelModules = [(if lv.lvm_type == "mirror" then "dm-mirror" else "dm-raid")]
+                ++ lib.optional (lv.lvm_type == "raid0") "raid0"
+                ++ lib.optional (lv.lvm_type == "raid1") "raid1"
+                # ++ lib.optional (lv.lvm_type == "raid10") "raid10"
+                ++ lib.optional (lv.lvm_type == "raid4" ||
+                                 lv.lvm_type == "raid5" ||
+                                 lv.lvm_type == "raid6") "raid456";
+
             })
           ])
           (lib.attrValues config.lvs);

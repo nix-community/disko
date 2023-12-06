@@ -9,7 +9,7 @@ diskoLib.testLib.makeDiskoTest {
     machine.succeed("mountpoint /home");
   '';
   extraInstallerConfig = {
-    boot.kernelModules = [ "dm-raid0" "dm-mirror" ];
+    boot.kernelModules = [ "dm-raid" "raid0" "dm-mirror" ];
   };
   extraSystemConfig = {
     # sadly systemd-boot fails to install to a raid /boot device
