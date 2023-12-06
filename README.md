@@ -96,7 +96,7 @@ a disk named /dev/nvme0n1, you would run the following command to partition,
 format and mount the disk.
 
 ```
-$ sudo nix run github:nix-community/disko -- --mode disko /tmp/disko-config.nix --arg disks '[ "/dev/nvme0n1" ]'
+$ sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko -- --mode disko /tmp/disko-config.nix --arg disks '[ "/dev/nvme0n1" ]'
 ```
 
 ## Related Tools
