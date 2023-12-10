@@ -126,8 +126,10 @@ in
             MNTPOINT=$(mktemp -d)
             mount ${config.device} "$MNTPOINT" -o subvol=/
             trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-            btrfs subvolume create "$MNTPOINT"/${subvol.name} ${toString subvol.extraArgs}
-            ${swapCreate "$MNTPOINT/${subvol.name}" subvol.swap}
+            SUBVOL_ABS_PATH="$MNTPOINT/${subvol.name}"
+            mkdir -p "$(dirname "$SUBVOL_ABS_PATH")"
+            btrfs subvolume create "$SUBVOL_ABS_PATH" ${toString subvol.extraArgs}
+            ${swapCreate "$SUBVOL_ABS_PATH" subvol.swap}
           )
         '') (lib.attrValues config.subvolumes)}
       '';
