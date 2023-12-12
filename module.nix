@@ -10,6 +10,13 @@ let
 in
 {
   options.disko = {
+    memSize = lib.mkOption {
+      type = lib.types.int;
+      description = ''
+        size of the memory passed to runInLinuxVM, in megabytes
+      '';
+      default = 1024;
+    };
     devices = lib.mkOption {
       type = diskoLib.toplevel;
       default = { };
