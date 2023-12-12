@@ -65,7 +65,7 @@ in
     {
       buildInputs = dependencies;
       inherit preVM postVM QEMU_OPTS;
-      memSize = 1024;
+      memSize = nixosConfig.config.disko.memSize;
     }
     (partitioner + installer));
   impure = diskoLib.writeCheckedBash { inherit checked pkgs; } name ''
