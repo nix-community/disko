@@ -30,7 +30,19 @@ let
     util-linux
   ] ++ nixosConfig.config.disko.extraDependencies;
   preVM = ''
-    ${lib.concatMapStringsSep "\n" (disk: "truncate -s ${disk.imageSize} ${disk.name}.raw") (lib.attrValues nixosConfig.config.disko.devices.disk)}
+    export PATH=$PATH:${lib.makeBinPath (with pkgs; [ nix jq ])}
+    export NIX_STATE_DIR=$TMPDIR/state
+    export NIX_CONFIG="experimental-features = nix-command"
+    nix-store --load-db < ${pkgs.closureInfo {
+      rootPaths = [ systemToInstall.config.system.build.toplevel ];
+    }}/registration
+
+    ${lib.concatMapStringsSep "\n" (disk: ''
+      closureSize=$(nix path-info --closure-size --json ${systemToInstall.config.system.build.toplevel} | jq .[].closureSize)
+      size=$((closureSize + ${toString disk.imageSizeExtraBytes}))
+      echo "Truncating ${disk.name}.raw to $size bytes..."
+      truncate -s "$size" ${disk.name}.raw
+    '') (lib.attrValues nixosConfig.config.disko.devices.disk)}
   '';
   postVM = ''
     # shellcheck disable=SC2154
