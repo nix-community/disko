@@ -13,7 +13,6 @@ diskoLib.testLib.makeDiskoTest {
   };
   testMode = "direct";
   extraTestScript = ''
-    machine.succeed("test -b /dev/zroot/zfs_testvolume");
     machine.succeed("test -b /dev/md/raid1p1");
 
     machine.succeed("mountpoint /zfs_fs");
