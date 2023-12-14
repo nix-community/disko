@@ -27,7 +27,7 @@ let
     systemdMinimal
     nix
     util-linux
-  ];
+  ] ++ nixosConfig.config.disko.extraDependencies;
   preVM = ''
     ${lib.concatMapStringsSep "\n" (disk: "truncate -s ${disk.imageSize} ${disk.name}.raw") (lib.attrValues nixosConfig.config.disko.devices.disk)}
   '';
