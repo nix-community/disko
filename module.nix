@@ -10,6 +10,13 @@ let
 in
 {
   options.disko = {
+    extraRootModules = lib.mkOption {
+      type = lib.types.listOf lib.types.str ;
+      description = ''
+        extra modules to pass to the vmTools.runCommand invocation in the make-disk-image.nix builder
+      '';
+      default = [];
+    };
     memSize = lib.mkOption {
       type = lib.types.int;
       description = ''
@@ -21,6 +28,13 @@ in
       type = diskoLib.toplevel;
       default = { };
       description = "The devices to set up";
+    };
+    extraDependencies = lib.mkOption {
+      type = lib.types.listOf lib.types.package;
+      description = ''
+        list of extra packages to make available in the make-disk-image.nix VM builder, an example might be f2fs-tools
+      '';
+      default = [];
     };
     rootMountPoint = lib.mkOption {
       type = lib.types.str;

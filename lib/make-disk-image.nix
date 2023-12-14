@@ -7,6 +7,11 @@
 , checked ? false
 }:
 let
+  vmTools = pkgs.vmTools.override {
+    rootModules = ["9p" "9pnet_virtio" "virtio_pci" "virtio_blk"] ++ nixosConfig.config.disko.extraRootModules;
+    kernel = pkgs.aggregateModules
+    (with nixosConfig.config.boot.kernelPackages; [ kernel ]);
+  };
   cleanedConfig = diskoLib.testLib.prepareDiskoConfig nixosConfig.config diskoLib.testLib.devices;
   systemToInstall = nixosConfig.extendModules {
     modules = [{
@@ -22,7 +27,7 @@ let
     systemdMinimal
     nix
     util-linux
-  ];
+  ] ++ nixosConfig.config.disko.extraDependencies;
   preVM = ''
     ${lib.concatMapStringsSep "\n" (disk: "truncate -s ${disk.imageSize} ${disk.name}.raw") (lib.attrValues nixosConfig.config.disko.devices.disk)}
   '';
@@ -61,7 +66,7 @@ let
   QEMU_OPTS = lib.concatMapStringsSep " " (disk: "-drive file=${disk.name}.raw,if=virtio,cache=unsafe,werror=report") (lib.attrValues nixosConfig.config.disko.devices.disk);
 in
 {
-  pure = pkgs.vmTools.runInLinuxVM (pkgs.runCommand name
+  pure = vmTools.runInLinuxVM (pkgs.runCommand name
     {
       buildInputs = dependencies;
       inherit preVM postVM QEMU_OPTS;
@@ -160,7 +165,7 @@ in
     QEMU_OPTS+=" -m $build_memory"
     export QEMU_OPTS
 
-    ${pkgs.bash}/bin/sh -e ${pkgs.vmTools.vmRunCommand pkgs.vmTools.qemuCommandLinux}
+    ${pkgs.bash}/bin/sh -e ${vmTools.vmRunCommand vmTools.qemuCommandLinux}
     cd /
   '';
 }
