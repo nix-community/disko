@@ -29,6 +29,13 @@ in
       default = { };
       description = "The devices to set up";
     };
+    extraDependencies = lib.mkOption {
+      type = lib.types.listOf lib.types.package;
+      description = ''
+        list of extra packages to make available in the make-disk-image.nix VM builder, an example might be f2fs-tools
+      '';
+      default = [];
+    };
     rootMountPoint = lib.mkOption {
       type = lib.types.str;
       default = "/mnt";
