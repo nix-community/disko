@@ -76,7 +76,7 @@ in
           };
         };
       }));
-      default = [ ];
+      default = {};
       description = "Attrs of partitions to add to the partition table";
     };
     _parent = lib.mkOption {
