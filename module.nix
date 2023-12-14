@@ -10,6 +10,13 @@ let
 in
 {
   options.disko = {
+    extraRootModules = lib.mkOption {
+      type = lib.types.listOf lib.types.str ;
+      description = ''
+        extra modules to pass to the vmTools.runCommand invocation in the make-disk-image.nix builder
+      '';
+      default = [];
+    };
     memSize = lib.mkOption {
       type = lib.types.int;
       description = ''
