@@ -58,11 +58,11 @@ To access sample configurations for commonly-used disk layouts, refer to the
 A simple disko configuration may look like this:
 
 ```
-{ disks ? [ "/dev/vdb" ], ... }: {
+{
  disko.devices = {
   disk = {
    vdb = {
-    device = builtins.elemAt disks 0;
+    device = "/dev/sda";
     type = "disk";
     content = {
      type = "gpt";
@@ -96,7 +96,7 @@ a disk named /dev/nvme0n1, you would run the following command to partition,
 format and mount the disk.
 
 ```
-$ sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko -- --mode disko /tmp/disko-config.nix --arg disks '[ "/dev/nvme0n1" ]'
+$ sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko -- --mode disko /tmp/disko-config.nix
 ```
 
 ## Related Tools
