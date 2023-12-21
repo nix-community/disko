@@ -59,8 +59,8 @@ generate disk images:
 2. **Execute the result file:** Execute the generated result file. Running
    `./result --help` will output the available options:
 
-   ```
-   ./result --help
+   ```bash
+   $ ./result --help
    Usage: $script [options]
 
    Options:

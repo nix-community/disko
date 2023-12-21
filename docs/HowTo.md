@@ -45,8 +45,8 @@ If you use nix flakes support:
 
 First add it to [niv](https://github.com/nmattia/niv):
 
-```console
-$ niv add nix-community/disko
+```bash
+niv add nix-community/disko
 ```
 
 Then add the following to your configuration.nix in the `imports` list:
@@ -63,9 +63,9 @@ Then add the following to your configuration.nix in the `imports` list:
 
 As root run:
 
-```console
-$ nix-channel --add https://github.com/nix-community/disko/archive/master.tar.gz disko
-$ nix-channel --update
+```bash
+nix-channel --add https://github.com/nix-community/disko/archive/master.tar.gz disko
+nix-channel --update
 ```
 
 Then add the following to your configuration.nix in the `imports` list:
