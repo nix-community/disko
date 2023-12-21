@@ -61,7 +61,7 @@ A simple disko configuration may look like this:
 {
  disko.devices = {
   disk = {
-   vdb = {
+   my-disk = {
     device = "/dev/sda";
     type = "disk";
     content = {
