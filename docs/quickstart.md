@@ -47,8 +47,8 @@ the NixOS manual. Boot the machine from this USB drive.
 
 Identify the name of your system disk by using the `lsblk` command as follows:
 
-```
-$ lsblk
+```bash
+lsblk
 ```
 
 The output from this command will look something like this:
@@ -73,9 +73,9 @@ from the url you noted above, using the `-o` option to save the file as
 disko-config.nix. Your commands would look like this if you had chosen the
 hybrid layout:
 
-```
+```bash
 cd /tmp
-$ curl https://raw.githubusercontent.com/nix-community/disko/master/example/hybrid.nix -o /tmp/disko-config.nix
+curl https://raw.githubusercontent.com/nix-community/disko/master/example/hybrid.nix -o /tmp/disko-config.nix
 ```
 
 ### Step 5: Adjust the device in the disk configuration
@@ -84,20 +84,20 @@ Inside the disko-config.nix the device needs to point to the correct disk name.
 
 Open the configuration in your favorite editor i.e.:
 
-```
+```bash
 nano /tmp/disko-config.nix
 ```
 
 Replace `<disk-name>` with the name of your disk obtained in Step 1.
 
-```
-...
-      main = {
-        type = "disk";
-        device = "<disk-name>";
-        content = {
-          type = "gpt";
-...
+```nix
+# ...
+main = {
+  type = "disk";
+  device = "<disk-name>";
+  content = {
+    type = "gpt";
+# ...
 ```
 
 ### Step 6: Run disko to partition, format and mount your disks
@@ -106,16 +106,15 @@ The following step will partition and format your disk, and mount it to `/mnt`.
 
 **Please note: This will erase any existing data on your disk.**
 
+```bash
+sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko -- --mode disko /tmp/disko-config.nix
 ```
-$ sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko -- --mode disko /tmp/disko-config.nix
-```
-
 
 After the command has run, your file system should have been formatted and
 mounted. You can verify this by running the following command:
 
-```
-$ mount | grep /mnt
+```bash
+mount | grep /mnt
 ```
 
 The output should look like this if your disk name is `nvme0n1`.
@@ -141,16 +140,16 @@ command to generate an initial `configuration.nix`. You will be supplying the
 file system configuration details from `disko-config.nix`. Your CLI command to
 generate the configuration will be:
 
-```
-$ nixos-generate-config --no-filesystems --root /mnt
+```bash
+nixos-generate-config --no-filesystems --root /mnt
 ```
 
 This will create the file `configuration.nix` in `/mnt/etc/nixos`.
 
 b) Move the `disko` configuration to /etc/nixos
 
-```
-$ mv /tmp/disko-config.nix /mnt/etc/nixos
+```bash
+mv /tmp/disko-config.nix /mnt/etc/nixos
 ```
 
 c) You can now edit `configuration.nix` as per your requirements. This is
@@ -168,7 +167,7 @@ module and `disko-config.nix` to the imports section. This section will already
 include the file `./hardware-configuration.nix`, and you can add the new entries
 just below this. This section will now include:
 
-```
+```nix
 imports =
  [ # Include the results of the hardware scan.
    ./hardware-configuration.nix
@@ -186,7 +185,7 @@ existing lines that configure `systemd-boot`. The entries will look like this:
 **Note:** Its not necessary to set `boot.loader.grub.device` here, since Disko will
 take care of that automatically.
 
-```
+```nix
 # ...
    #boot.loader.systemd-boot.enable = true;
    #boot.loader.efi.canTouchEfiVariables = true;
@@ -198,7 +197,7 @@ take care of that automatically.
 
 f) Finish the installation and reboot your machine,
 
-```
-$ nixos-install
-$ reboot
+```bash
+nixos-install
+reboot
 ```
