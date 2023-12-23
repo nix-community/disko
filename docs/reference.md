@@ -53,13 +53,13 @@ generate disk images:
 
 1. **Build the disko image script:** Replace `mySystem` in the command below with your
    specific system configuration name:
-   ```bash
+   ```console
    nix build .#nixosConfigurations.mySystem.config.system.build.diskoImagesScript
    ```
 2. **Execute the result file:** Execute the generated result file. Running
    `./result --help` will output the available options:
 
-   ```bash
+   ```console
    ./result --help
    Usage: $script [options]
 
@@ -85,7 +85,7 @@ generate disk images:
 
 - For virtual drive use, define the image size in your Disko configuration:
 
-  ```bash
+  ```console
   disko.devices.disk.<drive>.imageSize = "32G"; # Set your preferred size
   ```
 
