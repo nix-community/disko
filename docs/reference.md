@@ -60,7 +60,7 @@ generate disk images:
    `./result --help` will output the available options:
 
    ```bash
-   $ ./result --help
+   ./result --help
    Usage: $script [options]
 
    Options:
