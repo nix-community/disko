@@ -22,7 +22,6 @@
                 type = "luks";
                 name = "crypted";
                 settings.allowDiscards = true;
-                passwordFile = "/tmp/secret.key";
                 content = {
                   type = "filesystem";
                   format = "ext4";
@@ -34,5 +33,12 @@
         };
       };
     };
+  };
+
+  # If we don't set passwordFile above, we will be interactively prompted by the
+  # disko script to set the LUKS password. However, as passwordFile is necessary
+  # for installTest we set it here.
+  disko.tests.extraDiskoConfig = {
+    devices.disk.vdb.content.partitions.luks.content.passwordFile = "/tmp/secret.key";
   };
 }
