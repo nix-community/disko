@@ -11,11 +11,11 @@ in
 {
   options.disko = {
     extraRootModules = lib.mkOption {
-      type = lib.types.listOf lib.types.str ;
+      type = lib.types.listOf lib.types.str;
       description = ''
         extra modules to pass to the vmTools.runCommand invocation in the make-disk-image.nix builder
       '';
-      default = [];
+      default = [ ];
     };
     memSize = lib.mkOption {
       type = lib.types.int;
@@ -34,7 +34,7 @@ in
       description = ''
         list of extra packages to make available in the make-disk-image.nix VM builder, an example might be f2fs-tools
       '';
-      default = [];
+      default = [ ];
     };
     rootMountPoint = lib.mkOption {
       type = lib.types.str;
@@ -90,8 +90,8 @@ in
     system.build = (cfg.devices._scripts { inherit pkgs; checked = cfg.checkScripts; }) // {
 
       # we keep these old outputs for compatibility
-      disko = builtins.trace "the .disko output is deprecated, please use .diskoScript instead" (cfg.devices._scripts pkgs).diskoScript;
-      diskoNoDeps = builtins.trace "the .diskoNoDeps output is deprecated, please use .diskoScriptNoDeps instead" (cfg.devices._scripts pkgs).diskoScriptNoDeps;
+      disko = builtins.trace "the .disko output is deprecated, please use .diskoScript instead" (cfg.devices._scripts { inherit pkgs; }).diskoScript;
+      diskoNoDeps = builtins.trace "the .diskoNoDeps output is deprecated, please use .diskoScriptNoDeps instead" (cfg.devices._scripts { inherit pkgs; }).diskoScriptNoDeps;
 
       diskoImages = diskoLib.makeDiskImages {
         nixosConfig = args;
