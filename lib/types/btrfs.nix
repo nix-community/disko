@@ -47,10 +47,28 @@ in
       default = device;
       description = "Device to use";
     };
-    extraDevices = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      default = [ ];
-      description = "Additional devices to use";
+    profiles = lib.mkOption {
+      type = lib.types.attrsOf (lib.types.submodule ({ config, ... }: {
+        options = {
+          disks = lib.mkOption {
+            type = lib.types.listOf lib.types.str;
+            default = [ ];
+            description = "Additional disks to define for raid";
+          };
+          metadata = lib.mkOption {
+            type = lib.types.str;
+            default = null;
+            description = "Additional disks to define for raid";
+          };
+          data = lib.mkOption {
+            type = lib.types.str;
+            default = null;
+            description = "Additional disks to define for raid";
+          };
+        };
+      }));
+      default = { };
+      description = "Define Profiles for disks representing BLOCK GROUPS, CHUNKS, or RAID.";
     };
     extraArgs = lib.mkOption {
       type = lib.types.listOf lib.types.str;
