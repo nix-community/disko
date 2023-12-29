@@ -67,9 +67,9 @@
           ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") config.options)} \
           ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-O ${n}=${v}") config.rootFsOptions)} \
           "''${zfs_devices[@]}"
-        ${lib.optionalString ((config.rootFsOptions.mountpoint or "") != "none") ''
+        if [[ $(zfs get -H mounted ${config.name} | cut -f3) == "yes" ]]; then
           zfs unmount ${config.name}
-        ''}
+        fi
         ${lib.concatMapStrings (dataset: dataset._create) (lib.attrValues config.datasets)}
       '';
     };
