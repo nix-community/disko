@@ -55,12 +55,12 @@ in
             default = [ ];
             description = "Additional disks to define for raid";
           };
-          metadata = lib.mkOption {
+          metadataProfile = lib.mkOption {
             type = lib.types.str;
             default = null;
             description = "Additional disks to define for raid";
           };
-          data = lib.mkOption {
+          dataProfile = lib.mkOption {
             type = lib.types.str;
             default = null;
             description = "Additional disks to define for raid";
