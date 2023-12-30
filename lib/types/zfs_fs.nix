@@ -6,17 +6,27 @@
       default = config._module.args.name;
       description = "Name of the dataset";
     };
+
+    _name = lib.mkOption {
+      type = lib.types.str;
+      default = "${config._parent.name}/${config.name}";
+      internal = true;
+      description = "Fully quantified name for dataset";
+    };
+
     type = lib.mkOption {
       type = lib.types.enum [ "zfs_fs" ];
       default = "zfs_fs";
       internal = true;
       description = "Type";
     };
+
     options = lib.mkOption {
       type = lib.types.attrsOf lib.types.str;
       default = { };
       description = "Options to set for the dataset";
     };
+
     mountOptions = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ "defaults" ];
@@ -33,6 +43,7 @@
       internal = true;
       default = parent;
     };
+
     _meta = lib.mkOption {
       internal = true;
       readOnly = true;
@@ -40,6 +51,7 @@
       default = _dev: { };
       description = "Metadata";
     };
+
     _create = diskoLib.mkCreateOption {
       inherit config options;
       # -u prevents mounting newly created datasets, which is
@@ -47,17 +59,18 @@
       # since (create order != mount order)
       # -p creates parents automatically
       default = ''
-        zfs create -up ${config._parent.name}/${config.name} \
+        zfs create -up ${config._name} \
           ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") config.options)}
       '';
-    };
+    } // { readOnly = false; };
+
     _mount = diskoLib.mkMountOption {
       inherit config options;
       default =
-        lib.optionalAttrs (config.options.mountpoint or "" != "none") {
+        lib.optionalAttrs (config.options.mountpoint or "" != "none" && config.options.canmount or "" != "off") {
           fs.${config.mountpoint} = ''
-            if ! findmnt ${config._parent.name}/${config.name} "${rootMountPoint}${config.mountpoint}" >/dev/null 2>&1; then
-              mount ${config._parent.name}/${config.name} "${rootMountPoint}${config.mountpoint}" \
+            if ! findmnt ${config._name} "${rootMountPoint}${config.mountpoint}" >/dev/null 2>&1; then
+              mount ${config._name} "${rootMountPoint}${config.mountpoint}" \
                 -o X-mount.mkdir \
                 ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
                 ${lib.optionalString ((config.options.mountpoint or "") != "legacy") "-o zfsutil"} \
@@ -66,19 +79,21 @@
           '';
         };
     };
+
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
       default =
-        lib.optional (config.options.mountpoint or "" != "none") {
+        lib.optional (config.options.mountpoint or "" != "none" && config.options.canmount or "" != "off") {
           fileSystems.${config.mountpoint} = {
-            device = "${config._parent.name}/${config.name}";
+            device = "${config._name}";
             fsType = "zfs";
             options = config.mountOptions ++ lib.optional ((config.options.mountpoint or "") != "legacy") "zfsutil";
           };
         };
       description = "NixOS configuration";
     };
+
     _pkgs = lib.mkOption {
       internal = true;
       readOnly = true;
