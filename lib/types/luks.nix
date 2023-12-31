@@ -15,10 +15,17 @@ let
           + "Use passwordFile instead if you want to use interactive login or settings.keyFile if you want to use key file login")
         config.keyFile
     else null;
-  keyFileArgs = ''\
+  keyFileArgs = ''
     ${lib.optionalString (keyFile != null) "--key-file ${keyFile}"} \
     ${lib.optionalString (lib.hasAttr "keyFileSize" config.settings) "--keyfile-size ${builtins.toString config.settings.keyFileSize}"} \
-    ${lib.optionalString (lib.hasAttr "keyFileOffset" config.settings) "--keyfile-offset ${builtins.toString config.settings.keyFileOffset}"}
+    ${lib.optionalString (lib.hasAttr "keyFileOffset" config.settings) "--keyfile-offset ${builtins.toString config.settings.keyFileOffset}"} \
+  '';
+  cryptsetupOpen = ''
+    cryptsetup open ${config.device} ${config.name} \
+      ${lib.optionalString (config.settings.allowDiscards or false) "--allow-discards"} \
+      ${lib.optionalString (config.settings.bypassWorkqueues or false) "--perf-no_read_workqueue --perf-no_write_workqueue"} \
+      ${toString config.extraOpenArgs} \
+      ${keyFileArgs} \
   '';
 in
 {
@@ -120,12 +127,11 @@ in
           done
           set -x
         ''}
-        cryptsetup -q luksFormat ${config.device} ${toString config.extraFormatArgs} \
-          ${keyFileArgs}
-        cryptsetup open ${config.device} ${config.name} \
-          ${toString config.extraOpenArgs} \
-          ${keyFileArgs}
-        ${toString (lib.lists.forEach config.additionalKeyFiles (x: "cryptsetup luksAddKey ${config.device} ${x} ${keyFileArgs}"))}
+        cryptsetup -q luksFormat ${config.device} ${toString config.extraFormatArgs} ${keyFileArgs}
+        ${cryptsetupOpen} --persistent
+        ${toString (lib.forEach config.additionalKeyFiles (keyFile: ''
+          cryptsetup luksAddKey ${config.device} ${keyFile} ${keyFileArgs}
+        ''))}
         ${lib.optionalString (config.content != null) config.content._create}
       '';
     };
@@ -145,8 +151,7 @@ in
                 export password
                 set -x
               ''}
-              cryptsetup open ${config.device} ${config.name} \
-              ${keyFileArgs}
+              ${cryptsetupOpen}
             fi
             ${lib.optionalString (config.content != null) contentMount.dev or ""}
           '';
