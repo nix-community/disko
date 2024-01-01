@@ -59,6 +59,22 @@
           };
         };
       };
+      a = {
+        type = "disk";
+        device = "/dev/sda";
+        content = {
+          type = "gpt";
+          partitions = {
+            zfs = {
+              size = "100%";
+              content = {
+                type = "zfs";
+                pool = "storage2";
+              };
+            };
+          };
+        };
+      };
     };
     zpool = {
       storage = {
@@ -70,6 +86,20 @@
           dataset = {
             type = "zfs_fs";
             mountpoint = "/storage/dataset";
+          };
+        };
+      };
+      storage2 = {
+        type = "zpool";
+        mountpoint = "/storage2";
+        rootFsOptions = {
+          canmount = "off";
+        };
+
+        datasets = {
+          dataset = {
+            type = "zfs_fs";
+            mountpoint = "/storage2/dataset";
           };
         };
       };

@@ -67,9 +67,9 @@
           ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") config.options)} \
           ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-O ${n}=${v}") config.rootFsOptions)} \
           "''${zfs_devices[@]}"
-        ${lib.optionalString ((config.rootFsOptions.mountpoint or "") != "none") ''
+        if [[ $(zfs get -H mounted ${config.name} | cut -f3) == "yes" ]]; then
           zfs unmount ${config.name}
-        ''}
+        fi
         ${lib.concatMapStrings (dataset: dataset._create) (lib.attrValues config.datasets)}
       '';
     };
@@ -85,32 +85,13 @@
               zpool import -l -R ${rootMountPoint} '${config.name}'
             ${lib.concatMapStrings (x: x.dev or "") (lib.attrValues datasetMounts)}
           '';
-          fs = (datasetMounts.fs or { }) // lib.optionalAttrs (config.mountpoint != null) {
-            ${config.mountpoint} = ''
-              if ! findmnt ${config.name} "${rootMountPoint}${config.mountpoint}" >/dev/null 2>&1; then
-                mount ${config.name} "${rootMountPoint}${config.mountpoint}" \
-                  ${lib.optionalString ((config.options.mountpoint or "") != "legacy") "-o zfsutil"} \
-                  ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
-                  -o X-mount.mkdir \
-                  -t zfs
-              fi
-            '';
-          };
+          inherit (datasetMounts) fs;
         };
     };
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
-      default = [
-        (map (dataset: dataset._config) (lib.attrValues config.datasets))
-        (lib.optional (config.mountpoint != null) {
-          fileSystems.${config.mountpoint} = {
-            device = config.name;
-            fsType = "zfs";
-            options = config.mountOptions ++ lib.optional ((config.options.mountpoint or "") != "legacy") "zfsutil";
-          };
-        })
-      ];
+      default = map (dataset: dataset._config) (lib.attrValues config.datasets);
       description = "NixOS configuration";
     };
     _pkgs = lib.mkOption {
@@ -119,6 +100,16 @@
       type = lib.types.functionTo (lib.types.listOf lib.types.package);
       default = pkgs: [ pkgs.util-linux ] ++ lib.flatten (map (dataset: dataset._pkgs pkgs) (lib.attrValues config.datasets));
       description = "Packages";
+    };
+  };
+
+  config = {
+    datasets."__root" = {
+      _name = config.name;
+      _create = "";
+      type = "zfs_fs";
+      mountpoint = config.mountpoint;
+      options = config.rootFsOptions;
     };
   };
 }
