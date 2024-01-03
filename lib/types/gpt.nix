@@ -18,9 +18,19 @@ in
       type = lib.types.attrsOf (lib.types.submodule ({ name, ... }@partition: {
         options = {
           type = lib.mkOption {
-            type = lib.types.strMatching "[A-Fa-f0-9]{4}";
+            type =
+              let
+                hexPattern = len: "[A-Fa-f0-9]{${toString len}}";
+              in
+              lib.types.either
+                (lib.types.strMatching (hexPattern 4))
+                (lib.types.strMatching (lib.concatMapStringsSep "-" hexPattern [ 8 4 4 4 12 ]));
             default = "8300";
-            description = "Filesystem type to use, run sgdisk -L to see what is available";
+            description = ''
+              Filesystem type to use.
+              This can either be an sgdisk-specific short code (run sgdisk -L to see what is available),
+              or a fully specified GUID (see https://en.wikipedia.org/wiki/GUID_Partition_Table#Partition_type_GUIDs).
+            '';
           };
           device = lib.mkOption {
             type = lib.types.str;
@@ -76,7 +86,7 @@ in
           };
         };
       }));
-      default = {};
+      default = { };
       description = "Attrs of partitions to add to the partition table";
     };
     _parent = lib.mkOption {
