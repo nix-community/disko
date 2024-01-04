@@ -82,6 +82,7 @@
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = ''
+        wipefs --all --force ${config.device}
         parted -s ${config.device} -- mklabel ${config.format}
         ${lib.concatStrings (map (partition: ''
           ${lib.optionalString (config.format == "gpt") ''
