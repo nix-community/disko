@@ -446,7 +446,7 @@ let
 
               # shellcheck disable=SC2043
               for dev in ${toString (lib.catAttrs "device" (lib.attrValues devices.disk))}; do
-                ${../disk-deactivate}/disk-deactivate "$dev"
+                PATH=$PATH:${lib.makeBinPath (with pkgs; [ jq ])} ${../disk-deactivate}/disk-deactivate "$dev"
               done
             '';
           };
