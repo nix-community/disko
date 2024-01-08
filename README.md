@@ -68,6 +68,7 @@ A simple disko configuration may look like this:
      type = "gpt";
      partitions = {
       ESP = {
+       type = "EF00";
        size = "500M";
        content = {
         type = "filesystem";
