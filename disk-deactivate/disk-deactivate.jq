@@ -26,6 +26,9 @@ def remove:
 def deactivate:
   if .type == "disk" then
     [
+      # If this disk is a member of raid, stop that raid
+      "mdadm --stop $(lsblk \(.path) -l -p -o type,name | awk 'match($1,\"raid.*\") {print $2}')",
+      # Remove all file-systems and other magic strings
       "wipefs --all -f \(.path)",
       # Remove the MBR bootstrap code
       "dd if=/dev/zero of=\(.path) bs=440 count=1"
