@@ -127,7 +127,7 @@ in {
       inherit config options;
       default = ''
         ${
-          lib.optionalString (config.swap != {}) ''
+          lib.optionalString (config.swap != {} && config.multidisk == false) ''
             mkfs.btrfs ${config.device} ${toString config.extraArgs}
             ${lib.optionalString (config.swap != {}) ''
               (
