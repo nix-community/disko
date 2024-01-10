@@ -58,8 +58,8 @@ in {
     };
     multidisk = lib.mkOption {
       type = lib.types.enum ["multidisk"];
-      internal = false;
-      description = "Type";
+      default = false;
+      description = "If multidisk";
     };
     extraArgs = lib.mkOption {
       type = lib.types.listOf lib.types.str;
