@@ -27,7 +27,8 @@ def deactivate:
   if .type == "disk" then
     [
       # If this disk is a member of raid, stop that raid
-      "lsblk \(.path) -l -p -o type,name | awk 'match($1,\"raid.*\") {print $2}' | xargs -r mdadm --stop",
+      "md_dev=$(lsblk \(.path) -l -p -o type,name | awk 'match($1,\"raid.*\") {print $2}')",
+      "if [[ -n \"${md_dev}\" ]]; then umount \"$md_dev\"; mdadm --stop \"$md_dev\"; fi",
       # Remove all file-systems and other magic strings
       "wipefs --all -f \(.path)",
       # Remove the MBR bootstrap code
