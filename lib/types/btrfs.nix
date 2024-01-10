@@ -128,7 +128,7 @@ in {
       default = ''
         ${
           lib.optionalString (config.swap != {} && config.multidisk == false) ''
-            mkfs.btrfs ${config.devices} ${toString config.extraArgs}
+            mkfs.btrfs ${config.device} ${toString config.extraArgs}
             ${lib.optionalString (config.swap != {}) ''
               (
                 MNTPOINT=$(mktemp -d)
@@ -140,7 +140,7 @@ in {
             ${lib.concatMapStrings (subvol: ''
               (
                 MNTPOINT=$(mktemp -d)
-                mount ${config.devices} "$MNTPOINT" -o subvol=/
+                mount ${config.device} "$MNTPOINT" -o subvol=/
                 trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
                 SUBVOL_ABS_PATH="$MNTPOINT/${subvol.name}"
                 mkdir -p "$(dirname "$SUBVOL_ABS_PATH")"
@@ -156,7 +156,7 @@ in {
             ${lib.concatMapStrings (subvol: ''
               (
                 MNTPOINT=$(mktemp -d)
-                mount ${config.devices} "$MNTPOINT" -o subvol=/
+                mount ${config.device} "$MNTPOINT" -o subvol=/
                 trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
                 SUBVOL_ABS_PATH="$MNTPOINT/${subvol.name}"
                 mkdir -p "$(dirname "$SUBVOL_ABS_PATH")"
@@ -180,8 +180,8 @@ in {
               (subvol.mountpoint != null)
               {
                 ${subvol.mountpoint} = ''
-                  if ! findmnt ${config.devices} "${rootMountPoint}${subvol.mountpoint}" > /dev/null 2>&1; then
-                    mount ${config.devices} "${rootMountPoint}${subvol.mountpoint}" \
+                  if ! findmnt ${config.device} "${rootMountPoint}${subvol.mountpoint}" > /dev/null 2>&1; then
+                    mount ${config.device} "${rootMountPoint}${subvol.mountpoint}" \
                     ${lib.concatMapStringsSep " " (opt: "-o ${opt}") (subvol.mountOptions ++ ["subvol=${subvol.name}"])} \
                     -o X-mount.mkdir
                   fi
@@ -194,8 +194,8 @@ in {
           subvolMounts
           // lib.optionalAttrs (config.mountpoint != null) {
             ${config.mountpoint} = ''
-              if ! findmnt ${config.devices} "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
-                mount ${config.devices} "${rootMountPoint}${config.mountpoint}" \
+              if ! findmnt ${config.device} "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
+                mount ${config.device} "${rootMountPoint}${config.mountpoint}" \
                 ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
                 -o X-mount.mkdir
               fi
@@ -212,7 +212,7 @@ in {
             subvol:
               lib.optional (subvol.mountpoint != null) {
                 fileSystems.${subvol.mountpoint} = {
-                  device = config.devices;
+                  device = config.device;
                   fsType = "btrfs";
                   options = subvol.mountOptions ++ ["subvol=${subvol.name}"];
                 };
@@ -221,7 +221,7 @@ in {
           (lib.attrValues config.subvolumes))
         (lib.optional (config.mountpoint != null) {
           fileSystems.${config.mountpoint} = {
-            device = config.devices;
+            device = config.device;
             fsType = "btrfs";
             options = config.mountOptions;
           };
