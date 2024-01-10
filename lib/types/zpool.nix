@@ -85,7 +85,7 @@
               zpool import -l -R ${rootMountPoint} '${config.name}'
             ${lib.concatMapStrings (x: x.dev or "") (lib.attrValues datasetMounts)}
           '';
-          inherit (datasetMounts) fs;
+          fs = datasetMounts.fs or { };
         };
     };
     _config = lib.mkOption {
