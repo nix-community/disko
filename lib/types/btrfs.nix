@@ -57,7 +57,7 @@ in {
       description = "Device to use";
     };
     multidisk = lib.mkOption {
-      type = lib.types.enum ["btrfs_multidisk"];
+      type = lib.types.enum ["multidisk"];
       internal = false;
       description = "Type";
     };
