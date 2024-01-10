@@ -57,7 +57,7 @@ in {
       description = "Device to use";
     };
     multidisk = lib.mkOption {
-      type = lib.types.enum ["multidisk"];
+      type = lib.types.bool;
       default = false;
       description = "If multidisk";
     };
