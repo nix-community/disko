@@ -5,7 +5,7 @@
 diskoLib.testLib.makeDiskoTest {
   inherit pkgs;
   name = "btrfs-multidisk";
-  disko-config = ../example/btrfs-multidisk.nix;
+  disko-config = ../example/btrfs-multidisk-subvolumes.nix;
   extraTestScript = ''
     machine.succeed("test ! -e /test");
     machine.succeed("test -e /home/user");
