@@ -23,7 +23,7 @@
               size = "100%";
               content = {
                 type = "btrfs";
-                devices = "/dev/sda /dev/sdb /dev/sdc";
+                device = "/dev/sda /dev/sdb /dev/sdc";
                 extraArgs = ["-f" "-d raid1c3" "-m raid1c3"]; # Override existing partition
                 # Subvolumes must set a mountpoint in order to be mounted,
                 # unless their parent is mounted

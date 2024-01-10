@@ -161,7 +161,6 @@ in {
                 SUBVOL_ABS_PATH="$MNTPOINT/${subvol.name}"
                 mkdir -p "$(dirname "$SUBVOL_ABS_PATH")"
                 btrfs subvolume create "$SUBVOL_ABS_PATH" ${toString subvol.extraArgs}
-                ${swapCreate "$SUBVOL_ABS_PATH" subvol.swap}
               )
             '') (lib.attrValues config.subvolumes)}
           ''
