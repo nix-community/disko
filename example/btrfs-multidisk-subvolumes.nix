@@ -19,6 +19,13 @@
                 mountpoint = "/boot";
               };
             };
+            swap = {
+              size = "8G";
+              content = {
+                type = "swap";
+                resumeDevice = true; # resume from hiberation from this device
+              };
+            };
             root = {
               size = "100%";
               content = {
