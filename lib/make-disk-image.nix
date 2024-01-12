@@ -10,7 +10,8 @@ let
   vmTools = pkgs.vmTools.override {
     rootModules = ["9p" "9pnet_virtio" "virtio_pci" "virtio_blk"] ++ nixosConfig.config.disko.extraRootModules;
     kernel = pkgs.aggregateModules
-    (with nixosConfig.config.boot.kernelPackages; [ kernel ]);
+    (with nixosConfig.config.boot.kernelPackages; [ kernel ]
+      ++ lib.optional (lib.elem "zfs" nixosConfig.config.disko.extraRootModules) zfs);
   };
   cleanedConfig = diskoLib.testLib.prepareDiskoConfig nixosConfig.config diskoLib.testLib.devices;
   systemToInstall = nixosConfig.extendModules {
