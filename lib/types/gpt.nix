@@ -89,6 +89,44 @@ in
       default = { };
       description = "Attrs of partitions to add to the partition table";
     };
+    efiGptPartitionFirst = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Place EFI GPT (0xEE) partition first in MBR (good for GRUB)";
+    };
+    hybrid_partitions = lib.mkOption {
+      type = lib.types.listOf (lib.types.submodule ({name, ...} @ hp: {
+        options = {
+          mbrPartitionType = lib.mkOption {
+            type = lib.types.nullOr lib.types.str;
+            default = null;
+            description = "MBR type code";
+          };
+          mbrBootableFlag = lib.mkOption {
+            type = lib.types.bool;
+            default = false;
+            description = "Set the bootable flag (aka the active flag) on any or all of your hybridized partitions";
+          };
+          _create = diskoLib.mkCreateOption {
+            inherit config options;
+            default = ''
+              ${lib.optionalString (hp.config.mbrPartitionType != null) ''
+                sfdisk --label-nested dos --part-type ${parent.device} ${(toString hp.config._index)} ${hp.config.mbrPartitionType}
+              ''}
+              ${lib.optionalString hp.config.mbrBootableFlag ''
+                sfdisk --label-nested dos --activate ${parent.device} ${(toString hp.config._index)}
+              ''}
+            '';
+          };
+          _index = lib.mkOption {
+            internal = true;
+            default = diskoLib.indexOf (x: x.mbrPartitionType == hp.config.mbrPartitionType && x.mbrBootableFlag == hp.config.mbrBootableFlag) (config.hybrid_partitions) 0;
+          };
+        };
+      }));
+      default = [ ];
+      description = "Entries to add to the Hybrid MBR table";
+    };
     _parent = lib.mkOption {
       internal = true;
       default = parent;
@@ -108,6 +146,7 @@ in
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = ''
+        sgdisk -Z ${config.device}
         ${lib.concatStrings (map (partition: ''
           sgdisk \
             --set-alignment=2048 \
@@ -122,6 +161,19 @@ in
           udevadm settle
           ${lib.optionalString (partition.content != null) partition.content._create}
         '') sortedPartitions)}
+
+        ${
+          lib.optionalString (config.hybrid_partitions != [])
+          ("sgdisk -h "
+            + (lib.concatStringsSep ":" (lib.imap1 (i: _: (toString i)) config.hybrid_partitions))
+            + (
+              lib.optionalString (!config.efiGptPartitionFirst) ":EE "
+            )
+            + parent.device)
+        }
+        ${lib.concatMapStrings (hp:
+          hp._create)
+        config.hybrid_partitions}
 
       '';
     };
