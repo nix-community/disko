@@ -149,7 +149,6 @@ in
         sgdisk -Z ${config.device}
         ${lib.concatStrings (map (partition: ''
           sgdisk \
-            --set-alignment=2048 \
             --align-end \
             --new=${toString partition._index}:${partition.start}:${partition.end} \
             --change-name=${toString partition._index}:${partition.label} \
