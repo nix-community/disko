@@ -24,7 +24,7 @@ def remove:
 ;
 
 def deactivate:
-  if .type == "disk" then
+  if .type == "disk" or .type == "loop" then
     [
       # If this disk is a member of raid, stop that raid
       "md_dev=$(lsblk \(.path) -l -p -o type,name | awk 'match($1,\"raid.*\") {print $2}')",
@@ -54,7 +54,7 @@ def deactivate:
       "mdadm --stop \(.name)"
     ]
   else
-    []
+    ["echo Warning: unknown type '\(.type)'. Consider handling this in https://github.com/nix-community/disko/blob/master/disk-deactivate/disk-deactivate.jq"]
   end
 ;
 

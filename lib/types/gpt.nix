@@ -146,7 +146,6 @@ in
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = ''
-        sgdisk -Z ${config.device}
         ${lib.concatStrings (map (partition: ''
           sgdisk \
             --align-end \
