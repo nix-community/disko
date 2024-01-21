@@ -7,12 +7,6 @@
         content = {
           type = "gpt";
           efiGptPartitionFirst = false;
-          hybrid_partitions = [
-            {
-              mbrPartitionType = "0x0c";
-              mbrBootableFlag = false;
-            }
-          ];
           partitions = {
             TOW-BOOT-FI = {
               priority = 1;
@@ -22,6 +16,10 @@
                 type = "filesystem";
                 format = "vfat";
                 mountpoint = null;
+              };
+              hybrid = {
+                mbrPartitionType = "0x0c";
+                mbrBootableFlag = false;
               };
             };
             ESP = {
