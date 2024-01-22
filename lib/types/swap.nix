@@ -28,6 +28,12 @@
       default = [ ];
       description = "Extra arguments";
     };
+    mountOptions = lib.mkOption {
+      type = lib.types.listOf lib.types.nonEmptyStr;
+      default = [ "defaults" ];
+      example = [ "nofail" ];
+      description = "Options used to mount the swap.";
+    };
     priority = lib.mkOption {
       type = lib.types.nullOr lib.types.int;
       default = null;
@@ -82,7 +88,9 @@
               }"} ${
               lib.optionalString (config.priority != null)
                 "--priority=${toString config.priority}"
-              } ${config.device}
+              } \
+              --options=${lib.concatStringsSep "," config.mountOptions} \
+              ${config.device}
           fi
         '';
       };
@@ -99,6 +107,7 @@
             # forward discard/TRIM attempts through dm-crypt
             allowDiscards = config.discardPolicy != null;
           };
+          options = config.mountOptions;
         }];
         boot.resumeDevice = lib.mkIf config.resumeDevice config.device;
       }];
