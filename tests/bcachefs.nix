@@ -20,7 +20,5 @@ diskoLib.testLib.makeDiskoTest {
         });
       })
     ];
-    boot.kernelPackages = pkgs.lib.mkForce (pkgs.recurseIntoAttrs pkgs.linuxPackages_latest);
   };
-  extraSystemConfig.boot.kernelPackages = pkgs.lib.mkForce (pkgs.recurseIntoAttrs pkgs.linuxPackages_latest);
 }
