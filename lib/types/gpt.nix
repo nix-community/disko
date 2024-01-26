@@ -1,6 +1,7 @@
 { config, options, lib, diskoLib, parent, device, ... }:
 let
   sortedPartitions = lib.sort (x: y: x.priority < y.priority) (lib.attrValues config.partitions);
+  sortedHybridPartitions = lib.filter (p: p.hybrid != null) sortedPartitions;
 in
 {
   options = {
@@ -80,6 +81,35 @@ in
             '';
           };
           content = diskoLib.partitionType { parent = config; device = partition.config.device; };
+          hybrid = lib.mkOption {
+            type = lib.types.nullOr (lib.types.submodule ({name, ...} @ hp: {
+              options = {
+                mbrPartitionType = lib.mkOption {
+                  type = lib.types.nullOr lib.types.str;
+                  default = null;
+                  description = "MBR type code";
+                };
+                mbrBootableFlag = lib.mkOption {
+                  type = lib.types.bool;
+                  default = false;
+                  description = "Set the bootable flag (aka the active flag) on any or all of your hybridized partitions";
+                };
+                _create = diskoLib.mkCreateOption {
+                  inherit config options;
+                  default = ''
+                    ${lib.optionalString (hp.config.mbrPartitionType != null) ''
+                      sfdisk --label-nested dos --part-type ${parent.device} ${(toString partition.config._index)} ${hp.config.mbrPartitionType}
+                    ''}
+                    ${lib.optionalString hp.config.mbrBootableFlag ''
+                      sfdisk --label-nested dos --activate ${parent.device} ${(toString partition.config._index)}
+                    ''}
+                  '';
+                };
+              };
+            }));
+            default = null;
+            description = "Entry to add to the Hybrid MBR table";
+          };
           _index = lib.mkOption {
             internal = true;
             default = diskoLib.indexOf (x: x.name == partition.config.name) sortedPartitions 0;
@@ -88,6 +118,11 @@ in
       }));
       default = { };
       description = "Attrs of partitions to add to the partition table";
+    };
+    efiGptPartitionFirst = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "Place EFI GPT (0xEE) partition first in MBR (good for GRUB)";
     };
     _parent = lib.mkOption {
       internal = true;
@@ -121,6 +156,20 @@ in
           udevadm settle
           ${lib.optionalString (partition.content != null) partition.content._create}
         '') sortedPartitions)}
+
+        ${
+          lib.optionalString (sortedHybridPartitions != [])
+          ("sgdisk -h "
+            + (lib.concatStringsSep ":" (map (p: (toString p._index)) sortedHybridPartitions))
+            + (
+              lib.optionalString (!config.efiGptPartitionFirst) ":EE "
+            )
+            + parent.device)
+        }
+        ${lib.concatMapStrings (p:
+            p.hybrid._create
+          )
+          sortedHybridPartitions}
 
       '';
     };

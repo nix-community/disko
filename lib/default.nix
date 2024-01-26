@@ -84,9 +84,11 @@ let
         "${dev}${toString index}" # /dev/md/raid1 style
       else if match "/dev/mapper/.+" dev != null then
         "${dev}${toString index}" # /dev/mapper/vg-lv1 style
+      else if match "/dev/loop[[:digit:]]+" dev != null
+        then "${dev}p${toString index}" # /dev/mapper/vg-lv1 style
       else
         abort ''
-          ${dev} seems not to be a supported disk format. Please add this to disko in https://github.com/nix-community/disko/blob/master/types/default.nix
+          ${dev} seems not to be a supported disk format. Please add this to disko in https://github.com/nix-community/disko/blob/master/lib/default.nix
         '';
 
     /* get the index an item in a list
