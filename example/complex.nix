@@ -35,7 +35,7 @@
                 settings.keyFile = "/tmp/secret.key";
                 additionalKeyFiles = [ "/tmp/additionalSecret.key" ];
                 extraFormatArgs = [
-                  "--iter-time 1" # unsecure but fast for tests
+                  "--iter-time 1" # insecure but fast for tests
                 ];
                 content = {
                   type = "lvm_pv";
@@ -64,7 +64,7 @@
                   keyFileOffset = 2;
                 };
                 extraFormatArgs = [
-                  "--iter-time 1" # unsecure but fast for tests
+                  "--iter-time 1" # insecure but fast for tests
                 ];
                 content = {
                   type = "lvm_pv";
