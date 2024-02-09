@@ -93,7 +93,7 @@ A simple disko configuration may look like this:
 ```
 
 If you'd saved this configuration in /tmp/disko-config.nix, and wanted to create
-a disk named /dev/nvme0n1, you would run the following command to partition,
+a disk named /dev/sda, you would run the following command to partition,
 format and mount the disk.
 
 ```console
