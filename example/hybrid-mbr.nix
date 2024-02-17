@@ -1,9 +1,9 @@
-{disks ? ["/dev/sda"], ...}: {
+{
   disko.devices = {
     disk = {
       main = {
         type = "disk";
-        device = builtins.elemAt disks 0;
+        device = "/dev/sdb";
         content = {
           type = "gpt";
           efiGptPartitionFirst = false;
