@@ -1,6 +1,12 @@
 { config, options, lib, diskoLib, parent, device, ... }:
 {
-  options = {
+  options = lib.warn ''
+    The legacy table is outdated and should not be used. We recommend using the gpt type instead.
+    Please note that certain features, such as the test framework, may not function properly with the legacy table type.
+    If you encounter errors similar to:
+    "error: The option `disko.devices.disk.disk1.content.partitions."[definition 1-entry 1]".content._config` is read-only, but it's set multiple times,"
+    this is likely due to the use of the legacy table type.
+  '' {
     type = lib.mkOption {
       type = lib.types.enum [ "table" ];
       internal = true;
