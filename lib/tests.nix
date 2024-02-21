@@ -114,7 +114,7 @@ let
         };
 
         installedTopLevel = ((if extendModules != null then extendModules else installed-system-eval.extendModules) {
-          modules = [{
+          modules = [({config, ...}: {
             imports = [
               extraSystemConfig
               ({ modulesPath, ... }: {
@@ -141,8 +141,20 @@ let
             boot.zfs.devNodes = "/dev/disk/by-uuid"; # needed because /dev/disk/by-id is empty in qemu-vms
 
             # grub will install to these devices, we need to force those or we are offset by 1
-            boot.loader.grub.devices = lib.mkForce testConfigInstall.boot.loader.grub.devices;
-          }];
+            # we use mkOveride 70, so that users can override this with mkForce in case they are testing grub mirrored boots
+            boot.loader.grub.devices = lib.mkOverride 70 testConfigInstall.boot.loader.grub.devices;
+
+            assertions = [
+              {
+                assertion = builtins.length config.boot.loader.grub.mirroredBoots > 1 -> config.boot.loader.grub.devices == [];
+                message = ''
+                  When using `--vm-test` in combination with `mirroredBoots`,
+                  it is necessary to configure `boot.loader.grub.devices` as an empty list by setting `boot.loader.grub.devices = lib.mkForce [];`.
+                  This adjustment is crucial because the `--vm-test` mechanism automatically overrides the grub boot devices as part of the virtual machine test.
+                '';
+              }
+            ];
+          })];
         }).config.system.build.toplevel;
 
       in
