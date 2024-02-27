@@ -28,6 +28,7 @@
         in
         {
           disko = pkgs.callPackage ./package.nix { };
+          disko-install = pkgs.callPackage ./disko-install.nix { };
           default = self.packages.${system}.disko;
         } // pkgs.lib.optionalAttrs (!pkgs.buildPlatform.isRiscV64) {
           disko-doc = pkgs.callPackage ./doc.nix { };
@@ -43,6 +44,11 @@
             makeTest = import (pkgs.path + "/nixos/tests/make-test-python.nix");
             eval-config = import (pkgs.path + "/nixos/lib/eval-config.nix");
           });
+
+          disko-install = pkgs.callPackage ./tests/disko-install {
+            inherit self;
+          };
+
           shellcheck = pkgs.runCommand "shellcheck" { nativeBuildInputs = [ pkgs.shellcheck ]; } ''
             cd ${./.}
             shellcheck disk-deactivate/disk-deactivate disko
@@ -50,8 +56,17 @@
           '';
         in
         # FIXME: aarch64-linux seems to hang on boot
-        nixpkgs.lib.optionalAttrs pkgs.hostPlatform.isx86_64 nixosTests //
+        nixpkgs.lib.optionalAttrs pkgs.hostPlatform.isx86_64 (nixosTests // { inherit disko-install; }) //
         pkgs.lib.optionalAttrs (!pkgs.buildPlatform.isRiscV64 && !pkgs.hostPlatform.isx86_32) { inherit shellcheck; });
+
+      nixosConfigurations.testmachine = nixpkgs.lib.nixosSystem {
+        system = "x86_64-linux";
+        modules = [
+          ./tests/disko-install/configuration.nix
+          ./example/hybrid.nix
+          ./module.nix
+        ];
+      };
       formatter = forAllSystems (system:
         let
           pkgs = nixpkgs.legacyPackages.${system};

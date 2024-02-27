@@ -1,0 +1,169 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+showUsage() {
+  cat <<EOF
+Usage: $0 [OPTIONS]
+  -f, --flake FLAKE_URI#ATTR  Use the specified flake to install the NixOS configuration.
+  --dry-run                   Print the commands that would be run, but do not run them.
+  --show-trace                Show the stack trace on error.
+  -h, --help                  Show this help message.
+  --reference-lock-file FILE  Use the specified lock file as a reference for the Nix store.
+EOF
+}
+
+serialiaseArrayToNix() {
+  local -n array=$1
+  nixExpr="{ "
+  # Iterate over the associative array to populate the Nix attrset string
+  for key in "${!array[@]}"; do
+    value=${array[$key]}
+    nixExpr+="\"${key//\"/\\\"}\" = \"${value//\"/\\\"}\"; "
+  done
+  nixExpr+="}"
+
+  echo "$nixExpr"
+}
+
+readonly libexec_dir="${0%/*}"
+
+nix_args=(
+  --extra-experimental-features 'nix-command flakes'
+  "--option" "no-write-lock-file" "true"
+)
+dry_run=
+diskoAttr=diskoScript
+declare -A diskMappings
+
+parseArgs() {
+  [[ $# -eq 0 ]] && {
+    showUsage
+    exit 1
+  }
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+    -d | --debug)
+      set -x
+      ;;
+    -f | --flake)
+      flake=$2
+      shift
+      ;;
+    -h | --help)
+      showUsage
+      exit 0
+      ;;
+    --dry-run)
+      dry_run=y
+      ;;
+    --show-trace)
+      nix_args+=("$1")
+      ;;
+    --mode)
+      if [[ $# -lt 2 ]]; then
+        echo "Option $1 requires an argument" >&2
+        exit 1
+      fi
+      case $2 in
+        format)
+          diskoAttr=diskoScript
+          ;;
+        mount)
+          diskoAttr=mountScript
+          ;;
+        *)
+          echo "Invalid mode: $2" >&2
+          echo "Valid modes are: format, mount" >&2
+          exit 1
+          ;;
+      esac
+      mode=$2
+      shift
+      ;;
+    --option)
+      if [[ $# -lt 3 ]]; then
+        echo "Option $1 requires an argument" >&2
+        exit 1
+      fi
+      nix_args+=(--option "$2" "$3")
+      shift
+      shift
+      ;;
+    --disk)
+      if [[ $# -lt 3 ]]; then
+        echo "Option $1 requires an argument" >&2
+        exit 1
+      fi
+      # shellcheck disable=SC2034
+      diskMappings[$2]=$3
+      shift
+      shift
+      ;;
+    *)
+      echo "Unknown option: $1" >&2
+      showUsage
+      exit 1
+      ;;
+    esac
+    shift
+  done
+}
+
+cleanupMountPoint() {
+  mountPoint=$1
+  if mountpoint -q "${mountPoint}"; then
+    umount -R "${mountPoint}"
+  fi
+  rmdir "${mountPoint}"
+}
+
+main() {
+  parseArgs "$@"
+
+  if [[ -z ${flake-} ]]; then
+    echo "Please specify the flake-uri with --flake to use for installation." >&2
+    exit 1
+  fi
+
+  if [[ $flake =~ ^(.*)\#([^\#\"]*)$ ]]; then
+    flake="${BASH_REMATCH[1]}"
+    flakeAttr="${BASH_REMATCH[2]}"
+  fi
+  if [[ -z ${flakeAttr-} ]]; then
+    echo "Please specify the name of the NixOS configuration to be installed, as a URI fragment in the flake-uri." >&2
+    echo 'For example, to use the output nixosConfigurations.foo from the flake.nix, append "#foo" to the flake-uri.' >&2
+    exit 1
+  fi
+
+  mountPoint=$(mktemp -d)
+  chmod 755 "${mountPoint}" # bchachefs wants 755
+  escapeMountPoint=$(printf '%q' "$mountPoint")
+  # shellcheck disable=SC2064
+  trap "cleanupMountPoint ${escapeMountPoint}" EXIT
+
+  IFS=$'\n' mapfile -t artifacts < <(nix-build "${libexec_dir}"/install-cli.nix \
+    "${nix_args[@]}" \
+    --no-out-link \
+    --impure \
+    --argstr flake "$flake" \
+    --argstr flakeAttr "$flakeAttr" \
+    --argstr rootMountPoint "$mountPoint" \
+    --arg diskMappings "$(serialiaseArrayToNix diskMappings)" \
+    -A installToplevel \
+    -A "$diskoAttr")
+  nixos_system=${artifacts[0]}
+  disko_script=${artifacts[1]}
+
+  if [[ -n ${dry_run-} ]]; then
+    echo "Would run: $disko_script"
+    echo "Would run: nixos-install --system '$nixos_system' --root '$mountPoint'"
+    exit 0
+  fi
+
+  "$disko_script"
+  nixos-install --no-root-password --system "$nixos_system" --root "$mountPoint"
+}
+
+main "$@"
