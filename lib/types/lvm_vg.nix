@@ -19,6 +19,11 @@
             default = name;
             description = "Name of the logical volume";
           };
+          priority = lib.mkOption {
+            type = lib.types.int;
+            default = if (lib.hasInfix "100%" lv.config.size) then 9001 else 1000;
+            description = "Priority of the logical volume, smaller values are created first";
+          };
           size = lib.mkOption {
             type = lib.types.str; # TODO lvm size type
             description = "Size of the logical volume";
@@ -56,7 +61,7 @@
       inherit config options;
       default =
         let
-          sortedLvs = lib.sort (a: _: !lib.hasInfix "100%" a.size) (lib.attrValues config.lvs);
+          sortedLvs = lib.sort (a: b: a.priority < b.priority) (lib.attrValues config.lvs);
         in
         ''
           readarray -t lvm_devices < <(cat "$disko_devices_dir"/lvm_${config.name})
