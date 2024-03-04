@@ -20,12 +20,13 @@ pkgs.nixosTest {
   };
 
   testScript = ''
-    def create_test_machine(oldmachine=None, args={}): # taken from <nixpkgs/nixos/tests/installer.nix>
+    def create_test_machine(oldmachine, args={}): # taken from <nixpkgs/nixos/tests/installer.nix>
+        startCommand = "${pkgs.qemu_test}/bin/qemu-kvm"
+        startCommand += " -cpu max -m 1024 -virtfs local,path=/nix/store,security_model=none,mount_tag=nix-store"
+        startCommand += f' -drive file={oldmachine.state_dir}/empty0.qcow2,id=drive1,if=none,index=1,werror=report'
+        startCommand += ' -device virtio-blk-pci,drive=drive1'
         machine = create_machine({
-          "qemuFlags":
-            '-cpu max -m 1024 -virtfs local,path=/nix/store,security_model=none,mount_tag=nix-store,'
-            f' -drive file={oldmachine.state_dir}/empty0.qcow2,id=drive1,if=none,index=1,werror=report'
-            f' -device virtio-blk-pci,drive=drive1',
+          "startCommand": startCommand,
         } | args)
         driver.machines.append(machine)
         return machine
