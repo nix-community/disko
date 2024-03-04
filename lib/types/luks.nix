@@ -211,6 +211,7 @@ in
       type = lib.types.functionTo (lib.types.listOf lib.types.package);
       default = pkgs: [ pkgs.cryptsetup ]
         ++ (lib.optionals (config.clevisPin != null) [ pkgs.clevis ])
+        ++ (lib.optionals (config.clevisPin == "tang") [ pkgs.curl ])
         ++ (lib.optionals (config.content != null) (config.content._pkgs pkgs));
       description = "Packages";
     };
