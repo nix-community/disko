@@ -55,7 +55,15 @@ in
           };
           label = lib.mkOption {
             type = lib.types.str;
-            default = "${config._parent.type}-${config._parent.name}-${partition.config.name}";
+            default = let
+              # 72 bytes is the maximum length of a GPT partition name
+              # the labels seem to be in UTF-16, so 2 bytes per character
+              limit = 36;
+              label = "${config._parent.type}-${config._parent.name}-${partition.config.name}"; 
+            in if (lib.stringLength label) > limit then
+              builtins.substring 0 limit (builtins.hashString "sha256" label)
+            else
+              label;
           };
           size = lib.mkOption {
             type = lib.types.either (lib.types.enum [ "100%" ]) (lib.types.strMatching "[0-9]+[KMGTP]?");
