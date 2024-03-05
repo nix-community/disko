@@ -33,7 +33,11 @@ pkgs.nixosTest {
     machine.succeed("lsblk >&2")
 
     print(machine.succeed("tty"))
-    machine.succeed("${disko-install}/bin/disko-install --disk main /dev/vdb --flake ${../..}#testmachine")
+    machine.succeed("umask 066; echo > /tmp/age.key")
+    permission = machine.succeed("stat -c %a /tmp/age.key").strip()
+    assert permission == "600", f"expected permission 600 on /tmp/age.key, got {permission}"
+
+    machine.succeed("${disko-install}/bin/disko-install --disk main /dev/vdb --extra-files /tmp/age.key /var/lib/secrets/age.key --flake ${../..}#testmachine")
     # test idempotency
     machine.succeed("${disko-install}/bin/disko-install --mode mount --disk main /dev/vdb --flake ${../..}#testmachine")
     machine.shutdown()
@@ -42,5 +46,7 @@ pkgs.nixosTest {
     new_machine.start()
     name = new_machine.succeed("hostname").strip()
     assert name == "disko-machine", f"expected hostname 'disko-machine', got {name}"
+    permission = new_machine.succeed("stat -c %a /var/lib/secrets/age.key").strip()
+    assert permission == "600", f"expected permission 600 on /var/lib/secrets/age.key, got {permission}"
   '';
 }
