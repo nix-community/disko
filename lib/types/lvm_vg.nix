@@ -22,6 +22,9 @@
           priority = lib.mkOption {
             type = lib.types.int;
             default = if (lib.hasInfix "100%" lv.config.size) then 9001 else 1000;
+            defaultText = lib.literalExpression ''
+              if (lib.hasInfix "100%" lv.config.size) then 9001 else 1000
+            '';
             description = "Priority of the logical volume, smaller values are created first";
           };
           size = lib.mkOption {
