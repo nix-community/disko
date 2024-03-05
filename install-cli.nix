@@ -1,7 +1,7 @@
 { flake
 , flakeAttr
 , diskMappings
-, canTouchEfiVariables ? false
+, writeEfiBootEntries ? false
 , rootMountPoint ? "/mnt"
 }:
 let
@@ -32,7 +32,7 @@ let
     };
    installSystem = originalSystem.extendModules {
      modules = [({ lib, ... }: {
-       boot.loader.efi.canTouchEfiVariables = lib.mkVMOverride canTouchEfiVariables;
+       boot.loader.efi.canTouchEfiVariables = lib.mkVMOverride writeEfiBootEntries;
        boot.loader.grub.devices = lib.mkVMOverride diskoSystem.config.boot.loader.grub.devices;
      })];
    };

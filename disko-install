@@ -10,6 +10,9 @@ Usage: $0 [OPTIONS]
   --show-trace                Show the stack trace on error.
   -h, --help                  Show this help message.
   --reference-lock-file FILE  Use the specified lock file as a reference for the Nix store.
+  --write-efi-boot-entries    Write EFI boot entries to the NVRAM of the system for the installed system.
+                              Specify this option if you plan to boot from this disk on the current machine,
+                              but not if you plan to move the disk to another machine.
 EOF
 }
 
@@ -34,6 +37,7 @@ nix_args=(
 )
 dry_run=
 diskoAttr=diskoScript
+writeEfiBootEntries=false
 declare -A diskMappings
 
 parseArgs() {
@@ -60,6 +64,9 @@ parseArgs() {
       ;;
     --show-trace)
       nix_args+=("$1")
+      ;;
+    --write-efi-boot-entries)
+      writeEfiBootEntries=true
       ;;
     --mode)
       if [[ $# -lt 2 ]]; then
@@ -150,6 +157,7 @@ main() {
     --argstr flake "$flake" \
     --argstr flakeAttr "$flakeAttr" \
     --argstr rootMountPoint "$mountPoint" \
+    --arg writeEfiBootEntries "$writeEfiBootEntries" \
     --arg diskMappings "$(serialiaseArrayToNix diskMappings)" \
     -A installToplevel \
     -A "$diskoAttr")
