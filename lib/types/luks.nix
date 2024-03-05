@@ -14,6 +14,12 @@ let
         ("The option `keyFile` is deprecated."
           + "Use passwordFile instead if you want to use interactive login or settings.keyFile if you want to use key file login")
         config.keyFile
+    else if config.clevisPin != null
+    then
+      lib.warn
+        ("You are using clevisPin only without any passphrase or keyFile."
+          + "If you loose access to your pins the data on your disk will be lost")
+        ''<(echo -n "clevis-temp-passphrase")''
     else null;
   keyFileArgs = ''
     ${lib.optionalString (keyFile != null) "--key-file ${keyFile}"} \
@@ -58,8 +64,20 @@ in
     };
     askPassword = lib.mkOption {
       type = lib.types.bool;
-      default = config.keyFile == null && config.passwordFile == null && (! config.settings ? "keyFile");
+      default = config.keyFile == null && config.passwordFile == null && (! config.settings ? "keyFile") && (config.clevisPin == null);
       description = "Whether to ask for a password for initial encryption";
+    };
+    clevisPin = lib.mkOption {
+      type = lib.types.nullOr (lib.types.enum ["tpm2" "tang" "sss"]);
+      default = null;
+      description = "Pin the encrypted volume to a clevis backend";
+      example = "tang";
+    };
+    clevisPinConfig = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = "{}";
+      description = "Configuration for the clevis backend";
+      example = "{\"url\": \"http://tang-server\"}";
     };
     settings = lib.mkOption {
       default = { };
@@ -93,7 +111,7 @@ in
     extraOpenArgs = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];
-      description = "Extra arguments to pass to `cryptsetup luksOpen` when opening";
+      description = "Extra arguments to pass to `cryptsetup open` when opening";
       example = [ "--timeout 10" ];
     };
     content = diskoLib.deviceType { parent = config; device = "/dev/mapper/${config.name}"; };
@@ -113,7 +131,7 @@ in
       inherit config options;
       default = ''
         ${lib.optionalString config.askPassword ''
-          set +x
+          set -x
           askPassword() {
             echo "Enter password for ${config.device}: "
             IFS= read -r -s password
@@ -132,6 +150,13 @@ in
         ${toString (lib.forEach config.additionalKeyFiles (keyFile: ''
           cryptsetup luksAddKey ${config.device} ${keyFile} ${keyFileArgs}
         ''))}
+        ${lib.optionalString (config.clevisPin != null && keyFile != ''<(echo -n "clevis-temp-passphrase")'') ''
+          cryptsetup luksAddKey ${config.device} <(echo -n "clevis-temp-passphrase") ${keyFileArgs}
+        ''}
+        ${lib.optionalString (config.clevisPin != null) ''
+          clevis luks bind -y -k - -d ${config.device} ${config.clevisPin} '${config.clevisPinConfig}' <<< clevis-temp-passphrase
+          cryptsetup luksRemoveKey ${config.device} <(echo -n "clevis-temp-passphrase")
+        ''}
         ${lib.optionalString (config.content != null) config.content._create}
       '';
     };
@@ -169,14 +194,25 @@ in
             inherit (config) device;
           } // config.settings;
         }
-      ]) ++ (lib.optional (config.content != null) config.content._config);
+        ])
+        ++ (lib.optional (config.initrdUnlock && (config.clevisPin != null)) [{
+          boot.initrd.clevis.enable = true;
+          boot.initrd.clevis.devices.${config.name} = {};
+        }])
+        ++ (lib.optional (config.initrdUnlock && (config.clevisPin == "tang")) [{
+          boot.initrd.clevis.useTang = true;
+        }])
+        ++ (lib.optional (config.content != null) config.content._config);
       description = "NixOS configuration";
     };
     _pkgs = lib.mkOption {
       internal = true;
       readOnly = true;
       type = lib.types.functionTo (lib.types.listOf lib.types.package);
-      default = pkgs: [ pkgs.cryptsetup ] ++ (lib.optionals (config.content != null) (config.content._pkgs pkgs));
+      default = pkgs: [ pkgs.cryptsetup ]
+        ++ (lib.optionals (config.clevisPin != null) [ pkgs.clevis ])
+        ++ (lib.optionals (config.clevisPin == "tang") [ pkgs.curl ])
+        ++ (lib.optionals (config.content != null) (config.content._pkgs pkgs));
       description = "Packages";
     };
   };

@@ -22,6 +22,7 @@ let
   };
   dependencies = with pkgs; [
     bash
+    iproute
     coreutils
     gnused
     parted # for partprobe
@@ -58,6 +59,13 @@ let
     nix-store --load-db < ${pkgs.closureInfo {
       rootPaths = [ systemToInstall.config.system.build.toplevel ];
     }}/registration
+
+    # configure user network
+    echo $(${pkgs.iproute}/bin/ip link)
+    ${pkgs.iproute}/bin/ip link set dev ens3 up
+    ${pkgs.iproute}/bin/ip addr add 10.0.2.15/24 dev ens3
+    ${pkgs.iproute}/bin/ip route add default via 10.0.2.2
+    echo 'nameserver 10.0.2.3' > /etc/resolv.conf
 
     ${systemToInstall.config.system.build.diskoScript}
   '';

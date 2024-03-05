@@ -86,7 +86,7 @@ let
         tsp-config = tsp-generator.config testConfigBooted;
         num-disks = builtins.length (lib.attrNames testConfigBooted.disko.devices.disk);
 
-        installed-system = { ... }: {
+        installed-system = { config, ... }: {
           imports = [
             (lib.optionalAttrs (testMode == "direct") tsp-config)
             (lib.optionalAttrs (testMode == "module") {
@@ -101,9 +101,10 @@ let
           # config for tests to make them run faster or work at all
           documentation.enable = false;
           hardware.enableAllFirmware = lib.mkForce false;
-          boot.initrd.preDeviceCommands = ''
+          boot.initrd.preDeviceCommands = lib.mkIf (!config.boot.initrd.systemd.enable) ''
             echo -n 'secretsecret' > /tmp/secret.key
           '';
+          boot.initrd.systemd.contents."/tmp/secret.key".text = lib.mkIf (config.boot.initrd.systemd.enable) "secretsecret";
           boot.consoleLogLevel = lib.mkForce 100;
           boot.loader.systemd-boot.enable = lib.mkDefault efi;
         };
