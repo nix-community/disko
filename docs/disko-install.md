@@ -111,3 +111,17 @@ or attaching it to a qemu-vm:
 ```
 $ sudo qemu-kvm -enable-kvm -hda /dev/sda
 ```
+
+### Persisting boot entries to EFI vars flash
+
+Disko-install is designed for NixOS installations on portable storage or disks that may be transferred between computers.
+As such, it does not modify the host's NVRAM by default.
+To ensure your NixOS installation boots seamlessly on new hardware or to prioritize it in your current machine's boot order,
+use the --write-efi-boot-entries option:
+
+```console
+$ sudo nix run 'github:nix-community/disko#disko-install' -- --write-efi-boot-entries --flake '/tmp/config/etc/nixos#mymachine' --disk main /dev/sda
+```
+
+This command installs NixOS with Disko-install and sets the newly installed system as the default boot option,
+without affecting the flexibility to boot from other devices if needed.
