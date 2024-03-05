@@ -223,10 +223,15 @@ let
                   disk_flags += f' -drive file={oldmachine.state_dir}/empty{i}.qcow2,id=drive{i + 1},if=none,index={i + 1},werror=report'
                   disk_flags += f' -device virtio-blk-pci,drive=drive{i + 1}'
               return disk_flags
-          def create_test_machine(oldmachine=None, args={}): # taken from <nixpkgs/nixos/tests/installer.nix>
+          def create_test_machine(oldmachine, args={}): # taken from <nixpkgs/nixos/tests/installer.nix>
+              startCommand = "${pkgs.qemu_test}/bin/qemu-kvm"
+              startCommand += " -cpu max -m 1024 -virtfs local,path=/nix/store,security_model=none,mount_tag=nix-store"
+              startCommand += disks(oldmachine, ${toString num-disks})
+              ${lib.optionalString efi ''
+                startCommand +=" -drive if=pflash,format=raw,unit=0,readonly=on,file=${pkgs.OVMF.firmware} -drive if=pflash,format=raw,unit=1,readonly=on,file=${pkgs.OVMF.variables}"
+              ''}
               machine = create_machine({
-                "qemuFlags": "-cpu max -m 1024 -virtfs local,path=/nix/store,security_model=none,mount_tag=nix-store" + disks(oldmachine, ${toString num-disks}),
-                ${lib.optionalString efi ''"bios": "${pkgs.OVMF.fd}/FV/OVMF.fd",''}
+                "startCommand": startCommand,
               } | args)
               driver.machines.append(machine)
               return machine
