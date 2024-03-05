@@ -1,10 +1,10 @@
-# Disko-install
+# disko-install
 
-Disko-install enhances the normal `nixos-install` with disko's partitioning feature.
+**disko-install** enhances the normal `nixos-install` with disko's partitioning feature.
 It can be started from the NixOS installer but it can also be used to create bootable USB-Sticks from your normal workstation.
 Furthermore `disko-install` has a mount mode that will only mount but not destroy existing partitions.
 The mount mode can be used to mount and repair existing NixOS installations.
-This document provides a comprehensive guide on how to use Disko-Install, including examples for typical usage scenarios.
+This document provides a comprehensive guide on how to use **disko-install**, including examples for typical usage scenarios.
 
 ## Requirements
 
@@ -16,7 +16,7 @@ This document provides a comprehensive guide on how to use Disko-Install, includ
 
 ### Fresh Installation
 
-For a fresh installation, where Disko-Install will handle partitioning and setting up the disk, use the following syntax:
+For a fresh installation, where **disko-install** will handle partitioning and setting up the disk, use the following syntax:
 
 ```console
 sudo nix run 'github:nix-community/disko#disko-install' -- --flake <flake-url>#<flake-attr> --disk <disk-name> <disk-device>
@@ -114,7 +114,7 @@ $ sudo qemu-kvm -enable-kvm -hda /dev/sda
 
 ### Persisting boot entries to EFI vars flash
 
-Disko-install is designed for NixOS installations on portable storage or disks that may be transferred between computers.
+**disko-install** is designed for NixOS installations on portable storage or disks that may be transferred between computers.
 As such, it does not modify the host's NVRAM by default.
 To ensure your NixOS installation boots seamlessly on new hardware or to prioritize it in your current machine's boot order,
 use the --write-efi-boot-entries option:
@@ -123,5 +123,5 @@ use the --write-efi-boot-entries option:
 $ sudo nix run 'github:nix-community/disko#disko-install' -- --write-efi-boot-entries --flake '/tmp/config/etc/nixos#mymachine' --disk main /dev/sda
 ```
 
-This command installs NixOS with Disko-install and sets the newly installed system as the default boot option,
+This command installs NixOS with **disko-install** and sets the newly installed system as the default boot option,
 without affecting the flexibility to boot from other devices if needed.
