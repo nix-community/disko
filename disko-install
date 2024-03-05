@@ -5,11 +5,14 @@ set -euo pipefail
 showUsage() {
   cat <<EOF
 Usage: $0 [OPTIONS]
+  --mode MODE                 Specify the mode of operation. Valid modes are: format, mount.
   -f, --flake FLAKE_URI#ATTR  Use the specified flake to install the NixOS configuration.
+  --disk NAME DEVICE          Map the specified disk name to the specified device path.
   --dry-run                   Print the commands that would be run, but do not run them.
   --show-trace                Show the stack trace on error.
   -h, --help                  Show this help message.
-  --reference-lock-file FILE  Use the specified lock file as a reference for the Nix store.
+  --extra-files SOURCE DEST   Copy the specified file or directory from the host into the NixOS configuration.
+  --option NAME VALUE         Pass the specified option to Nix.
   --write-efi-boot-entries    Write EFI boot entries to the NVRAM of the system for the installed system.
                               Specify this option if you plan to boot from this disk on the current machine,
                               but not if you plan to move the disk to another machine.
@@ -39,6 +42,7 @@ dry_run=
 diskoAttr=diskoScript
 writeEfiBootEntries=false
 declare -A diskMappings
+declare -A extraFiles
 
 parseArgs() {
   [[ $# -eq 0 ]] && {
@@ -89,6 +93,15 @@ parseArgs() {
       mode=$2
       shift
       ;;
+    --extra-files)
+      if [[ $# -lt 3 ]]; then
+        echo "Option $1 requires two arguments: source, destination" >&2
+        exit 1
+      fi
+      extraFiles[$2]=$3
+      shift
+      shift
+      ;;
     --option)
       if [[ $# -lt 3 ]]; then
         echo "Option $1 requires an argument" >&2
@@ -100,7 +113,7 @@ parseArgs() {
       ;;
     --disk)
       if [[ $# -lt 3 ]]; then
-        echo "Option $1 requires an argument" >&2
+        echo "Option $1 requires two arguments: disk_name, device_path" >&2
         exit 1
       fi
       # shellcheck disable=SC2034
@@ -171,6 +184,13 @@ main() {
   fi
 
   "$disko_script"
+
+  for source in "${!extraFiles[@]}"; do
+    destination=${extraFiles[$source]}
+    mkdir -p "$mountPoint/$(dirname "$destination")"
+    cp -ar "$source" "$mountPoint/$destination"
+  done
+
   nixos-install --no-root-password --system "$nixos_system" --root "$mountPoint"
 }
 
