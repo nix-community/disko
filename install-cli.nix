@@ -15,7 +15,7 @@ let
           dev = if  diskMappings ? ${name} then
             diskMappings.${name}
           else
-            throw "No device passed for disk '${name}'";
+            throw "No device passed for disk '${name}'. Pass `--disk ${name} /dev/name` via commandline";
         in value // {
           device = dev;
           content = value.content // { device = dev; };

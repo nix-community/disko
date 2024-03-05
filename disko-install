@@ -78,17 +78,17 @@ parseArgs() {
         exit 1
       fi
       case $2 in
-        format)
-          diskoAttr=diskoScript
-          ;;
-        mount)
-          diskoAttr=mountScript
-          ;;
-        *)
-          echo "Invalid mode: $2" >&2
-          echo "Valid modes are: format, mount" >&2
-          exit 1
-          ;;
+      format)
+        diskoAttr=diskoScript
+        ;;
+      mount)
+        diskoAttr=mountScript
+        ;;
+      *)
+        echo "Invalid mode: $2" >&2
+        echo "Valid modes are: format, mount" >&2
+        exit 1
+        ;;
       esac
       mode=$2
       shift
@@ -163,7 +163,7 @@ main() {
   # shellcheck disable=SC2064
   trap "cleanupMountPoint ${escapeMountPoint}" EXIT
 
-  IFS=$'\n' mapfile -t artifacts < <(nix-build "${libexec_dir}"/install-cli.nix \
+  outputs=$(nix-build "${libexec_dir}"/install-cli.nix \
     "${nix_args[@]}" \
     --no-out-link \
     --impure \
@@ -174,6 +174,8 @@ main() {
     --arg diskMappings "$(serialiaseArrayToNix diskMappings)" \
     -A installToplevel \
     -A "$diskoAttr")
+
+  IFS=$'\n' mapfile -t artifacts <<<"$outputs"
   nixos_system=${artifacts[0]}
   disko_script=${artifacts[1]}
 
