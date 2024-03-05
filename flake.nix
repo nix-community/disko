@@ -57,7 +57,10 @@
         in
         # FIXME: aarch64-linux seems to hang on boot
         nixpkgs.lib.optionalAttrs pkgs.hostPlatform.isx86_64 (nixosTests // { inherit disko-install; }) //
-        pkgs.lib.optionalAttrs (!pkgs.buildPlatform.isRiscV64 && !pkgs.hostPlatform.isx86_32) { inherit shellcheck; });
+        pkgs.lib.optionalAttrs (!pkgs.buildPlatform.isRiscV64 && !pkgs.hostPlatform.isx86_32) {
+          inherit shellcheck;
+          inherit (self.packages.${system}) disko-doc;
+        });
 
       nixosConfigurations.testmachine = nixpkgs.lib.nixosSystem {
         system = "x86_64-linux";
