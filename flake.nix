@@ -28,7 +28,10 @@
         in
         {
           disko = pkgs.callPackage ./package.nix { };
-          disko-install = pkgs.callPackage ./disko-install.nix { };
+           # alias to make `nix run` more convenient
+          disko-install = self.packages.${system}.disko.overrideAttrs (old: {
+            name = "disko-install";
+          });
           default = self.packages.${system}.disko;
         } // pkgs.lib.optionalAttrs (!pkgs.buildPlatform.isRiscV64) {
           disko-doc = pkgs.callPackage ./doc.nix { };

@@ -240,7 +240,7 @@ let
           machine.succeed("echo -n 'additionalSecret' > /tmp/additionalSecret.key")
           machine.succeed("echo -n 'secretsecret' > /tmp/secret.key")
           ${lib.optionalString (testMode == "direct") ''
-            #  running direct mode
+            # running direct mode
             machine.succeed("${tsp-format}")
             machine.succeed("${tsp-mount}")
             machine.succeed("${tsp-mount}") # verify that the command is idempotent

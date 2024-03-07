@@ -1,6 +1,6 @@
-{ stdenvNoCC, makeWrapper, lib, path }:
+{ stdenvNoCC, makeWrapper, lib, path, nix, coreutils }:
 
-stdenvNoCC.mkDerivation rec {
+stdenvNoCC.mkDerivation (finalAttrs: {
   name = "disko";
   src = ./.;
   nativeBuildInputs = [
@@ -8,13 +8,15 @@ stdenvNoCC.mkDerivation rec {
   ];
   installPhase = ''
     mkdir -p $out/bin $out/share/disko
-    cp -r cli.nix default.nix disk-deactivate lib $out/share/disko
-    sed \
-      -e "s|libexec_dir=\".*\"|libexec_dir=\"$out/share/disko\"|" \
-      -e "s|#!/usr/bin/env.*|#!/usr/bin/env bash|" \
-      disko > $out/bin/disko
-    chmod 755 $out/bin/disko
-    wrapProgram $out/bin/disko --prefix NIX_PATH : "nixpkgs=${path}"
+    cp -r install-cli.nix cli.nix default.nix disk-deactivate lib $out/share/disko
+
+    for i in disko disko-install; do
+      sed -e "s|libexec_dir=\".*\"|libexec_dir=\"$out/share/disko\"|" "$i" > "$out/bin/$i"
+      chmod 755 "$out/bin/$i"
+      wrapProgram "$out/bin/$i" \
+        --prefix PATH : ${lib.makeBinPath [ nix coreutils ]} \
+        --prefix NIX_PATH : "nixpkgs=${path}"
+    done
   '';
   meta = with lib; {
     description = "Format disks with nix-config";
@@ -22,5 +24,6 @@ stdenvNoCC.mkDerivation rec {
     license = licenses.mit;
     maintainers = with maintainers; [ lassulus ];
     platforms = platforms.linux;
+    mainProgram = finalAttrs.name;
   };
-}
+})
