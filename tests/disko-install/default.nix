@@ -1,11 +1,10 @@
 { pkgs ? import <nixpkgs> { }, self }:
 let
   disko-install = pkgs.callPackage ../../disko-install.nix { };
-  toplevel = self.nixosConfigurations.testmachine.config.system.build.toplevel;
 
   dependencies = [
     pkgs.stdenv.drvPath
-    toplevel
+    self.nixosConfigurations.testmachine.config.system.build.toplevel
     self.nixosConfigurations.testmachine.config.system.build.diskoScript
   ] ++ builtins.map (i: i.outPath) (builtins.attrValues self.inputs);
 
