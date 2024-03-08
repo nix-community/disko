@@ -51,12 +51,49 @@ generate disk images:
 
 ### Generating the `.raw` VM Image
 
-1. **Build the disko image script:** Replace `mySystem` in the command below with your
+1. **Create a NixOS configuration that includes the disko and the disk configuration of your choice**
+
+In the this example we create a flake containing a nixos configuration for `myhost`.
+
+```nix
+# save this as flake.nix
+{
+  description = "A disko images example";
+
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    disko.url = "github:nix-community/disko";
+    disko.inputs.nixpkgs.follows = "nixpkgs";
+  };
+
+  outputs = { self, disko, nixpkgs }: {
+    nixosConfigurations.myhost = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+      modules = [
+        # You can get this file from here: https://github.com/nix-community/disko/blob/master/example/simple-efi.nix
+        ./simple-efi.nix
+        disko.nixosModules.disko
+        ({ config, ... }: {
+          # shut up state version warning
+          system.stateVersion = config.system.nixos.version;
+          # Adjust this to your liking.
+          # WARNING: if you set a too low value the image might be not big enough to contain the nixos installation
+          disko.devices.disk.vdb.imageSize = "10G";
+        })
+      ];
+    };
+  };
+}
+```
+
+2. **Build the disko image script:** Replace `myhost` in the command below with your
    specific system configuration name:
+
    ```console
-   nix build .#nixosConfigurations.mySystem.config.system.build.diskoImagesScript
+   nix build .#nixosConfigurations.myhost.config.system.build.diskoImagesScript
    ```
-2. **Execute the result file:** Execute the generated result file. Running
+
+3. **Execute the result file:** Execute the generated result file. Running
    `./result --help` will output the available options:
 
    ```console
@@ -79,6 +116,19 @@ generate disk images:
      use an actuall disk instead of writing to a file
      This only works if your conifg has only one disk specified
      There is no check if the specified path is actually a disk so you can also write to another file
+   ```
+
+   An example run may look like this:
+
+   ```
+   sudo ./result --build-memory 2048
+   ```
+
+   In our code example it will produce the following image:
+
+   ```
+   $ ls -la vdb.raw
+   .rw-r--r-- root root 10 GB 2 minutes ago vdb.raw
    ```
 
 ### Additional Configuration
