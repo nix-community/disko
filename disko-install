@@ -151,6 +151,11 @@ main() {
     flake="${BASH_REMATCH[1]}"
     flakeAttr="${BASH_REMATCH[2]}"
   fi
+
+  if [[ -e "$flake" ]]; then
+    flake=$(realpath "$flake")
+  fi
+
   if [[ -z ${flakeAttr-} ]]; then
     echo "Please specify the name of the NixOS configuration to be installed, as a URI fragment in the flake-uri." >&2
     echo 'For example, to use the output nixosConfigurations.foo from the flake.nix, append "#foo" to the flake-uri.' >&2
