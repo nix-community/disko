@@ -93,7 +93,7 @@ In the this example we create a flake containing a nixos configuration for `myho
    nix build .#nixosConfigurations.myhost.config.system.build.diskoImagesScript
    ```
 
-3. **Execute the result file:** Execute the generated result file. Running
+3. **Execute the disko image script:** Execute the generated disko image script. Running
    `./result --help` will output the available options:
 
    ```console
@@ -124,6 +124,8 @@ In the this example we create a flake containing a nixos configuration for `myho
    sudo ./result --build-memory 2048
    ```
 
+   The script will generate the actual image outside of the nix store in the current working directory.
+   The create image names depend on the names used in `disko.disks` attrset in the NixOS configuration.
    In our code example it will produce the following image:
 
    ```
