@@ -104,6 +104,14 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
+nixBuild() {
+  if command -v nom-build > /dev/null; then
+    nom-build "$@"
+  else
+    nix-build "$@"
+  fi
+}
+
 if ! { [[ $mode = "format" ]] || [[ $mode = "mount" ]] || [[ $mode = "disko" ]] || [[ $mode = "create" ]] || [[ $mode = "zap_create_mount" ]] ; }; then
   abort "mode must be either format, mount or disko"
 fi
@@ -131,7 +139,7 @@ else
 fi
 
 # The "--impure" is still pure, as the path is within the nix store.
-script=$(nix-build "${libexec_dir}"/cli.nix \
+script=$(nixBuild "${libexec_dir}"/cli.nix \
   --no-out-link \
   --impure \
   --argstr mode "$mode" \

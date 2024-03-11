@@ -139,6 +139,14 @@ cleanupMountPoint() {
   rmdir "${mountPoint}"
 }
 
+nixBuild() {
+  if command -v nom-build > /dev/null; then
+    nom-build "$@"
+  else
+    nix-build "$@"
+  fi
+}
+
 main() {
   parseArgs "$@"
 
@@ -168,7 +176,7 @@ main() {
   # shellcheck disable=SC2064
   trap "cleanupMountPoint ${escapeMountPoint}" EXIT
 
-  outputs=$(nix-build "${libexec_dir}"/install-cli.nix \
+  outputs=$(nixBuild "${libexec_dir}"/install-cli.nix \
     "${nix_args[@]}" \
     --no-out-link \
     --impure \
