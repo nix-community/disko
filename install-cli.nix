@@ -8,7 +8,7 @@ let
   originalSystem = (builtins.getFlake "${flake}").nixosConfigurations."${flakeAttr}";
   diskoSystem =
     let
-      lib = originalSystem.lib;
+      lib = originalSystem.pkgs.lib;
 
       modifiedDisks = builtins.mapAttrs
         (name: value: let
