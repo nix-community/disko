@@ -243,15 +243,23 @@ let
             # running direct mode
             machine.succeed("${tsp-format}")
             machine.succeed("${tsp-mount}")
-            machine.succeed("${tsp-mount}") # verify that the command is idempotent
+            machine.succeed("${tsp-mount}") # verify that mount is idempotent
             machine.succeed("${tsp-disko}") # verify that we can destroy and recreate
+            machine.succeed("mkdir -p /mnt/home")
+            machine.succeed("touch /mnt/home/testfile")
+            machine.succeed("${tsp-format}") # verify that format is idempotent
+            machine.succeed("test -e /mnt/home/testfile")
           ''}
           ${lib.optionalString (testMode == "module") ''
             #  running module mode
             machine.succeed("${nodes.machine.system.build.formatScript}")
             machine.succeed("${nodes.machine.system.build.mountScript}")
-            machine.succeed("${nodes.machine.system.build.mountScript}") # verify that the command is idempotent
+            machine.succeed("${nodes.machine.system.build.mountScript}") # verify that mount is idempotent
             machine.succeed("${nodes.machine.system.build.diskoScript}") # verify that we can destroy and recreate again
+            machine.succeed("mkdir -p /mnt/home")
+            machine.succeed("touch /mnt/home/testfile")
+            machine.succeed("${nodes.machine.system.build.formatScript}") # verify that format is idempotent
+            machine.succeed("test -e /mnt/home/testfile")
           ''}
 
           ${postDisko}

@@ -31,7 +31,9 @@
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = ''
-        pvcreate ${config.device}
+        if ! (blkid '${config.device}' | grep -q 'TYPE='); then
+          pvcreate ${config.device}
+        fi
         echo "${config.device}" >>"$disko_devices_dir"/lvm_${config.vg}
       '';
     };
@@ -49,7 +51,7 @@
       internal = true;
       readOnly = true;
       type = lib.types.functionTo (lib.types.listOf lib.types.package);
-      default = pkgs: [ pkgs.lvm2 ];
+      default = pkgs: [ pkgs.gnugrep pkgs.lvm2 ];
       description = "Packages";
     };
   };

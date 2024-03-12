@@ -68,16 +68,23 @@
         in
         ''
           readarray -t lvm_devices < <(cat "$disko_devices_dir"/lvm_${config.name})
-          vgcreate ${config.name} \
-            "''${lvm_devices[@]}"
+          if ! vgdisplay "${config.name}" >/dev/null; then
+            vgcreate ${config.name} \
+              "''${lvm_devices[@]}"
+          fi
           ${lib.concatMapStrings (lv: ''
-            lvcreate \
-              --yes \
-              ${if lib.hasInfix "%" lv.size then "-l" else "-L"} ${lv.size} \
-              -n ${lv.name} \
-              ${lib.optionalString (lv.lvm_type != null) "--type=${lv.lvm_type}"} \
-              ${toString lv.extraArgs} \
-              ${config.name}
+            if ! lvdisplay '${config.name}/${lv.name}'; then
+              lvcreate \
+                --yes \
+                ${if lib.hasInfix "%" lv.size then "-l" else "-L"} ${lv.size} \
+                -n ${lv.name} \
+                ${lib.optionalString (lv.lvm_type != null) "--type=${lv.lvm_type}"} \
+                ${toString lv.extraArgs} \
+                ${config.name}
+            fi
+          '') sortedLvs}
+
+          ${lib.concatMapStrings (lv: ''
             ${lib.optionalString (lv.content != null) lv.content._create}
           '') sortedLvs}
         '';

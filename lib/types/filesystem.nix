@@ -44,9 +44,11 @@
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = ''
-        mkfs.${config.format} \
-          ${toString config.extraArgs} \
-          ${config.device}
+        if ! (blkid '${config.device}' | grep -q 'TYPE='); then
+          mkfs.${config.format} \
+            ${toString config.extraArgs} \
+            ${config.device}
+        fi
       '';
     };
     _mount = diskoLib.mkMountOption {
@@ -79,7 +81,7 @@
       readOnly = true;
       # type = lib.types.functionTo (lib.types.listOf lib.types.package);
       default = pkgs:
-        [ pkgs.util-linux ] ++ (
+        [ pkgs.util-linux pkgs.gnugrep ] ++ (
           # TODO add many more
           if (config.format == "xfs") then [ pkgs.xfsprogs ]
           else if (config.format == "btrfs") then [ pkgs.btrfs-progs ]

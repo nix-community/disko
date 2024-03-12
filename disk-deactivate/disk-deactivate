@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -efux -o pipefail
-# dependencies: bash jq util-linux lvm2 mdadm zfs
+# dependencies: bash jq util-linux lvm2 mdadm zfs gnugrep
 disk=$(realpath "$1")
 
 lsblk -a -f >&2

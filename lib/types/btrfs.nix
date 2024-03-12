@@ -31,7 +31,11 @@ let
   swapCreate = mountpoint: swap:
     lib.concatMapStringsSep
       "\n"
-      (file: ''btrfs filesystem mkswapfile --size ${file.size} "${mountpoint}/${file.path}"'')
+      (file: ''
+      if ! test -e "${mountpoint}/${file.path}"; then
+        btrfs filesystem mkswapfile --size ${file.size} "${mountpoint}/${file.path}"
+      fi
+      '')
       (lib.attrValues swap);
 
 in
@@ -112,26 +116,33 @@ in
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = ''
-        mkfs.btrfs ${config.device} ${toString config.extraArgs}
-        ${lib.optionalString (config.swap != {}) ''
-          (
-            MNTPOINT=$(mktemp -d)
-            mount ${device} "$MNTPOINT" -o subvol=/
-            trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-            ${swapCreate "$MNTPOINT" config.swap}
-          )
-        ''}
-        ${lib.concatMapStrings (subvol: ''
-          (
-            MNTPOINT=$(mktemp -d)
-            mount ${config.device} "$MNTPOINT" -o subvol=/
-            trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
-            SUBVOL_ABS_PATH="$MNTPOINT/${subvol.name}"
-            mkdir -p "$(dirname "$SUBVOL_ABS_PATH")"
-            btrfs subvolume create "$SUBVOL_ABS_PATH" ${toString subvol.extraArgs}
-            ${swapCreate "$SUBVOL_ABS_PATH" subvol.swap}
-          )
-        '') (lib.attrValues config.subvolumes)}
+        # create the filesystem only if the device seems empty
+        if ! (blkid '${config.device}' -o export | grep -q '^TYPE='); then
+          mkfs.btrfs "${config.device}" ${toString config.extraArgs}
+        fi
+        if (blkid "${config.device}" -o export | grep -q '^TYPE=btrfs$'); then
+          ${lib.optionalString (config.swap != {}) ''
+            (
+              MNTPOINT=$(mktemp -d)
+              mount ${device} "$MNTPOINT" -o subvol=/
+              trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
+              ${swapCreate "$MNTPOINT" config.swap}
+            )
+          ''}
+          ${lib.concatMapStrings (subvol: ''
+            (
+              MNTPOINT=$(mktemp -d)
+              mount ${config.device} "$MNTPOINT" -o subvol=/
+              trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
+              SUBVOL_ABS_PATH="$MNTPOINT/${subvol.name}"
+              mkdir -p "$(dirname "$SUBVOL_ABS_PATH")"
+              if ! btrfs subvolume show "$SUBVOL_ABS_PATH" > /dev/null 2>&1; then
+                btrfs subvolume create "$SUBVOL_ABS_PATH" ${toString subvol.extraArgs}
+              fi
+              ${swapCreate "$SUBVOL_ABS_PATH" subvol.swap}
+            )
+          '') (lib.attrValues config.subvolumes)}
+        fi
       '';
     };
     _mount = diskoLib.mkMountOption {
@@ -206,7 +217,7 @@ in
       readOnly = true;
       type = lib.types.functionTo (lib.types.listOf lib.types.package);
       default = pkgs:
-        [ pkgs.btrfs-progs pkgs.coreutils ];
+        [ pkgs.btrfs-progs pkgs.coreutils pkgs.gnugrep ];
       description = "Packages";
     };
   };
