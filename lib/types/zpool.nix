@@ -62,13 +62,32 @@
       inherit config options;
       default = ''
         readarray -t zfs_devices < <(cat "$disko_devices_dir"/zfs_${config.name})
-        zpool create -f ${config.name} \
-          -R ${rootMountPoint} ${config.mode} \
-          ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") config.options)} \
-          ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-O ${n}=${v}") config.rootFsOptions)} \
-          "''${zfs_devices[@]}"
-        if [[ $(zfs get -H mounted ${config.name} | cut -f3) == "yes" ]]; then
-          zfs unmount ${config.name}
+        if zpool list '${config.name}'; then
+          echo "not creating zpool ${config.name} as a pool with that name already exists" >&2
+        else
+          continue=1
+          for dev in "''${zfs_devices[@]}"; do
+            if ! blkid "$dev" >/dev/null; then
+              # blkid fails, so device seems empty
+              :
+            elif (blkid "$dev" -o export | grep '^PTUUID='); then
+              echo "device $dev already has a partuuid, skipping creating zpool ${config.name}" >&2
+              continue=0
+            elif (blkid "$dev" -o export | grep '^TYPE='); then
+              echo "device $dev already has a partition, skipping creating zpool ${config.name}" >&2
+              continue=0
+            fi
+          done
+          if [ $continue -eq 1 ]; then
+            zpool create -f ${config.name} \
+              -R ${rootMountPoint} ${config.mode} \
+              ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") config.options)} \
+              ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-O ${n}=${v}") config.rootFsOptions)} \
+              "''${zfs_devices[@]}"
+            if [[ $(zfs get -H mounted ${config.name} | cut -f3) == "yes" ]]; then
+              zfs unmount ${config.name}
+            fi
+          fi
         fi
         ${lib.concatMapStrings (dataset: dataset._create) (lib.attrValues config.datasets)}
       '';
@@ -98,7 +117,7 @@
       internal = true;
       readOnly = true;
       type = lib.types.functionTo (lib.types.listOf lib.types.package);
-      default = pkgs: [ pkgs.util-linux ] ++ lib.flatten (map (dataset: dataset._pkgs pkgs) (lib.attrValues config.datasets));
+      default = pkgs: [ pkgs.gnugrep pkgs.util-linux ] ++ lib.flatten (map (dataset: dataset._pkgs pkgs) (lib.attrValues config.datasets));
       description = "Packages";
     };
   };

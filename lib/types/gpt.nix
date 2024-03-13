@@ -153,34 +153,44 @@ in
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = ''
+        if ! blkid "${config.device}" >/dev/null; then
+          ${lib.concatStrings (map (partition: ''
+            if sgdisk \
+              --info=${toString partition._index} \
+              ${config.device} > /dev/null 2>&1
+            then
+              sgdisk \
+                --align-end \
+                --new=${toString partition._index}:${partition.start}:${partition.end} \
+                --change-name=${toString partition._index}:${partition.label} \
+                --typecode=${toString partition._index}:${partition.type} \
+                ${config.device}
+              # ensure /dev/disk/by-path/..-partN exists before continuing
+              partprobe ${config.device}
+              udevadm trigger --subsystem-match=block
+              udevadm settle
+            fi
+          '') sortedPartitions)}
+
+          ${
+            lib.optionalString (sortedHybridPartitions != [])
+            ("sgdisk -h "
+              + (lib.concatStringsSep ":" (map (p: (toString p._index)) sortedHybridPartitions))
+              + (
+                lib.optionalString (!config.efiGptPartitionFirst) ":EE "
+              )
+              + parent.device)
+          }
+          ${lib.concatMapStrings (p:
+              p.hybrid._create
+            )
+            sortedHybridPartitions
+          }
+        fi
+
         ${lib.concatStrings (map (partition: ''
-          sgdisk \
-            --align-end \
-            --new=${toString partition._index}:${partition.start}:${partition.end} \
-            --change-name=${toString partition._index}:${partition.label} \
-            --typecode=${toString partition._index}:${partition.type} \
-            ${config.device}
-          # ensure /dev/disk/by-path/..-partN exists before continuing
-          partprobe ${config.device}
-          udevadm trigger --subsystem-match=block
-          udevadm settle
           ${lib.optionalString (partition.content != null) partition.content._create}
         '') sortedPartitions)}
-
-        ${
-          lib.optionalString (sortedHybridPartitions != [])
-          ("sgdisk -h "
-            + (lib.concatStringsSep ":" (map (p: (toString p._index)) sortedHybridPartitions))
-            + (
-              lib.optionalString (!config.efiGptPartitionFirst) ":EE "
-            )
-            + parent.device)
-        }
-        ${lib.concatMapStrings (p:
-            p.hybrid._create
-          )
-          sortedHybridPartitions}
-
       '';
     };
     _mount = diskoLib.mkMountOption {

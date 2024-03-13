@@ -52,7 +52,7 @@
           "com.sun:auto-snapshot" = "false";
         };
         mountpoint = "/";
-        postCreateHook = "zfs snapshot zroot@blank";
+        postCreateHook = "zfs list -t snapshot -H -o name | grep -E '^zroot@blank$' || zfs snapshot zroot@blank";
 
         datasets = {
           zfs_fs = {

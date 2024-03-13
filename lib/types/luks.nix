@@ -112,26 +112,28 @@ in
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = ''
-        ${lib.optionalString config.askPassword ''
-          set +x
-          askPassword() {
-            echo "Enter password for ${config.device}: "
-            IFS= read -r -s password
-            echo "Enter password for ${config.device} again to be safe: "
-            IFS= read -r -s password_check
-            export password
-            [ "$password" = "$password_check" ]
-          }
-          until askPassword; do
-            echo "Passwords did not match, please try again."
-          done
-          set -x
-        ''}
-        cryptsetup -q luksFormat ${config.device} ${toString config.extraFormatArgs} ${keyFileArgs}
-        ${cryptsetupOpen} --persistent
-        ${toString (lib.forEach config.additionalKeyFiles (keyFile: ''
-          cryptsetup luksAddKey ${config.device} ${keyFile} ${keyFileArgs}
-        ''))}
+        if ! blkid "${config.device}" >/dev/null || ! (blkid "${config.device}" -o export | grep -q '^TYPE='); then
+          ${lib.optionalString config.askPassword ''
+            set +x
+            askPassword() {
+              echo "Enter password for ${config.device}: "
+              IFS= read -r -s password
+              echo "Enter password for ${config.device} again to be safe: "
+              IFS= read -r -s password_check
+              export password
+              [ "$password" = "$password_check" ]
+            }
+            until askPassword; do
+              echo "Passwords did not match, please try again."
+            done
+            set -x
+          ''}
+          cryptsetup -q luksFormat ${config.device} ${toString config.extraFormatArgs} ${keyFileArgs}
+          ${cryptsetupOpen} --persistent
+          ${toString (lib.forEach config.additionalKeyFiles (keyFile: ''
+            cryptsetup luksAddKey ${config.device} ${keyFile} ${keyFileArgs}
+          ''))}
+        fi
         ${lib.optionalString (config.content != null) config.content._create}
       '';
     };
@@ -176,7 +178,7 @@ in
       internal = true;
       readOnly = true;
       type = lib.types.functionTo (lib.types.listOf lib.types.package);
-      default = pkgs: [ pkgs.cryptsetup ] ++ (lib.optionals (config.content != null) (config.content._pkgs pkgs));
+      default = pkgs: [ pkgs.gnugrep pkgs.cryptsetup ] ++ (lib.optionals (config.content != null) (config.content._pkgs pkgs));
       description = "Packages";
     };
   };

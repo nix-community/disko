@@ -59,8 +59,10 @@
       # since (create order != mount order)
       # -p creates parents automatically
       default = ''
-        zfs create -up ${config._name} \
-          ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") config.options)}
+        if ! zfs get type ${config._name} >/dev/null 2>&1; then
+          zfs create -up ${config._name} \
+            ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") config.options)}
+        fi
       '';
     } // { readOnly = false; };
 
