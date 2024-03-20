@@ -111,7 +111,6 @@
             partprobe ${config.device}
             udevadm trigger --subsystem-match=block
             udevadm settle
-            ${lib.optionalString (partition.content != null) partition.content._create}
           '') config.partitions)}
         fi
         ${lib.concatStrings (map (partition: ''
