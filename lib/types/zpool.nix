@@ -73,6 +73,9 @@
             elif (blkid "$dev" -o export | grep '^PTUUID='); then
               echo "device $dev already has a partuuid, skipping creating zpool ${config.name}" >&2
               continue=0
+            elif (blkid "$dev" -o export | grep '^TYPE=zfs_member'); then
+              # zfs_member is a zfs partition, so we try to add the device to the pool
+              :
             elif (blkid "$dev" -o export | grep '^TYPE='); then
               echo "device $dev already has a partition, skipping creating zpool ${config.name}" >&2
               continue=0
