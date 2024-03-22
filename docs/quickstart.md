@@ -198,6 +198,6 @@ take care of that automatically.
 f) Finish the installation and reboot your machine,
 
 ```console
-nixos-install
+nixos-install --root /mnt
 reboot
 ```
