@@ -53,7 +53,7 @@ Then add the following to your configuration.nix in the `imports` list:
 
 ```nix
 {
-  imports = [ "${(import ./nix/sources.nix).disko}/modules/disko.nix" ];
+  imports = [ "${(import ./nix/sources.nix).disko}/module.nix" ];
 }
 ```
 
@@ -72,7 +72,7 @@ Then add the following to your configuration.nix in the `imports` list:
 
 ```nix
 {
-  imports = [ <disko/modules/disko.nix> ];
+  imports = [ <disko/module.nix> ];
 }
 ```
 
