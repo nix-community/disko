@@ -90,7 +90,6 @@ parseArgs() {
         exit 1
         ;;
       esac
-      mode=$2
       shift
       ;;
     --extra-files)
@@ -152,6 +151,12 @@ main() {
 
   if [[ -z ${flake-} ]]; then
     echo "Please specify the flake-uri with --flake to use for installation." >&2
+    exit 1
+  fi
+
+  # check if we are root
+  if [[ "$EUID" -ne 0 ]]; then
+    echo "This script must be run as root" >&2
     exit 1
   fi
 
