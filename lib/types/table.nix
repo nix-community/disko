@@ -31,7 +31,7 @@
             description = "Partition type";
           };
           fs-type = lib.mkOption {
-            type = lib.types.nullOr (lib.types.enum [ "btrfs" "ext2" "ext3" "ext4" "fat16" "fat32" "hfs" "hfs+" "linux-swap" "ntfs" "reiserfs" "udf" "xfs" ]);
+            type = lib.types.nullOr (lib.types.enum [ "bcachefs" "btrfs" "ext2" "ext3" "ext4" "fat16" "fat32" "hfs" "hfs+" "linux-swap" "ntfs" "reiserfs" "udf" "xfs" ]);
             default = null;
             description = "Filesystem type to use";
           };
