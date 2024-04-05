@@ -400,6 +400,7 @@ let
                   lvm2
                   bash
                   jq
+                  gnused
                 ])}:$PATH
                 ${cfg.config._destroy}
               '';
