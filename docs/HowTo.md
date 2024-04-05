@@ -59,6 +59,29 @@ Then add the following to your configuration.nix in the `imports` list:
 
 </details>
 <details>
+  <summary>npins</summary>
+
+First add it to [npins](https://github.com/andir/npins):
+
+```console
+npins add github nix-community disko
+```
+
+Then add the following to your configuration.nix in the `imports` list:
+
+```nix
+let
+  sources = import ./npins;
+  disko = import sources.disko {};
+in
+{
+  imports = [ "${disko}/module.nix" ];
+  …
+}
+```
+
+</details>
+<details>
   <summary>nix-channel</summary>
 
 As root run:
