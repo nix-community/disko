@@ -449,7 +449,7 @@ let
 
               # shellcheck disable=SC2043
               for dev in ${toString (lib.catAttrs "device" (lib.attrValues devices.disk))}; do
-                ${../disk-deactivate}/disk-deactivate "$dev"
+                $BASH ${../disk-deactivate}/disk-deactivate "$dev"
               done
             '';
           };
