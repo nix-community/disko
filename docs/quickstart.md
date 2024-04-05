@@ -68,24 +68,24 @@ In Step 1, you chose a disk layout configuration from the
 and made a note of its URL.
 
 Your configuration needs to be saved on the new machine for example
-as /tmp/disko-config.nix. You can do this using the `curl` command to download
+as /tmp/disk-config.nix. You can do this using the `curl` command to download
 from the url you noted above, using the `-o` option to save the file as
-disko-config.nix. Your commands would look like this if you had chosen the
+disk-config.nix. Your commands would look like this if you had chosen the
 hybrid layout:
 
 ```console
 cd /tmp
-curl https://raw.githubusercontent.com/nix-community/disko/master/example/hybrid.nix -o /tmp/disko-config.nix
+curl https://raw.githubusercontent.com/nix-community/disko/master/example/hybrid.nix -o /tmp/disk-config.nix
 ```
 
 ### Step 5: Adjust the device in the disk configuration
 
-Inside the disko-config.nix the device needs to point to the correct disk name.
+Inside the disk-config.nix the device needs to point to the correct disk name.
 
 Open the configuration in your favorite editor i.e.:
 
 ```console
-nano /tmp/disko-config.nix
+nano /tmp/disk-config.nix
 ```
 
 Replace `<disk-name>` with the name of your disk obtained in Step 1.
@@ -107,7 +107,7 @@ The following step will partition and format your disk, and mount it to `/mnt`.
 **Please note: This will erase any existing data on your disk.**
 
 ```console
-sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko -- --mode disko /tmp/disko-config.nix
+sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko -- --mode disko /tmp/disk-config.nix
 ```
 
 After the command has run, your file system should have been formatted and
@@ -131,13 +131,13 @@ the NixOS installation as described in the
 [NixOS manual](https://nixos.org/manual/nixos/stable/index.html#sec-installation) -
 see the section headed "**Installing**", Steps 3 onwards. However, you will need
 to include the partitioning and formatting configurations that you copied into
-`/tmp/disko-config.nix` in your configuration, rather than allowing NixOS to
+`/tmp/disk-config.nix` in your configuration, rather than allowing NixOS to
 generate information about your file systems. When you are configuring the
 system as per Step 4 of the manual, you should:
 
 a) Include the `no-filesystems` switch when using the `nixos-generate-config`
 command to generate an initial `configuration.nix`. You will be supplying the
-file system configuration details from `disko-config.nix`. Your CLI command to
+file system configuration details from `disk-config.nix`. Your CLI command to
 generate the configuration will be:
 
 ```console
@@ -149,7 +149,7 @@ This will create the file `configuration.nix` in `/mnt/etc/nixos`.
 b) Move the `disko` configuration to /etc/nixos
 
 ```console
-mv /tmp/disko-config.nix /mnt/etc/nixos
+mv /tmp/disk-config.nix /mnt/etc/nixos
 ```
 
 c) You can now edit `configuration.nix` as per your requirements. This is
@@ -163,7 +163,7 @@ NixOS configuration in the manual:
 [Example: NixOS Configuration](https://nixos.org/manual/nixos/stable/index.html#ex-config).
 
 d) When editing `configuration.nix`, you will need to add the `disko` NixOS
-module and `disko-config.nix` to the imports section. This section will already
+module and `disk-config.nix` to the imports section. This section will already
 include the file `./hardware-configuration.nix`, and you can add the new entries
 just below this. This section will now include:
 
@@ -172,7 +172,7 @@ imports =
  [ # Include the results of the hardware scan.
    ./hardware-configuration.nix
    "${builtins.fetchTarball "https://github.com/nix-community/disko/archive/master.tar.gz"}/module.nix"
-   ./disko-config.nix
+   ./disk-config.nix
  ];
 ```
 
