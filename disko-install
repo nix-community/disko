@@ -6,6 +6,9 @@ showUsage() {
   cat <<EOF
 Usage: $0 [OPTIONS]
   --mode MODE                 Specify the mode of operation. Valid modes are: format, mount.
+                              Format will format the disk before installing.
+                              Mount will mount the disk before installing.
+                              Mount is useful for updating an existing system without losing data.
   -f, --flake FLAKE_URI#ATTR  Use the specified flake to install the NixOS configuration.
   --disk NAME DEVICE          Map the specified disk name to the specified device path.
   --dry-run                   Print the commands that would be run, but do not run them.
