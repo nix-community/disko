@@ -125,3 +125,89 @@ $ sudo nix run 'github:nix-community/disko#disko-install' -- --write-efi-boot-en
 
 This command installs NixOS with **disko-install** and sets the newly installed system as the default boot option,
 without affecting the flexibility to boot from other devices if needed.
+
+### Using disko-install in an offline installer
+
+If you want to **disko-install** from a customer installer without internet, you need to make sure that
+next the toplevel of your NixOS closure that you plan to install, it also needs **diskoScript** and
+all the flake inputs for evaluation.
+
+#### Example configuration to install
+
+Add this to your flake.nix output:
+
+```nix
+{
+  nixosConfigurations.your-machine = inputs.nixpkgs.lib.nixosSystem {
+    system = "x86_64-linux";
+    modules = [
+      {
+        # TODO: add your NixOS configuration here, don't forget your hardware-configuration.nix as well!
+        boot.loader.systemd-boot.enable = true;
+        imports = [ self.inputs.disko.nixosModules.disko ];
+        disko.devices = {
+          disk = {
+            vdb = {
+              device = "/dev/disk/by-id/some-disk-id";
+              type = "disk";
+              content = {
+                type = "gpt";
+                partitions = {
+                  ESP = {
+                    type = "EF00";
+                    size = "500M";
+                    content = {
+                      type = "filesystem";
+                      format = "vfat";
+                      mountpoint = "/boot";
+                    };
+                  };
+                  root = {
+                    size = "100%";
+                    content = {
+                      type = "filesystem";
+                      format = "ext4";
+                      mountpoint = "/";
+                    };
+                  };
+                };
+              };
+            };
+          };
+        };
+      }
+    ];
+  };
+}
+```
+
+#### Example for a NixOS installer
+
+```nix
+# `self` here is referring to the flake `self`, you may need to pass it using `specialArgs` or define your NixOS installer configuration
+# in the flake.nix itself to get direct access to the `self` flake variable.
+{ pkgs, self, ... }:
+let
+  dependencies = [
+    pkgs.stdenv.drvPath
+    self.nixosConfigurations.your-machine.config.system.build.toplevel
+    self.nixosConfigurations.your-machine.config.system.build.diskoScript
+  ] ++ builtins.map (i: i.outPath) (builtins.attrValues self.inputs);
+
+  closureInfo = pkgs.closureInfo { rootPaths = dependencies; };
+in
+# Now add `closureInfo` to your NixOS installer
+{
+  environment.etc."install-closure".source = "${closureInfo}/store-paths";
+
+  environment.systemPackages = [
+    (pkgs.writeShellScriptBin "install-nixos-unattended" ''
+      set -eux
+      # Replace "/dev/disk/by-id/some-disk-id" with your actual disk ID
+      exec ${pkgs.disko}/bin/disko-install --flake "${self}#your-machine" --disk vdb "/dev/disk/by-id/some-disk-id"
+    '')
+  ];
+}
+```
+
+Also see the [NixOS test of disko-install](https://github.com/nix-community/disko/blob/master/tests/disko-install/default.nix) that also runs without internet.
