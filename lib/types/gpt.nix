@@ -74,6 +74,11 @@ in
               can be 100% for the whole remaining disk, will be done last in that case.
             '';
           };
+          alignment = lib.mkOption {
+            type = lib.types.int;
+            default = if (builtins.substring (builtins.stringLength partition.config.start - 1) 1 partition.config.start == "s" || (builtins.substring (builtins.stringLength partition.config.end - 1) 1 partition.config.end == "s" )) then 1 else 0;
+            description = "Alignment of the partition, if sectors are used as start or end it can be aligned to 1";
+          };
           start = lib.mkOption {
             type = lib.types.str;
             default = "0";
@@ -159,7 +164,7 @@ in
         ${lib.concatStrings (map (partition: ''
           # try to create the partition, if it fails, try to change the type and name
           if ! sgdisk \
-            --align-end \
+            --align-end ${lib.optionalString (partition.alignment != 0) ''--set-alignment=${builtins.toString partition.alignment}''} \
             --new=${toString partition._index}:${partition.start}:${partition.end} \
             --change-name=${toString partition._index}:${partition.label} \
             --typecode=${toString partition._index}:${partition.type} \
