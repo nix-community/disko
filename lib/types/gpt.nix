@@ -74,6 +74,11 @@ in
               can be 100% for the whole remaining disk, will be done last in that case.
             '';
           };
+          alignment = lib.mkOption {
+            type = lib.types.int;
+            default = if (builtins.substring (builtins.stringLength partition.config.start - 1) 1 partition.config.start == "s" || (builtins.substring (builtins.stringLength partition.config.end - 1) 1 partition.config.end == "s" )) then 1 else 0;
+            description = "Alignment of the partition, if sectors are used as start or end it can be aligned to 1";
+          };
           start = lib.mkOption {
             type = lib.types.str;
             default = "0";
@@ -153,40 +158,42 @@ in
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = ''
-        if ! blkid "${config.device}" >/dev/null; then
-          ${lib.concatStrings (map (partition: ''
-            if sgdisk \
-              --info=${toString partition._index} \
-              ${config.device} > /dev/null 2>&1
-            then
-              sgdisk \
-                --align-end \
-                --new=${toString partition._index}:${partition.start}:${partition.end} \
-                --change-name=${toString partition._index}:${partition.label} \
-                --typecode=${toString partition._index}:${partition.type} \
-                ${config.device}
-              # ensure /dev/disk/by-path/..-partN exists before continuing
-              partprobe ${config.device}
-              udevadm trigger --subsystem-match=block
-              udevadm settle
-            fi
-          '') sortedPartitions)}
-
-          ${
-            lib.optionalString (sortedHybridPartitions != [])
-            ("sgdisk -h "
-              + (lib.concatStringsSep ":" (map (p: (toString p._index)) sortedHybridPartitions))
-              + (
-                lib.optionalString (!config.efiGptPartitionFirst) ":EE "
-              )
-              + parent.device)
-          }
-          ${lib.concatMapStrings (p:
-              p.hybrid._create
-            )
-            sortedHybridPartitions
-          }
+        if ! blkid "${config.device}" >&2; then
+          sgdisk --clear ${config.device}
         fi
+        ${lib.concatStrings (map (partition: ''
+          # try to create the partition, if it fails, try to change the type and name
+          if ! sgdisk \
+            --align-end ${lib.optionalString (partition.alignment != 0) ''--set-alignment=${builtins.toString partition.alignment}''} \
+            --new=${toString partition._index}:${partition.start}:${partition.end} \
+            --change-name=${toString partition._index}:${partition.label} \
+            --typecode=${toString partition._index}:${partition.type} \
+            ${config.device}
+          then sgdisk \
+            --change-name=${toString partition._index}:${partition.label} \
+            --typecode=${toString partition._index}:${partition.type} \
+            ${config.device}
+          fi
+          # ensure /dev/disk/by-path/..-partN exists before continuing
+          partprobe ${config.device} || : # sometimes partprobe fails, but the partitions are still up2date
+          udevadm trigger --subsystem-match=block
+          udevadm settle
+        '') sortedPartitions)}
+
+        ${
+          lib.optionalString (sortedHybridPartitions != [])
+          ("sgdisk -h "
+            + (lib.concatStringsSep ":" (map (p: (toString p._index)) sortedHybridPartitions))
+            + (
+              lib.optionalString (!config.efiGptPartitionFirst) ":EE "
+            )
+            + parent.device)
+        }
+        ${lib.concatMapStrings (p:
+            p.hybrid._create
+          )
+          sortedHybridPartitions
+        }
 
         ${lib.concatStrings (map (partition: ''
           ${lib.optionalString (partition.content != null) partition.content._create}

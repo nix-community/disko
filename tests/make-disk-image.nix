@@ -8,6 +8,7 @@ diskoLib.makeDiskImages {
     ({ config, ... }: {
       documentation.enable = false;
       system.stateVersion = config.system.nixos.version;
+      disko.memSize = 2048;
     })
   ];
 }
