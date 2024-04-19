@@ -24,6 +24,7 @@ pkgs.nixosTest {
         startCommand += " -cpu max -m 1024 -virtfs local,path=/nix/store,security_model=none,mount_tag=nix-store"
         startCommand += f' -drive file={oldmachine.state_dir}/empty0.qcow2,id=drive1,if=none,index=1,werror=report'
         startCommand += ' -device virtio-blk-pci,drive=drive1'
+        startCommand +=" -drive if=pflash,format=raw,unit=0,readonly=on,file=${pkgs.OVMF.firmware} -drive if=pflash,format=raw,unit=1,readonly=on,file=${pkgs.OVMF.variables}"
         machine = create_machine({
           "startCommand": startCommand,
         } | args)

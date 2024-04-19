@@ -1,4 +1,6 @@
 {
+  boot.loader.systemd-boot.enable = true;
+
   disko.devices = {
     disk = {
       main = {
