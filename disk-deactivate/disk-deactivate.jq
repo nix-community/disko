@@ -69,7 +69,10 @@ def walk:
 
 def init:
   "/dev/\(.name)" as $disk |
-  if $disk == $disk_to_clear then
+  "/dev/disk/by-id/\(."id-link")" as $disk_by_id |
+  "/dev/disk/by-id/\(.tran)-\(.id)" as $disk_by_id2 |
+  "/dev/disk/by-id/\(.tran)-\(.wwn)" as $disk_by_wwn |
+  if $disk == $disk_to_clear or $disk_by_id == $disk_to_clear or $disk_by_id2 == $disk_to_clear or $disk_by_wwn == $disk_to_clear then
     [
       "set -fu",
       walk
