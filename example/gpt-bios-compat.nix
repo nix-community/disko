@@ -11,6 +11,7 @@
             boot = {
               size = "1M";
               type = "EF02"; # for grub MBR
+              priority = 1; # Needs to be first partition
             };
             root = {
               size = "100%";
