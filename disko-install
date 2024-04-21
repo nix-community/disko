@@ -19,6 +19,10 @@ Usage: $0 [OPTIONS]
   --write-efi-boot-entries    Write EFI boot entries to the NVRAM of the system for the installed system.
                               Specify this option if you plan to boot from this disk on the current machine,
                               but not if you plan to move the disk to another machine.
+  --system-option KEY VALUE   Pass the specified system option to the NixOS configuration.
+                              This option can be specified multiple times.
+                              For example, to set the authorizedKeys, use
+                              --system-option users.users.root.openssh.authorizedKeys.keys '[ "ssh-rsa ..." ]'
 EOF
 }
 
@@ -29,6 +33,19 @@ serialiaseArrayToNix() {
   for key in "${!array[@]}"; do
     value=${array[$key]}
     nixExpr+="\"${key//\"/\\\"}\" = \"${value//\"/\\\"}\"; "
+  done
+  nixExpr+="}"
+
+  echo "$nixExpr"
+}
+
+serialiaseArrayToNixUnquoted() {
+  local -n array=$1
+  nixExpr="{ "
+  # Iterate over the associative array to populate the Nix attrset string
+  for key in "${!array[@]}"; do
+    value=${array[$key]}
+    nixExpr+="${key} = ${value};"
   done
   nixExpr+="}"
 
@@ -46,6 +63,7 @@ diskoAttr=diskoScript
 writeEfiBootEntries=false
 declare -A diskMappings
 declare -A extraFiles
+declare -A extraSystemConfig
 
 parseArgs() {
   [[ $# -eq 0 ]] && {
@@ -93,6 +111,16 @@ parseArgs() {
         exit 1
         ;;
       esac
+      shift
+      ;;
+    --system-option)
+      if [[ $# -lt 3 ]]; then
+        echo "Option $1 requires two arguments: key, value" >&2
+        exit 1
+      fi
+      # shellcheck disable=SC2034
+      extraSystemConfig[$2]=$3
+      shift
       shift
       ;;
     --extra-files)
@@ -193,6 +221,7 @@ main() {
     --argstr rootMountPoint "$mountPoint" \
     --arg writeEfiBootEntries "$writeEfiBootEntries" \
     --arg diskMappings "$(serialiaseArrayToNix diskMappings)" \
+    --arg extraSystemConfig "$(serialiaseArrayToNixUnquoted extraSystemConfig)" \
     -A installToplevel \
     -A "$diskoAttr")
 
