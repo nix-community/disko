@@ -32,9 +32,9 @@ let
     lib.concatMapStringsSep
       "\n"
       (file: ''
-      if ! test -e "${mountpoint}/${file.path}"; then
-        btrfs filesystem mkswapfile --size ${file.size} "${mountpoint}/${file.path}"
-      fi
+        if ! test -e "${mountpoint}/${file.path}"; then
+          btrfs filesystem mkswapfile --size ${file.size} "${mountpoint}/${file.path}"
+        fi
       '')
       (lib.attrValues swap);
 

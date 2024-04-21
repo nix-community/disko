@@ -70,8 +70,8 @@ and made a note of its URL.
 Your configuration needs to be saved on the new machine for example
 as /tmp/disk-config.nix. You can do this using the `curl` command to download
 from the url you noted above, using the `-o` option to save the file as
-disk-config.nix. Your commands would look like this if you had chosen the
-hybrid layout:
+disk-config.nix. Your commands would look like this if you had chosen the hybrid
+layout:
 
 ```console
 cd /tmp
@@ -182,8 +182,8 @@ of the NixOS manual. The following configuration for `grub` works for both EFI
 and BIOS systems. Add this to your configuration.nix, commenting out the
 existing lines that configure `systemd-boot`. The entries will look like this:
 
-**Note:** Its not necessary to set `boot.loader.grub.device` here, since Disko will
-take care of that automatically.
+**Note:** Its not necessary to set `boot.loader.grub.device` here, since Disko
+will take care of that automatically.
 
 ```nix
 # ...

@@ -85,7 +85,7 @@ let
       else if match "/dev/mapper/.+" dev != null then
         "${dev}${toString index}" # /dev/mapper/vg-lv1 style
       else if match "/dev/loop[[:digit:]]+" dev != null
-        then "${dev}p${toString index}" # /dev/mapper/vg-lv1 style
+      then "${dev}p${toString index}" # /dev/mapper/vg-lv1 style
       else
         abort ''
           ${dev} seems not to be a supported disk format. Please add this to disko in https://github.com/nix-community/disko/blob/master/lib/default.nix
@@ -191,10 +191,10 @@ let
         isAttrsOfSubmodule = o: o.type.name == "attrsOf" && o.type.nestedTypes.elemType.name == "submodule";
         isSerializable = n: o: !(
           lib.hasPrefix "_" n
-          || lib.hasSuffix "Hook" n
-          || isAttrsOfSubmodule o
-          # TODO don't hardcode diskoLib.subType options.
-          || n == "content" || n == "partitions" || n == "datasets" || n == "swap"
+            || lib.hasSuffix "Hook" n
+            || isAttrsOfSubmodule o
+            # TODO don't hardcode diskoLib.subType options.
+            || n == "content" || n == "partitions" || n == "datasets" || n == "swap"
         );
       in
       lib.toShellVars
@@ -245,14 +245,17 @@ let
         internal = true;
         readOnly = true;
         type = diskoLib.jsonType;
-        default = lib.mapAttrsRecursive (name: value: if builtins.isString value then ''
-          (
-            ${diskoLib.indent (diskoLib.defineHookVariables { inherit options; })}
-            ${config.preMountHook}
-            ${diskoLib.indent value}
-            ${config.postMountHook}
-          )
-        '' else value) attrs.default;
+        default = lib.mapAttrsRecursive
+          (_name: value:
+            if builtins.isString value then ''
+              (
+                ${diskoLib.indent (diskoLib.defineHookVariables { inherit options; })}
+                ${config.preMountHook}
+                ${diskoLib.indent value}
+                ${config.postMountHook}
+              )
+            '' else value)
+          attrs.default;
         description = "Mount script";
       };
 

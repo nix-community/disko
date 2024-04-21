@@ -52,19 +52,20 @@
       description = "Metadata";
     };
 
-    _create = diskoLib.mkCreateOption {
-      inherit config options;
-      # -u prevents mounting newly created datasets, which is
-      # important to prevent accidental shadowing of mount points
-      # since (create order != mount order)
-      # -p creates parents automatically
-      default = ''
-        if ! zfs get type ${config._name} >/dev/null 2>&1; then
-          zfs create -up ${config._name} \
-            ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") config.options)}
-        fi
-      '';
-    } // { readOnly = false; };
+    _create = diskoLib.mkCreateOption
+      {
+        inherit config options;
+        # -u prevents mounting newly created datasets, which is
+        # important to prevent accidental shadowing of mount points
+        # since (create order != mount order)
+        # -p creates parents automatically
+        default = ''
+          if ! zfs get type ${config._name} >/dev/null 2>&1; then
+            zfs create -up ${config._name} \
+              ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") config.options)}
+          fi
+        '';
+      } // { readOnly = false; };
 
     _mount = diskoLib.mkMountOption {
       inherit config options;
