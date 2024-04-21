@@ -1,10 +1,12 @@
 # disko-install
 
-**disko-install** enhances the normal `nixos-install` with disko's partitioning feature.
-It can be started from the NixOS installer but it can also be used to create bootable USB-Sticks from your normal workstation.
-Furthermore `disko-install` has a mount mode that will only mount but not destroy existing partitions.
-The mount mode can be used to mount and repair existing NixOS installations.
-This document provides a comprehensive guide on how to use **disko-install**, including examples for typical usage scenarios.
+**disko-install** enhances the normal `nixos-install` with disko's partitioning
+feature. It can be started from the NixOS installer but it can also be used to
+create bootable USB-Sticks from your normal workstation. Furthermore
+`disko-install` has a mount mode that will only mount but not destroy existing
+partitions. The mount mode can be used to mount and repair existing NixOS
+installations. This document provides a comprehensive guide on how to use
+**disko-install**, including examples for typical usage scenarios.
 
 ## Requirements
 
@@ -16,7 +18,8 @@ This document provides a comprehensive guide on how to use **disko-install**, in
 
 ### Fresh Installation
 
-For a fresh installation, where **disko-install** will handle partitioning and setting up the disk, use the following syntax:
+For a fresh installation, where **disko-install** will handle partitioning and
+setting up the disk, use the following syntax:
 
 ```console
 sudo nix run 'github:nix-community/disko#disko-install' -- --flake <flake-url>#<flake-attr> --disk <disk-name> <disk-device>
@@ -24,11 +27,11 @@ sudo nix run 'github:nix-community/disko#disko-install' -- --flake <flake-url>#<
 
 Example:
 
-First run `nixos-generate-config --root /tmp/config --no-filesystems` and
-edit `configuration.nix` to your liking.
+First run `nixos-generate-config --root /tmp/config --no-filesystems` and edit
+`configuration.nix` to your liking.
 
-Than add the following `flake.nix` inside `/tmp/config/etc/nixos`.
-In this example we assume a system that has been booted with EFI:
+Than add the following `flake.nix` inside `/tmp/config/etc/nixos`. In this
+example we assume a system that has been booted with EFI:
 
 ```nix
 {
@@ -53,6 +56,7 @@ In this example we assume a system that has been booted with EFI:
                   MBR = {
                     type = "EF02"; # for grub MBR
                     size = "1M";
+                    priority = 1; # Needs to be first partition
                   };
                   ESP = {
                     type = "EF00";
@@ -105,8 +109,8 @@ In our example, we want to install to a USB-stick (/dev/sda):
 $ sudo nix run 'github:nix-community/disko#disko-install' -- --flake '/tmp/config/etc/nixos#mymachine' --disk main /dev/sda
 ```
 
-Afterwards you can test your USB-stick by either selecting during the boot
-or attaching it to a qemu-vm:
+Afterwards you can test your USB-stick by either selecting during the boot or
+attaching it to a qemu-vm:
 
 ```
 $ sudo qemu-kvm -enable-kvm -hda /dev/sda
@@ -114,23 +118,25 @@ $ sudo qemu-kvm -enable-kvm -hda /dev/sda
 
 ### Persisting boot entries to EFI vars flash
 
-**disko-install** is designed for NixOS installations on portable storage or disks that may be transferred between computers.
-As such, it does not modify the host's NVRAM by default.
-To ensure your NixOS installation boots seamlessly on new hardware or to prioritize it in your current machine's boot order,
-use the --write-efi-boot-entries option:
+**disko-install** is designed for NixOS installations on portable storage or
+disks that may be transferred between computers. As such, it does not modify the
+host's NVRAM by default. To ensure your NixOS installation boots seamlessly on
+new hardware or to prioritize it in your current machine's boot order, use the
+--write-efi-boot-entries option:
 
 ```console
 $ sudo nix run 'github:nix-community/disko#disko-install' -- --write-efi-boot-entries --flake '/tmp/config/etc/nixos#mymachine' --disk main /dev/sda
 ```
 
-This command installs NixOS with **disko-install** and sets the newly installed system as the default boot option,
-without affecting the flexibility to boot from other devices if needed.
+This command installs NixOS with **disko-install** and sets the newly installed
+system as the default boot option, without affecting the flexibility to boot
+from other devices if needed.
 
 ### Using disko-install in an offline installer
 
-If you want to **disko-install** from a customer installer without internet, you need to make sure that
-next the toplevel of your NixOS closure that you plan to install, it also needs **diskoScript** and
-all the flake inputs for evaluation.
+If you want to **disko-install** from a customer installer without internet, you
+need to make sure that next the toplevel of your NixOS closure that you plan to
+install, it also needs **diskoScript** and all the flake inputs for evaluation.
 
 #### Example configuration to install
 
@@ -212,4 +218,6 @@ in
 }
 ```
 
-Also see the [NixOS test of disko-install](https://github.com/nix-community/disko/blob/master/tests/disko-install/default.nix) that also runs without internet.
+Also see the
+[NixOS test of disko-install](https://github.com/nix-community/disko/blob/master/tests/disko-install/default.nix)
+that also runs without internet.
