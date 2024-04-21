@@ -114,47 +114,49 @@ let
         };
 
         installedTopLevel = ((if extendModules != null then extendModules else installed-system-eval.extendModules) {
-          modules = [({config, ...}: {
-            imports = [
-              extraSystemConfig
-              ({ modulesPath, ... }: {
-                imports = [
-                  (modulesPath + "/testing/test-instrumentation.nix") # we need these 2 modules always to be able to run the tests
-                  (modulesPath + "/profiles/qemu-guest.nix")
-                ];
-                disko.devices = lib.mkForce testConfigBooted.disko.devices;
-              })
-            ];
+          modules = [
+            ({ config, ... }: {
+              imports = [
+                extraSystemConfig
+                ({ modulesPath, ... }: {
+                  imports = [
+                    (modulesPath + "/testing/test-instrumentation.nix") # we need these 2 modules always to be able to run the tests
+                    (modulesPath + "/profiles/qemu-guest.nix")
+                  ];
+                  disko.devices = lib.mkForce testConfigBooted.disko.devices;
+                })
+              ];
 
-            # since we boot on a different machine, the efi payload needs to be portable
-            boot.loader.grub.efiInstallAsRemovable = efi;
-            boot.loader.grub.efiSupport = efi;
-            boot.loader.systemd-boot.graceful = true;
+              # since we boot on a different machine, the efi payload needs to be portable
+              boot.loader.grub.efiInstallAsRemovable = efi;
+              boot.loader.grub.efiSupport = efi;
+              boot.loader.systemd-boot.graceful = true;
 
-            # we always want the bind-mounted nix store. otherwise tests take forever
-            fileSystems."/nix/store" = lib.mkForce {
-              device = "nix-store";
-              fsType = "9p";
-              neededForBoot = true;
-              options = [ "trans=virtio" "version=9p2000.L" "cache=loose" ];
-            };
-            boot.zfs.devNodes = "/dev/disk/by-uuid"; # needed because /dev/disk/by-id is empty in qemu-vms
+              # we always want the bind-mounted nix store. otherwise tests take forever
+              fileSystems."/nix/store" = lib.mkForce {
+                device = "nix-store";
+                fsType = "9p";
+                neededForBoot = true;
+                options = [ "trans=virtio" "version=9p2000.L" "cache=loose" ];
+              };
+              boot.zfs.devNodes = "/dev/disk/by-uuid"; # needed because /dev/disk/by-id is empty in qemu-vms
 
-            # grub will install to these devices, we need to force those or we are offset by 1
-            # we use mkOveride 70, so that users can override this with mkForce in case they are testing grub mirrored boots
-            boot.loader.grub.devices = lib.mkOverride 70 testConfigInstall.boot.loader.grub.devices;
+              # grub will install to these devices, we need to force those or we are offset by 1
+              # we use mkOveride 70, so that users can override this with mkForce in case they are testing grub mirrored boots
+              boot.loader.grub.devices = lib.mkOverride 70 testConfigInstall.boot.loader.grub.devices;
 
-            assertions = [
-              {
-                assertion = builtins.length config.boot.loader.grub.mirroredBoots > 1 -> config.boot.loader.grub.devices == [];
-                message = ''
-                  When using `--vm-test` in combination with `mirroredBoots`,
-                  it is necessary to configure `boot.loader.grub.devices` as an empty list by setting `boot.loader.grub.devices = lib.mkForce [];`.
-                  This adjustment is crucial because the `--vm-test` mechanism automatically overrides the grub boot devices as part of the virtual machine test.
-                '';
-              }
-            ];
-          })];
+              assertions = [
+                {
+                  assertion = builtins.length config.boot.loader.grub.mirroredBoots > 1 -> config.boot.loader.grub.devices == [ ];
+                  message = ''
+                    When using `--vm-test` in combination with `mirroredBoots`,
+                    it is necessary to configure `boot.loader.grub.devices` as an empty list by setting `boot.loader.grub.devices = lib.mkForce [];`.
+                    This adjustment is crucial because the `--vm-test` mechanism automatically overrides the grub boot devices as part of the virtual machine test.
+                  '';
+                }
+              ];
+            })
+          ];
         }).config.system.build.toplevel;
 
       in

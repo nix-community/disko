@@ -93,8 +93,8 @@ A simple disko configuration may look like this:
 ```
 
 If you'd saved this configuration in /tmp/disk-config.nix, and wanted to create
-a disk named /dev/sda, you would run the following command to partition,
-format and mount the disk.
+a disk named /dev/sda, you would run the following command to partition, format
+and mount the disk.
 
 ```console
 sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko -- --mode disko /tmp/disk-config.nix

@@ -28,8 +28,8 @@
         in
         {
           disko = pkgs.callPackage ./package.nix { };
-           # alias to make `nix run` more convenient
-          disko-install = self.packages.${system}.disko.overrideAttrs (old: {
+          # alias to make `nix run` more convenient
+          disko-install = self.packages.${system}.disko.overrideAttrs (_old: {
             name = "disko-install";
           });
           default = self.packages.${system}.disko;

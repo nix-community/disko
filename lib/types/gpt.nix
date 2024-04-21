@@ -55,15 +55,17 @@ in
           };
           label = lib.mkOption {
             type = lib.types.str;
-            default = let
-              # 72 bytes is the maximum length of a GPT partition name
-              # the labels seem to be in UTF-16, so 2 bytes per character
-              limit = 36;
-              label = "${config._parent.type}-${config._parent.name}-${partition.config.name}"; 
-            in if (lib.stringLength label) > limit then
-              builtins.substring 0 limit (builtins.hashString "sha256" label)
-            else
-              label;
+            default =
+              let
+                # 72 bytes is the maximum length of a GPT partition name
+                # the labels seem to be in UTF-16, so 2 bytes per character
+                limit = 36;
+                label = "${config._parent.type}-${config._parent.name}-${partition.config.name}";
+              in
+              if (lib.stringLength label) > limit then
+                builtins.substring 0 limit (builtins.hashString "sha256" label)
+              else
+                label;
           };
           size = lib.mkOption {
             type = lib.types.either (lib.types.enum [ "100%" ]) (lib.types.strMatching "[0-9]+[KMGTP]?");
@@ -76,7 +78,7 @@ in
           };
           alignment = lib.mkOption {
             type = lib.types.int;
-            default = if (builtins.substring (builtins.stringLength partition.config.start - 1) 1 partition.config.start == "s" || (builtins.substring (builtins.stringLength partition.config.end - 1) 1 partition.config.end == "s" )) then 1 else 0;
+            default = if (builtins.substring (builtins.stringLength partition.config.start - 1) 1 partition.config.start == "s" || (builtins.substring (builtins.stringLength partition.config.end - 1) 1 partition.config.end == "s")) then 1 else 0;
             description = "Alignment of the partition, if sectors are used as start or end it can be aligned to 1";
           };
           start = lib.mkOption {
@@ -95,7 +97,7 @@ in
           };
           content = diskoLib.partitionType { parent = config; device = partition.config.device; };
           hybrid = lib.mkOption {
-            type = lib.types.nullOr (lib.types.submodule ({name, ...} @ hp: {
+            type = lib.types.nullOr (lib.types.submodule ({ ... } @ hp: {
               options = {
                 mbrPartitionType = lib.mkOption {
                   type = lib.types.nullOr lib.types.str;

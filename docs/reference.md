@@ -51,9 +51,11 @@ generate disk images:
 
 ### Generating the `.raw` VM Image
 
-1. **Create a NixOS configuration that includes the disko and the disk configuration of your choice**
+1. **Create a NixOS configuration that includes the disko and the disk
+   configuration of your choice**
 
-In the this example we create a flake containing a nixos configuration for `myhost`.
+In the this example we create a flake containing a nixos configuration for
+`myhost`.
 
 ```nix
 # save this as flake.nix
@@ -86,15 +88,15 @@ In the this example we create a flake containing a nixos configuration for `myho
 }
 ```
 
-2. **Build the disko image script:** Replace `myhost` in the command below with your
-   specific system configuration name:
+2. **Build the disko image script:** Replace `myhost` in the command below with
+   your specific system configuration name:
 
    ```console
    nix build .#nixosConfigurations.myhost.config.system.build.diskoImagesScript
    ```
 
-3. **Execute the disko image script:** Execute the generated disko image script. Running
-   `./result --help` will output the available options:
+3. **Execute the disko image script:** Execute the generated disko image script.
+   Running `./result --help` will output the available options:
 
    ```console
    ./result --help
@@ -124,9 +126,10 @@ In the this example we create a flake containing a nixos configuration for `myho
    sudo ./result --build-memory 2048
    ```
 
-   The script will generate the actual image outside of the nix store in the current working directory.
-   The create image names depend on the names used in `disko.devices.disk` attrset in the NixOS configuration.
-   In our code example it will produce the following image:
+   The script will generate the actual image outside of the nix store in the
+   current working directory. The create image names depend on the names used in
+   `disko.devices.disk` attrset in the NixOS configuration. In our code example it will
+   produce the following image:
 
    ```
    $ ls -la vdb.raw
@@ -142,8 +145,8 @@ In the this example we create a flake containing a nixos configuration for `myho
   ```
 
 - If the `.raw` image size is not optimal, use `--write-to-disk` to write
-  directly to a drive. This bypasses the `.raw` file generation, which saves on read/write operations
-  and is suitable for single disk setups.
+  directly to a drive. This bypasses the `.raw` file generation, which saves on
+  read/write operations and is suitable for single disk setups.
 
 ### Understanding the Image Generation Process
 
