@@ -19,10 +19,7 @@ Usage: $0 [OPTIONS]
   --write-efi-boot-entries    Write EFI boot entries to the NVRAM of the system for the installed system.
                               Specify this option if you plan to boot from this disk on the current machine,
                               but not if you plan to move the disk to another machine.
-  --system-option KEY VALUE   Pass the specified system option to the NixOS configuration.
-                              This option can be specified multiple times.
-                              For example, to set the authorizedKeys, use
-                              --system-option users.users.root.openssh.authorizedKeys.keys '[ "ssh-rsa ..." ]'
+  --system-config JSON        Merges the specified JSON object into the NixOS configuration.
 EOF
 }
 
@@ -39,19 +36,6 @@ serialiaseArrayToNix() {
   echo "$nixExpr"
 }
 
-serialiaseArrayToNixUnquoted() {
-  local -n array=$1
-  nixExpr="{ "
-  # Iterate over the associative array to populate the Nix attrset string
-  for key in "${!array[@]}"; do
-    value=${array[$key]}
-    nixExpr+="${key} = ${value};"
-  done
-  nixExpr+="}"
-
-  echo "$nixExpr"
-}
-
 readonly libexec_dir="${0%/*}"
 
 nix_args=(
@@ -59,11 +43,12 @@ nix_args=(
   "--option" "no-write-lock-file" "true"
 )
 dry_run=
+extraSystemConfig="{}"
 diskoAttr=diskoScript
 writeEfiBootEntries=false
 declare -A diskMappings
 declare -A extraFiles
-declare -A extraSystemConfig
+
 
 parseArgs() {
   [[ $# -eq 0 ]] && {
@@ -113,14 +98,13 @@ parseArgs() {
       esac
       shift
       ;;
-    --system-option)
-      if [[ $# -lt 3 ]]; then
-        echo "Option $1 requires two arguments: key, value" >&2
+    --system-config)
+      if [[ $# -lt 2 ]]; then
+        echo "Option $1 requires one JSON argument." >&2
         exit 1
       fi
       # shellcheck disable=SC2034
-      extraSystemConfig[$2]=$3
-      shift
+      extraSystemConfig="$2"
       shift
       ;;
     --extra-files)
@@ -134,7 +118,7 @@ parseArgs() {
       ;;
     --option)
       if [[ $# -lt 3 ]]; then
-        echo "Option $1 requires an argument" >&2
+        echo "Option $1 requires two arguments: key, value" >&2
         exit 1
       fi
       nix_args+=(--option "$2" "$3")
@@ -221,7 +205,7 @@ main() {
     --argstr rootMountPoint "$mountPoint" \
     --arg writeEfiBootEntries "$writeEfiBootEntries" \
     --arg diskMappings "$(serialiaseArrayToNix diskMappings)" \
-    --arg extraSystemConfig "$(serialiaseArrayToNixUnquoted extraSystemConfig)" \
+    --argstr extraSystemConfig "$extraSystemConfig" \
     -A installToplevel \
     -A "$diskoAttr")
 
