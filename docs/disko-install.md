@@ -140,6 +140,8 @@ Add this to your flake.nix output:
 {
   nixosConfigurations.your-machine = inputs.nixpkgs.lib.nixosSystem {
     system = "x86_64-linux";
+    # to pass this flake into your configuration (see the example below)
+    specialArgs = {inherit self;};
     modules = [
       {
         # TODO: add your NixOS configuration here, don't forget your hardware-configuration.nix as well!
