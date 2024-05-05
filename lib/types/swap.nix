@@ -11,6 +11,18 @@
       default = device;
       description = "Device";
     };
+    discardPolicy = lib.mkOption {
+      default = null;
+      example = "once";
+      type = lib.types.nullOr (lib.types.enum [ "once" "pages" "both" ]);
+      description = lib.mdDoc ''
+        Specify the discard policy for the swap device. If "once", then the
+        whole swap space is discarded at swapon invocation. If "pages",
+        asynchronous discard on freed pages is performed, before returning to
+        the available pages pool. With "both", both policies are activated.
+        See swapon(8) for more information.
+      '';
+    };
     extraArgs = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];
@@ -53,7 +65,11 @@
       default = lib.optionalAttrs (!config.randomEncryption) {
         fs.${config.device} = ''
           if ! swapon --show | grep -q "^$(readlink -f ${config.device}) "; then
-            swapon ${config.device}
+            swapon ${
+              lib.optionalString (config.discardPolicy != null)
+                "--discard${lib.optionalString (config.discardPolicy != "both")
+                "=${config.discardPolicy}"
+              }"} ${config.device}
           fi
         '';
       };
@@ -64,7 +80,7 @@
       default = [{
         swapDevices = [{
           device = config.device;
-          randomEncryption = config.randomEncryption;
+          inherit (config) discardPolicy randomEncryption;
         }];
         boot.resumeDevice = lib.mkIf config.resumeDevice config.device;
       }];
