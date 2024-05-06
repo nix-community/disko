@@ -28,6 +28,15 @@
       default = [ ];
       description = "Extra arguments";
     };
+    priority = lib.mkOption {
+      type = lib.types.nullOr lib.types.int;
+      default = null;
+      description = lib.mdDoc ''
+        Specify the priority of the swap device. Priority is a value between 0 and 32767.
+        Higher numbers indicate higher priority.
+        null lets the kernel choose a priority, which will show up as a negative value.
+      '';
+    };
     randomEncryption = lib.mkOption {
       type = lib.types.bool;
       default = false;
@@ -69,7 +78,10 @@
               lib.optionalString (config.discardPolicy != null)
                 "--discard${lib.optionalString (config.discardPolicy != "both")
                 "=${config.discardPolicy}"
-              }"} ${config.device}
+              }"} ${
+              lib.optionalString (config.priority != null)
+                "--priority=${toString config.priority}"
+              } ${config.device}
           fi
         '';
       };
@@ -80,7 +92,7 @@
       default = [{
         swapDevices = [{
           device = config.device;
-          inherit (config) discardPolicy randomEncryption;
+          inherit (config) discardPolicy priority randomEncryption;
         }];
         boot.resumeDevice = lib.mkIf config.resumeDevice config.device;
       }];
