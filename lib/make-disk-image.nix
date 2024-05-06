@@ -38,6 +38,8 @@ let
     ${lib.concatMapStringsSep "\n" (disk: "mv ${disk.name}.raw \"$out\"/${disk.name}.raw") (lib.attrValues nixosConfig.config.disko.devices.disk)}
     ${extraPostVM}
   '';
+
+  closureInfo = pkgs.callPackage ./closure-info.nix { };
   partitioner = ''
     # running udev, stolen from stage-1.sh
     echo "running udev..."
@@ -55,7 +57,7 @@ let
 
     # populate nix db, so nixos-install doesn't complain
     export NIX_STATE_DIR=$TMPDIR/state
-    nix-store --load-db < ${pkgs.closureInfo {
+    ${pkgs.fakeroot}/bin/fakeroot nix-store --register-validity --reregister < ${closureInfo {
       rootPaths = [ systemToInstall.config.system.build.toplevel ];
     }}/registration
 
