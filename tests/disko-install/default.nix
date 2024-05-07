@@ -1,6 +1,6 @@
 { pkgs ? import <nixpkgs> { }, self }:
 let
-  disko-install = pkgs.callPackage ../../disko-install.nix { };
+  disko = pkgs.callPackage ../../package.nix { };
 
   dependencies = [
     self.nixosConfigurations.testmachine.pkgs.stdenv.drvPath
@@ -37,9 +37,9 @@ pkgs.nixosTest {
     permission = machine.succeed("stat -c %a /tmp/age.key").strip()
     assert permission == "600", f"expected permission 600 on /tmp/age.key, got {permission}"
 
-    machine.succeed("${disko-install}/bin/disko-install --disk main /dev/vdb --extra-files /tmp/age.key /var/lib/secrets/age.key --flake ${../..}#testmachine")
+    machine.succeed("${disko}/bin/disko-install --disk main /dev/vdb --extra-files /tmp/age.key /var/lib/secrets/age.key --flake ${../..}#testmachine")
     # test idempotency
-    machine.succeed("${disko-install}/bin/disko-install --mode mount --disk main /dev/vdb --flake ${../..}#testmachine")
+    machine.succeed("${disko}/bin/disko-install --mode mount --disk main /dev/vdb --flake ${../..}#testmachine")
     machine.shutdown()
 
     new_machine = create_test_machine(oldmachine=machine, args={ "name": "after_install" })
