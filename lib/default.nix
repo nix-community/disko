@@ -523,7 +523,7 @@ let
         };
       });
 
-    # import all tge types from the types directory
+    # import all the types from the types directory
     types = lib.listToAttrs (
       map
         (file: lib.nameValuePair
