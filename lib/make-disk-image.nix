@@ -38,6 +38,10 @@ let
     ${lib.concatMapStringsSep "\n" (disk: "mv ${disk.name}.raw \"$out\"/${disk.name}.raw") (lib.attrValues nixosConfig.config.disko.devices.disk)}
     ${extraPostVM}
   '';
+
+  closureInfo = pkgs.closureInfo {
+    rootPaths = [ systemToInstall.config.system.build.toplevel ];
+  };
   partitioner = ''
     # running udev, stolen from stage-1.sh
     echo "running udev..."
@@ -53,16 +57,19 @@ let
     udevadm trigger --action=add
     udevadm settle
 
-    # populate nix db, so nixos-install doesn't complain
-    export NIX_STATE_DIR=$TMPDIR/state
-    nix-store --load-db < ${pkgs.closureInfo {
-      rootPaths = [ systemToInstall.config.system.build.toplevel ];
-    }}/registration
-
     ${systemToInstall.config.system.build.diskoScript}
   '';
+
   installer = ''
-    ${systemToInstall.config.system.build.nixos-install}/bin/nixos-install --system ${systemToInstall.config.system.build.toplevel} --keep-going --no-channel-copy -v --no-root-password --option binary-caches ""
+    # populate nix db, so nixos-install doesn't complain
+    export NIX_STATE_DIR=${systemToInstall.config.disko.rootMountPoint}/nix/var/nix
+    nix-store --load-db < "${closureInfo}/registration"
+
+    # We copy files with cp because `nix copy` seems to have a large memory leak
+    mkdir -p ${systemToInstall.config.disko.rootMountPoint}/nix/store
+    xargs cp --recursive --target ${systemToInstall.config.disko.rootMountPoint}/nix/store < ${closureInfo}/store-paths
+
+    ${systemToInstall.config.system.build.nixos-install}/bin/nixos-install --root ${systemToInstall.config.disko.rootMountPoint} --system ${systemToInstall.config.system.build.toplevel} --keep-going --no-channel-copy -v --no-root-password --option binary-caches ""
     umount -Rv ${systemToInstall.config.disko.rootMountPoint}
   '';
   QEMU_OPTS = lib.concatMapStringsSep " " (disk: "-drive file=${disk.name}.raw,if=virtio,cache=unsafe,werror=report,format=raw") (lib.attrValues nixosConfig.config.disko.devices.disk);
