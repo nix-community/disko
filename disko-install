@@ -235,12 +235,8 @@ main() {
   if [[ ! -d "${mountPoint}/nix/store" ]]; then
     export NIX_STATE_DIR=${mountPoint}/nix/var/nix
     echo "Copying store paths" >&2
-
-    if [ -t 1 ]; then
-      xargs -I% xcp --recursive % "${mountPoint}/nix/store" < "${closure_info}/store-paths"
-    else
-      xargs -I% xcp --recursive --no-progress % "${mountPoint}/nix/store" < "${closure_info}/store-paths"
-    fi
+    mkdir -p "${mountPoint}/nix/store"
+    xargs cp --recursive --target "${mountPoint}/nix/store"  < "${closure_info}/store-paths"
     echo "Loading nix database" >&2
     nix-store --load-db < "${closure_info}/registration"
     unset NIX_STATE_DIR
