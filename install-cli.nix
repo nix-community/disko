@@ -62,5 +62,8 @@ let
 in
 {
   installToplevel = installSystem.config.system.build.toplevel;
+  closureInfo = installSystem.pkgs.closureInfo {
+    rootPaths = [ installSystem.config.system.build.toplevel ];
+  };
   inherit (diskoSystem.config.system.build) formatScript mountScript diskoScript;
 }

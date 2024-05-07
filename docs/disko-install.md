@@ -197,9 +197,10 @@ Add this to your flake.nix output:
 { pkgs, self, ... }:
 let
   dependencies = [
-    pkgs.stdenv.drvPath
     self.nixosConfigurations.your-machine.config.system.build.toplevel
     self.nixosConfigurations.your-machine.config.system.build.diskoScript
+    self.nixosConfigurations.your-machine.pkgs.stdenv.drvPath
+    (self.nixosConfigurations.your-machine.pkgs.closureInfo { rootPaths = [ ]; }).drvPath
   ] ++ builtins.map (i: i.outPath) (builtins.attrValues self.inputs);
 
   closureInfo = pkgs.closureInfo { rootPaths = dependencies; };

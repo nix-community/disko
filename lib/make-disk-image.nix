@@ -28,6 +28,7 @@ let
     systemdMinimal
     nix
     util-linux
+    xcp
   ] ++ nixosConfig.config.disko.extraDependencies;
   preVM = ''
     ${lib.concatMapStringsSep "\n" (disk: "truncate -s ${disk.imageSize} ${disk.name}.raw") (lib.attrValues nixosConfig.config.disko.devices.disk)}
@@ -39,7 +40,7 @@ let
     ${extraPostVM}
   '';
 
-  closureInfo = (pkgs.callPackage ./closure-info.nix { }) {
+  closureInfo = pkgs.closureInfo {
     rootPaths = [ systemToInstall.config.system.build.toplevel ];
   };
   partitioner = ''
@@ -63,15 +64,11 @@ let
   installer = ''
     # populate nix db, so nixos-install doesn't complain
     export NIX_STATE_DIR=${systemToInstall.config.disko.rootMountPoint}/nix/var/nix
-    # We have to use fakeroot here, because nix tries to chown files in the original store.
-    # fakeroot will make override all chown calls to no-ops.
-    echo "Registering store paths..."
-    ${pkgs.fakeroot}/bin/fakeroot nix-store --register-validity --reregister < ${closureInfo}/registration
+    nix-store --load-db < "${closureInfo}/registration"
 
     # We copy files with cp because `nix copy` seems to have a large memory leak
-    echo "Copying store paths..."
     mkdir -p ${systemToInstall.config.disko.rootMountPoint}/nix/store
-    xargs cp -r --target-directory=${systemToInstall.config.disko.rootMountPoint}/nix/store < ${closureInfo}/store-paths
+    xargs -I % xcp --recursive % ${systemToInstall.config.disko.rootMountPoint}/nix/store < ${closureInfo}/store-paths
 
     ${systemToInstall.config.system.build.nixos-install}/bin/nixos-install --root ${systemToInstall.config.disko.rootMountPoint} --system ${systemToInstall.config.system.build.toplevel} --keep-going --no-channel-copy -v --no-root-password --option binary-caches ""
     umount -Rv ${systemToInstall.config.disko.rootMountPoint}
