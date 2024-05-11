@@ -18,7 +18,7 @@
     in
     {
       nixosModules.default = self.nixosModules.disko; # convention
-      nixosModules.disko = import ./module.nix;
+      nixosModules.disko.imports = [ ./module.nix ];
       lib = import ./lib {
         inherit (nixpkgs) lib;
       };
