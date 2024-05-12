@@ -5,7 +5,7 @@
 We are currently having issues being able to generate proper module option
 documentation for our recursive disko types. However you can read the available
 options [here](https://github.com/nix-community/disko/tree/master/lib/types).
-Combined wit the
+Combined with the
 [examples](https://github.com/nix-community/disko/tree/master/example) this
 hopefully gives you an overview.
 
