@@ -92,7 +92,12 @@
       default = [{
         swapDevices = [{
           device = config.device;
-          inherit (config) discardPolicy priority randomEncryption;
+          inherit (config) discardPolicy priority;
+          randomEncryption = {
+            enable = config.randomEncryption;
+            # forward discard/TRIM attempts through dm-crypt
+            allowDiscards = config.discardPolicy != null;
+          };
         }];
         boot.resumeDevice = lib.mkIf config.resumeDevice config.device;
       }];
