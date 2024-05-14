@@ -233,13 +233,11 @@ main() {
   # that can be caused by using closureInfo in combination with multiple builders and non-deterministic builds.
   # Therefore if we have a blank store, we copy the store paths and registration from the closureInfo.
   if [[ ! -d "${mountPoint}/nix/store" ]]; then
-    export NIX_STATE_DIR=${mountPoint}/nix/var/nix
     echo "Copying store paths" >&2
     mkdir -p "${mountPoint}/nix/store"
     xargs cp --recursive --target "${mountPoint}/nix/store"  < "${closure_info}/store-paths"
     echo "Loading nix database" >&2
-    nix-store --load-db < "${closure_info}/registration"
-    unset NIX_STATE_DIR
+    NIX_STATE_DIR=${mountPoint}/nix/var/nix nix-store --load-db < "${closure_info}/registration"
   fi
 
   nixos-install --no-root-password --system "$nixos_system" --root "$mountPoint"
