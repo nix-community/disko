@@ -219,7 +219,7 @@ in
       readOnly = true;
       type = lib.types.functionTo (lib.types.listOf lib.types.package);
       default = pkgs:
-        [ pkgs.btrfs-progs pkgs.coreutils pkgs.gnugrep ];
+        [ pkgs.btrfs-progs pkgs.gnugrep ];
       description = "Packages";
     };
   };
