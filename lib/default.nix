@@ -404,6 +404,7 @@ let
                   bash
                   jq
                   gnused
+                  gawk
                 ])}:$PATH
                 ${cfg.config._destroy}
               '';
