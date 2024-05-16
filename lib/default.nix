@@ -385,8 +385,9 @@ let
             internal = true;
             description = ''
               packages required by the disko configuration
+              coreutils is always included
             '';
-            default = pkgs: unique (flatten (map (dev: dev._pkgs pkgs) (flatten (map attrValues (attrValues devices)))));
+            default = pkgs: unique ((flatten (map (dev: dev._pkgs pkgs) (flatten (map attrValues (attrValues devices))))) ++ [ pkgs.coreutils-full ]);
           };
           _scripts = lib.mkOption {
             internal = true;
@@ -404,6 +405,8 @@ let
                   bash
                   jq
                   gnused
+                  gawk
+                  coreutils-full
                 ])}:$PATH
                 ${cfg.config._destroy}
               '';
