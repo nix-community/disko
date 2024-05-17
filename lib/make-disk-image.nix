@@ -147,29 +147,30 @@ in
     export preVM=${diskoLib.writeCheckedBash { inherit pkgs checked; } "preVM.sh" ''
       set -efu
       mv copy_before_disko copy_after_disko xchg/
+      origBuilder=${pkgs.writeScript "disko-builder" ''
+        set -eu
+        export PATH=${lib.makeBinPath dependencies}
+        for src in /tmp/xchg/copy_before_disko/*; do
+          [ -e "$src" ] || continue
+          dst=$(basename "$src" | base64 -d)
+          mkdir -p "$(dirname "$dst")"
+          cp -r "$src" "$dst"
+        done
+        set -f
+        ${partitioner}
+        set +f
+        for src in /tmp/xchg/copy_after_disko/*; do
+          [ -e "$src" ] || continue
+          dst=/mnt/$(basename "$src" | base64 -d)
+          mkdir -p "$(dirname "$dst")"
+          cp -r "$src" "$dst"
+        done
+        ${installer}
+      ''}
+      echo "export origBuilder=$origBuilder" > xchg/saved-env
       ${preVM}
     ''}
     export postVM=${diskoLib.writeCheckedBash { inherit pkgs checked; } "postVM.sh" postVM}
-    export origBuilder=${pkgs.writeScript "disko-builder" ''
-      set -eu
-      export PATH=${lib.makeBinPath dependencies}
-      for src in /tmp/xchg/copy_before_disko/*; do
-        [ -e "$src" ] || continue
-        dst=$(basename "$src" | base64 -d)
-        mkdir -p "$(dirname "$dst")"
-        cp -r "$src" "$dst"
-      done
-      set -f
-      ${partitioner}
-      set +f
-      for src in /tmp/xchg/copy_after_disko/*; do
-        [ -e "$src" ] || continue
-        dst=/mnt/$(basename "$src" | base64 -d)
-        mkdir -p "$(dirname "$dst")"
-        cp -r "$src" "$dst"
-      done
-      ${installer}
-    ''}
 
     build_memory=''${build_memory:-1024}
     QEMU_OPTS=${lib.escapeShellArg QEMU_OPTS}
