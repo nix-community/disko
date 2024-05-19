@@ -17,6 +17,17 @@ in
       '';
       default = [ ];
     };
+    extraPostVM = lib.mkOption {
+      type = lib.types.str;
+      description = ''
+        extra shell code to execute once the disk image(s) have been succesfully created and moved to $out
+      '';
+      default = "";
+      example = pkgs.literalExpression ''
+        ''${pkgs.zstd}/bin/zstd --compress $out/*raw
+        rm $out/*raw
+      '';
+    };
     memSize = lib.mkOption {
       type = lib.types.int;
       description = ''

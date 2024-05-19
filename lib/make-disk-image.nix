@@ -3,7 +3,7 @@
 , pkgs ? nixosConfig.pkgs
 , lib ? pkgs.lib
 , name ? "${nixosConfig.config.networking.hostName}-disko-images"
-, extraPostVM ? ""
+, extraPostVM ? nixosConfig.config.disko.extraPostVM
 , checked ? false
 }:
 let
