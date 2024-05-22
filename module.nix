@@ -23,7 +23,7 @@ in
         extra shell code to execute once the disk image(s) have been succesfully created and moved to $out
       '';
       default = "";
-      example = pkgs.literalExpression ''
+      example = lib.literalExpression ''
         ''${pkgs.zstd}/bin/zstd --compress $out/*raw
         rm $out/*raw
       '';
