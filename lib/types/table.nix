@@ -6,6 +6,7 @@
     If you encounter errors similar to:
     "error: The option `disko.devices.disk.disk1.content.partitions."[definition 1-entry 1]".content._config` is read-only, but it's set multiple times,"
     this is likely due to the use of the legacy table type.
+    for a migration you can follow the guide at https://github.com/nix-community/disko/blob/master/docs/table-to-gpt.md
   ''
     {
       type = lib.mkOption {
