@@ -1,10 +1,10 @@
-# disko table to gpt migration guide
-NixOS on ZFS with latest disko
-## Error
+# Migrating to the new GPL layout
 
-WHen deploying NixOS the following trace occurs
+## Situation
 
-```clean=
+When evaluating your NixOS system closure the following trace appears:
+
+```
 trace: warning: The legacy table is outdated and should not be used. We recommend using the gpt type instead.
 Please note that certain features, such as the test framework, may not function properly with the legacy table type.
 If you encounter errors similar to:
@@ -12,106 +12,116 @@ If you encounter errors similar to:
 this is likely due to the use of the legacy table type.
 ```
 
-## Before
-Configuration in question
+The solution is to migrate to the new `gpt` layout type.
 
-```nix=
-{ disk ? "/dev/nvme0n1", ... }:
+## Precondition
+
+Disko was set up with
+
+- `type = "table"` and
+- `format = "gpt"`,
+
+for example like this:
+
+```nix
 {
-  boot.supportedFilesystems = [ "zfs" ];
-
-  disko.devices = {
-    disk = {
-      nvme = {
-        type = "disk";
-        device = disk;
-        content = {
-          type = "table";
-          format = "gpt";
-          partitions = [
-            {
-              name = "ESP";
-              start = "0";
-              end = "512MiB";
-              fs-type = "fat32";
-              bootable = true;
-              content = {
-                type = "filesystem";
-                format = "vfat";
-                mountpoint = "/boot";
-              };
-            };
-            {
-              name = "zfs";
-              start = "512MiB";
-              end = "100%";
-              content = {
-                type = "zfs";
-                pool = "tank";
-              };
-            }
-          ];
-        };
-      };
-    };
-    zpool = {
-     ...
+  disko.devices.disk.example = {
+    type = "disk";
+    device = "/dev/nvme0n1";
+    content = {
+      type = "table";
+      format = "gpt";
+      partitions = [
+        {
+          name = "ESP";
+          start = "0";
+          end = "512MiB";
+          fs-type = "fat32";
+          bootable = true;
+          content = {
+            type = "filesystem";
+            format = "vfat";
+            mountpoint = "/boot";
+          };
+        }
+        {
+          name = "root";
+          start = "512MiB";
+          end = "100%";
+          content.format = "ext4";
+        }
+      ];
     };
   };
 }
-
 ```
-# Migration
 
+## Remediation
 
-The new gpt layout uses partlabels to unify the partiton numbering. for this reason you have to set the partition labels manually if you want to upgrade.
+The new GPT layout (`type = "gpt"`) uses partlabels to realize the partiton numbering. For this reason you have to manually set up partition labels, if you want to resolve this issue.
+
+### Create GPT partition labels
+
+For each partition involved, create the partition label from these components:
+
+- The partition number (e.g. /dev/nvme0n**1**, or /dev/sda**1**)
+- The parent type in your disko config (value of `disko.device.disk.example.type = "disk";`)
+- The parent name in your disko config (attribute name of `disko.devices.disk.example`, so `example` in this example)
+- The partition name in your disko config (attribute name of `disko.devices.disk.content.partitions.*.name`)
+
 ```bash
-sgdisk -c 1:disk-nvme-ESP /dev/nvme0n1
-sgdisk -c 2:disk-nvme-zfs /dev/nvme0n1
+# sgdisk -c 1:disk-example-ESP /dev/nvme0n1
+# sgdisk -c 2:disk-example-zfs /dev/nvme0n1
 Warning: The kernel is still using the old partition table.
 The new table will be used at the next reboot or after you
 run partprobe(8) or kpartx(8)
 The operation has completed successfully.
 ```
 
-1 is the partition number (in system `/dev/nvme0n1p`**`1`**)
-disk is the parents type (in config: `disko.devices.disk.nvme.type = `**`"disk"`**)
-nvme is the parents name ( in config: `disko.devices.disk.`**`nvme`**)
-ESP is the name of the partition (in config: `disko.devices.disk.content.partitions.`**`ESP`**)
+### Update disko configuration
 
-usually it's okay to fuck this up, since booting an old generation should still be possible as the previous setup used disk numbering instead. When booting the new system you will see that systemd is waiting for the device with the respective partlabel.
-# After
+Make the following changes to your disko configuration:
 
-```nix=
-  disko.devices = {
-    disk = {
-      nvme = {
-        type = "disk";
-        device = disk;
-        content = {
-          type = "gpt";
-          partitions = {
-            ESP = {
-              size = "512MiB";
-              type = "EF00";
-              priority = 1; # instead of "start" the priority is used, otherwise the partitions are created alphabetically (ESP before zfs)
-              content = {
-                type = "filesystem";
-                format = "vfat";
-                mountpoint = "/boot";
-              };
-            };
-            zfs = {
-              size = "100%";
-              content = {
-                type = "zfs";
-                pool = "tank";
-              };
-            };
+1. Set `disko.devices.disk.example.content.type = "gpt"`
+1. Remove `disko.devices.disk.example.format`
+1. Convert `disko.devices.disk.example.partitions` to an attribute set and promote the `name` field to the key for its partition
+1. Add a `priority` field to each partition, to reflect the intended partition number
+
+Then rebuild your system and reboot.
+
+### Recovering from mistake
+
+If you made a mistake here, your system will be waiting for devices to appear, and then run into timeouts. You can easily recover from this, since rebooting into an old generation will still use the legacy way of numbering of partitions.
+
+## Result
+
+The fixed disko configuration would look like this:
+
+```nix
+{
+  disko.devices.disk.example = {
+    type = "disk";
+    device = "/dev/nvme0n1";
+    content = {
+      type = "gpt";
+      partitions = {
+        ESP = {
+          size = "512MiB";
+          type = "EF00";
+          priority = 1;
+          content = {
+            type = "filesystem";
+            format = "vfat";
+            mountpoint = "/boot";
           };
+        };
+        root = {
+          size = "100%";
+          priority = 2;
+          content.format = "ext4";
         };
       };
     };
-    zpool = { ... };
-  }
+  };
+}
 ```
