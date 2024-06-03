@@ -32,6 +32,10 @@ let
   ] ++ nixosConfig.config.disko.extraDependencies;
   preVM = ''
     ${lib.concatMapStringsSep "\n" (disk: "truncate -s ${disk.imageSize} ${disk.name}.raw") (lib.attrValues nixosConfig.config.disko.devices.disk)}
+    # This makes disko work, when canTouchEfiVariables is set to true.
+    # Technically these boot entries will no be persisted this way, but
+    # in most cases this is OK, because we can rely on the standard location for UEFI executables.
+    install -m600 ${pkgs.OVMF.variables} efivars.fd
   '';
   postVM = ''
     # shellcheck disable=SC2154
@@ -51,6 +55,7 @@ let
     ln -sfn /proc/self/fd/1 /dev/stdout
     ln -sfn /proc/self/fd/2 /dev/stderr
     mkdir -p /etc/udev
+    mount -t efivarfs none /sys/firmware/efi/efivars
     ln -sfn ${systemToInstall.config.system.build.etc}/etc/udev/rules.d /etc/udev/rules.d
     mkdir -p /dev/.mdadm
     ${pkgs.systemdMinimal}/lib/systemd/systemd-udevd --daemon
@@ -74,7 +79,12 @@ let
     umount -Rv ${systemToInstall.config.disko.rootMountPoint}
   '';
 
-  QEMU_OPTS = "-drive if=pflash,format=raw,unit=0,readonly=on,file=${pkgs.OVMF.firmware}" + " " + (lib.concatMapStringsSep " " (disk: "-drive file=${disk.name}.raw,if=virtio,cache=unsafe,werror=report,format=raw") (lib.attrValues nixosConfig.config.disko.devices.disk));
+  QEMU_OPTS = lib.concatStringsSep " " ([
+    "-drive if=pflash,format=raw,unit=0,readonly=on,file=${pkgs.OVMF.firmware}"
+    "-drive if=pflash,format=raw,unit=1,file=efivars.fd"
+  ] ++ builtins.map (disk:
+    "-drive file=${disk.name}.raw,if=virtio,cache=unsafe,werror=report,format=raw"
+  ) (lib.attrValues nixosConfig.config.disko.devices.disk));
 in
 {
   pure = vmTools.runInLinuxVM (pkgs.runCommand name
