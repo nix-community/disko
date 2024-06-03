@@ -3,7 +3,7 @@
 , pkgs ? nixosConfig.pkgs
 , lib ? pkgs.lib
 , name ? "${nixosConfig.config.networking.hostName}-disko-images"
-, extraPostVM ? ""
+, extraPostVM ? nixosConfig.config.disko.extraPostVM
 , checked ? false
 }:
 let
@@ -73,7 +73,8 @@ let
     ${systemToInstall.config.system.build.nixos-install}/bin/nixos-install --root ${systemToInstall.config.disko.rootMountPoint} --system ${systemToInstall.config.system.build.toplevel} --keep-going --no-channel-copy -v --no-root-password --option binary-caches ""
     umount -Rv ${systemToInstall.config.disko.rootMountPoint}
   '';
-  QEMU_OPTS = lib.concatMapStringsSep " " (disk: "-drive file=${disk.name}.raw,if=virtio,cache=unsafe,werror=report,format=raw") (lib.attrValues nixosConfig.config.disko.devices.disk);
+
+  QEMU_OPTS = "-drive if=pflash,format=raw,unit=0,readonly=on,file=${pkgs.OVMF.firmware}" + " " + (lib.concatMapStringsSep " " (disk: "-drive file=${disk.name}.raw,if=virtio,cache=unsafe,werror=report,format=raw") (lib.attrValues nixosConfig.config.disko.devices.disk));
 in
 {
   pure = vmTools.runInLinuxVM (pkgs.runCommand name
