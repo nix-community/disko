@@ -73,7 +73,8 @@ let
     ${systemToInstall.config.system.build.nixos-install}/bin/nixos-install --root ${systemToInstall.config.disko.rootMountPoint} --system ${systemToInstall.config.system.build.toplevel} --keep-going --no-channel-copy -v --no-root-password --option binary-caches ""
     umount -Rv ${systemToInstall.config.disko.rootMountPoint}
   '';
-  QEMU_OPTS = lib.concatMapStringsSep " " (disk: "-drive file=${disk.name}.raw,if=virtio,cache=unsafe,werror=report,format=raw") (lib.attrValues nixosConfig.config.disko.devices.disk);
+
+  QEMU_OPTS = "-drive if=pflash,format=raw,unit=0,readonly=on,file=${pkgs.OVMF.firmware}" + " " + (lib.concatMapStringsSep " " (disk: "-drive file=${disk.name}.raw,if=virtio,cache=unsafe,werror=report,format=raw") (lib.attrValues nixosConfig.config.disko.devices.disk));
 in
 {
   pure = vmTools.runInLinuxVM (pkgs.runCommand name
@@ -146,29 +147,30 @@ in
     export preVM=${diskoLib.writeCheckedBash { inherit pkgs checked; } "preVM.sh" ''
       set -efu
       mv copy_before_disko copy_after_disko xchg/
+      origBuilder=${pkgs.writeScript "disko-builder" ''
+        set -eu
+        export PATH=${lib.makeBinPath dependencies}
+        for src in /tmp/xchg/copy_before_disko/*; do
+          [ -e "$src" ] || continue
+          dst=$(basename "$src" | base64 -d)
+          mkdir -p "$(dirname "$dst")"
+          cp -r "$src" "$dst"
+        done
+        set -f
+        ${partitioner}
+        set +f
+        for src in /tmp/xchg/copy_after_disko/*; do
+          [ -e "$src" ] || continue
+          dst=/mnt/$(basename "$src" | base64 -d)
+          mkdir -p "$(dirname "$dst")"
+          cp -r "$src" "$dst"
+        done
+        ${installer}
+      ''}
+      echo "export origBuilder=$origBuilder" > xchg/saved-env
       ${preVM}
     ''}
     export postVM=${diskoLib.writeCheckedBash { inherit pkgs checked; } "postVM.sh" postVM}
-    export origBuilder=${pkgs.writeScript "disko-builder" ''
-      set -eu
-      export PATH=${lib.makeBinPath dependencies}
-      for src in /tmp/xchg/copy_before_disko/*; do
-        [ -e "$src" ] || continue
-        dst=$(basename "$src" | base64 -d)
-        mkdir -p "$(dirname "$dst")"
-        cp -r "$src" "$dst"
-      done
-      set -f
-      ${partitioner}
-      set +f
-      for src in /tmp/xchg/copy_after_disko/*; do
-        [ -e "$src" ] || continue
-        dst=/mnt/$(basename "$src" | base64 -d)
-        mkdir -p "$(dirname "$dst")"
-        cp -r "$src" "$dst"
-      done
-      ${installer}
-    ''}
 
     build_memory=''${build_memory:-1024}
     QEMU_OPTS=${lib.escapeShellArg QEMU_OPTS}
