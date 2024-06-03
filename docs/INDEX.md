@@ -13,3 +13,4 @@
 - [Support Matrix](./supportmatrix.md)
 - [Reference](./reference.md)
 - [Upgrade Guide](./upgrade-guide.md)
+  - [Migrating to the new GPT layout](./table-to-gpt.md)

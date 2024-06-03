@@ -1,4 +1,4 @@
-# Migrating to the new GPL layout
+# Migrating to the new GPT layout
 
 ## Situation
 
