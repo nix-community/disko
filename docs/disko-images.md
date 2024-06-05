@@ -70,10 +70,6 @@ In the this example we create a flake containing a nixos configuration for
      specify the ammount of memory that gets allocated to the build vm (in mb)
      This can be usefull if you want to build images with a more involed NixOS config
      By default the vm will get 1024M/1GB
-   * --write-to-disk </dev/disk>
-     use an actuall disk instead of writing to a file
-     This only works if your conifg has only one disk specified
-     There is no check if the specified path is actually a disk so you can also write to another file
    ```
 
    An example run may look like this:
