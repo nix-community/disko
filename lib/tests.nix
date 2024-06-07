@@ -220,21 +220,37 @@ let
 
         testScript = { nodes, ... }: ''
           def disks(oldmachine, num_disks):
-              disk_flags = ""
+              disk_flags = []
               for i in range(num_disks):
-                  disk_flags += f' -drive file={oldmachine.state_dir}/empty{i}.qcow2,id=drive{i + 1},if=none,index={i + 1},werror=report'
-                  disk_flags += f' -device virtio-blk-pci,drive=drive{i + 1}'
+                  disk_flags += [
+                    '-drive',
+                    f"file={oldmachine.state_dir}/empty{i}.qcow2,id=drive{i + 1},if=none,index={i + 1},werror=report",
+                    '-device',
+                    f"virtio-blk-pci,drive=drive{i + 1}"
+                  ]
               return disk_flags
-          def create_test_machine(oldmachine, args={}): # taken from <nixpkgs/nixos/tests/installer.nix>
-              startCommand = "${pkgs.qemu_test}/bin/qemu-kvm"
-              startCommand += " -cpu max -m 1024 -virtfs local,path=/nix/store,security_model=none,mount_tag=nix-store"
-              startCommand += disks(oldmachine, ${toString num-disks})
+
+          def create_test_machine(
+              oldmachine=None, **kwargs
+          ):  # taken from <nixpkgs/nixos/tests/installer.nix>
+              start_command = [
+                  "${pkgs.qemu_test}/bin/qemu-kvm",
+                  "-cpu",
+                  "max",
+                  "-m",
+                  "1024",
+                  "-virtfs",
+                  "local,path=/nix/store,security_model=none,mount_tag=nix-store",
+                  *disks(oldmachine, ${toString num-disks})
+              ]
               ${lib.optionalString efi ''
-                startCommand +=" -drive if=pflash,format=raw,unit=0,readonly=on,file=${pkgs.OVMF.firmware} -drive if=pflash,format=raw,unit=1,readonly=on,file=${pkgs.OVMF.variables}"
+                start_command += ["-drive",
+                  "if=pflash,format=raw,unit=0,readonly=on,file=${pkgs.OVMF.firmware}",
+                  "-drive",
+                  "if=pflash,format=raw,unit=1,readonly=on,file=${pkgs.OVMF.variables}"
+                ]
               ''}
-              machine = create_machine({
-                "startCommand": startCommand,
-              } | args)
+              machine = create_machine(start_command=" ".join(start_command), **kwargs)
               driver.machines.append(machine)
               return machine
 
@@ -283,7 +299,7 @@ let
             machine.succeed("sync")
             machine.shutdown()
 
-            machine = create_test_machine(oldmachine=machine, args={ "name": "booted_machine" })
+            machine = create_test_machine(oldmachine=machine, name="booted_machine")
             machine.start()
             ${bootCommands}
             machine.wait_for_unit("local-fs.target")
