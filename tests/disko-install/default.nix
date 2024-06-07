@@ -20,14 +20,23 @@ pkgs.nixosTest {
   };
 
   testScript = ''
-    def create_test_machine(oldmachine, args={}): # taken from <nixpkgs/nixos/tests/installer.nix>
-        startCommand = "${pkgs.qemu_test}/bin/qemu-kvm"
-        startCommand += " -cpu max -m 1024 -virtfs local,path=/nix/store,security_model=none,mount_tag=nix-store"
-        startCommand += f' -drive file={oldmachine.state_dir}/empty0.qcow2,id=drive1,if=none,index=1,werror=report'
-        startCommand += ' -device virtio-blk-pci,drive=drive1'
-        machine = create_machine({
-          "startCommand": startCommand,
-        } | args)
+    def create_test_machine(
+        oldmachine=None, **kwargs
+    ):  # taken from <nixpkgs/nixos/tests/installer.nix>
+        start_command = [
+            "${pkgs.qemu_test}/bin/qemu-kvm",
+            "-cpu",
+            "max",
+            "-m",
+            "1024",
+            "-virtfs",
+            "local,path=/nix/store,security_model=none,mount_tag=nix-store",
+            "-drive",
+            f"file={oldmachine.state_dir}/empty0.qcow2,id=drive1,if=none,index=1,werror=report",
+            "-device",
+            "virtio-blk-pci,drive=drive1",
+        ]
+        machine = create_machine(start_command=" ".join(start_command), **kwargs)
         driver.machines.append(machine)
         return machine
     machine.succeed("lsblk >&2")
@@ -42,7 +51,7 @@ pkgs.nixosTest {
     machine.succeed("${disko}/bin/disko-install --mode mount --disk main /dev/vdb --flake ${../..}#testmachine")
     machine.shutdown()
 
-    new_machine = create_test_machine(oldmachine=machine, args={ "name": "after_install" })
+    new_machine = create_test_machine(oldmachine=machine, name="after_install")
     new_machine.start()
     name = new_machine.succeed("hostname").strip()
     assert name == "disko-machine", f"expected hostname 'disko-machine', got {name}"
