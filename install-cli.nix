@@ -53,8 +53,8 @@ let
           boot.loader.efi.canTouchEfiVariables = lib.mkVMOverride writeEfiBootEntries;
           boot.loader.grub.devices = lib.mkVMOverride diskoSystem.config.boot.loader.grub.devices;
           imports = [
-             ({ _file = "disko-install --system-config"; } // (builtins.fromJSON extraSystemConfig))
-           ];
+            ({ _file = "disko-install --system-config"; } // (builtins.fromJSON extraSystemConfig))
+          ];
         }
       )
     ];
