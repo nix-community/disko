@@ -118,6 +118,10 @@ this project.
 This software is provided free under the
 [MIT Licence](https://opensource.org/licenses/MIT).
 
+## Get in touch
+
+We have a public matrix channel at [disko](https://matrix.to/#/#disko:nixos.org).
+
 ---
 
 This project is supported by [Numtide](https://numtide.com/).
