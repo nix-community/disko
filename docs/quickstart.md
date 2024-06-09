@@ -15,21 +15,42 @@ existing partitions. Dual booting with other operating systems is not supported.
 
 ### Step 1: Choose a Disk Configuration
 
-Configurations for the most common disk layouts are provided in the
-[examples directory](https://github.com/nix-community/disko/tree/master/example)
-of the `disko` repository. Decide which of these layouts best suits your
-requirements. If you're not sure which layout to pick, use the
-[hybrid](https://github.com/nix-community/disko/blob/master/example/hybrid.nix)
+Real-world templates are provided in this [repository](https://github.com/nix-community/disko-templates).
+
+More disk layouts for all filesystems can be also found in the
+[example](https://github.com/nix-community/disko/tree/master/example) directory
+of disko. However these examples are also used for regression tests in disko and
+may have uncommon options in them to fully exercise all features of disko, that
+you may need to change or remove.
+
+Decide which of these layouts best suits your requirements. If you're not sure
+which layout to pick, use the
+[single-disk-ext4](https://github.com/nix-community/disko-templates/blob/main/single-disk-ext4/disko-config.nix)
 configuration. This layout is compatible with both BIOS and EFI systems.
 
 Refer to the [reference manual](./reference.md) for more information about the
 sample layouts and how to build your own configuration.
 
-Once you've chosen your layout, you'll need to make a note of the URL to the raw
-file. To do this, open the file in Github. Immediately below the list of
-contributors, you will see a button labelled 'RAW' near the right hand side.
-Click this. The URL of the raw file will appear in the search bar of your
-browser. It will look something like this:
+To copy a template use this command in your nixos configuration directory:
+
+```
+nix flake init --template github:nix-community/disko-templates#single-disk-ext4
+```
+
+This will write a file called `disko-config.nix` into the current directory.
+Import this file in your NixOS configuration:
+
+```nix
+{
+  imports = [ ./disko-config.nix ];
+}
+```
+
+If you want to choose a layout from the disko example directory instead, you'll
+need to make a note of the URL to the raw file. To do this, open the file in
+Github. Immediately below the list of contributors, you will see a button
+labelled 'RAW' near the right hand side. Click this. The URL of the raw file
+will appear in the search bar of your browser. It will look something like this:
 
 ```
 https://raw.githubusercontent.com/nix-community/disko/master/example/hybrid.nix
