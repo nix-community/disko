@@ -118,9 +118,6 @@ this project.
 This software is provided free under the
 [MIT Licence](https://opensource.org/licenses/MIT).
 
-If you would like to become a contributor, please see our
-[contribution guidelines.](https://github.com/numtide/docs/contribution-guidelines.md)
-
 ---
 
 This project is supported by [Numtide](https://numtide.com/).
