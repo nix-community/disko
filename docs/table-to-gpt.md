@@ -58,16 +58,21 @@ for example like this:
 
 ## Remediation
 
-The new GPT layout (`type = "gpt"`) uses partlabels to realize the partiton numbering. For this reason you have to manually set up partition labels, if you want to resolve this issue.
+The new GPT layout (`type = "gpt"`) uses partlabels to realize the partiton
+numbering. For this reason you have to manually set up partition labels, if you
+want to resolve this issue.
 
 ### Create GPT partition labels
 
 For each partition involved, create the partition label from these components:
 
 - The partition number (e.g. /dev/nvme0n**1**, or /dev/sda**1**)
-- The parent type in your disko config (value of `disko.device.disk.example.type = "disk";`)
-- The parent name in your disko config (attribute name of `disko.devices.disk.example`, so `example` in this example)
-- The partition name in your disko config (attribute name of `disko.devices.disk.content.partitions.*.name`)
+- The parent type in your disko config (value of
+  `disko.device.disk.example.type = "disk";`)
+- The parent name in your disko config (attribute name of
+  `disko.devices.disk.example`, so `example` in this example)
+- The partition name in your disko config (attribute name of
+  `disko.devices.disk.content.partitions.*.name`)
 
 ```bash
 # sgdisk -c 1:disk-example-ESP /dev/nvme0n1
@@ -84,14 +89,18 @@ Make the following changes to your disko configuration:
 
 1. Set `disko.devices.disk.example.content.type = "gpt"`
 1. Remove `disko.devices.disk.example.format`
-1. Convert `disko.devices.disk.example.partitions` to an attribute set and promote the `name` field to the key for its partition
-1. Add a `priority` field to each partition, to reflect the intended partition number
+1. Convert `disko.devices.disk.example.partitions` to an attribute set and
+   promote the `name` field to the key for its partition
+1. Add a `priority` field to each partition, to reflect the intended partition
+   number
 
 Then rebuild your system and reboot.
 
 ### Recovering from mistake
 
-If you made a mistake here, your system will be waiting for devices to appear, and then run into timeouts. You can easily recover from this, since rebooting into an old generation will still use the legacy way of numbering of partitions.
+If you made a mistake here, your system will be waiting for devices to appear,
+and then run into timeouts. You can easily recover from this, since rebooting
+into an old generation will still use the legacy way of numbering of partitions.
 
 ## Result
 

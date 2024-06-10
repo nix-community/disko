@@ -41,7 +41,7 @@ recursive layouts.
 
 Disko doesn't require installation: it can be run directly from nix-community
 repository. The [Quickstart Guide](./docs/quickstart.md) documents how to run
-Disko in its simplest form when installing NixOS. Alternatively you can
+Disko in its simplest form when installing NixOS. Alternatively, you can
 also use the new [disko-install](./docs/disko-install.md) tool, which combines
 the `disko` and `nixos-install` into one step.
 
@@ -118,8 +118,10 @@ this project.
 This software is provided free under the
 [MIT Licence](https://opensource.org/licenses/MIT).
 
-If you would like to become a contributor, please see our
-[contribution guidelines.](https://github.com/numtide/docs/contribution-guidelines.md)
+## Get in touch
+
+We have a public matrix channel at
+[disko](https://matrix.to/#/#disko:nixos.org).
 
 ---
 

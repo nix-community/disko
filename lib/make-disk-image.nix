@@ -82,9 +82,11 @@ let
   QEMU_OPTS = lib.concatStringsSep " " ([
     "-drive if=pflash,format=raw,unit=0,readonly=on,file=${pkgs.OVMF.firmware}"
     "-drive if=pflash,format=raw,unit=1,file=efivars.fd"
-  ] ++ builtins.map (disk:
-    "-drive file=${disk.name}.raw,if=virtio,cache=unsafe,werror=report,format=raw"
-  ) (lib.attrValues nixosConfig.config.disko.devices.disk));
+  ] ++ builtins.map
+    (disk:
+      "-drive file=${disk.name}.raw,if=virtio,cache=unsafe,werror=report,format=raw"
+    )
+    (lib.attrValues nixosConfig.config.disko.devices.disk));
 in
 {
   pure = vmTools.runInLinuxVM (pkgs.runCommand name

@@ -4,7 +4,7 @@ let
 
   dependencies = [
     self.nixosConfigurations.testmachine.pkgs.stdenv.drvPath
-    (self.nixosConfigurations.testmachine.pkgs.closureInfo { rootPaths = []; }).drvPath
+    (self.nixosConfigurations.testmachine.pkgs.closureInfo { rootPaths = [ ]; }).drvPath
     self.nixosConfigurations.testmachine.config.system.build.toplevel
     self.nixosConfigurations.testmachine.config.system.build.diskoScript
   ] ++ builtins.map (i: i.outPath) (builtins.attrValues self.inputs);

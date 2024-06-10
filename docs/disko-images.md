@@ -80,8 +80,8 @@ In the this example we create a flake containing a nixos configuration for
 
    The script will generate the actual image outside of the nix store in the
    current working directory. The create image names depend on the names used in
-   `disko.devices.disk` attrset in the NixOS configuration. In our code example it will
-   produce the following image:
+   `disko.devices.disk` attrset in the NixOS configuration. In our code example
+   it will produce the following image:
 
    ```
    $ ls -la vdb.raw
