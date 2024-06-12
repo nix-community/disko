@@ -1,4 +1,4 @@
-{ config, options, lib, diskoLib, parent, ... }:
+{ config, options, lib, diskoLib, parent, toplevel-config, ... }:
 {
   options = {
     name = lib.mkOption {
@@ -30,7 +30,7 @@
       description = "Size of the dataset";
     };
 
-    content = diskoLib.partitionType { parent = config; device = "/dev/zvol/${config._parent.name}/${config.name}"; };
+    content = diskoLib.partitionType { parent = config; device = "/dev/zvol/${config._parent.name}/${config.name}"; inherit toplevel-config; };
 
     _parent = lib.mkOption {
       internal = true;

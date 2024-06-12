@@ -2,6 +2,7 @@
 , rootMountPoint ? "/mnt"
 , makeTest ? import <nixpkgs/nixos/tests/make-test-python.nix>
 , eval-config ? import <nixpkgs/nixos/lib/eval-config.nix>
+, toplevel-config ? {}
 }:
 with lib;
 with builtins;
@@ -35,7 +36,7 @@ let
     # option for valid contents of partitions (basically like devices, but without tables)
     partitionType = extraArgs: lib.mkOption {
       type = lib.types.nullOr (diskoLib.subType {
-        types = { inherit (diskoLib.types) btrfs filesystem zfs mdraid luks lvm_pv swap; };
+        types = { inherit (diskoLib.types) btrfs filesystem zfs mdraid luks lvm_pv swap bcachefs; };
         inherit extraArgs;
       });
       default = null;
@@ -45,7 +46,7 @@ let
     # option for valid contents of devices
     deviceType = extraArgs: lib.mkOption {
       type = lib.types.nullOr (diskoLib.subType {
-        types = { inherit (diskoLib.types) table gpt btrfs filesystem zfs mdraid luks lvm_pv swap; };
+        types = { inherit (diskoLib.types) table gpt btrfs filesystem zfs mdraid luks lvm_pv swap bcachefs; };
         inherit extraArgs;
       });
       default = null;
@@ -219,7 +220,7 @@ let
           postMountHook = diskoLib.mkHook "shell commands to run after mount";
         };
         config._module.args = {
-          inherit diskoLib rootMountPoint;
+          inherit diskoLib rootMountPoint toplevel-config;
         };
       }
     ];
@@ -344,7 +345,7 @@ let
     */
     toplevel = lib.types.submodule (cfg:
       let
-        devices = { inherit (cfg.config) disk mdadm zpool lvm_vg nodev; };
+        devices = { inherit (cfg.config) disk mdadm zpool lvm_vg nodev bcachefspool; };
       in
       {
         options = {
@@ -362,6 +363,11 @@ let
             type = lib.types.attrsOf diskoLib.types.zpool;
             default = { };
             description = "ZFS pool device";
+          };
+          bcachefspool = lib.mkOption {
+            type = lib.types.attrsOf diskoLib.types.bcachefspool;
+            default = { };
+            description = "BcacheFS pool device";
           };
           lvm_vg = lib.mkOption {
             type = lib.types.attrsOf diskoLib.types.lvm_vg;
@@ -522,6 +528,16 @@ let
                 collectedConfigs = flatten (map (dev: dev._config) (flatten (map attrValues (attrValues devices))));
               in
               lib.genAttrs configKeys (key: lib.mkMerge (lib.catAttrs key collectedConfigs));
+          };
+          _internal = {
+            bcachefspools = lib.mkOption {
+              internal = true;
+              type = lib.types.attrsOf (lib.types.listOf lib.types.str);
+              description = ''
+                Disko Internal List of BcacheFS pool's
+              '';
+              default = {};
+            };
           };
         };
       });

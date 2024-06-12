@@ -1,4 +1,4 @@
-{ config, options, lib, diskoLib, parent, device, ... }:
+{ config, options, lib, diskoLib, parent, device, toplevel-config, ... }:
 let
   keyFile =
     if config.settings ? "keyFile"
@@ -96,7 +96,7 @@ in
       description = "Extra arguments to pass to `cryptsetup luksOpen` when opening";
       example = [ "--timeout 10" ];
     };
-    content = diskoLib.deviceType { parent = config; device = "/dev/mapper/${config.name}"; };
+    content = diskoLib.deviceType { parent = config; device = "/dev/mapper/${config.name}"; inherit toplevel-config; };
     _parent = lib.mkOption {
       internal = true;
       default = parent;

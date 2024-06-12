@@ -1,4 +1,4 @@
-{ config, options, lib, diskoLib, ... }:
+{ config, options, lib, rootMountPoint, diskoLib, toplevel-config, ... }:
 {
   options = {
     name = lib.mkOption {
@@ -14,10 +14,10 @@
       description = "Type";
     };
 
-    formatOptions = lib.mkOption {
+    formatArgs = lib.mkOption {
       type = lib.types.listOf lib.types.str;
-      default = [ "defaults" ];
-      description = "Format options";
+      default = [];
+      description = "Formating Arguments";
     };
 
     mountOptions = lib.mkOption {
@@ -36,8 +36,7 @@
       internal = true;
       readOnly = true;
       type = diskoLib.jsonType;
-      default =
-        lib.optionalAttrs (config.content != null) (config.content._meta [ "bcachefspool" config.name ]);
+      default = { };
       description = "Metadata";
     };
 
@@ -46,7 +45,7 @@
       default = ''
         readarray -t bcachefs_devices < <(cat "$disko_devices_dir"/bcachefs_${config.name}/devices)
         readarray -t bcachefs_labels < <(cat "$disko_devices_dir"/bcachefs_${config.name}/labels)
-        readarray -t bcachefs_format_options < <(cat "$disko_devices_dir"/bcachefs_${config.name}/format_options)
+        readarray -t bcachefs_format_options < <(cat "$disko_devices_dir"/bcachefs_${config.name}/format_args)
 
         device_configs=()
 
@@ -57,26 +56,37 @@
             device_configs+=("--label=$label $format_options $device")
         done
 
-        bcachefs format --fs_label=${config.name} ${lib.concatStringsSep " " config.formatOptions} \
+        bcachefs format --fs_label=${config.name} ${lib.concatStringsSep " " config.formatArgs} \
           $(IFS=' \' ; echo "''${device_configs[*]}")
       '';
     };
 
     _mount = diskoLib.mkMountOption {
       inherit config options;
-      default = "TODO";
+      default = {
+        fs = lib.optionalAttrs (config.mountpoint != null) {
+          ${config.mountpoint} = ''
+            readarray -t bcachefs_devices < <(cat "$disko_devices_dir"/bcachefs_${config.name}/devices)
+
+            mount -t bcachefs $(IFS=':' ; echo ''${bcachefs_devices[*]}) "${rootMountPoint}${config.mountpoint}" \
+              ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
+              -o X-mount.mkdir
+          '';
+        };
+      };
     };
 
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
-      default = lib.optional (config.options.mountpoint or "" != "none") {
+      default = [ {
           fileSystems.${config.mountpoint} = {
-            device = "${lib.concatStringsSep ":" config.formatOptions}";
+            device = "${lib.concatStringsSep ":" (lib.traceVal toplevel-config.disko.devices._internal.bcachefspools).${config.name}}";
             fsType = "bcachefs";
             options = config.mountOptions;
           };
-        };
+        }
+      ];
       description = "NixOS configuration";
     };
     _pkgs = lib.mkOption {

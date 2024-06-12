@@ -12,20 +12,21 @@
       default = device;
     };
 
-    name = lib.mkOption {
+    pool = lib.mkOption {
       type = lib.types.str;
-      description = "Name";
+      description = "Pool";
     };
 
     label = lib.mkOption {
       type = lib.types.str;
+      default = config._module.args.name;
       description = "Label";
     };
 
-    formatOptions = lib.mkOption {
+    formatArgs = lib.mkOption {
       type = lib.types.listOf lib.types.str;
-      default = [ "defaults" ];
-      description = "Format options";
+      default = [];
+      description = "Formating Arguments";
     };
 
     _parent = lib.mkOption {
@@ -37,16 +38,16 @@
       readOnly = true;
       type = lib.types.functionTo diskoLib.jsonType;
       default = dev: {
-        deviceDependencies.bcachefspool.${config.name} = [ dev ];
+        deviceDependencies.bcachefspool.${config.pool} = [ dev ];
       };
       description = "Metadata";
     };
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = ''
-        echo ${config.device} >>"$disko_devices_dir"/bcachefs_${config.name}/devices
-        echo ${config.label} >>"$disko_devices_dir"/bcachefs_${config.name}/labels
-        echo ${lib.concatStringsSep " " config.formatOptions} >>"$disko_devices_dir"/bcachefs_${config.name}/format_options
+        echo ${config.device} >>"$disko_devices_dir"/bcachefs_${config.pool}/devices
+        echo ${config.label} >>"$disko_devices_dir"/bcachefs_${config.pool}/labels
+        echo ${lib.concatStringsSep " " config.formatArgs} >>"$disko_devices_dir"/bcachefs_${config.pool}/format_args
       '';
     };
     _mount = diskoLib.mkMountOption {
@@ -56,7 +57,11 @@
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
-      default = [ ];
+      default = [
+        {
+          disko.devices._internal.bcachefspools.${config.pool} = [ (lib.traceVal config.device) ];
+        }
+      ];
       description = "NixOS configuration";
     };
     _pkgs = lib.mkOption {
