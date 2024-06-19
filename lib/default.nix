@@ -204,7 +204,7 @@ let
 
     mkHook = description: lib.mkOption {
       inherit description;
-      type = lib.types.str;
+      type = lib.types.lines;
       default = "";
     };
 
