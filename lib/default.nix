@@ -232,9 +232,9 @@ let
         default = ''
           ( # ${config.type} ${concatMapStringsSep " " (n: toString (config.${n} or "")) ["name" "device" "format" "mountpoint"]} #
             ${diskoLib.indent (diskoLib.defineHookVariables { inherit options; })}
-            ${config.preCreateHook}
+            ${diskoLib.indent config.preCreateHook}
             ${diskoLib.indent attrs.default}
-            ${config.postCreateHook}
+            ${diskoLib.indent config.postCreateHook}
           )
         '';
         description = "Creation script";
@@ -250,9 +250,9 @@ let
             if builtins.isString value then ''
               (
                 ${diskoLib.indent (diskoLib.defineHookVariables { inherit options; })}
-                ${config.preMountHook}
+                ${diskoLib.indent config.preMountHook}
                 ${diskoLib.indent value}
-                ${config.postMountHook}
+                ${diskoLib.indent config.postMountHook}
               )
             '' else value)
           attrs.default;
