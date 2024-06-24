@@ -1,4 +1,4 @@
-{ config, options, lib, diskoLib, ... }:
+{ config, options, lib, diskoLib, toplevel-config, ... }:
 {
   options = {
     name = lib.mkOption {
@@ -42,7 +42,7 @@
             default = [ ];
             description = "Extra arguments";
           };
-          content = diskoLib.partitionType { parent = config; device = "/dev/${config.name}/${lv.config.name}"; };
+          content = diskoLib.partitionType { parent = config; device = "/dev/${config.name}/${lv.config.name}"; inherit toplevel-config; };
         };
       }));
       default = { };

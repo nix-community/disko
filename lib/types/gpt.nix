@@ -1,4 +1,4 @@
-{ config, options, lib, diskoLib, parent, device, ... }:
+{ config, options, lib, diskoLib, parent, device, toplevel-config, ... }:
 let
   sortedPartitions = lib.sort (x: y: x.priority < y.priority) (lib.attrValues config.partitions);
   sortedHybridPartitions = lib.filter (p: p.hybrid != null) sortedPartitions;
@@ -95,7 +95,7 @@ in
               or - for relative sizes from the disks end
             '';
           };
-          content = diskoLib.partitionType { parent = config; device = partition.config.device; };
+          content = diskoLib.partitionType { parent = config; device = partition.config.device; inherit toplevel-config; };
           hybrid = lib.mkOption {
             type = lib.types.nullOr (lib.types.submodule ({ ... } @ hp: {
               options = {

@@ -1,4 +1,4 @@
-{ config, options, lib, diskoLib, ... }:
+{ config, options, lib, diskoLib, toplevel-config, ... }:
 {
   options = {
     name = lib.mkOption {
@@ -24,7 +24,7 @@
       '';
       default = "2G";
     };
-    content = diskoLib.deviceType { parent = config; device = config.device; };
+    content = diskoLib.deviceType { parent = config; device = config.device; inherit toplevel-config; };
     _meta = lib.mkOption {
       internal = true;
       readOnly = true;
