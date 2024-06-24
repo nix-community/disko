@@ -13,9 +13,10 @@ in
     extraRootModules = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       description = ''
-        extra modules to pass to the vmTools.runCommand invocation in the make-disk-image.nix builder
+        extra kernel modules to pass to the vmTools.runCommand invocation in the make-disk-image.nix builder
       '';
       default = [ ];
+      example = [ "bcachefs" ];
     };
     extraPostVM = lib.mkOption {
       type = lib.types.str;
