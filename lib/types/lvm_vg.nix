@@ -1,4 +1,10 @@
 { config, options, lib, diskoLib, ... }:
+let
+  # Load kernel modules to ensure device mapper types are available
+  kernelModules = lib.filter (x: x != "") (map
+    (lv: lib.optionalString (lv.lvm_type != null && lv.lvm_type != "thinlv") "dm-${lv.lvm_type}")
+  (lib.attrValues config.lvs));
+in
 {
   options = {
     name = lib.mkOption {
@@ -21,7 +27,7 @@
           };
           priority = lib.mkOption {
             type = lib.types.int;
-            default = if (lib.hasInfix "100%" lv.config.size) then 9001 else 1000;
+            default = (if lv.config.lvm_type == "thin-pool" then 501 else 1000) + (if lib.hasInfix "100%" lv.config.size then 251 else 0);
             defaultText = lib.literalExpression ''
               if (lib.hasInfix "100%" lv.config.size) then 9001 else 1000
             '';
@@ -33,7 +39,7 @@
           };
           lvm_type = lib.mkOption {
             # TODO: add raid10
-            type = lib.types.nullOr (lib.types.enum [ "mirror" "raid0" "raid1" "raid4" "raid5" "raid6" ]); # TODO add all lib.types
+            type = lib.types.nullOr (lib.types.enum [ "mirror" "raid0" "raid1" "raid4" "raid5" "raid6" "thin-pool" "thinlv" ]); # TODO add all lib.types
             default = null; # maybe there is always a default type?
             description = "LVM type";
           };
@@ -41,6 +47,11 @@
             type = lib.types.listOf lib.types.str;
             default = [ ];
             description = "Extra arguments";
+          };
+          pool = lib.mkOption {
+            type = lib.types.nullOr lib.types.str;
+            default = null;
+            description = "Name of pool LV that this LV belongs to";
           };
           content = diskoLib.partitionType { parent = config; device = "/dev/${config.name}/${lv.config.name}"; };
         };
@@ -67,6 +78,7 @@
           sortedLvs = lib.sort (a: b: a.priority < b.priority) (lib.attrValues config.lvs);
         in
         ''
+          ${lib.concatMapStringsSep "\n" (k: ''modprobe "${k}"'') kernelModules}
           readarray -t lvm_devices < <(cat "$disko_devices_dir"/lvm_${config.name})
           if ! vgdisplay "${config.name}" >/dev/null; then
             vgcreate ${config.name} \
@@ -76,9 +88,12 @@
             if ! lvdisplay '${config.name}/${lv.name}'; then
               lvcreate \
                 --yes \
-                ${if lib.hasInfix "%" lv.size then "-l" else "-L"} ${lv.size} \
+                ${if (lv.lvm_type == "thinlv") then "-V"
+                  else if lib.hasInfix "%" lv.size then "-l" else "-L"} \
+                  ${lv.size} \
                 -n ${lv.name} \
-                ${lib.optionalString (lv.lvm_type != null) "--type=${lv.lvm_type}"} \
+                ${lib.optionalString (lv.lvm_type == "thinlv") "--thinpool=${lv.pool}"} \
+                ${lib.optionalString (lv.lvm_type != null && lv.lvm_type != "thinlv") "--type=${lv.lvm_type}"} \
                 ${toString lv.extraArgs} \
                 ${config.name}
             fi
@@ -110,7 +125,7 @@
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
-      default =
+      default = [ { boot.initrd.kernelModules = kernelModules; } ] ++
         map
           (lv: [
             (lib.optional (lv.content != null) lv.content._config)
