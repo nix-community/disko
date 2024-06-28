@@ -45,7 +45,19 @@ in
           };
           priority = lib.mkOption {
             type = lib.types.int;
-            default = if (partition.config.size or "" == "100%") then 9001 else 1000;
+            default = if partition.config.size or "" == "100%" then
+              9001
+            else if partition.config.type == "EF02" then
+              # Boot partition should be created first, because some BIOS implementations require it.
+              # Priority defaults to 100 here to support any potential use-case for placing partitions prior to EF02
+              100
+            else
+              1000;
+            defaultText = ''
+              1000: normal partitions
+              9001: partitions with 100% size
+              100: boot partitions (EF02)
+            '';
             description = "Priority of the partition, smaller values are created first";
           };
           name = lib.mkOption {
