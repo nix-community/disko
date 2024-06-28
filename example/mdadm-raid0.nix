@@ -10,7 +10,6 @@
             boot = {
               size = "1M";
               type = "EF02"; # for grub MBR
-              priority = 1; # Needs to be first partition
             };
             mdadm = {
               size = "100%";
@@ -31,7 +30,6 @@
             boot = {
               size = "1M";
               type = "EF02"; # for grub MBR
-              priority = 1; # Needs to be first partition
             };
             mdadm = {
               size = "100%";
