@@ -240,7 +240,7 @@ main() {
     NIX_STATE_DIR=${mountPoint}/nix/var/nix nix-store --load-db < "${closure_info}/registration"
   fi
 
-  nixos-install --no-root-password --system "$nixos_system" --root "$mountPoint"
+  nixos-install --no-channel-copy --no-root-password --system "$nixos_system" --root "$mountPoint"
 }
 
 main "$@"

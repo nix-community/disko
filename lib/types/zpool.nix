@@ -62,7 +62,9 @@
       inherit config options;
       default = ''
         readarray -t zfs_devices < <(cat "$disko_devices_dir"/zfs_${config.name})
-        if zpool list '${config.name}'; then
+        # Try importing the pool without mounting anything if it exists.
+        # This allows us to set mounpoints.
+        if zpool import -N -f '${config.name}' || zpool list '${config.name}'; then
           echo "not creating zpool ${config.name} as a pool with that name already exists" >&2
         else
           continue=1
