@@ -10,6 +10,17 @@ let
 in
 {
   options.disko = {
+    imageBuilderKernel = lib.mkOption {
+      type = lib.types.package;
+    imageBuilderKernelPackages = lib.mkOption {
+      type = lib.types.attrs;
+      description = ''
+        the kernel used when building disk images via make-disk-image.nix.
+        Useful when the config's kernel won't boot in the image-builder.
+      '';
+      default = config.boot.kernelPackages;
+      example = lib.literalExpression "pkgs.linuxPackages_testing";
+    };
     extraRootModules = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       description = ''
