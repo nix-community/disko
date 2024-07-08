@@ -1,6 +1,6 @@
 { nixosConfig
 , diskoLib
-, pkgs ? nixosConfig.pkgs
+, pkgs ? nixosConfig.config.disko.imageBuilderPkgs
 , lib ? pkgs.lib
 , name ? "${nixosConfig.config.networking.hostName}-disko-images"
 , extraPostVM ? nixosConfig.config.disko.extraPostVM

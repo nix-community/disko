@@ -12,6 +12,15 @@ in
   options.disko = {
     imageBuilderKernel = lib.mkOption {
       type = lib.types.package;
+    imageBuilderPkgs = lib.mkOption {
+      type = lib.types.attrs;
+      description = ''
+        the pkgs instance used when building disk images via make-disk-image.nix.
+        Useful when the config's kernel won't boot in the image-builder.
+      '';
+      default = pkgs;
+      example = lib.literalExpression "pkgs";
+    };
     imageBuilderKernelPackages = lib.mkOption {
       type = lib.types.attrs;
       description = ''
