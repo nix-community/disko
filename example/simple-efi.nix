@@ -1,7 +1,7 @@
 {
   disko.devices = {
     disk = {
-      vdb = {
+      main = {
         device = "/dev/disk/by-id/some-disk-id";
         type = "disk";
         content = {

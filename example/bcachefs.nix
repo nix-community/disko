@@ -1,7 +1,7 @@
 {
   disko.devices = {
     disk = {
-      vdb = {
+      main = {
         device = "/dev/disk/by-path/pci-0000:02:00.0-nvme-1";
         type = "disk";
         content = {
