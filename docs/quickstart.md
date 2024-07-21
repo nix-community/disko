@@ -15,7 +15,8 @@ existing partitions. Dual booting with other operating systems is not supported.
 
 ### Step 1: Choose a Disk Configuration
 
-Real-world templates are provided in this [repository](https://github.com/nix-community/disko-templates).
+Real-world templates are provided in this
+[repository](https://github.com/nix-community/disko-templates).
 
 More disk layouts for all filesystems can be also found in the
 [example](https://github.com/nix-community/disko/tree/master/example) directory

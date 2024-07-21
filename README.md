@@ -41,9 +41,9 @@ recursive layouts.
 
 Disko doesn't require installation: it can be run directly from nix-community
 repository. The [Quickstart Guide](./docs/quickstart.md) documents how to run
-Disko in its simplest form when installing NixOS. Alternatively, you can
-also use the new [disko-install](./docs/disko-install.md) tool, which combines
-the `disko` and `nixos-install` into one step.
+Disko in its simplest form when installing NixOS. Alternatively, you can also
+use the new [disko-install](./docs/disko-install.md) tool, which combines the
+`disko` and `nixos-install` into one step.
 
 For information on other use cases, including upgrading from an older version of
 **disko**, using **disko** without NixOS and downloading the module, see the
