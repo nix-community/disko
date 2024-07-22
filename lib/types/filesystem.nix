@@ -24,7 +24,19 @@
     mountpoint = lib.mkOption {
       type = lib.types.nullOr diskoLib.optionTypes.absolute-pathname;
       default = null;
-      description = "Path to mount the filesystem to";
+      description = ''
+        Path to mount the filesystem to during normal operation, or null to
+        disable. The NixOS configuration module will add an entry under
+        `fileSystems` to mount the filesystem at this path.
+      '';
+    };
+    installMountpoint = lib.mkOption {
+      type = lib.types.nullOr diskoLib.optionTypes.absolute-pathname;
+      default = config.mountpoint;
+      description = ''
+        Path to mount the filesystem to during installation, or null to
+        disable.
+      '';
     };
     format = lib.mkOption {
       type = lib.types.str;
@@ -53,10 +65,10 @@
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
-      default = lib.optionalAttrs (config.mountpoint != null) {
-        fs.${config.mountpoint} = ''
-          if ! findmnt ${config.device} "${rootMountPoint}${config.mountpoint}" >/dev/null 2>&1; then
-            mount ${config.device} "${rootMountPoint}${config.mountpoint}" \
+      default = lib.optionalAttrs (config.installMountpoint != null) {
+        fs.${config.installMountpoint} = ''
+          if ! findmnt ${config.device} "${rootMountPoint}${config.installMountpoint}" >/dev/null 2>&1; then
+            mount ${config.device} "${rootMountPoint}${config.installMountpoint}" \
               -t "${config.format}" \
               ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
               -o X-mount.mkdir
