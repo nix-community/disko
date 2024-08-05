@@ -150,9 +150,9 @@ in
               topology=""
               # For shell check
               mode="${config.mode}"
-              if [ $mode != "prescribed" ]; then
-                ${if hasTopology then
-                  ''topology="${config.mode} \"''${zfs_devices}\""''
+              if [ "$mode" != "prescribed" ]; then
+                ${if !hasTopology then
+                  ''topology="${config.mode} ''${zfs_devices[*]}"''
                 else
                   ''
                   echo "topology cannot be set when mode != 'prescribed', skipping creating zpool ${config.name}" >&2
@@ -174,7 +174,6 @@ in
                   devs=''${line#*=}
                   IFS=' ' read -r -a devices <<< "$devs"
                   all_devices+=("''${devices[@]}")
-                  # shellcheck disable=SC2089
                   topology+=" ''${mode} ''${devices[*]}"
                 done
                 # all_devices sorted should equal zfs_devices sorted
@@ -188,7 +187,6 @@ in
               fi
             fi
             if [ $continue -eq 1 ]; then
-              # shellcheck disable=SC2090
               zpool create -f ${config.name} \
                 -R ${rootMountPoint} \
                 ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") config.options)} \

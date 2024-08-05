@@ -60,7 +60,7 @@
       };
       cache = {
         type = "disk";
-        device = "/dev/sdc";
+        device = "/dev/vdc";
         content = {
           type = "gpt";
           partitions = {
@@ -100,15 +100,14 @@
         };
 
         datasets = {
-            # See examples/zfs.nix for more comprehensive usage.
-            zfs_fs = {
-              type = "zfs_fs";
-              mountpoint = "/zfs_fs";
-              options."com.sun:auto-snapshot" = "true";
-            };
+          # See examples/zfs.nix for more comprehensive usage.
+          zfs_fs = {
+            type = "zfs_fs";
+            mountpoint = "/zfs_fs";
+            options."com.sun:auto-snapshot" = "true";
+          };
         };
       };
     };
   };
 }
-
