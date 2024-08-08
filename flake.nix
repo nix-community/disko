@@ -85,10 +85,58 @@
             deadnix
           ];
           text = ''
-            set -o xtrace
-            nixpkgs-fmt "$@"
-            deno fmt "$@"
-            deadnix --edit "$@"
+            showUsage() {
+              cat <<EOF
+            Usage: $0 [OPTIONS] FILES...
+              -c, --check  Only check formatting, do not modify files.
+              -h, --help   Show this help message.
+            EOF
+            }
+
+            check=
+            files=()
+
+            parseArgs() {
+              while [[ $# -gt 0 ]]; do
+                case "$1" in
+                -h | --help)
+                  showUsage
+                  exit 0
+                  ;;
+                -c | --check)
+                  check=1
+                  ;;
+                *)
+                  files+=("$1")
+                  ;;
+                esac
+                shift
+              done
+
+              if [[ ''${#files[@]} -eq 0 ]]; then
+                files=(.)
+              fi
+            }
+
+            main() {
+              parseArgs "$@"
+
+              if [[ -z "$check" ]]; then
+                set -o xtrace
+
+                nixpkgs-fmt -- "''${files[@]}"
+                deno fmt -- "''${files[@]}"
+                deadnix --edit -- "''${files[@]}"
+              else
+                set -o xtrace
+
+                nixpkgs-fmt --check -- "''${files[@]}"
+                deno fmt --check -- "''${files[@]}"
+                deadnix -- "''${files[@]}"
+              fi
+            }
+
+            main "$@"
           '';
         }
       );

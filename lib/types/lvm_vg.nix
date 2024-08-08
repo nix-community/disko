@@ -3,7 +3,7 @@ let
   # Load kernel modules to ensure device mapper types are available
   kernelModules = lib.filter (x: x != "") (map
     (lv: lib.optionalString (lv.lvm_type != null && lv.lvm_type != "thinlv") "dm-${lv.lvm_type}")
-  (lib.attrValues config.lvs));
+    (lib.attrValues config.lvs));
 in
 {
   options = {
@@ -125,7 +125,7 @@ in
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
-      default = [ { boot.initrd.kernelModules = kernelModules; } ] ++
+      default = [{ boot.initrd.kernelModules = kernelModules; }] ++
         map
           (lv: [
             (lib.optional (lv.content != null) lv.content._config)
