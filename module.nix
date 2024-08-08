@@ -10,6 +10,34 @@ let
 in
 {
   options.disko = {
+    imageBuilderQemu = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      description = ''
+        the qemu emulator string used when building disk images via make-disk-image.nix.
+        Useful when using binfmt on your build host, and wanting to build disk
+        images for a foreign architecture
+      '';
+      default = null;
+      example = lib.literalExpression "''${pkgs.qemu_kvm}/bin/qemu-system-aarch64";
+    };
+    imageBuilderPkgs = lib.mkOption {
+      type = lib.types.attrs;
+      description = ''
+        the pkgs instance used when building disk images via make-disk-image.nix.
+        Useful when the config's kernel won't boot in the image-builder.
+      '';
+      default = pkgs;
+      example = lib.literalExpression "pkgs";
+    };
+    imageBuilderKernelPackages = lib.mkOption {
+      type = lib.types.attrs;
+      description = ''
+        the kernel used when building disk images via make-disk-image.nix.
+        Useful when the config's kernel won't boot in the image-builder.
+      '';
+      default = config.boot.kernelPackages;
+      example = lib.literalExpression "pkgs.linuxPackages_testing";
+    };
     extraRootModules = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       description = ''

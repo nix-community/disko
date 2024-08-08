@@ -1,6 +1,6 @@
 { nixosConfig
 , diskoLib
-, pkgs ? nixosConfig.pkgs
+, pkgs ? nixosConfig.config.disko.imageBuilderPkgs
 , lib ? pkgs.lib
 , name ? "${nixosConfig.config.networking.hostName}-disko-images"
 , extraPostVM ? nixosConfig.config.disko.extraPostVM
@@ -9,8 +9,9 @@
 let
   vmTools = pkgs.vmTools.override {
     rootModules = [ "9p" "9pnet_virtio" "virtio_pci" "virtio_blk" ] ++ nixosConfig.config.disko.extraRootModules;
+    customQemu = nixosConfig.config.disko.imageBuilderQemu;
     kernel = pkgs.aggregateModules
-      (with nixosConfig.config.boot.kernelPackages; [ kernel ]
+      (with nixosConfig.config.disko.imageBuilderKernelPackages; [ kernel ]
         ++ lib.optional (lib.elem "zfs" nixosConfig.config.disko.extraRootModules) zfs);
   };
   cleanedConfig = diskoLib.testLib.prepareDiskoConfig nixosConfig.config diskoLib.testLib.devices;
