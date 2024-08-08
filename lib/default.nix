@@ -16,6 +16,8 @@ let
     # a version of makeDiskImage which runs outside of the store
     makeDiskImagesScript = args: (import ./make-disk-image.nix ({ inherit diskoLib; } // args)).impure;
 
+    makeVMRunner = args: (import ./interactive-vm.nix ({ inherit diskoLib; } // args)).pure;
+
     testLib = import ./tests.nix { inherit lib makeTest eval-config; };
     # like lib.types.oneOf but instead of a list takes an attrset
     # uses the field "type" to find the correct type in the attrset

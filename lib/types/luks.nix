@@ -114,19 +114,23 @@ in
       default = ''
         if ! blkid "${config.device}" >/dev/null || ! (blkid "${config.device}" -o export | grep -q '^TYPE='); then
           ${lib.optionalString config.askPassword ''
-            set +x
             askPassword() {
-              echo "Enter password for ${config.device}: "
-              IFS= read -r -s password
-              echo "Enter password for ${config.device} again to be safe: "
-              IFS= read -r -s password_check
-              export password
-              [ "$password" = "$password_check" ]
+              if [ -z ''${IN_DISKO_TEST+x} ]; then
+                set +x
+                echo "Enter password for ${config.device}: "
+                IFS= read -r -s password
+                echo "Enter password for ${config.device} again to be safe: "
+                IFS= read -r -s password_check
+                export password
+                [ "$password" = "$password_check" ]
+                set -x
+              else
+                export password=disko
+              fi
             }
             until askPassword; do
               echo "Passwords did not match, please try again."
             done
-            set -x
           ''}
           cryptsetup -q luksFormat ${config.device} ${toString config.extraFormatArgs} ${keyFileArgs}
           ${cryptsetupOpen} --persistent
@@ -147,11 +151,15 @@ in
           dev = ''
             if ! cryptsetup status ${config.name} >/dev/null 2>/dev/null; then
               ${lib.optionalString config.askPassword ''
-                set +x
-                echo "Enter password for ${config.device}"
-                IFS= read -r -s password
-                export password
-                set -x
+                if [ -z ''${IN_DISKO_TEST+x} ]; then
+                  set +x
+                  echo "Enter password for ${config.device}"
+                  IFS= read -r -s password
+                  export password
+                  set -x
+                else
+                  export password=disko
+                fi
               ''}
               ${cryptsetupOpen}
             fi

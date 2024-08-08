@@ -59,40 +59,42 @@
         # important to prevent accidental shadowing of mount points
         # since (create order != mount order)
         # -p creates parents automatically
-        default = let
-          createOptions = (lib.optionalAttrs (config.mountpoint != null) { mountpoint = config.mountpoint; }) // config.options;
-          # All options defined as PROP_ONETIME or PROP_ONETIME_DEFAULT in https://github.com/openzfs/zfs/blob/master/module/zcommon/zfs_prop.c
-          onetimeProperties = [
-            "encryption"
-            "casesensitivity"
-            "utf8only"
-            "normalization"
-            "volblocksize"
-            "pbkdf2iters"
-            "pbkdf2salt"
-            "keyformat"
-          ];
-          updateOptions = builtins.removeAttrs config.options onetimeProperties;
-          mountpoint = config.options.mountpoint or config.mountpoint;
-        in ''
-          if ! zfs get type ${config._name} >/dev/null 2>&1; then
-            zfs create -up ${config._name} \
-              ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") (createOptions))}
-          ${lib.optionalString (updateOptions != {}) ''
-          else
-            zfs set ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "${n}=${v}") updateOptions)} ${config._name}
-            ${lib.optionalString (mountpoint != null) ''
-              # zfs will try unmount the dataset to change the mountpoint
-              # but this might fail if the dataset is in use
-              if ! zfs set mountpoint=${mountpoint} ${config._name}; then
-                echo "Failed to set mountpoint to '${mountpoint}' for ${config._name}." >&2
-                echo "You may need to run when the pool is not mounted i.e. in a recovery system:" >&2
-                echo "  zfs set mountpoint=${mountpoint} ${config._name}" >&2
-              fi
+        default =
+          let
+            createOptions = (lib.optionalAttrs (config.mountpoint != null) { mountpoint = config.mountpoint; }) // config.options;
+            # All options defined as PROP_ONETIME or PROP_ONETIME_DEFAULT in https://github.com/openzfs/zfs/blob/master/module/zcommon/zfs_prop.c
+            onetimeProperties = [
+              "encryption"
+              "casesensitivity"
+              "utf8only"
+              "normalization"
+              "volblocksize"
+              "pbkdf2iters"
+              "pbkdf2salt"
+              "keyformat"
+            ];
+            updateOptions = builtins.removeAttrs config.options onetimeProperties;
+            mountpoint = config.options.mountpoint or config.mountpoint;
+          in
+          ''
+            if ! zfs get type ${config._name} >/dev/null 2>&1; then
+              zfs create -up ${config._name} \
+                ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") (createOptions))}
+            ${lib.optionalString (updateOptions != {}) ''
+            else
+              zfs set ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "${n}=${v}") updateOptions)} ${config._name}
+              ${lib.optionalString (mountpoint != null) ''
+                # zfs will try unmount the dataset to change the mountpoint
+                # but this might fail if the dataset is in use
+                if ! zfs set mountpoint=${mountpoint} ${config._name}; then
+                  echo "Failed to set mountpoint to '${mountpoint}' for ${config._name}." >&2
+                  echo "You may need to run when the pool is not mounted i.e. in a recovery system:" >&2
+                  echo "  zfs set mountpoint=${mountpoint} ${config._name}" >&2
+                fi
+              ''}
             ''}
-          ''}
-          fi
-        '';
+            fi
+          '';
       } // { readOnly = false; };
 
     _mount = diskoLib.mkMountOption {
