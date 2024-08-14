@@ -240,6 +240,10 @@ main() {
     NIX_STATE_DIR=${mountPoint}/nix/var/nix nix-store --load-db < "${closure_info}/registration"
   fi
 
+  echo "Syncing filesystems" >&2
+  fsync "${mountPoint}"
+
+  echo "Install NixOS" >&2
   nixos-install --no-channel-copy --no-root-password --system "$nixos_system" --root "$mountPoint"
 }
 
