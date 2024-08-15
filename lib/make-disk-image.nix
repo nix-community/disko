@@ -67,13 +67,32 @@ let
   '';
 
   installer = ''
+    if [[ -f /sys/module/zfs/parameters/zfs_arc_max ]]; then
+      # We have seen `cp` run out of memory when copying the store paths and using zfs.
+      # Default for ARC is 1/2 of RAM, we choose 1/4 of RAM.
+      # Since we mostly write to the store and don't read from it, we don't need a large ARC.
+      # This hopefully gives zfs enough time to free up memory.
+      QUARTER_RAM=$(($(grep MemTotal /proc/meminfo | awk '{print $2 * 1024}') / 4))
+      echo "$QUARTER_RAM" > /sys/module/zfs/parameters/zfs_arc_max
+    fi
+
+    # Useful for monitoring memory usage
+    #echo $(($(cat /sys/module/zfs/parameters/zfs_arc_max) / 1024 / 1024)) MB
+    #(while true; do
+    #  ${pkgs.procps}/bin/free -h
+    #  if [[ -f /sys/module/zfs/parameters/zfs_arc_max ]]; then ${pkgs.zfs}/bin/arcstat; fi
+    #  ${pkgs.procps}/bin/ps -eo pid,ppid,comm,%mem,%cpu --sort=-%mem | head -n 4
+    #  # this can be very verbose
+    #  # ${pkgs.linuxPackages_latest.mm-tools}/bin/slabinfo
+    #  sleep 1
+    #done) &
+
     # populate nix db, so nixos-install doesn't complain
     export NIX_STATE_DIR=${systemToInstall.config.disko.rootMountPoint}/nix/var/nix
     nix-store --load-db < "${closureInfo}/registration"
 
-    # We copy files with cp because `nix copy` seems to have a large memory leak
-    mkdir -p ${systemToInstall.config.disko.rootMountPoint}/nix/store
-    xargs cp --recursive --target ${systemToInstall.config.disko.rootMountPoint}/nix/store < ${closureInfo}/store-paths
+    # We copy files with rsync because `nix copy` seems to have a large memory leak
+    ${pkgs.rsync}/bin/rsync -rtpl --files-from=${closureInfo}/store-paths / ${systemToInstall.config.disko.rootMountPoint}
 
     ${systemToInstall.config.system.build.nixos-install}/bin/nixos-install --root ${systemToInstall.config.disko.rootMountPoint} --system ${systemToInstall.config.system.build.toplevel} --keep-going --no-channel-copy -v --no-root-password --option binary-caches ""
     umount -Rv ${systemToInstall.config.disko.rootMountPoint}
