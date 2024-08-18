@@ -36,6 +36,7 @@ in
         Useful when the config's kernel won't boot in the image-builder.
       '';
       default = config.boot.kernelPackages;
+      defaultText = lib.literalExpression "config.boot.kernelPackages";
       example = lib.literalExpression "pkgs.linuxPackages_testing";
     };
     extraRootModules = lib.mkOption {
