@@ -27,6 +27,7 @@ in
         Useful when the config's kernel won't boot in the image-builder.
       '';
       default = pkgs;
+      defaultText = lib.literalExpression "pkgs";
       example = lib.literalExpression "pkgs";
     };
     imageBuilderKernelPackages = lib.mkOption {
