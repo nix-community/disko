@@ -1,6 +1,6 @@
 # Running Interactive VMs with disko
 
-disko now exports it's own flavor of interactive VMs (similiar to config.system.build.vm).
+disko now exports its own flavor of interactive VMs (similiar to config.system.build.vm).
 Simply import the disko module and build the vm runner with:
 ```
 nix build -L '.#nixosConfigurations.mymachine.config.system.build.vmWithDisko'
