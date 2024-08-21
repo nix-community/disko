@@ -18,7 +18,7 @@ in
         images for a foreign architecture
       '';
       default = null;
-      example = lib.literalExpression "''${pkgs.qemu_kvm}/bin/qemu-system-aarch64";
+      example = lib.literalExpression "\${pkgs.qemu_kvm}/bin/qemu-system-aarch64";
     };
     imageBuilderPkgs = lib.mkOption {
       type = lib.types.attrs;
