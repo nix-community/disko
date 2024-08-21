@@ -5,6 +5,9 @@
 , name ? "${nixosConfig.config.networking.hostName}-disko-images"
 , extraPostVM ? nixosConfig.config.disko.extraPostVM
 , checked ? false
+, copyNixStore ? true
+, testMode ? false
+, extraConfig ? { }
 }:
 let
   vmTools = pkgs.vmTools.override {
@@ -16,10 +19,14 @@ let
   };
   cleanedConfig = diskoLib.testLib.prepareDiskoConfig nixosConfig.config diskoLib.testLib.devices;
   systemToInstall = nixosConfig.extendModules {
-    modules = [{
-      disko.devices = lib.mkForce cleanedConfig.disko.devices;
-      boot.loader.grub.devices = lib.mkForce cleanedConfig.boot.loader.grub.devices;
-    }];
+    modules = [
+      extraConfig
+      {
+        disko.testMode = true;
+        disko.devices = lib.mkForce cleanedConfig.disko.devices;
+        boot.loader.grub.devices = lib.mkForce cleanedConfig.boot.loader.grub.devices;
+      }
+    ];
   };
   dependencies = with pkgs; [
     bash
@@ -49,6 +56,7 @@ let
     rootPaths = [ systemToInstall.config.system.build.toplevel ];
   };
   partitioner = ''
+    set -efux
     # running udev, stolen from stage-1.sh
     echo "running udev..."
     ln -sfn /proc/self/fd /dev/fd
@@ -64,10 +72,13 @@ let
     udevadm trigger --action=add
     udevadm settle
 
+    ${lib.optionalString testMode ''
+      export IN_DISKO_TEST=1
+    ''}
     ${systemToInstall.config.system.build.diskoScript}
   '';
 
-  installer = ''
+  installer = lib.optionalString copyNixStore ''
     # populate nix db, so nixos-install doesn't complain
     export NIX_STATE_DIR=${systemToInstall.config.disko.rootMountPoint}/nix/var/nix
     nix-store --load-db < "${closureInfo}/registration"

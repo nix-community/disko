@@ -99,6 +99,15 @@ in
       type = lib.types.bool;
       default = false;
     };
+    testMode = lib.mkOption {
+      internal = true;
+      description = ''
+        this is true if the system is being run in test mode.
+        like a vm test or an interactive vm
+      '';
+      type = lib.types.bool;
+      default = false;
+    };
     tests = {
       efi = lib.mkOption {
         description = ''
@@ -150,6 +159,11 @@ in
         efi = cfg.tests.efi;
         extraSystemConfig = cfg.tests.extraConfig;
         extraTestScript = cfg.tests.extraChecks;
+      };
+
+      vmWithDisko = diskoLib.makeVMRunner {
+        inherit pkgs;
+        nixosConfig = args;
       };
     };
 
