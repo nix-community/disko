@@ -73,7 +73,7 @@
               "pbkdf2salt"
               "keyformat"
             ];
-            updateOptions = builtins.removeAttrs config.options onetimeProperties;
+            updateOptions = builtins.removeAttrs config.options (onetimeProperties ++ [ "mountpoint" ]);
             mountpoint = config.options.mountpoint or config.mountpoint;
           in
           ''
@@ -84,12 +84,15 @@
             else
               zfs set ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "${n}=${v}") updateOptions)} ${config._name}
               ${lib.optionalString (mountpoint != null) ''
-                # zfs will try unmount the dataset to change the mountpoint
-                # but this might fail if the dataset is in use
-                if ! zfs set mountpoint=${mountpoint} ${config._name}; then
-                  echo "Failed to set mountpoint to '${mountpoint}' for ${config._name}." >&2
-                  echo "You may need to run when the pool is not mounted i.e. in a recovery system:" >&2
-                  echo "  zfs set mountpoint=${mountpoint} ${config._name}" >&2
+                if [[ "$(zfs get -H -o value mountpoint ${config._name})" != "${mountpoint}" ]]; then
+                  echo "Changing mountpoint to '${mountpoint}' for ${config._name}..."
+                  # zfs will try unmount the dataset to change the mountpoint
+                  # but this might fail if the dataset is in use
+                  if ! zfs set mountpoint=${mountpoint} ${config._name}; then
+                    echo "Failed to set mountpoint to '${mountpoint}' for ${config._name}." >&2
+                    echo "You may need to run when the pool is not mounted i.e. in a recovery system:" >&2
+                    echo "  zfs set mountpoint=${mountpoint} ${config._name}" >&2
+                  fi
                 fi
               ''}
             ''}
