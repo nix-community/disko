@@ -60,7 +60,8 @@
     };
     _create = diskoLib.mkCreateOption {
       inherit config options;
-      default = ''
+      # TODO: we don't support encrypted swap yet
+      default = lib.optionalString (!config.randomEncryption) ''
         if ! blkid "${config.device}" -o export | grep -q '^TYPE='; then
           mkswap \
             ${toString config.extraArgs} \
