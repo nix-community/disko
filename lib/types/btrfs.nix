@@ -13,6 +13,23 @@ let
           default = name;
           description = "Path to the swap file (relative to the mountpoint)";
         };
+
+        priority = lib.mkOption {
+          type = lib.types.nullOr lib.types.int;
+          default = null;
+          description = lib.mdDoc ''
+            Specify the priority of the swap file. Priority is a value between 0 and 32767.
+            Higher numbers indicate higher priority.
+            null lets the kernel choose a priority, which will show up as a negative value.
+          '';
+        };
+
+        options = lib.mkOption {
+          type = lib.types.listOf lib.types.nonEmptyStr;
+          default = [ "defaults" ];
+          example = [ "nofail" ];
+          description = "Options used to mount the swap.";
+        };
       };
     }));
     default = { };
@@ -24,6 +41,7 @@ let
       swapDevices = builtins.map
         (file: {
           device = "${mountpoint}/${file.path}";
+          inherit (file) priority options;
         })
         (lib.attrValues swap);
     };
