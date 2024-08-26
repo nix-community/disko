@@ -135,16 +135,16 @@ in
       inherit config options;
       default =
         let
-          formatOutput = (mode: members: ''
+          formatOutput = mode: members: ''
             entries+=("${mode}=${
               lib.concatMapStringsSep " "
               (d: if lib.strings.hasPrefix "/" d then d else "/dev/disk/by-partlabel/disk-${d}-zfs") members
             }")
-          '');
-          formatVdev = (vdev: formatOutput vdev.mode vdev.members);
+          '';
+          formatVdev = vdev: formatOutput vdev.mode vdev.members;
           hasTopology = !(builtins.isString config.mode);
-          mode = if !hasTopology then config.mode else "prescribed";
-          topology = if hasTopology then config.mode.topology else { };
+          mode = if hasTopology then "prescribed" else config.mode;
+          topology = lib.optionalAttrs hasTopology config.mode.topology;
         in
         ''
           readarray -t zfs_devices < <(cat "$disko_devices_dir"/zfs_${config.name})
