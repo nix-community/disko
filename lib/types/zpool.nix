@@ -117,7 +117,7 @@ in
           format_output = (mode: members: ''
             entries+=("${mode}=${
               lib.concatMapStringsSep " "
-              (d: "/dev/disk/by-partlabel/disk-${d}-zfs") members
+              (d: if lib.strings.hasPrefix "/" d then d else "/dev/disk/by-partlabel/disk-${d}-zfs") members
             }")
           '');
           format_vdev = (vdev: format_output vdev.mode vdev.members);
