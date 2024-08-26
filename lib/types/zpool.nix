@@ -22,8 +22,61 @@ in
       description = "Type";
     };
     mode = lib.mkOption {
-      type = lib.types.enum (modeOptions ++ [ "prescribed" ]);
       default = "";
+      type = (lib.types.enum modeOptions) // (lib.types.attrsOf (diskoLib.subType {
+        types = {
+          topology =
+            let
+              vdev = lib.types.submodule ({ name, ... }: {
+                options = {
+                  mode = lib.mkOption {
+                    type = lib.types.enum modeOptions;
+                    default = "";
+                    description = "mode of the zfs vdev";
+                  };
+                  members = lib.mkOption {
+                    type = lib.types.listOf lib.types.str;
+                    description = "Members of the vdev";
+                  };
+                };
+              });
+              parent = config;
+            in
+            lib.types.submodule
+              ({ config, name, ... }: {
+                options = {
+                  type = lib.mkOption {
+                    type = lib.types.enum [ "topology" ];
+                    default = "topology";
+                    internal = true;
+                    description = "Type";
+                  };
+                  # zfs disk types
+                  vdev = lib.mkOption {
+                    type = lib.types.listOf vdev;
+                    default = [ ];
+                    description = "A list of storage vdevs";
+                    example = [{
+                      mode = "mirror";
+                      members = [ "x" "y" ];
+                    }];
+                  };
+                  special = lib.mkOption {
+                    type = lib.types.nullOr vdev;
+                    default = null;
+                    description = "A list of devices for the special vdev";
+                  };
+                  cache = lib.mkOption {
+                    type = lib.types.nullOr lib.types.str;
+                    default = null;
+                    description = "The cache device";
+                  };
+                  # TODO: Consider
+                };
+              });
+        };
+        extraArgs.parent = config;
+      }));
       description = "Mode of the ZFS pool";
     };
     options = lib.mkOption {
@@ -53,55 +106,6 @@ in
       });
       description = "List of datasets to define";
     };
-    topology = lib.mkOption {
-      type =
-        let
-          vdev = lib.types.submodule ({ name, ... }: {
-            options = {
-              mode = lib.mkOption {
-                type = lib.types.enum modeOptions;
-                default = "";
-                description = "mode of the zfs vdev";
-              };
-              members = lib.mkOption {
-                type = lib.types.listOf lib.types.str;
-                description = "Members of the vdev";
-              };
-            };
-          });
-          parent = config;
-        in
-        lib.types.nullOr
-          (lib.types.submodule
-            ({ config, name, ... }: {
-              options = {
-                type = lib.mkOption {
-                  type = lib.types.enum [ "zfs_topology" ];
-                  default = "zfs_topology";
-                  internal = true;
-                  description = "Type";
-                };
-                # zfs disk types
-                vdev = lib.mkOption {
-                  type = lib.types.listOf vdev;
-                  default = [ ];
-                  description = "A list of storage vdevs";
-                };
-                special = lib.mkOption {
-                  type = lib.types.nullOr vdev;
-                  default = null;
-                  description = "A list of devices for the special vdev";
-                };
-                cache = lib.mkOption {
-                  type = lib.types.nullOr lib.types.str;
-                  default = null;
-                  description = "The cache device";
-                };
-              };
-            }));
-      default = null;
-      description = "Topology of the ZFS pool";
-    };
     _meta = lib.mkOption {
       internal = true;
       readOnly = true;
@@ -114,14 +118,16 @@ in
       inherit config options;
       default =
         let
-          format_output = (mode: members: ''
+          formatOutput = (mode: members: ''
             entries+=("${mode}=${
               lib.concatMapStringsSep " "
               (d: if lib.strings.hasPrefix "/" d then d else "/dev/disk/by-partlabel/disk-${d}-zfs") members
             }")
           '');
-          format_vdev = (vdev: format_output vdev.mode vdev.members);
-          hasTopology = config.topology != null;
+          formatVdev = (vdev: formatOutput vdev.mode vdev.members);
+          hasTopology = builtins.isString config.mode;
+          mode = if hasTopology then config.mode else "prescribed";
+          topology = if hasTopology then config.mode.topology else { };
         in
         ''
           readarray -t zfs_devices < <(cat "$disko_devices_dir"/zfs_${config.name})
@@ -149,24 +155,17 @@ in
             if [ $continue -eq 1 ]; then
               topology=""
               # For shell check
-              mode="${config.mode}"
+              mode="${mode}"
               if [ "$mode" != "prescribed" ]; then
-                ${if !hasTopology then
-                  ''topology="${config.mode} ''${zfs_devices[*]}"''
-                else
-                  ''
-                  echo "topology cannot be set when mode != 'prescribed', skipping creating zpool ${config.name}" >&2
-                  continue=0
-                  ''
-                }
+                topology="${mode} ''${zfs_devices[*]}"
               else
                 entries=()
-                ${lib.optionalString (hasTopology && config.topology.vdev != null)
-                    (lib.concatMapStrings format_vdev config.topology.vdev)}
-                ${lib.optionalString (hasTopology && config.topology.special != null)
-                    (format_output "special ${config.topology.special.mode}" config.topology.special.members)}
-                ${lib.optionalString (hasTopology && config.topology.cache != null)
-                    (format_output "cache" [config.topology.cache])}
+                ${lib.optionalString (hasTopology && topology.vdev != null)
+                    (lib.concatMapStrings formatVdev topology.vdev)}
+                ${lib.optionalString (hasTopology && topology.special != null)
+                    (formatOutput "special ${topology.special.mode}" topology.special.members)}
+                ${lib.optionalString (hasTopology && topology.cache != null)
+                    (formatOutput "cache" [topology.cache])}
                 all_devices=()
                 for line in "''${entries[@]}"; do
                   # lineformat is mode=device1 device2 device3

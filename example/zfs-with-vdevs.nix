@@ -78,27 +78,26 @@
     zpool = {
       zroot = {
         type = "zpool";
-        mode = "prescribed";
+        mode = {
+          topology = {
+            vdev = [
+              {
+                mode = "mirror";
+                members = [ "x" "y" ];
+              }
+            ];
+            special = {
+              members = [ "z" ];
+            };
+            cache = "cache";
+          };
+        };
+
         rootFsOptions = {
           compression = "zstd";
           "com.sun:auto-snapshot" = "false";
         };
         mountpoint = "/";
-
-        topology = {
-          type = "zfs_topology";
-          vdev = [
-            {
-              mode = "mirror";
-              members = [ "x" "y" ];
-            }
-          ];
-          special = {
-            members = [ "z" ];
-          };
-          cache = "cache";
-        };
-
         datasets = {
           # See examples/zfs.nix for more comprehensive usage.
           zfs_fs = {
