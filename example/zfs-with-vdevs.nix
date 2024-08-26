@@ -80,6 +80,7 @@
         type = "zpool";
         mode = {
           topology = {
+            type = "topology";
             vdev = [
               {
                 mode = "mirror";

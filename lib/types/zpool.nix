@@ -1,9 +1,11 @@
 { config, options, lib, diskoLib, rootMountPoint, ... }:
 let
+  # TODO: Consider expanding to handle `disk` `file` and `draid` mode options.
   modeOptions = [
     ""
     "mirror"
     "raidz"
+    "raidz1"
     "raidz2"
     "raidz3"
   ];
@@ -32,7 +34,7 @@ in
                   mode = lib.mkOption {
                     type = lib.types.enum modeOptions;
                     default = "";
-                    description = "mode of the zfs vdev";
+                    description = "Mode of the zfs vdev";
                   };
                   members = lib.mkOption {
                     type = lib.types.listOf lib.types.str;
@@ -51,27 +53,39 @@ in
                     internal = true;
                     description = "Type";
                   };
-                  # zfs disk types
+                  # zfs device types
                   vdev = lib.mkOption {
                     type = lib.types.listOf vdev;
                     default = [ ];
-                    description = "A list of storage vdevs";
+                    description = ''
+                      A list of storage vdevs. See
+                      https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#Virtual_Devices_(vdevs)
+                      for details.
+                    '';
                     example = [{
                       mode = "mirror";
-                      members = [ "x" "y" ];
+                      members = [ "x" "y" "/dev/sda1" ];
                     }];
                   };
                   special = lib.mkOption {
                     type = lib.types.nullOr vdev;
                     default = null;
-                    description = "A list of devices for the special vdev";
+                    description = ''
+                      A vdev definition for a special device. See
+                      https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#special
+                      for details.
+                    '';
                   };
                   cache = lib.mkOption {
-                    type = lib.types.nullOr lib.types.str;
+                    type = lib.types.listOf lib.types.str;
                     default = null;
-                    description = "The cache device";
+                    description = ''
+                      A dedicated zfs cache device (L2ARC). See
+                      https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#Cache_Devices
+                      for details.
+                    '';
                   };
-                  # TODO: Consider
+                  # TODO: Consider supporting log, spare, and dedup options.
                 };
               });
         };
@@ -125,8 +139,8 @@ in
             }")
           '');
           formatVdev = (vdev: formatOutput vdev.mode vdev.members);
-          hasTopology = builtins.isString config.mode;
-          mode = if hasTopology then config.mode else "prescribed";
+          hasTopology = !(builtins.isString config.mode);
+          mode = if !hasTopology then config.mode else "prescribed";
           topology = if hasTopology then config.mode.topology else { };
         in
         ''
@@ -164,8 +178,8 @@ in
                     (lib.concatMapStrings formatVdev topology.vdev)}
                 ${lib.optionalString (hasTopology && topology.special != null)
                     (formatOutput "special ${topology.special.mode}" topology.special.members)}
-                ${lib.optionalString (hasTopology && topology.cache != null)
-                    (formatOutput "cache" [topology.cache])}
+                ${lib.optionalString (hasTopology && topology.cache != [])
+                    (formatOutput "cache" topology.cache)}
                 all_devices=()
                 for line in "''${entries[@]}"; do
                   # lineformat is mode=device1 device2 device3
