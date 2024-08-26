@@ -25,72 +25,75 @@ in
     };
     mode = lib.mkOption {
       default = "";
-      type = (lib.types.enum modeOptions) // (lib.types.attrsOf (diskoLib.subType {
-        types = {
-          topology =
-            let
-              vdev = lib.types.submodule ({ name, ... }: {
-                options = {
-                  mode = lib.mkOption {
-                    type = lib.types.enum modeOptions;
-                    default = "";
-                    description = "Mode of the zfs vdev";
+      type = (lib.types.oneOf [
+        (lib.types.enum modeOptions)
+        (lib.types.attrsOf (diskoLib.subType {
+          types = {
+            topology =
+              let
+                vdev = lib.types.submodule ({ name, ... }: {
+                  options = {
+                    mode = lib.mkOption {
+                      type = lib.types.enum modeOptions;
+                      default = "";
+                      description = "Mode of the zfs vdev";
+                    };
+                    members = lib.mkOption {
+                      type = lib.types.listOf lib.types.str;
+                      description = "Members of the vdev";
+                    };
                   };
-                  members = lib.mkOption {
-                    type = lib.types.listOf lib.types.str;
-                    description = "Members of the vdev";
+                });
+                parent = config;
+              in
+              lib.types.submodule
+                ({ config, name, ... }: {
+                  options = {
+                    type = lib.mkOption {
+                      type = lib.types.enum [ "topology" ];
+                      default = "topology";
+                      internal = true;
+                      description = "Type";
+                    };
+                    # zfs device types
+                    vdev = lib.mkOption {
+                      type = lib.types.listOf vdev;
+                      default = [ ];
+                      description = ''
+                        A list of storage vdevs. See
+                        https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#Virtual_Devices_(vdevs)
+                        for details.
+                      '';
+                      example = [{
+                        mode = "mirror";
+                        members = [ "x" "y" "/dev/sda1" ];
+                      }];
+                    };
+                    special = lib.mkOption {
+                      type = lib.types.nullOr vdev;
+                      default = null;
+                      description = ''
+                        A vdev definition for a special device. See
+                        https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#special
+                        for details.
+                      '';
+                    };
+                    cache = lib.mkOption {
+                      type = lib.types.listOf lib.types.str;
+                      default = null;
+                      description = ''
+                        A dedicated zfs cache device (L2ARC). See
+                        https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#Cache_Devices
+                        for details.
+                      '';
+                    };
+                    # TODO: Consider supporting log, spare, and dedup options.
                   };
-                };
-              });
-              parent = config;
-            in
-            lib.types.submodule
-              ({ config, name, ... }: {
-                options = {
-                  type = lib.mkOption {
-                    type = lib.types.enum [ "topology" ];
-                    default = "topology";
-                    internal = true;
-                    description = "Type";
-                  };
-                  # zfs device types
-                  vdev = lib.mkOption {
-                    type = lib.types.listOf vdev;
-                    default = [ ];
-                    description = ''
-                      A list of storage vdevs. See
-                      https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#Virtual_Devices_(vdevs)
-                      for details.
-                    '';
-                    example = [{
-                      mode = "mirror";
-                      members = [ "x" "y" "/dev/sda1" ];
-                    }];
-                  };
-                  special = lib.mkOption {
-                    type = lib.types.nullOr vdev;
-                    default = null;
-                    description = ''
-                      A vdev definition for a special device. See
-                      https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#special
-                      for details.
-                    '';
-                  };
-                  cache = lib.mkOption {
-                    type = lib.types.listOf lib.types.str;
-                    default = null;
-                    description = ''
-                      A dedicated zfs cache device (L2ARC). See
-                      https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#Cache_Devices
-                      for details.
-                    '';
-                  };
-                  # TODO: Consider supporting log, spare, and dedup options.
-                };
-              });
-        };
-        extraArgs.parent = config;
-      }));
+                });
+          };
+          extraArgs.parent = config;
+        }))
+      ]);
       description = "Mode of the ZFS pool";
     };
     options = lib.mkOption {

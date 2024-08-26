@@ -90,7 +90,7 @@
             special = {
               members = [ "z" ];
             };
-            cache = "cache";
+            cache = [ "cache" ];
           };
         };
 
