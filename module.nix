@@ -98,30 +98,35 @@ in
       };
     };
   };
-  config = lib.mkIf (cfg.devices.disk != { }) {
-    system.build = (cfg.devices._scripts { inherit pkgs; checked = cfg.checkScripts; }) // {
+  config = {
+    system.build = lib.mapAttrs (name: cfg:
+      if cfg.devices.disk == {} then
+        throw ''
+          Cannot provide ${name} without disks configured.
+          Current value of disko.devices.disk is empty.
+          Set up a disk configuration according to:
+          https://github.com/nix-community/disko/blob/master/docs/quickstart.md#step-1-choose-a-disk-configuration
+        ''
+      else cfg)
+      (cfg.devices._scripts { inherit pkgs; checked = cfg.checkScripts; } //  {
+        diskoImages = diskoLib.makeDiskImages {
+          nixosConfig = args;
+        };
 
-      # we keep these old outputs for compatibility
-      disko = builtins.trace "the .disko output is deprecated, please use .diskoScript instead" (cfg.devices._scripts { inherit pkgs; }).diskoScript;
-      diskoNoDeps = builtins.trace "the .diskoNoDeps output is deprecated, please use .diskoScriptNoDeps instead" (cfg.devices._scripts { inherit pkgs; }).diskoScriptNoDeps;
+        diskoImagesScript = diskoLib.makeDiskImagesScript {
+          nixosConfig = args;
+        };
 
-      diskoImages = diskoLib.makeDiskImages {
-        nixosConfig = args;
-      };
-      diskoImagesScript = diskoLib.makeDiskImagesScript {
-        nixosConfig = args;
-      };
-
-      installTest = diskoLib.testLib.makeDiskoTest {
-        inherit extendModules pkgs;
-        name = "${config.networking.hostName}-disko";
-        disko-config = builtins.removeAttrs config [ "_module" ];
-        testMode = "direct";
-        efi = cfg.tests.efi;
-        extraSystemConfig = cfg.tests.extraConfig;
-        extraTestScript = cfg.tests.extraChecks;
-      };
-    };
+        installTest = diskoLib.testLib.makeDiskoTest {
+          inherit extendModules pkgs;
+          name = "${config.networking.hostName}-disko";
+          disko-config = builtins.removeAttrs config [ "_module" ];
+          testMode = "direct";
+          efi = cfg.tests.efi;
+          extraSystemConfig = cfg.tests.extraConfig;
+          extraTestScript = cfg.tests.extraChecks;
+        };
+    });
 
 
     # we need to specify the keys here, so we don't get an infinite recursion error
