@@ -16,6 +16,15 @@ diskoLib.testLib.makeDiskoTest {
             out == expected_value
         ), f"Expected {property}={expected_value} on {ds}, got: {out}"
 
+    # These fields are 0 if l2arc is disabled
+    assert (
+        machine.succeed(
+            "cat /proc/spl/kstat/zfs/arcstats"
+            " | grep '^l2_' | tr -s ' '"
+            " | cut -s -d ' ' -f3 | uniq"
+        ).strip() != "0"
+    ), "Excepted cache to be utilized."
+
     assert_property("zroot", "compression", "zstd")
     assert_property("zroot/zfs_fs", "com.sun:auto-snapshot", "true")
     assert_property("zroot/zfs_fs", "compression", "zstd")
