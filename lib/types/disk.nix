@@ -20,7 +20,7 @@
       type = lib.types.strMatching "[0-9]+[KMGTP]?";
       description = ''
         size of the image if the makeDiskImages function from diksoLib is used.
-        is used as an argument to truncate -s
+        is used as an argument to "qemu-img create ..."
       '';
       default = "2G";
     };

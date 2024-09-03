@@ -30,6 +30,7 @@ let
       disko.devices = cfg_.disko.devices;
     };
     testMode = true;
+    imageFormat = "qcow2";
   };
   rootDisk = {
     name = "root";
@@ -79,8 +80,8 @@ in
     trap 'rm -rf "$tmp"' EXIT
     ${lib.concatMapStringsSep "\n" (disk: ''
       ${pkgs.qemu}/bin/qemu-img create -f qcow2 \
-      -b ${diskoImages}/${disk.name}.raw \
-      -F raw "$tmp"/${disk.name}.qcow2
+      -b ${diskoImages}/${disk.name}.qcow2 \
+      -F qcow2 "$tmp"/${disk.name}.qcow2
     '') disks}
     set +f
     ${vm}/bin/run-*-vm

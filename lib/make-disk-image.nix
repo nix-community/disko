@@ -8,6 +8,7 @@
 , copyNixStore ? true
 , testMode ? false
 , extraConfig ? { }
+, imageFormat ? "raw"
 }:
 let
   vmTools = pkgs.vmTools.override {
@@ -39,7 +40,7 @@ let
     findutils
   ] ++ nixosConfig.config.disko.extraDependencies;
   preVM = ''
-    ${lib.concatMapStringsSep "\n" (disk: "truncate -s ${disk.imageSize} ${disk.name}.raw") (lib.attrValues nixosConfig.config.disko.devices.disk)}
+    ${lib.concatMapStringsSep "\n" (disk: "${pkgs.qemu}/bin/qemu-img create -f ${imageFormat} ${disk.name}.${imageFormat} ${disk.imageSize}") (lib.attrValues nixosConfig.config.disko.devices.disk)}
     # This makes disko work, when canTouchEfiVariables is set to true.
     # Technically these boot entries will no be persisted this way, but
     # in most cases this is OK, because we can rely on the standard location for UEFI executables.
@@ -48,7 +49,7 @@ let
   postVM = ''
     # shellcheck disable=SC2154
     mkdir -p "$out"
-    ${lib.concatMapStringsSep "\n" (disk: "mv ${disk.name}.raw \"$out\"/${disk.name}.raw") (lib.attrValues nixosConfig.config.disko.devices.disk)}
+    ${lib.concatMapStringsSep "\n" (disk: "mv ${disk.name}.${imageFormat} \"$out\"/${disk.name}.${imageFormat}") (lib.attrValues nixosConfig.config.disko.devices.disk)}
     ${extraPostVM}
   '';
 
@@ -96,7 +97,7 @@ let
     "-drive if=pflash,format=raw,unit=1,file=efivars.fd"
   ] ++ builtins.map
     (disk:
-      "-drive file=${disk.name}.raw,if=virtio,cache=unsafe,werror=report,format=raw"
+      "-drive file=${disk.name}.${imageFormat},if=virtio,cache=unsafe,werror=report,format=${imageFormat}"
     )
     (lib.attrValues nixosConfig.config.disko.devices.disk));
 in
