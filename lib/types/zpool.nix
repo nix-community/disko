@@ -148,6 +148,10 @@ in
         in
         ''
           readarray -t zfs_devices < <(cat "$disko_devices_dir"/zfs_${config.name})
+          if [ ''${#zfs_devices[@]} -eq 0 ]; then
+            echo "no devices found for zpool ${config.name}. Did you misspell the pool name?" >&2
+            exit 1
+          fi
           # Try importing the pool without mounting anything if it exists.
           # This allows us to set mounpoints.
           if zpool import -N -f '${config.name}' || zpool list '${config.name}'; then
