@@ -45,6 +45,7 @@ let
       { name
       , disko-config
       , extendModules ? null
+      , extraDiskoConfig ? { }
       , pkgs ? import <nixpkgs> { }
       , extraTestScript ? ""
       , bootCommands ? ""
@@ -74,10 +75,13 @@ let
             importedDiskoConfig { inherit lib; }
           else
             importedDiskoConfig;
-        testConfigInstall = testLib.prepareDiskoConfig diskoConfigWithArgs (lib.tail testLib.devices);
+
+        extendedDiskoConfigWithArgs = lib.recursiveUpdate diskoConfigWithArgs { disko = extraDiskoConfig; };
+
+        testConfigInstall = testLib.prepareDiskoConfig extendedDiskoConfigWithArgs (lib.tail testLib.devices);
         # we need to shift the disks by one because the first disk is the /dev/vda of the test runner
         # so /dev/vdb becomes /dev/vda etc.
-        testConfigBooted = testLib.prepareDiskoConfig diskoConfigWithArgs testLib.devices;
+        testConfigBooted = testLib.prepareDiskoConfig extendedDiskoConfigWithArgs testLib.devices;
 
         tsp-generator = pkgs.callPackage ../. { checked = true; };
         tsp-format = (tsp-generator.formatScript testConfigInstall) pkgs;

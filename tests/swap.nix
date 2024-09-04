@@ -1,10 +1,13 @@
 { pkgs ? import <nixpkgs> { }
 , diskoLib ? pkgs.callPackage ../lib { }
 }:
-diskoLib.testLib.makeDiskoTest {
+diskoLib.testLib.makeDiskoTest (let
+  disko-config = import ../example/swap.nix;
+in {
   inherit pkgs;
   name = "swap";
-  disko-config = ../example/swap.nix;
+  inherit disko-config;
+  inherit (disko-config.disko.tests) extraDiskoConfig;
   extraTestScript = ''
     import json
     machine.succeed("mountpoint /");
@@ -16,4 +19,4 @@ diskoLib.testLib.makeDiskoTest {
   extraSystemConfig = {
     environment.systemPackages = [ pkgs.jq ];
   };
-}
+})

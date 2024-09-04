@@ -128,6 +128,13 @@ in
           machine.succeed("test -e /var/secrets/my.secret")
         '';
       };
+      extraDiskoConfig = lib.mkOption {
+        description = ''
+          Extra disko configuration when running the tests.
+        '';
+        type = lib.types.attrs;
+        default = { };
+      };
       extraConfig = lib.mkOption {
         description = ''
           Extra NixOS config for your test. Can be used to specify a different luks key for tests.
@@ -153,10 +160,10 @@ in
 
       installTest = diskoLib.testLib.makeDiskoTest {
         inherit extendModules pkgs;
+        inherit (cfg.tests) efi extraDiskoConfig;
         name = "${config.networking.hostName}-disko";
         disko-config = builtins.removeAttrs config [ "_module" ];
         testMode = "direct";
-        efi = cfg.tests.efi;
         extraSystemConfig = cfg.tests.extraConfig;
         extraTestScript = cfg.tests.extraChecks;
       };

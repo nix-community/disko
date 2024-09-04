@@ -43,6 +43,26 @@
           };
         };
       };
+      vdc = {
+        device = "/dev/vdc";
+        type = "disk";
+        content = {
+          type = "gpt";
+          partitions = {
+            bigSwap = {
+              size = "16G";
+              content = {
+                type = "swap";
+              };
+            };
+          };
+        };
+      };
     };
+  };
+
+  disko.tests.extraDiskoConfig = {
+    # We need to override the partition size as it is too big for the installTest.
+    devices.disk.vdc.content.partitions.bigSwap.size = "1G";
   };
 }
