@@ -13,7 +13,6 @@
 let
   vmTools = pkgs.vmTools.override {
     rootModules = [ "9p" "9pnet_virtio" "virtio_pci" "virtio_blk" ] ++ nixosConfig.config.disko.extraRootModules;
-    customQemu = nixosConfig.config.disko.imageBuilderQemu;
     kernel = pkgs.aggregateModules
       (with nixosConfig.config.disko.imageBuilderKernelPackages; [ kernel ]
         ++ lib.optional (lib.elem "zfs" nixosConfig.config.disko.extraRootModules) zfs);
