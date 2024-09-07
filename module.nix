@@ -7,6 +7,11 @@ let
     eval-config = import (pkgs.path + "/nixos/lib/eval-config.nix");
   };
   cfg = config.disko;
+
+  vmVariantWithDisko = diskoLib.makeVMRunner {
+    inherit pkgs;
+    nixosConfig = args;
+  };
 in
 {
   options.disko = {
@@ -137,6 +142,16 @@ in
       };
     };
   };
+
+  options.virtualisation.vmVariantWithDisko = lib.mkOption {
+    description = ''
+      Machine configuration to be added for the vm script available at `.system.build.vmWithDisko`.
+    '';
+    inherit (vmVariantWithDisko) type;
+    default = {};
+    visible = "shallow";
+  };
+
   config = lib.mkIf (cfg.devices.disk != { }) {
     system.build = (cfg.devices._scripts { inherit pkgs; checked = cfg.checkScripts; }) // {
 
@@ -161,10 +176,7 @@ in
         extraTestScript = cfg.tests.extraChecks;
       };
 
-      vmWithDisko = diskoLib.makeVMRunner {
-        inherit pkgs;
-        nixosConfig = args;
-      };
+      vmWithDisko = lib.mkDefault config.virtualisation.vmVariantWithDisko.system.build.vmWithDisko;
     };
 
 
