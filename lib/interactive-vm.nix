@@ -1,10 +1,9 @@
-{ nixosConfig
-, diskoLib
-, pkgs ? nixosConfig.pkgs
-}:
+# We need to specify extendModules here to ensure that it is available
+# in args for makeDiskImages
+{ diskoLib, modulesPath, config, pkgs, lib, extendModules, ... }@args:
+
 let
-  lib = pkgs.lib;
-  vm_disko = (diskoLib.testLib.prepareDiskoConfig nixosConfig.config diskoLib.testLib.devices).disko;
+  vm_disko = (diskoLib.testLib.prepareDiskoConfig config diskoLib.testLib.devices).disko;
   cfg_ = (lib.evalModules {
     modules = lib.singleton {
       # _file = toString input;
@@ -22,7 +21,7 @@ let
   }).config;
   disks = lib.attrValues cfg_.disko.devices.disk;
   diskoImages = diskoLib.makeDiskImages {
-    nixosConfig = nixosConfig;
+    nixosConfig = args;
     copyNixStore = false;
     extraConfig = {
       disko.devices = cfg_.disko.devices;
@@ -45,40 +44,38 @@ let
       driveExtraOpts.werror = "report";
     })
     (builtins.tail disks);
-in nixosConfig.extendModules {
-  modules = [
-    ({ modulesPath, config, pkgs, ... }: {
-      imports = [
-        (modulesPath + "/virtualisation/qemu-vm.nix")
-      ];
 
-      virtualisation.useEFIBoot = config.disko.tests.efi;
-      virtualisation.memorySize = config.disko.memSize;
-      virtualisation.useDefaultFilesystems = false;
-      virtualisation.diskImage = null;
-      virtualisation.qemu.drives = [ rootDisk ] ++ otherDisks;
-      boot.zfs.devNodes = "/dev/disk/by-uuid"; # needed because /dev/disk/by-id is empty in qemu-vms
-      boot.zfs.forceImportAll = true;
-
-      system.build.vmWithDisko = pkgs.writers.writeDashBin "disko-vm" ''
-        set -efux
-        export tmp=$(mktemp -d)
-        trap 'rm -rf "$tmp"' EXIT
-        ${lib.concatMapStringsSep "\n" (disk: ''
-          ${pkgs.qemu}/bin/qemu-img create -f qcow2 \
-          -b ${diskoImages}/${disk.name}.qcow2 \
-          -F qcow2 "$tmp"/${disk.name}.qcow2
-        '') disks}
-        set +f
-        ${config.system.build.vm}/bin/run-*-vm
-      '';
-    })
-    {
-      # generated from disko config
-      virtualisation.fileSystems = cfg_.disko.devices._config.fileSystems;
-      boot = cfg_.disko.devices._config.boot or { };
-      swapDevices = cfg_.disko.devices._config.swapDevices or [ ];
-    }
-    nixosConfig.config.disko.tests.extraConfig
+  diskoBasedConfiguration = {
+    # generated from disko config
+    virtualisation.fileSystems = cfg_.disko.devices._config.fileSystems;
+    boot = cfg_.disko.devices._config.boot or { };
+    swapDevices = cfg_.disko.devices._config.swapDevices or [ ];
+  };
+in
+{
+  imports = [
+    (modulesPath + "/virtualisation/qemu-vm.nix")
+    diskoBasedConfiguration
   ];
+
+  virtualisation.useEFIBoot = config.disko.tests.efi;
+  virtualisation.memorySize = config.disko.memSize;
+  virtualisation.useDefaultFilesystems = false;
+  virtualisation.diskImage = null;
+  virtualisation.qemu.drives = [ rootDisk ] ++ otherDisks;
+  boot.zfs.devNodes = "/dev/disk/by-uuid"; # needed because /dev/disk/by-id is empty in qemu-vms
+  boot.zfs.forceImportAll = true;
+
+  system.build.vmWithDisko = pkgs.writers.writeDashBin "disko-vm" ''
+    set -efux
+    export tmp=$(mktemp -d)
+    trap 'rm -rf "$tmp"' EXIT
+    ${lib.concatMapStringsSep "\n" (disk: ''
+      ${pkgs.qemu}/bin/qemu-img create -f qcow2 \
+      -b ${diskoImages}/${disk.name}.qcow2 \
+      -F qcow2 "$tmp"/${disk.name}.qcow2
+    '') disks}
+    set +f
+    ${config.system.build.vm}/bin/run-*-vm
+  '';
 }

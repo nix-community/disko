@@ -8,9 +8,12 @@ let
   };
   cfg = config.disko;
 
-  vmVariantWithDisko = diskoLib.makeVMRunner {
-    inherit pkgs;
-    nixosConfig = args;
+  vmVariantWithDisko = extendModules {
+    modules = [
+      ./lib/interactive-vm.nix
+      { _module.args = { inherit diskoLib; }; }
+      config.disko.tests.extraConfig
+    ];
   };
 in
 {
