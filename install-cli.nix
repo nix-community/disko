@@ -7,7 +7,17 @@
 ,
 }:
 let
-  originalSystem = (builtins.getFlake "${flake}").nixosConfigurations."${flakeAttr}";
+  extraConfig = { _file = "disko-install --system-config"; } // (builtins.fromJSON extraSystemConfig);
+
+  originalSystem = (builtins.getFlake "${flake}").nixosConfigurations."${flakeAttr}".extendModules {
+    modules = [
+      {
+        imports = [ extraConfig ];
+      }
+    ];
+  };
+
+
   lib = originalSystem.pkgs.lib;
 
   deviceName =
@@ -52,9 +62,6 @@ let
         {
           boot.loader.efi.canTouchEfiVariables = lib.mkVMOverride writeEfiBootEntries;
           boot.loader.grub.devices = lib.mkVMOverride diskoSystem.config.boot.loader.grub.devices;
-          imports = [
-            ({ _file = "disko-install --system-config"; } // (builtins.fromJSON extraSystemConfig))
-          ];
         }
       )
     ];
