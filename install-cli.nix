@@ -11,9 +11,7 @@ let
 
   originalSystem = (builtins.getFlake "${flake}").nixosConfigurations."${flakeAttr}".extendModules {
     modules = [
-      {
-        imports = [ extraConfig ];
-      }
+      extraConfig
     ];
   };
 
