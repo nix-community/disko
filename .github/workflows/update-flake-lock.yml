@@ -15,7 +15,7 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@V27
       - name: Update flake.lock
-        uses: DeterminateSystems/update-flake-lock@v23
+        uses: DeterminateSystems/update-flake-lock@v24
         with:
           pr-labels: |
             merge-queue
