@@ -11,12 +11,15 @@
 , imageFormat ? "raw"
 }:
 let
+  configSupportsZfs = nixosConfig.config.boot.supportedFilesystems.zfs or false;
   vmTools = pkgs.vmTools.override {
-    rootModules = [ "9p" "9pnet_virtio" "virtio_pci" "virtio_blk" ] ++ nixosConfig.config.disko.extraRootModules;
+    rootModules = [ "9p" "9pnet_virtio" "virtio_pci" "virtio_blk" ]
+      ++ (lib.optional configSupportsZfs "zfs")
+      ++ nixosConfig.config.disko.extraRootModules;
     customQemu = nixosConfig.config.disko.imageBuilderQemu;
     kernel = pkgs.aggregateModules
       (with nixosConfig.config.disko.imageBuilderKernelPackages; [ kernel ]
-        ++ lib.optional (lib.elem "zfs" nixosConfig.config.disko.extraRootModules) zfs);
+        ++ lib.optional (lib.elem "zfs" nixosConfig.config.disko.extraRootModules || configSupportsZfs) zfs);
   };
   cleanedConfig = diskoLib.testLib.prepareDiskoConfig nixosConfig.config diskoLib.testLib.devices;
   systemToInstall = nixosConfig.extendModules {
