@@ -200,7 +200,7 @@ in
     ''}
     export postVM=${diskoLib.writeCheckedBash { inherit pkgs checked; } "postVM.sh" postVM}
 
-    build_memory=''${build_memory:-1024}
+    build_memory=''${build_memory:-${nixosConfig.config.disko.memSize}}
     QEMU_OPTS=${lib.escapeShellArg QEMU_OPTS}
     QEMU_OPTS+=" -m $build_memory"
     export QEMU_OPTS
