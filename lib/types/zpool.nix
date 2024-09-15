@@ -253,7 +253,7 @@ in
   config = {
     datasets."__root" = {
       _name = config.name;
-      _create = "";
+      _createFilesystem = false;
       type = "zfs_fs";
       mountpoint = config.mountpoint;
       options = config.rootFsOptions;
