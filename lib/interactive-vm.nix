@@ -1,6 +1,4 @@
-# We need to specify extendModules here to ensure that it is available
-# in args for makeDiskImages
-{ diskoLib, modulesPath, config, pkgs, lib, extendModules, ... }@args:
+{ diskoLib, modulesPath, config, pkgs, lib, ... }:
 
 let
   vm_disko = (diskoLib.testLib.prepareDiskoConfig config diskoLib.testLib.devices).disko;
@@ -20,15 +18,6 @@ let
     };
   }).config;
   disks = lib.attrValues cfg_.disko.devices.disk;
-  diskoImages = diskoLib.makeDiskImages {
-    nixosConfig = args;
-    copyNixStore = false;
-    extraConfig = {
-      disko.devices = cfg_.disko.devices;
-    };
-    testMode = true;
-    imageFormat = "qcow2";
-  };
   rootDisk = {
     name = "root";
     file = ''"$tmp"/${(builtins.head disks).name}.qcow2'';
@@ -58,6 +47,14 @@ in
     diskoBasedConfiguration
   ];
 
+  disko.testMode = true;
+
+  disko.imageBuilder.copyNixStore = false;
+  disko.imageBuilder.extraConfig = {
+    disko.devices = cfg_.disko.devices;
+  };
+  disko.imageBuilder.imageFormat = "qcow2";
+
   virtualisation.useEFIBoot = config.disko.tests.efi;
   virtualisation.memorySize = config.disko.memSize;
   virtualisation.useDefaultFilesystems = false;
@@ -72,7 +69,7 @@ in
     trap 'rm -rf "$tmp"' EXIT
     ${lib.concatMapStringsSep "\n" (disk: ''
       ${pkgs.qemu}/bin/qemu-img create -f qcow2 \
-      -b ${diskoImages}/${disk.name}.qcow2 \
+      -b ${config.system.build.diskoImages}/${disk.name}.qcow2 \
       -F qcow2 "$tmp"/${disk.name}.qcow2
     '') disks}
     set +f

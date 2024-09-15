@@ -1,30 +1,29 @@
-{ nixosConfig
+{ config
 , diskoLib
-, pkgs ? nixosConfig.config.disko.imageBuilderPkgs
-, lib ? pkgs.lib
-, name ? "${nixosConfig.config.networking.hostName}-disko-images"
-, extraPostVM ? nixosConfig.config.disko.extraPostVM
-, checked ? false
-, copyNixStore ? true
-, testMode ? false
-, extraConfig ? { }
-, imageFormat ? "raw"
+, lib
+, extendModules
+, ...
 }:
 let
-  configSupportsZfs = nixosConfig.config.boot.supportedFilesystems.zfs or false;
+  diskoCfg = config.disko;
+  cfg = diskoCfg.imageBuilder;
+  inherit (cfg) pkgs imageFormat;
+  checked = diskoCfg.checkScripts;
+
+  configSupportsZfs = config.boot.supportedFilesystems.zfs or false;
   vmTools = pkgs.vmTools.override {
     rootModules = [ "9p" "9pnet_virtio" "virtio_pci" "virtio_blk" ]
       ++ (lib.optional configSupportsZfs "zfs")
-      ++ nixosConfig.config.disko.extraRootModules;
-    customQemu = nixosConfig.config.disko.imageBuilderQemu;
+      ++ cfg.extraRootModules;
+    customQemu = cfg.qemu;
     kernel = pkgs.aggregateModules
-      (with nixosConfig.config.disko.imageBuilderKernelPackages; [ kernel ]
-        ++ lib.optional (lib.elem "zfs" nixosConfig.config.disko.extraRootModules || configSupportsZfs) zfs);
+      (with cfg.kernelPackages; [ kernel ]
+        ++ lib.optional (lib.elem "zfs" cfg.extraRootModules || configSupportsZfs) zfs);
   };
-  cleanedConfig = diskoLib.testLib.prepareDiskoConfig nixosConfig.config diskoLib.testLib.devices;
-  systemToInstall = nixosConfig.extendModules {
+  cleanedConfig = diskoLib.testLib.prepareDiskoConfig config diskoLib.testLib.devices;
+  systemToInstall = extendModules {
     modules = [
-      extraConfig
+      cfg.extraConfig
       {
         disko.testMode = true;
         disko.devices = lib.mkForce cleanedConfig.disko.devices;
@@ -41,9 +40,9 @@ let
     nix
     util-linux
     findutils
-  ] ++ nixosConfig.config.disko.extraDependencies;
+  ] ++ cfg.extraDependencies;
   preVM = ''
-    ${lib.concatMapStringsSep "\n" (disk: "${pkgs.qemu}/bin/qemu-img create -f ${imageFormat} ${disk.name}.${imageFormat} ${disk.imageSize}") (lib.attrValues nixosConfig.config.disko.devices.disk)}
+    ${lib.concatMapStringsSep "\n" (disk: "${pkgs.qemu}/bin/qemu-img create -f ${imageFormat} ${disk.name}.${imageFormat} ${disk.imageSize}") (lib.attrValues diskoCfg.devices.disk)}
     # This makes disko work, when canTouchEfiVariables is set to true.
     # Technically these boot entries will no be persisted this way, but
     # in most cases this is OK, because we can rely on the standard location for UEFI executables.
@@ -52,8 +51,8 @@ let
   postVM = ''
     # shellcheck disable=SC2154
     mkdir -p "$out"
-    ${lib.concatMapStringsSep "\n" (disk: "mv ${disk.name}.${imageFormat} \"$out\"/${disk.name}.${imageFormat}") (lib.attrValues nixosConfig.config.disko.devices.disk)}
-    ${extraPostVM}
+    ${lib.concatMapStringsSep "\n" (disk: "mv ${disk.name}.${imageFormat} \"$out\"/${disk.name}.${imageFormat}") (lib.attrValues diskoCfg.devices.disk)}
+    ${cfg.extraPostVM}
   '';
 
   closureInfo = pkgs.closureInfo {
@@ -76,13 +75,13 @@ let
     udevadm trigger --action=add
     udevadm settle
 
-    ${lib.optionalString testMode ''
+    ${lib.optionalString diskoCfg.testMode ''
       export IN_DISKO_TEST=1
     ''}
     ${systemToInstall.config.system.build.diskoScript}
   '';
 
-  installer = lib.optionalString copyNixStore ''
+  installer = lib.optionalString cfg.copyNixStore ''
     # populate nix db, so nixos-install doesn't complain
     export NIX_STATE_DIR=${systemToInstall.config.disko.rootMountPoint}/nix/var/nix
     nix-store --load-db < "${closureInfo}/registration"
@@ -102,17 +101,18 @@ let
     (disk:
       "-drive file=${disk.name}.${imageFormat},if=virtio,cache=unsafe,werror=report,format=${imageFormat}"
     )
-    (lib.attrValues nixosConfig.config.disko.devices.disk));
+    (lib.attrValues diskoCfg.devices.disk));
 in
 {
-  pure = vmTools.runInLinuxVM (pkgs.runCommand name
+  system.build.diskoImages = vmTools.runInLinuxVM (pkgs.runCommand cfg.name
     {
       buildInputs = dependencies;
       inherit preVM postVM QEMU_OPTS;
-      memSize = nixosConfig.config.disko.memSize;
+      inherit (diskoCfg) memSize;
     }
     (partitioner + installer));
-  impure = diskoLib.writeCheckedBash { inherit checked pkgs; } name ''
+
+  system.build.diskoImagesScript = diskoLib.writeCheckedBash { inherit checked pkgs; } cfg.name ''
     set -efu
     export PATH=${lib.makeBinPath dependencies}
     showUsage() {

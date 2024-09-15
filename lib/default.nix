@@ -9,13 +9,6 @@ with builtins;
 let
   outputs = import ../default.nix { inherit lib diskoLib; };
   diskoLib = {
-
-    # like make-disk-image.nix from nixpkgs, but with disko config
-    makeDiskImages = args: (import ./make-disk-image.nix ({ inherit diskoLib; } // args)).pure;
-
-    # a version of makeDiskImage which runs outside of the store
-    makeDiskImagesScript = args: (import ./make-disk-image.nix ({ inherit diskoLib; } // args)).impure;
-
     testLib = import ./tests.nix { inherit lib makeTest eval-config; };
     # like lib.types.oneOf but instead of a list takes an attrset
     # uses the field "type" to find the correct type in the attrset

@@ -19,7 +19,7 @@
     imageSize = lib.mkOption {
       type = lib.types.strMatching "[0-9]+[KMGTP]?";
       description = ''
-        size of the image if the makeDiskImages function from diksoLib is used.
+        size of the image when disko images are created
         is used as an argument to "qemu-img create ..."
       '';
       default = "2G";
