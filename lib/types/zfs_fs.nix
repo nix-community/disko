@@ -52,6 +52,12 @@
       description = "Metadata";
     };
 
+    _createFilesystem = lib.mkOption {
+      internal = true;
+      type = lib.types.bool;
+      default = true;
+    };
+
     _create = diskoLib.mkCreateOption
       {
         inherit config options;
@@ -77,15 +83,20 @@
           in
           ''
             if ! zfs get type ${config._name} >/dev/null 2>&1; then
-              zfs create -up ${config._name} \
-                ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") (createOptions))}
+              ${if config._createFilesystem then ''
+                zfs create -up ${config._name} \
+                  ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") (createOptions))}
+              '' else ''
+                # don't create anything for root dataset of zpools
+                true
+              ''}
             ${lib.optionalString (updateOptions != {}) ''
             else
               zfs set -u ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "${n}=${v}") updateOptions)} ${config._name}
             ''}
             fi
           '';
-      } // { readOnly = false; };
+      };
 
     _mount = diskoLib.mkMountOption {
       inherit config options;
