@@ -36,7 +36,7 @@ In the this example we create a flake containing a nixos configuration for
           system.stateVersion = config.system.nixos.version;
           # Adjust this to your liking.
           # WARNING: if you set a too low value the image might be not big enough to contain the nixos installation
-          disko.devices.disk.vdb.imageSize = "10G";
+          disko.devices.disk.main.imageSize = "10G";
         })
       ];
     };
@@ -61,15 +61,15 @@ In the this example we create a flake containing a nixos configuration for
    Options:
    * --pre-format-files <src> <dst>
      copies the src to the dst on the VM, before disko is run
-     This is useful to provide secrets like LUKS keys, or other files you need for formating
+     This is useful to provide secrets like LUKS keys, or other files you need for formatting
    * --post-format-files <src> <dst>
      copies the src to the dst on the finished image
      These end up in the images later and is useful if you want to add some extra stateful files
      They will have the same permissions but will be owned by root:root
-   * --build-memory
-     specify the ammount of memory that gets allocated to the build vm (in mb)
-     This can be usefull if you want to build images with a more involed NixOS config
-     By default the vm will get 1024M/1GB
+   * --build-memory <amt>
+     specify the amount of memory in MiB that gets allocated to the build VM
+     This can be useful if you want to build images with a more involed NixOS config
+     The default is 1024 MiB
    ```
 
    An example run may look like this:
@@ -84,8 +84,8 @@ In the this example we create a flake containing a nixos configuration for
    it will produce the following image:
 
    ```
-   $ ls -la vdb.raw
-   .rw-r--r-- root root 10 GB 2 minutes ago vdb.raw
+   $ ls -la main.raw
+   .rw-r--r-- root root 10 GB 2 minutes ago main.raw
    ```
 
 ## Additional Configuration
