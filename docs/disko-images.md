@@ -36,7 +36,7 @@ In the this example we create a flake containing a nixos configuration for
           system.stateVersion = config.system.nixos.version;
           # Adjust this to your liking.
           # WARNING: if you set a too low value the image might be not big enough to contain the nixos installation
-          disko.devices.disk.vdb.imageSize = "10G";
+          disko.devices.disk.main.imageSize = "10G";
         })
       ];
     };
@@ -84,8 +84,8 @@ In the this example we create a flake containing a nixos configuration for
    it will produce the following image:
 
    ```
-   $ ls -la vdb.raw
-   .rw-r--r-- root root 10 GB 2 minutes ago vdb.raw
+   $ ls -la main.raw
+   .rw-r--r-- root root 10 GB 2 minutes ago main.raw
    ```
 
 ## Additional Configuration
