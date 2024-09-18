@@ -128,8 +128,10 @@ The following step will partition and format your disk, and mount it to `/mnt`.
 
 **Please note: This will erase any existing data on your disk.**
 
-```console
+```sh
 sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko -- --mode disko /tmp/disk-config.nix
+# Or use nix-shell. Be aware that this might run an older version of disko!
+nix-shell -p disko --run "sudo disko --mode disko /tmp/disk-config.nix"
 ```
 
 After the command has run, your file system should have been formatted and
