@@ -200,23 +200,28 @@ in
       eval-config = import (pkgs.path + "/nixos/lib/eval-config.nix");
     };
 
-    system.build = (cfg.devices._scripts { inherit pkgs; checked = cfg.checkScripts; }) // {
-      # we keep these old outputs for compatibility
-      disko = builtins.trace "the .disko output is deprecated, please use .diskoScript instead" (cfg.devices._scripts { inherit pkgs; }).diskoScript;
-      diskoNoDeps = builtins.trace "the .diskoNoDeps output is deprecated, please use .diskoScriptNoDeps instead" (cfg.devices._scripts { inherit pkgs; }).diskoScriptNoDeps;
+    system.build = (cfg.devices._scripts { inherit pkgs; checked = cfg.checkScripts; }) // (
+      let
+        throwIfNoDisksDetected = _: v: if cfg.devices.disk == { } then throw "No disks defined, did you forget to import your disko config?" else v;
+      in
+      lib.mapAttrs throwIfNoDisksDetected {
+        # we keep these old outputs for compatibility
+        disko = builtins.trace "the .disko output is deprecated, please use .diskoScript instead" (cfg.devices._scripts { inherit pkgs; }).diskoScript;
+        diskoNoDeps = builtins.trace "the .diskoNoDeps output is deprecated, please use .diskoScriptNoDeps instead" (cfg.devices._scripts { inherit pkgs; }).diskoScriptNoDeps;
 
-      installTest = diskoLib.testLib.makeDiskoTest {
-        inherit extendModules pkgs;
-        name = "${config.networking.hostName}-disko";
-        disko-config = builtins.removeAttrs config [ "_module" ];
-        testMode = "direct";
-        efi = cfg.tests.efi;
-        extraSystemConfig = cfg.tests.extraConfig;
-        extraTestScript = cfg.tests.extraChecks;
-      };
+        installTest = diskoLib.testLib.makeDiskoTest {
+          inherit extendModules pkgs;
+          name = "${config.networking.hostName}-disko";
+          disko-config = builtins.removeAttrs config [ "_module" ];
+          testMode = "direct";
+          efi = cfg.tests.efi;
+          extraSystemConfig = cfg.tests.extraConfig;
+          extraTestScript = cfg.tests.extraChecks;
+        };
 
-      vmWithDisko = lib.mkDefault config.virtualisation.vmVariantWithDisko.system.build.vmWithDisko;
-    };
+        vmWithDisko = lib.mkDefault config.virtualisation.vmVariantWithDisko.system.build.vmWithDisko;
+      }
+    );
 
     # we need to specify the keys here, so we don't get an infinite recursion error
     # Remember to add config keys here if they are added to types
