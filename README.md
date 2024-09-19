@@ -1,8 +1,6 @@
 # disko - Declarative disk partitioning
 
-<!-- Generated with bing image generator (which uses dall-e-2): edge-gpt-image --prompt "Disco ball shooting a laser beam at one hard drive" -->
-
-<img title="" src="./docs/logo.jpeg" alt="Project logo" width="274">
+<img title="" src="./docs/logo.png" alt="Project logo" width="274">
 
 [Documentation Index](./docs/INDEX.md)
 
