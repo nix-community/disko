@@ -3,6 +3,7 @@
 , lib
 , extendModules
 , options
+, pkgs
 , ...
 }:
 let
@@ -10,6 +11,10 @@ let
   cfg = diskoCfg.imageBuilder;
   inherit (cfg) pkgs imageFormat;
   checked = diskoCfg.checkScripts;
+
+  xcp' = pkgs.callPackage ../xcp.nix {
+    inherit (pkgs) xcp;
+  };
 
   configSupportsZfs = config.boot.supportedFilesystems.zfs or false;
   vmTools = pkgs.vmTools.override
@@ -46,6 +51,7 @@ let
     util-linux
     findutils
     kmod
+    xcp'
   ] ++ cfg.extraDependencies;
   preVM = ''
     # shellcheck disable=SC2154
@@ -93,7 +99,7 @@ let
 
     # We copy files with cp because `nix copy` seems to have a large memory leak
     mkdir -p ${systemToInstall.config.disko.rootMountPoint}/nix/store
-    time xargs cp --recursive --target ${systemToInstall.config.disko.rootMountPoint}/nix/store < ${closureInfo}/store-paths
+    xargs xcp --recursive --target-directory ${systemToInstall.config.disko.rootMountPoint}/nix/store < ${closureInfo}/store-paths
 
     ${systemToInstall.config.system.build.nixos-install}/bin/nixos-install --root ${systemToInstall.config.disko.rootMountPoint} --system ${systemToInstall.config.system.build.toplevel} --keep-going --no-channel-copy -v --no-root-password --option binary-caches ""
     umount -Rv ${systemToInstall.config.disko.rootMountPoint}
