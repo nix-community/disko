@@ -80,6 +80,7 @@ in
         type = lib.types.str;
         description = "name for the disk images";
         default = "${config.networking.hostName}-disko-images";
+        defaultText = "\${config.networking.hostName}-disko-images";
       };
 
       copyNixStore = lib.mkOption {
