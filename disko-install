@@ -256,7 +256,7 @@ main() {
   if [[ ! -f "${mountPoint}/nix/var/nix/db/db.sqlite" ]]; then
     echo "Copying store paths" >&2
     mkdir -p "${mountPoint}/nix/store"
-    xargs cp --recursive --target "${mountPoint}/nix/store"  < "${closure_info}/store-paths"
+    xargs xcp --recursive --target-directory "${mountPoint}/nix/store"  < "${closure_info}/store-paths"
     echo "Loading nix database" >&2
     NIX_STATE_DIR=${mountPoint}/nix/var/nix nix-store --load-db < "${closure_info}/registration"
   fi
