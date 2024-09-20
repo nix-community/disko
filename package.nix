@@ -1,6 +1,9 @@
-{ stdenvNoCC, makeWrapper, lib, path, nix, coreutils, nixos-install-tools, binlore, diskoVersion }:
+{ stdenvNoCC, makeWrapper, lib, path, nix, coreutils, nixos-install-tools, binlore, diskoVersion, xcp, callPackage }:
 
 let
+  xcp' = callPackage ./xcp.nix {
+    inherit xcp;
+  };
   self = stdenvNoCC.mkDerivation (finalAttrs: {
     name = "disko";
     src = ./.;
@@ -16,7 +19,7 @@ let
         chmod 755 "$out/bin/$i"
         wrapProgram "$out/bin/$i" \
           --set DISKO_VERSION "${diskoVersion}" \
-          --prefix PATH : ${lib.makeBinPath [ nix coreutils nixos-install-tools ]} \
+          --prefix PATH : ${lib.makeBinPath [ nix coreutils nixos-install-tools xcp' ]} \
           --prefix NIX_PATH : "nixpkgs=${path}"
       done
     '';
