@@ -261,7 +261,9 @@ let
       interpreter = if noDeps then "/usr/bin/env bash" else "${pkgs.bash}/bin/bash";
       check = lib.optionalString (checked && !pkgs.hostPlatform.isRiscV64 && !pkgs.hostPlatform.isx86_32) (pkgs.writeScript "check" ''
         set -efu
-        ${pkgs.shellcheck}/bin/shellcheck -e SC2034 "$1"
+        # SC2054: our toShellVars function doesn't quote list elements with commas
+        # SC2034: We don't use all variables exported by hooks.
+        ${pkgs.shellcheck}/bin/shellcheck -e SC2034,SC2054 "$1"
       '');
     };
 
