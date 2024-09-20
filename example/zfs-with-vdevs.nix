@@ -93,6 +93,8 @@
             cache = [ "cache" ];
           };
         };
+        # Workaround: cannot import 'zroot': I/O error in disko tests
+        options.cachefile = "none";
 
         rootFsOptions = {
           compression = "zstd";

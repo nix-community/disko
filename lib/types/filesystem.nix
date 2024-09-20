@@ -46,7 +46,7 @@
       default = ''
         if ! (blkid '${config.device}' | grep -q 'TYPE='); then
           mkfs.${config.format} \
-            ${toString config.extraArgs} \
+            ${lib.escapeShellArgs config.extraArgs} \
             ${config.device}
         fi
       '';
@@ -58,7 +58,7 @@
           if ! findmnt ${config.device} "${rootMountPoint}${config.mountpoint}" >/dev/null 2>&1; then
             mount ${config.device} "${rootMountPoint}${config.mountpoint}" \
               -t "${config.format}" \
-              ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
+              ${lib.concatMapStringsSep " " (opt: "-o ${lib.escapeShellArg opt}") config.mountOptions} \
               -o X-mount.mkdir
           fi
         '';
