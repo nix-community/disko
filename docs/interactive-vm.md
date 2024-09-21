@@ -18,6 +18,8 @@ You can configure the VM using the `virtualisation.vmVariantWithDisko` NixOS opt
 {
   virtualisation.vmVariantWithDisko = {
     virtualisation.fileSystems."/persist".neededForBoot = true;
+    # For running VM on macos: https://www.tweag.io/blog/2023-02-09-nixos-vm-on-macos/
+    # virtualisation.host.pkgs = inputs.nixpkgs.legacyPackages.aarch64-darwin;
   };
 }
 ```
