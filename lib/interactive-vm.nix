@@ -40,6 +40,8 @@ let
     boot = cfg_.disko.devices._config.boot or { };
     swapDevices = cfg_.disko.devices._config.swapDevices or [ ];
   };
+
+  hostPkgs = config.virtualisation.host.pkgs;
 in
 {
   imports = [
@@ -63,12 +65,12 @@ in
   boot.zfs.devNodes = "/dev/disk/by-uuid"; # needed because /dev/disk/by-id is empty in qemu-vms
   boot.zfs.forceImportAll = true;
 
-  system.build.vmWithDisko = pkgs.writers.writeDashBin "disko-vm" ''
+  system.build.vmWithDisko = hostPkgs.writers.writeDashBin "disko-vm" ''
     set -efux
-    export tmp=$(mktemp -d)
+    export tmp=$(${hostPkgs.coreutils}/bin/mktemp -d)
     trap 'rm -rf "$tmp"' EXIT
     ${lib.concatMapStringsSep "\n" (disk: ''
-      ${pkgs.qemu}/bin/qemu-img create -f qcow2 \
+      ${hostPkgs.qemu}/bin/qemu-img create -f qcow2 \
       -b ${config.system.build.diskoImages}/${disk.name}.qcow2 \
       -F qcow2 "$tmp"/${disk.name}.qcow2
     '') disks}
