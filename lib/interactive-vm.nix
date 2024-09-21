@@ -67,11 +67,11 @@ in
     set -efux
     export tmp=$(mktemp -d)
     trap 'rm -rf "$tmp"' EXIT
-    ${lib.concatMapStringsSep "\n" (disk: ''
-      ${pkgs.qemu}/bin/qemu-img create -f qcow2 \
-      -b ${config.system.build.diskoImages}/${disk.name}.qcow2 \
-      -F qcow2 "$tmp"/${disk.name}.qcow2
-    '') disks}
+
+    cd "$tmp"
+
+    ${config.system.build.diskoImagesScript}
+
     set +f
     ${config.system.build.vm}/bin/run-*-vm
   '';
