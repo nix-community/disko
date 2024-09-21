@@ -102,9 +102,14 @@ let
       "-drive file=${disk.name}.${imageFormat},if=virtio,cache=unsafe,werror=report,format=${imageFormat}"
     )
     (lib.attrValues diskoCfg.devices.disk));
+
+  runInLinuxVM = drv:
+    lib.overrideDerivation
+    (vmTools.runInLinuxVM drv)
+      (_: {requiredSystemFeatures = if cfg.requireKVM then ["kvm"] else [];});
 in
 {
-  system.build.diskoImages = vmTools.runInLinuxVM (pkgs.runCommand cfg.name
+  system.build.diskoImages = runInLinuxVM (pkgs.runCommand cfg.name
     {
       buildInputs = dependencies;
       inherit preVM postVM QEMU_OPTS;

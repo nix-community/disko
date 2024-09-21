@@ -25,6 +25,15 @@ in
         example = lib.literalExpression "\${pkgs.qemu_kvm}/bin/qemu-system-aarch64";
       };
 
+      requireKVM = lib.mkOption {
+        type = lib.types.bool;
+        description = ''
+          By default vmTools.runInLinuxVM requires KVM, see https://github.com/NixOS/nixpkgs/issues/67079
+          This option allows to drop this requirement.
+        '';
+        default = with pkgs.buildPlatform; isLinux && (isAarch64 || isMips || isx86 || isRiscV || isS390x);
+      };
+
       pkgs = lib.mkOption {
         type = lib.types.attrs;
         description = ''
