@@ -47,6 +47,8 @@
       zroot = {
         type = "zpool";
         mode = "mirror";
+        # Workaround: cannot import 'zroot': I/O error in disko tests
+        options.cachefile = "none";
         rootFsOptions = {
           compression = "zstd";
           "com.sun:auto-snapshot" = "false";
