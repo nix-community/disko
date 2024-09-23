@@ -40,6 +40,15 @@ let
     nix
     util-linux
     findutils
+    (pkgs.xcp.overrideAttrs (old: {
+      # https://github.com/tarka/xcp/pull/56
+      patches = (old.patches or []) ++ [
+        (fetchpatch {
+          url = "https://github.com/tarka/xcp/commit/8c00cef85c4ae6ffa4f49a59e5f64f68f6407000.patch";
+          sha256 = "sha256-pwgtA/36YPRtpn4jmOcb44xjiDfEKmpXdJDSvqfGQuk=";
+        })
+      ];
+    }))
   ] ++ cfg.extraDependencies;
   preVM = ''
     ${lib.concatMapStringsSep "\n" (disk: "${pkgs.qemu}/bin/qemu-img create -f ${imageFormat} ${disk.name}.${imageFormat} ${disk.imageSize}") (lib.attrValues diskoCfg.devices.disk)}
@@ -88,7 +97,7 @@ let
 
     # We copy files with cp because `nix copy` seems to have a large memory leak
     mkdir -p ${systemToInstall.config.disko.rootMountPoint}/nix/store
-    xargs cp --recursive --target ${systemToInstall.config.disko.rootMountPoint}/nix/store < ${closureInfo}/store-paths
+    xargs xcp --recursive --target-directory ${systemToInstall.config.disko.rootMountPoint}/nix/store < ${closureInfo}/store-paths
 
     ${systemToInstall.config.system.build.nixos-install}/bin/nixos-install --root ${systemToInstall.config.disko.rootMountPoint} --system ${systemToInstall.config.system.build.toplevel} --keep-going --no-channel-copy -v --no-root-password --option binary-caches ""
     umount -Rv ${systemToInstall.config.disko.rootMountPoint}
