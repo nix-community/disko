@@ -130,11 +130,15 @@ in
           (lv: [
             (lib.optional (lv.content != null) lv.content._config)
             (lib.optional (lv.lvm_type != null) {
-              boot.initrd.kernelModules = [ (if lv.lvm_type == "mirror" then "dm-mirror" else "dm-raid") ]
-                ++ lib.optional (lv.lvm_type == "raid0") "raid0"
-                ++ lib.optional (lv.lvm_type == "raid1") "raid1"
-                # ++ lib.optional (lv.lvm_type == "raid10") "raid10"
-                ++ lib.optional
+              boot.initrd.kernelModules = [
+                # Prevent unbootable systems if LVM snapshots are present at boot time.
+                "dm-snapshot"
+                (if lv.lvm_type == "mirror" then "dm-mirror" else "dm-raid")
+              ]
+              ++ lib.optional (lv.lvm_type == "raid0") "raid0"
+              ++ lib.optional (lv.lvm_type == "raid1") "raid1"
+              # ++ lib.optional (lv.lvm_type == "raid10") "raid10"
+              ++ lib.optional
                 (lv.lvm_type == "raid4" ||
                   lv.lvm_type == "raid5" ||
                   lv.lvm_type == "raid6") "raid456";
