@@ -1,9 +1,14 @@
 { config, options, lib, diskoLib, ... }:
 let
   # Load kernel modules to ensure device mapper types are available
-  kernelModules = lib.filter (x: x != "") (map
-    (lv: lib.optionalString (lv.lvm_type != null && lv.lvm_type != "thinlv") "dm-${lv.lvm_type}")
-    (lib.attrValues config.lvs));
+  kernelModules =
+    [
+      # Prevent unbootable systems if LVM snapshots are present at boot time.
+      "dm-snapshot"
+    ] ++
+    lib.filter (x: x != "") (map
+      (lv: lib.optionalString (lv.lvm_type != null && lv.lvm_type != "thinlv") "dm-${lv.lvm_type}")
+      (lib.attrValues config.lvs));
 in
 {
   options = {
@@ -131,8 +136,6 @@ in
             (lib.optional (lv.content != null) lv.content._config)
             (lib.optional (lv.lvm_type != null) {
               boot.initrd.kernelModules = [
-                # Prevent unbootable systems if LVM snapshots are present at boot time.
-                "dm-snapshot"
                 (if lv.lvm_type == "mirror" then "dm-mirror" else "dm-raid")
               ]
               ++ lib.optional (lv.lvm_type == "raid0") "raid0"
