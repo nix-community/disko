@@ -1,6 +1,4 @@
-{ pkgs ? import <nixpkgs> { }
-, diskoLib ? pkgs.callPackage ../lib { }
-}:
+{ pkgs ? import <nixpkgs> { }, ... }:
 (pkgs.nixos [
   ../example/stand-alone/configuration.nix
   { documentation.enable = false; }

@@ -189,7 +189,7 @@ in
       Machine configuration to be added for the vm script available at `.system.build.vmWithDisko`.
     '';
     inherit (vmVariantWithDisko) type;
-    default = {};
+    default = { };
     visible = "shallow";
   };
 

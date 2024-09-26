@@ -33,4 +33,5 @@ let
       mainProgram = finalAttrs.name;
     };
   });
-in self
+in
+self

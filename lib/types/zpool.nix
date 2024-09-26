@@ -31,7 +31,7 @@ in
           types = {
             topology =
               let
-                vdev = lib.types.submodule ({ name, ... }: {
+                vdev = lib.types.submodule ({ ... }: {
                   options = {
                     mode = lib.mkOption {
                       type = lib.types.enum modeOptions;
@@ -44,10 +44,9 @@ in
                     };
                   };
                 });
-                parent = config;
               in
               lib.types.submodule
-                ({ config, name, ... }: {
+                ({ ... }: {
                   options = {
                     type = lib.mkOption {
                       type = lib.types.enum [ "topology" ];
