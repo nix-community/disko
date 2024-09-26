@@ -2,6 +2,7 @@
 , diskoLib
 , lib
 , extendModules
+, options
 , ...
 }:
 let
@@ -130,7 +131,7 @@ in
     * --build-memory <amt>
       specify the amount of memory in MiB that gets allocated to the build VM
       This can be useful if you want to build images with a more involed NixOS config
-      The default is 1024 MiB
+      The default is disko.memSize which defaults to ${builtins.toString options.disko.memSize.default} MiB
     USAGE
     }
 
@@ -200,7 +201,7 @@ in
     ''}
     export postVM=${diskoLib.writeCheckedBash { inherit pkgs checked; } "postVM.sh" postVM}
 
-    build_memory=''${build_memory:-1024}
+    build_memory=''${build_memory:-${builtins.toString diskoCfg.memSize}}
     QEMU_OPTS=${lib.escapeShellArg QEMU_OPTS}
     QEMU_OPTS+=" -m $build_memory"
     export QEMU_OPTS
