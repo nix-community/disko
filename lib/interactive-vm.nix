@@ -64,6 +64,7 @@ in
   virtualisation.qemu.drives = [ rootDisk ] ++ otherDisks;
   boot.zfs.devNodes = "/dev/disk/by-uuid"; # needed because /dev/disk/by-id is empty in qemu-vms
   boot.zfs.forceImportAll = true;
+  boot.zfs.forceImportRoot = lib.mkForce true;
 
   system.build.vmWithDisko = hostPkgs.writers.writeDashBin "disko-vm" ''
     set -efux
