@@ -1,49 +1,75 @@
 {
   disko.devices = {
     disk = {
-      disk0 = {
-        type = "disk";
-	device = "/dev/sdb";
-	content = {
-	  type = "gpt";
-	  partitions = {
-	    crypted2 = {
-	      name = "crypt_raidp2";
-	      size = "100%";
-	      content = {
-                type = "luks";
-		name = "raidp2"; # this is DM name
-	      };
-	    };
-	  };
-	};
-      };
+      # Devices will be mounted and formatted in alphabetical order, and btrfs can only mount raids
+      # when all devices are present. So we define an "empty" luks device on the first disk,
+      # and the actual btrfs raid on the second disk, and the name of these entries matters!
       disk1 = {
         type = "disk";
         device = "/dev/sda";
         content = {
           type = "gpt";
           partitions = {
-            crypted1 = {
+            ESP = {
+              size = "512M";
+              type = "EF00";
+              content = {
+                type = "filesystem";
+                format = "vfat";
+                mountpoint = "/boot";
+                mountOptions = [ "umask=0077" ];
+              };
+            };
+            crypt_p1 = {
               size = "100%";
-	      name = "crypt_raidp1";
               content = {
                 type = "luks";
-		name = "raidp1";
-		content = {
-		  type = "btrfs";
-		  extraArgs = [ "-f" "-m raid1 -d raid1" "/dev/mapper/raidp2"]; # raidp2 - DM name of 2nd disk
+                name = "p1"; # device-mapper name when decrypted
+                # Remove settings.keyFile if you want to use interactive password entry
+                settings = {
+                  allowDiscards = true;
+                  keyFile = "/tmp/secret.key";
+                };
+              };
+            };
+          };
+        };
+      };
+      disk2 = {
+        type = "disk";
+        device = "/dev/sdb";
+        content = {
+          type = "gpt";
+          partitions = {
+            crypt_p2 = {
+              size = "100%";
+              content = {
+                type = "luks";
+                name = "p2";
+                # Remove settings.keyFile if you want to use interactive password entry
+                settings = {
+                  allowDiscards = true;
+                  keyFile = "/tmp/secret.key"; # Same key for both devices
+                };
+                content = {
+                  type = "btrfs";
+                  extraArgs = [
+                    "-d raid1"
+                    "/dev/mapper/p1" # Use decrypted mapped device, same name as defined in disk1
+                  ];
                   subvolumes = {
-		    "/" = {
-                      mountpoint = "/mnt/SoftWare";
-		      mountOptions = [
-		        "rw" "relatime" "ssd" "discard=async" "space_cache=v2" "subvolid=5" "subvol=/"
-		      ];
-		    };
-		  };
-		};
-	      };
-	    };
+                    "/root" = {
+                      mountpoint = "/";
+                      mountOptions = [
+                        "rw"
+                        "relatime"
+                        "ssd"
+                      ];
+                    };
+                  };
+                };
+              };
+            };
           };
         };
       };
