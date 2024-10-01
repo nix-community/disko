@@ -122,6 +122,7 @@ The fixed disko configuration would look like this:
             type = "filesystem";
             format = "vfat";
             mountpoint = "/boot";
+            mountOptions = [ "umask=0077" ];
           };
         };
         root = {
