@@ -8,6 +8,15 @@ diskoLib.testLib.makeDiskoTest {
   extraInstallerConfig.networking.hostId = "8425e349";
   extraSystemConfig = {
     networking.hostId = "8425e349";
+    # It looks like the 60s of NixOS is sometimes not enough for our virtio-based zpool.
+    # This fixes the flakeiness of the test.
+    boot.initrd.postResumeCommands = ''
+      for i in $(seq 1 120); do
+        if zpool list | grep -q zroot || zpool import -N zroot; then
+          break
+        fi
+      done
+    '';
   };
   extraTestScript = ''
     def assert_property(ds, property, expected_value):
