@@ -79,7 +79,7 @@ in
                     };
                     cache = lib.mkOption {
                       type = lib.types.listOf lib.types.str;
-                      default = null;
+                      default = [];
                       description = ''
                         A dedicated zfs cache device (L2ARC). See
                         https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#Cache_Devices
