@@ -65,6 +65,7 @@ example we assume a system that has been booted with EFI:
                       type = "filesystem";
                       format = "vfat";
                       mountpoint = "/boot";
+                      mountOptions = [ "umask=0077" ];
                     };
                   };
                   root = {
@@ -168,6 +169,7 @@ Add this to your flake.nix output:
                       type = "filesystem";
                       format = "vfat";
                       mountpoint = "/boot";
+                      mountOptions = [ "umask=0077" ];
                     };
                   };
                   root = {
