@@ -135,9 +135,10 @@ from other devices if needed.
 
 ### Using disko-install in an offline installer
 
-If you want to **disko-install** from a customer installer without internet, you
-need to make sure that next the toplevel of your NixOS closure that you plan to
-install, it also needs **diskoScript** and all the flake inputs for evaluation.
+If you want to use **disko-install** from a custom installer without internet,
+you need to make sure that in addition to the toplevel of your NixOS closure
+that you plan to install, it also needs to contain  **diskoScript** and all the
+flake inputs for evaluation.
 
 #### Example configuration to install
 
