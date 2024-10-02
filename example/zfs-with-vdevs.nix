@@ -14,6 +14,7 @@
                 type = "filesystem";
                 format = "vfat";
                 mountpoint = "/boot";
+                mountOptions = [ "umask=0077" ];
               };
             };
             zfs = {
@@ -84,7 +85,10 @@
             vdev = [
               {
                 mode = "mirror";
-                members = [ "x" "y" ];
+                members = [
+                  "x"
+                  "y"
+                ];
               }
             ];
             special = {
