@@ -81,7 +81,7 @@ in
     };
     initrdUnlock = lib.mkOption {
       type = lib.types.bool;
-      default = true;
+      default = config.boot.initrd.systemd.enable;
       description = "Whether to add a boot.initrd.luks.devices entry for the specified disk.";
     };
     extraFormatArgs = lib.mkOption {
