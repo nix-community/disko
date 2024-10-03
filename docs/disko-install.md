@@ -30,7 +30,7 @@ Example:
 First run `nixos-generate-config --root /tmp/config --no-filesystems` and edit
 `configuration.nix` to your liking.
 
-Than add the following `flake.nix` inside `/tmp/config/etc/nixos`. In this
+Then add the following `flake.nix` inside `/tmp/config/etc/nixos`. In this
 example we assume a system that has been booted with EFI:
 
 ```nix
