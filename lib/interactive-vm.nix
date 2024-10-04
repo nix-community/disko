@@ -58,7 +58,7 @@ in
   disko.imageBuilder.imageFormat = "qcow2";
 
   virtualisation.useEFIBoot = config.disko.tests.efi;
-  virtualisation.memorySize = config.disko.memSize;
+  virtualisation.memorySize = lib.mkDefault config.disko.memSize;
   virtualisation.useDefaultFilesystems = false;
   virtualisation.diskImage = null;
   virtualisation.qemu.drives = [ rootDisk ] ++ otherDisks;
