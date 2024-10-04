@@ -5,13 +5,7 @@ config.system.build.vm). Simply import the disko module and build the vm runner
 with:
 
 ```
-nix build -L '.#nixosConfigurations.mymachine.config.system.build.vmWithDisko'
-```
-
-afterwards you can run the interactive VM with:
-
-```
-result/bin/disko-vm
+nix run -L '.#nixosConfigurations.mymachine.config.system.build.vmWithDisko'
 ```
 
 You can configure the VM using the `virtualisation.vmVariantWithDisko` NixOS
