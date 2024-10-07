@@ -42,6 +42,26 @@ let
     util-linux
     findutils
   ] ++ cfg.extraDependencies;
+
+  prepareFile = name: content: ''
+    out="$(echo "${name}" | base64)"
+    ${if lib.isStorePath content
+     then ''cp --reflink=auto -r "${content}" "$out"''
+     else content
+     }
+  '';
+
+  prepareFiles = ''
+    (
+      cd $TMPDIR/xchg
+      mkdir -p pre_format_files post_format_files
+      cd pre_format_files
+      ${lib.concatStringsSep "\n" (lib.attrValues (lib.mapAttrs prepareFile cfg.preFormatFiles))}
+      cd ../post_format_files
+      ${lib.concatStringsSep "\n" (lib.attrValues (lib.mapAttrs prepareFile cfg.postFormatFiles))}
+    )
+  '';
+
   preVM = ''
     ${lib.concatMapStringsSep "\n" (disk: "${pkgs.qemu}/bin/qemu-img create -f ${imageFormat} ${disk.name}.${imageFormat} ${disk.imageSize}") (lib.attrValues diskoCfg.devices.disk)}
     # This makes disko work, when canTouchEfiVariables is set to true.
@@ -59,8 +79,19 @@ let
   closureInfo = pkgs.closureInfo {
     rootPaths = [ systemToInstall.config.system.build.toplevel ];
   };
+
   partitioner = ''
-    set -efux
+    set -eux
+
+    set +f
+    for src in /tmp/xchg/pre_format_files/*; do
+      [ -e "$src" ] || continue
+      dst=$(basename "$src" | base64 -d)
+      mkdir -p "$(dirname "$dst")"
+      cp -r "$src" "$dst"
+    done
+    set -f
+
     # running udev, stolen from stage-1.sh
     echo "running udev..."
     ln -sfn /proc/self/fd /dev/fd
@@ -80,6 +111,15 @@ let
       export IN_DISKO_TEST=1
     ''}
     ${systemToInstall.config.system.build.diskoScript}
+
+    set +f
+    for src in /tmp/xchg/post_format_files/*; do
+      [ -e "$src" ] || continue
+      dst=/mnt/$(basename "$src" | base64 -d)
+      mkdir -p "$(dirname "$dst")"
+      cp -r "$src" "$dst"
+    done
+    set -f
   '';
 
   installer = lib.optionalString cfg.copyNixStore ''
@@ -108,8 +148,9 @@ in
   system.build.diskoImages = vmTools.runInLinuxVM (pkgs.runCommand cfg.name
     {
       buildInputs = dependencies;
-      inherit preVM postVM QEMU_OPTS;
+      inherit postVM QEMU_OPTS;
       inherit (diskoCfg) memSize;
+      preVM = preVM + prepareFiles;
     }
     (partitioner + installer));
 
@@ -140,20 +181,20 @@ in
     trap 'rm -rf "$TMPDIR"' EXIT
     cd "$TMPDIR"
 
-    mkdir copy_before_disko copy_after_disko
+    mkdir pre_format_files post_format_files
 
     while [[ $# -gt 0 ]]; do
       case "$1" in
       --pre-format-files)
         src=$2
         dst=$3
-        cp --reflink=auto -r "$src" copy_before_disko/"$(echo "$dst" | base64)"
+        cp --reflink=auto -r "$src" pre_format_files/"$(echo "$dst" | base64)"
         shift 2
         ;;
       --post-format-files)
         src=$2
         dst=$3
-        cp --reflink=auto -r "$src" copy_after_disko/"$(echo "$dst" | base64)"
+        cp --reflink=auto -r "$src" post_format_files/"$(echo "$dst" | base64)"
         shift 2
         ;;
       --build-memory)
@@ -175,25 +216,11 @@ in
 
     export preVM=${diskoLib.writeCheckedBash { inherit pkgs checked; } "preVM.sh" ''
       set -efu
-      mv copy_before_disko copy_after_disko xchg/
+      mv pre_format_files post_format_files xchg/
       origBuilder=${pkgs.writeScript "disko-builder" ''
         set -eu
         export PATH=${lib.makeBinPath dependencies}
-        for src in /tmp/xchg/copy_before_disko/*; do
-          [ -e "$src" ] || continue
-          dst=$(basename "$src" | base64 -d)
-          mkdir -p "$(dirname "$dst")"
-          cp -r "$src" "$dst"
-        done
-        set -f
         ${partitioner}
-        set +f
-        for src in /tmp/xchg/copy_after_disko/*; do
-          [ -e "$src" ] || continue
-          dst=/mnt/$(basename "$src" | base64 -d)
-          mkdir -p "$(dirname "$dst")"
-          cp -r "$src" "$dst"
-        done
         ${installer}
       ''}
       echo "export origBuilder=$origBuilder" > xchg/saved-env
