@@ -86,6 +86,7 @@
           if (config.format == "xfs") then [ pkgs.xfsprogs ]
           else if (config.format == "btrfs") then [ pkgs.btrfs-progs ]
           else if (config.format == "vfat") then [ pkgs.dosfstools ]
+          else if (config.format == "exfat") then [ pkgs.exfat ]
           else if (config.format == "ext2") then [ pkgs.e2fsprogs ]
           else if (config.format == "ext3") then [ pkgs.e2fsprogs ]
           else if (config.format == "ext4") then [ pkgs.e2fsprogs ]
