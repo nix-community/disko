@@ -24,6 +24,7 @@ let
         # legacy aliases
         create = "createScriptNoDeps";
         zap_create_mount = "diskoScriptNoDeps";
+        config = "configFile";
       }.${mode}
     else
       {
@@ -34,6 +35,7 @@ let
         # legacy aliases
         create = "createScript";
         zap_create_mount = "diskoScript";
+        config = "configFile";
       }.${mode};
 
   hasDiskoConfigFlake =

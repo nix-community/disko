@@ -40,5 +40,7 @@ in
   diskoNoDeps = cfg: pkgs: builtins.trace "the diskoNoDeps output is deprecated, please use disko instead" ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).diskoScriptNoDeps;
 
   config = cfg: (eval cfg).config.disko.devices._config;
+  configFile = cfg: pkgs: pkgs.writers.writeJSON "config.json" cfg.disko.devices;
+
   packages = cfg: (eval cfg).config.disko.devices._packages;
 }
