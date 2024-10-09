@@ -10,6 +10,10 @@ declare disko_config
 mode=mount
 nix_args=()
 
+# DISKO_VERSION is set by the wrapper in package.nix
+DISKO_VERSION="${DISKO_VERSION:="unknown! This is a bug, please report it!"}"
+onlyPrintVersion=false
+
 showUsage() {
   cat <<USAGE
 Usage: $0 [options] disk-config.nix
@@ -92,6 +96,9 @@ while [[ $# -gt 0 ]]; do
     --show-trace)
       nix_args+=("$1")
       ;;
+    --version)
+      onlyPrintVersion=true
+      ;;
     *)
       if [ -z ${disko_config+x} ]; then
         disko_config=$1
@@ -103,6 +110,13 @@ while [[ $# -gt 0 ]]; do
   esac
   shift
 done
+
+if [[ "$onlyPrintVersion" = true ]]; then
+  echo "$DISKO_VERSION"
+  exit 0
+fi
+# Always print version information to help with debugging
+echo "disko version $DISKO_VERSION"
 
 nixBuild() {
   if command -v nom-build > /dev/null; then
