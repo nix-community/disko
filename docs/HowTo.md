@@ -22,7 +22,7 @@ If you use nix flakes support:
 
 ```nix
 {
-  inputs.disko.url = "github:nix-community/disko";
+  inputs.disko.url = "github:nix-community/disko/latest";
   inputs.disko.inputs.nixpkgs.follows = "nixpkgs";
 
   outputs = { self, nixpkgs, disko }: {

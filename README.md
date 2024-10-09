@@ -99,7 +99,7 @@ a disk named /dev/sda, you would run the following command to partition, format
 and mount the disk.
 
 ```console
-sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko -- --mode disko /tmp/disk-config.nix
+sudo nix --experimental-features "nix-command flakes" run github:nix-community/disko/latest -- --mode disko /tmp/disk-config.nix
 ```
 
 ## Related Tools

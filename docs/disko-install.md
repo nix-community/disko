@@ -22,7 +22,7 @@ For a fresh installation, where **disko-install** will handle partitioning and
 setting up the disk, use the following syntax:
 
 ```console
-sudo nix run 'github:nix-community/disko#disko-install' -- --flake <flake-url>#<flake-attr> --disk <disk-name> <disk-device>
+sudo nix run 'github:nix-community/disko#disko-install/latest' -- --flake <flake-url>#<flake-attr> --disk <disk-name> <disk-device>
 ```
 
 Example:
@@ -36,7 +36,7 @@ example we assume a system that has been booted with EFI:
 ```nix
 {
   inputs.nixpkgs.url = "github:nixos/nixpkgs?ref=nixos-unstable";
-  inputs.disko.url = "github:nix-community/disko";
+  inputs.disko.url = "github:nix-community/disko/latest";
   inputs.disko.inputs.nixpkgs.follows = "nixpkgs";
 
   outputs = { self, disko, nixpkgs }: {
@@ -107,7 +107,7 @@ nvme0n1     259:0    0  1.8T  0 disk
 In our example, we want to install to a USB-stick (/dev/sda):
 
 ```console
-$ sudo nix run 'github:nix-community/disko#disko-install' -- --flake '/tmp/config/etc/nixos#mymachine' --disk main /dev/sda
+$ sudo nix run 'github:nix-community/disko/latest#disko-install' -- --flake '/tmp/config/etc/nixos#mymachine' --disk main /dev/sda
 ```
 
 Afterwards you can test your USB-stick by either selecting during the boot or
@@ -126,7 +126,7 @@ new hardware or to prioritize it in your current machine's boot order, use the
 --write-efi-boot-entries option:
 
 ```console
-$ sudo nix run 'github:nix-community/disko#disko-install' -- --write-efi-boot-entries --flake '/tmp/config/etc/nixos#mymachine' --disk main /dev/sda
+$ sudo nix run 'github:nix-community/disko/latest#disko-install' -- --write-efi-boot-entries --flake '/tmp/config/etc/nixos#mymachine' --disk main /dev/sda
 ```
 
 This command installs NixOS with **disko-install** and sets the newly installed
