@@ -48,6 +48,7 @@ echo "{ version = \"$version\"; released = true; }" > version.nix
 # Commit and tag the release
 git commit -am "release: v$version"
 git tag -a "v$version" -m "release: v$version"
+git tag -a "latest" -m "release: v$version"
 
 # a revsion suffix when run from the tagged release commit
 echo "{ version = \"$version\"; released = false; }" > version.nix
