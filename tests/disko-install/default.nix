@@ -1,6 +1,6 @@
-{ pkgs ? import <nixpkgs> { }, self }:
+{ pkgs ? import <nixpkgs> { }, self, diskoVersion }:
 let
-  disko = pkgs.callPackage ../../package.nix { };
+  disko = pkgs.callPackage ../../package.nix { inherit diskoVersion; };
 
   dependencies = [
     self.nixosConfigurations.testmachine.pkgs.stdenv.drvPath
