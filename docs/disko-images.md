@@ -20,7 +20,7 @@ In the this example we create a flake containing a nixos configuration for
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    disko.url = "github:nix-community/disko";
+    disko.url = "github:nix-community/disko/latest";
     disko.inputs.nixpkgs.follows = "nixpkgs";
   };
 
