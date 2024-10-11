@@ -1,1 +1,1 @@
-{ version = "1.8.0"; released = false; }
+{ version = "1.8.2"; released = true; }
