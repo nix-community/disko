@@ -88,8 +88,8 @@ The operation has completed successfully.
 Make the following changes to your disko configuration:
 
 1. Set `disko.devices.disk.example.content.type = "gpt"`
-1. Remove `disko.devices.disk.example.format`
-1. Convert `disko.devices.disk.example.partitions` to an attribute set and
+1. Remove `disko.devices.disk.example.content.format`
+1. Convert `disko.devices.disk.example.content.partitions` to an attribute set and
    promote the `name` field to the key for its partition
 1. Add a `priority` field to each partition, to reflect the intended partition
    number
