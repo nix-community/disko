@@ -48,10 +48,18 @@ echo "{ version = \"$version\"; released = true; }" > version.nix
 # Commit and tag the release
 git commit -am "release: v$version"
 git tag -a "v$version" -m "release: v$version"
+git tag -d "latest"
 git tag -a "latest" -m "release: v$version"
 
 # a revsion suffix when run from the tagged release commit
 echo "{ version = \"$version\"; released = false; }" > version.nix
 git commit -am "release: reset released flag"
 
-echo "now run 'git push --tags origin master'"
+echo "Release was prepared successfully!"
+echo "To push the release, run the following command:"
+echo
+echo "  git push origin master v$version && git push --force latest"
+echo
+echo "After that, create a release on GitHub:"
+echo
+echo "  https://github.com/nix-community/disko/releases/new"
