@@ -127,13 +127,13 @@ if [[ -n "${flake+x}" ]]; then
     exit 1
   fi
   if [[ -e "$flake" ]]; then
-    flake=$(realpath "$flake")
+    flake="$(realpath "$flake")"
   fi
   nix_args+=("--arg" "flake" "\"$flake\"")
   nix_args+=("--argstr" "flakeAttr" "$flakeAttr")
   nix_args+=(--extra-experimental-features flakes)
 elif [[ -n "${disko_config+x}" ]] && [[ -e "$disko_config" ]]; then
-  nix_args+=("--arg" "diskoFile" $(realpath "$disko_config"))
+  nix_args+=("--arg" "diskoFile" "$(realpath "$disko_config")")
 else
   abort "disko config must be an existing file or flake must be set"
 fi
