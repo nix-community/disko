@@ -58,7 +58,7 @@ git commit -am "release: reset released flag"
 echo "Release was prepared successfully!"
 echo "To push the release, run the following command:"
 echo
-echo "  git push origin master v$version && git push --force latest"
+echo "  git push origin master v$version && git push --force origin latest"
 echo
 echo "After that, create a release on GitHub:"
 echo
