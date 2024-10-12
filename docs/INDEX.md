@@ -1,6 +1,6 @@
 # disko - Declarative disk partitioning
 
-<img title="" src="./logo.jpeg" alt="" width="220">
+<img title="" src="./logo.png" alt="" width="220">
 
 ## Table of Contents
 
