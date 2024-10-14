@@ -26,7 +26,8 @@ in
               lib.types.either
                 (lib.types.strMatching (hexPattern 4))
                 (lib.types.strMatching (lib.concatMapStringsSep "-" hexPattern [ 8 4 4 4 12 ]));
-            default = "8300";
+            default = if partition.config.content.type == "swap" then "8200" else "8300";
+            defaultText = ''8300 (Linux filesystem) normally, 8200 (Linux swap) if content.type is "swap"'';
             description = ''
               Filesystem type to use.
               This can either be an sgdisk-specific short code (run sgdisk -L to see what is available),
