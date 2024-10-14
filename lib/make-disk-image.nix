@@ -43,7 +43,7 @@ let
     findutils
   ] ++ cfg.extraDependencies;
   preVM = ''
-    ${lib.concatMapStringsSep "\n" (disk: "${pkgs.qemu}/bin/qemu-img create -f ${imageFormat} ${disk.name}.${imageFormat} ${disk.imageSize}") (lib.attrValues diskoCfg.devices.disk)}
+    ${lib.concatMapStringsSep "\n" (disk: "${pkgs.qemu}/bin/qemu-img create -f ${imageFormat} ${disk.imageName}.${imageFormat} ${disk.imageSize}") (lib.attrValues diskoCfg.devices.disk)}
     # This makes disko work, when canTouchEfiVariables is set to true.
     # Technically these boot entries will no be persisted this way, but
     # in most cases this is OK, because we can rely on the standard location for UEFI executables.
@@ -52,7 +52,7 @@ let
   postVM = ''
     # shellcheck disable=SC2154
     mkdir -p "$out"
-    ${lib.concatMapStringsSep "\n" (disk: "mv ${disk.name}.${imageFormat} \"$out\"/${disk.name}.${imageFormat}") (lib.attrValues diskoCfg.devices.disk)}
+    ${lib.concatMapStringsSep "\n" (disk: "mv ${disk.imageName}.${imageFormat} \"$out\"/${disk.imageName}.${imageFormat}") (lib.attrValues diskoCfg.devices.disk)}
     ${cfg.extraPostVM}
   '';
 
@@ -100,7 +100,7 @@ let
     "-drive if=pflash,format=raw,unit=1,file=efivars.fd"
   ] ++ builtins.map
     (disk:
-      "-drive file=${disk.name}.${imageFormat},if=virtio,cache=unsafe,werror=report,format=${imageFormat}"
+      "-drive file=${disk.imageName}.${imageFormat},if=virtio,cache=unsafe,werror=report,format=${imageFormat}"
     )
     (lib.attrValues diskoCfg.devices.disk));
 in
