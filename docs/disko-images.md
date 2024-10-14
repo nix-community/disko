@@ -90,6 +90,14 @@ In the this example we create a flake containing a nixos configuration for
 
 ## Additional Configuration
 
+- For custom image name output, define the image name in your Disko configuration:
+
+  ```console
+  disko.devices.disk.<drive>.imageName = "nixos-x86_64-linux-generic-btrfs"; # Set your preferred name
+  ```
+
+  The image scirpt will produce `nixos-x86_64-linux-generic-btrfs.raw` instead of `<drive>.raw`.
+
 - For virtual drive use, define the image size in your Disko configuration:
 
   ```console
