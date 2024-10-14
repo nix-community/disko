@@ -64,7 +64,7 @@ let
     else if (lib.traceValSeq hasDiskoModuleFlake) then
       (builtins.getFlake flake).nixosConfigurations.${flakeAttr}.config.system.build.${diskoAttr}
     else
-      (builtins.abort "neither diskoConfigurations.${flakeAttr} nor nixosConfigurations.${flakeAttr} found");
+      (builtins.abort "couldn't find `diskoConfigurations.${flakeAttr}` or `nixosConfigurations.${flakeAttr}.config.disko.devices`");
 
 in
 diskoScript
