@@ -16,6 +16,14 @@
       type = diskoLib.optionTypes.absolute-pathname; # TODO check if subpath of /dev ? - No! eg: /.swapfile
       description = "Device path";
     };
+    imageName = lib.mkOption {
+      type = lib.types.str;
+      default = config.name;
+      description = ''
+        name of the image when disko images are created
+        is used as an argument to "qemu-img create ..."
+      '';
+    };
     imageSize = lib.mkOption {
       type = lib.types.strMatching "[0-9]+[KMGTP]?";
       description = ''

@@ -57,7 +57,7 @@ in
       };
 
       extraPostVM = lib.mkOption {
-        type = lib.types.str;
+        type = lib.types.lines;
         description = ''
           extra shell code to execute once the disk image(s) have been succesfully created and moved to $out
         '';
