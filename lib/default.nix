@@ -393,21 +393,22 @@ let
             default = { pkgs, checked ? false }:
               let
                 throwIfNoDisksDetected = _: v: if devices.disk == { } then throw "No disks defined, did you forget to import your disko config?" else v;
+                destroyDependencies = with pkgs; [
+                  util-linux
+                  e2fsprogs
+                  mdadm
+                  zfs
+                  lvm2
+                  bash
+                  jq
+                  gnused
+                  gawk
+                  coreutils-full
+                ];
               in
               mapAttrs throwIfNoDisksDetected {
                 destroyScript = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-destroy" ''
-                  export PATH=${lib.makeBinPath (with pkgs; [
-                    util-linux
-                    e2fsprogs
-                    mdadm
-                    zfs
-                    lvm2
-                    bash
-                    jq
-                    gnused
-                    gawk
-                    coreutils-full
-                  ])}:$PATH
+                  export PATH=${lib.makeBinPath destroyDependencies}:$PATH
                   ${cfg.config._destroy}
                 '';
 
@@ -422,7 +423,7 @@ let
                 '';
 
                 diskoScript = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko" ''
-                  export PATH=${lib.makeBinPath ((cfg.config._packages pkgs) ++ [ pkgs.bash ])}:$PATH
+                  export PATH=${lib.makeBinPath ((cfg.config._packages pkgs) ++ [ pkgs.bash ] ++ destroyDependencies)}:$PATH
                   ${cfg.config._disko}
                 '';
 
