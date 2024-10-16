@@ -116,6 +116,8 @@ this project.
 This software is provided free under the
 [MIT Licence](https://opensource.org/licenses/MIT).
 
+If you want to contribute, check out [CONTRIBUTING.md](./CONTRIBUTING.md).
+
 ## Get in touch
 
 We have a public matrix channel at

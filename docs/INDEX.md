@@ -4,6 +4,8 @@
 
 ## Table of Contents
 
+### For users
+
 - [README](../README.md)
 - [Quickstart](./quickstart.md)
 - [System Requirements](./requirements.md)
@@ -14,3 +16,7 @@
 - [Reference](./reference.md)
 - [Upgrade Guide](./upgrade-guide.md)
   - [Migrating to the new GPT layout](./table-to-gpt.md)
+
+### For contributors
+
+- [Running and debugging tests](./testing.md)
