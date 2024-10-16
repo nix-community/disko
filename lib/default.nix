@@ -3,9 +3,6 @@
 , makeTest ? import <nixpkgs/nixos/tests/make-test-python.nix>
 , eval-config ? import <nixpkgs/nixos/lib/eval-config.nix>
 }:
-with lib;
-with builtins;
-
 let
   outputs = import ../default.nix { inherit lib diskoLib; };
   diskoLib = {
@@ -14,9 +11,9 @@ let
     # uses the field "type" to find the correct type in the attrset
     subType = { types, extraArgs ? { parent = { type = "rootNode"; name = "root"; }; } }: lib.mkOptionType {
       name = "subType";
-      description = "one of ${concatStringsSep "," (attrNames types)}";
-      check = x: if x ? type then types.${x.type}.check x else throw "No type option set in:\n${generators.toPretty {} x}";
-      merge = loc: foldl'
+      description = "one of ${lib.concatStringsSep "," (lib.attrNames types)}";
+      check = x: if x ? type then types.${x.type}.check x else throw "No type option set in:\n${lib.generators.toPretty {} x}";
+      merge = loc: lib.foldl'
         (_res: def: types.${def.value.type}.merge loc [
           # we add a dummy root parent node to render documentation
           (lib.recursiveUpdate { value._module.args = extraArgs; } def)
@@ -53,7 +50,7 @@ let
          deepMergeMap (x: x.t = "test") [ { x = { y = 1; z = 3; }; } { x = { bla = 234; }; } ]
          => { x = { y = 1; z = 3; bla = 234; t = "test"; }; }
     */
-    deepMergeMap = f: foldr (attr: acc: (recursiveUpdate acc (f attr))) { };
+    deepMergeMap = f: lib.foldr (attr: acc: (lib.recursiveUpdate acc (f attr))) { };
 
     /* get a device and an index to get the matching device name
 
@@ -67,6 +64,7 @@ let
        => "/dev/disk/by-id/xxx-part2"
     */
     deviceNumbering = dev: index:
+      let inherit (lib) match; in
       if match "/dev/([vs]|(xv)d).+" dev != null then
         dev + toString index  # /dev/{s,v,xv}da style
       else if match "/dev/(disk|zvol)/.+" dev != null then
@@ -100,10 +98,10 @@ let
         iter = index: list:
           if list == [ ] then
             fallback
-          else if f (head list) then
+          else if f (lib.head list) then
             index
           else
-            iter (index + 1) (tail list);
+            iter (index + 1) (lib.tail list);
       in
       iter 1 list;
 
@@ -116,7 +114,7 @@ let
        indent "test\nbla"
        => "test\n  bla"
     */
-    indent = replaceStrings [ "\n" ] [ "\n  " ];
+    indent = lib.replaceStrings [ "\n" ] [ "\n  " ];
 
     /* A nix option type representing a json datastructure, vendored from nixpkgs to avoid dependency on pkgs */
     jsonType =
@@ -144,10 +142,10 @@ let
     sortDevicesByDependencies = deviceDependencies: devices:
       let
         dependsOn = a: b:
-          elem a (attrByPath b [ ] deviceDependencies);
-        maybeSortedDevices = toposort dependsOn (diskoLib.deviceList devices);
+          lib.elem a (lib.attrByPath b [ ] deviceDependencies);
+        maybeSortedDevices = lib.toposort dependsOn (diskoLib.deviceList devices);
       in
-      if (hasAttr "cycle" maybeSortedDevices) then
+      if (lib.hasAttr "cycle" maybeSortedDevices) then
         abort "detected a cycle in your disk setup: ${maybeSortedDevices.cycle}"
       else
         maybeSortedDevices.result;
@@ -161,7 +159,7 @@ let
          => [ [ "zfs" "pool1" ] [ "zfs" "pool2" ] [ "mdadm" "raid1" ] ]
     */
     deviceList = devices:
-      concatLists (mapAttrsToList (n: v: (map (x: [ n x ]) (attrNames v))) devices);
+      lib.concatLists (lib.mapAttrsToList (n: v: (map (x: [ n x ]) (lib.attrNames v))) devices);
 
     /* Takes either a string or null and returns the string or an empty string
 
@@ -173,7 +171,7 @@ let
          maybeSTr "hello world"
          => "hello world"
     */
-    maybeStr = x: optionalString (x != null) x;
+    maybeStr = x: lib.optionalString (x != null) x;
 
     /* Takes a Submodules config and options argument and returns a serializable
        subset of config variables as a shell script snippet.
@@ -224,7 +222,7 @@ let
         readOnly = true;
         type = lib.types.str;
         default = ''
-          ( # ${config.type} ${concatMapStringsSep " " (n: toString (config.${n} or "")) ["name" "device" "format" "mountpoint"]} #
+          ( # ${config.type} ${lib.concatMapStringsSep " " (n: toString (config.${n} or "")) ["name" "device" "format" "mountpoint"]} #
             ${diskoLib.indent (diskoLib.defineHookVariables { inherit options; })}
             ${diskoLib.indent config.preCreateHook}
             ${diskoLib.indent attrs.default}
@@ -309,29 +307,29 @@ let
     optionTypes = rec {
       filename = lib.mkOptionType {
         name = "filename";
-        check = isString;
-        merge = mergeOneOption;
+        check = lib.isString;
+        merge = lib.mergeOneOption;
         description = "A filename";
       };
 
       absolute-pathname = lib.mkOptionType {
         name = "absolute pathname";
-        check = x: isString x && substring 0 1 x == "/" && pathname.check x;
-        merge = mergeOneOption;
+        check = x: lib.isString x && lib.substring 0 1 x == "/" && pathname.check x;
+        merge = lib.mergeOneOption;
         description = "An absolute path";
       };
 
       pathname = lib.mkOptionType {
         name = "pathname";
         check = x:
-          let
+          with lib; let
             # The filter is used to normalize paths, i.e. to remove duplicated and
             # trailing slashes.  It also removes leading slashes, thus we have to
             # check for "/" explicitly below.
             xs = filter (s: stringLength s > 0) (splitString "/" x);
           in
           isString x && (x == "/" || (length xs > 0 && all filename.check xs));
-        merge = mergeOneOption;
+        merge = lib.mergeOneOption;
         description = "A path name";
       };
     };
@@ -375,7 +373,7 @@ let
               meta informationen generated by disko
               currently used for building a dependency list so we know in which order to create the devices
             '';
-            default = diskoLib.deepMergeMap (dev: dev._meta) (flatten (map attrValues (attrValues devices)));
+            default = diskoLib.deepMergeMap (dev: dev._meta) (lib.flatten (map lib.attrValues (lib.attrValues devices)));
           };
           _packages = lib.mkOption {
             internal = true;
@@ -383,7 +381,7 @@ let
               packages required by the disko configuration
               coreutils is always included
             '';
-            default = pkgs: unique ((flatten (map (dev: dev._pkgs pkgs) (flatten (map attrValues (attrValues devices))))) ++ [ pkgs.coreutils-full ]);
+            default = pkgs: with lib; unique ((flatten (map (dev: dev._pkgs pkgs) (flatten (map attrValues (attrValues devices))))) ++ [ pkgs.coreutils-full ]);
           };
           _scripts = lib.mkOption {
             internal = true;
@@ -393,22 +391,21 @@ let
             default = { pkgs, checked ? false }:
               let
                 throwIfNoDisksDetected = _: v: if devices.disk == { } then throw "No disks defined, did you forget to import your disko config?" else v;
-                destroyDependencies = with pkgs; [
-                  util-linux
-                  e2fsprogs
-                  mdadm
-                  zfs
-                  lvm2
-                  bash
-                  jq
-                  gnused
-                  gawk
-                  coreutils-full
-                ];
               in
-              mapAttrs throwIfNoDisksDetected {
+              lib.mapAttrs throwIfNoDisksDetected {
                 destroyScript = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-destroy" ''
-                  export PATH=${lib.makeBinPath destroyDependencies}:$PATH
+                  export PATH=${lib.makeBinPath (with pkgs; [
+                    util-linux
+                    e2fsprogs
+                    mdadm
+                    zfs
+                    lvm2
+                    bash
+                    jq
+                    gnused
+                    gawk
+                    coreutils-full
+                  ])}:$PATH
                   ${cfg.config._destroy}
                 '';
 
@@ -423,7 +420,7 @@ let
                 '';
 
                 diskoScript = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko" ''
-                  export PATH=${lib.makeBinPath ((cfg.config._packages pkgs) ++ [ pkgs.bash ] ++ destroyDependencies)}:$PATH
+                  export PATH=${lib.makeBinPath ((cfg.config._packages pkgs) ++ [ pkgs.bash ])}:$PATH
                   ${cfg.config._disko}
                 '';
 
@@ -467,7 +464,7 @@ let
               The script to create all devices defined by disko.devices
             '';
             default =
-              let
+              with lib; let
                 sortedDeviceList = diskoLib.sortDevicesByDependencies (cfg.config._meta.deviceDependencies or { }) devices;
               in
               ''
@@ -487,7 +484,7 @@ let
               The script to mount all devices defined by disko.devices
             '';
             default =
-              let
+              with lib; let
                 fsMounts = diskoLib.deepMergeMap (dev: dev._mount.fs or { }) (flatten (map attrValues (attrValues devices)));
                 sortedDeviceList = diskoLib.sortDevicesByDependencies (cfg.config._meta.deviceDependencies or { }) devices;
               in
@@ -518,11 +515,11 @@ let
               The NixOS config generated by disko
             '';
             default =
-              let
+              with lib; let
                 configKeys = flatten (map attrNames (flatten (map (dev: dev._config) (flatten (map attrValues (attrValues devices))))));
                 collectedConfigs = flatten (map (dev: dev._config) (flatten (map attrValues (attrValues devices))));
               in
-              lib.genAttrs configKeys (key: lib.mkMerge (lib.catAttrs key collectedConfigs));
+              genAttrs configKeys (key: mkMerge (catAttrs key collectedConfigs));
           };
         };
       });
