@@ -190,8 +190,9 @@ main() {
     exit 1
   fi
 
-  mountPoint=$(mktemp -d)
-  chmod 755 "${mountPoint}" # bchachefs wants 755
+  mountPoint="/mnt/disko-install-root"
+  mkdir -p "${mountPoint}"
+  chmod 755 "${mountPoint}" # bcachefs wants 755
   escapeMountPoint=$(printf '%q' "$mountPoint")
   # shellcheck disable=SC2064
   trap "cleanupMountPoint ${escapeMountPoint}" EXIT
