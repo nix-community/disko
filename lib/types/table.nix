@@ -91,26 +91,26 @@
         inherit config options;
         default = ''
           if ! blkid "${config.device}" >/dev/null; then
-            parted -s ${config.device} -- mklabel ${config.format}
+            parted -s "${config.device}" -- mklabel ${config.format}
             ${lib.concatStrings (map (partition: ''
               ${lib.optionalString (config.format == "gpt") ''
-                parted -s ${config.device} -- mkpart ${partition.name} ${diskoLib.maybeStr partition.fs-type} ${partition.start} ${partition.end}
+                parted -s "${config.device}" -- mkpart "${diskoLib.hexEscapeUdevSymlink partition.name}" ${diskoLib.maybeStr partition.fs-type} ${partition.start} ${partition.end}
               ''}
               ${lib.optionalString (config.format == "msdos") ''
-                parted -s ${config.device} -- mkpart ${partition.part-type} ${diskoLib.maybeStr partition.fs-type} ${partition.start} ${partition.end}
+                parted -s "${config.device}" -- mkpart ${partition.part-type} ${diskoLib.maybeStr partition.fs-type} ${partition.start} ${partition.end}
               ''}
               # ensure /dev/disk/by-path/..-partN exists before continuing
-              partprobe ${config.device}
+              partprobe "${config.device}"
               udevadm trigger --subsystem-match=block
               udevadm settle
               ${lib.optionalString partition.bootable ''
-                parted -s ${config.device} -- set ${toString partition._index} boot on
+                parted -s "${config.device}" -- set ${toString partition._index} boot on
               ''}
               ${lib.concatMapStringsSep "" (flag: ''
-                parted -s ${config.device} -- set ${toString partition._index} ${flag} on
+                parted -s "${config.device}" -- set ${toString partition._index} ${flag} on
               '') partition.flags}
               # ensure further operations can detect new partitions
-              partprobe ${config.device}
+              partprobe "${config.device}"
               udevadm trigger --subsystem-match=block
               udevadm settle
             '') config.partitions)}

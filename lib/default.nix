@@ -82,6 +82,39 @@ let
           ${dev} seems not to be a supported disk format. Please add this to disko in https://github.com/nix-community/disko/blob/master/lib/default.nix
         '';
 
+    /* Escape a string as required to be used in udev symlinks
+
+      The allowed characters are "0-9A-Za-z#+-.:=@_/", valid UTF-8 character sequences, and "\x00" hex encoding.
+      Everything else is escaped as "\xXX" where XX is the hex value of the character.
+
+      The source of truth for the list of allowed characters is the udev documentation:
+      https://www.freedesktop.org/software/systemd/man/latest/udev.html#SYMLINK1
+
+      This function is implemented as a best effort. It is not guaranteed to be 100% in line
+      with the udev implementation, and we hope that you're not crazy enough to try to break it.
+
+      hexEscapeUdevSymlink :: str -> str
+
+      Example:
+      hexEscapeUdevSymlink "Boot data partition"
+      => "Boot\x20data\x20partition"
+
+      hexEscapeUdevSymlink "Even(crazier)par&titi^onName"
+      => "Even\x28crazier\x29par\x26titi\x5EonName"
+
+      hexEscapeUdevSymlink "all0these@char#acters+_are-allow.ed"
+      => "all0these@char#acters+_are-allow.ed"
+    */
+    hexEscapeUdevSymlink = with lib; let
+      allowedChars = "[0-9A-Za-z#+-.:=@_/]";
+      charToHex = c: toHexString (strings.charToInt c);
+    in
+    str: pipe str [
+      (splitString "")
+      (map (c: if match allowedChars c != null || c == "" then c else "\\x" + charToHex c))
+      concatStrings
+    ];
+
     /* get the index an item in a list
 
        indexOf :: (a -> bool) -> [a] -> int -> int
@@ -92,7 +125,7 @@ let
 
        indexOf (x: x == "x") [ 1 2 3 ] 0
        => 0
-    */
+      */
     indexOf = f: list: fallback:
       let
         iter = index: list:

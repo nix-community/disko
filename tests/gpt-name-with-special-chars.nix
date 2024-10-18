@@ -7,6 +7,7 @@ diskoLib.testLib.makeDiskoTest {
   disko-config = ../example/gpt-name-with-whitespace.nix;
   extraTestScript = ''
     machine.succeed("mountpoint /");
-    machine.succeed("mountpoint /name_with_spaces");
+    machine.succeed("mountpoint '/name with spaces'");
+    machine.succeed("mountpoint '/name^with\\some@special#chars'");
   '';
 }

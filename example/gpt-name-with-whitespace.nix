@@ -17,12 +17,19 @@
               };
             };
             "name with spaces" = {
-              type = "EF00";
               size = "100M";
               content = {
                 type = "filesystem";
                 format = "vfat";
-                mountpoint = "/name_with_spaces";
+                mountpoint = "/name with spaces";
+              };
+            };
+            "name^with\\some@special#chars" = {
+              size = "100M";
+              content = {
+                type = "filesystem";
+                format = "vfat";
+                mountpoint = "/name^with\\some@special#chars";
               };
             };
             root = {

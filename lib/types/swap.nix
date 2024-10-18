@@ -71,7 +71,7 @@
         if ! blkid "${config.device}" -o export | grep -q '^TYPE='; then
           mkswap \
             ${toString config.extraArgs} \
-            ${config.device}
+            "${config.device}"
         fi
       '';
     };
@@ -80,7 +80,7 @@
       # TODO: we don't support encrypted swap yet
       default = lib.optionalAttrs (!config.randomEncryption) {
         fs.${config.device} = ''
-          if ! swapon --show | grep -q "^$(readlink -f ${config.device}) "; then
+          if ! swapon --show | grep -q "^$(readlink -f "${config.device}") "; then
             swapon ${
               lib.optionalString (config.discardPolicy != null)
                 "--discard${lib.optionalString (config.discardPolicy != "both")
@@ -90,7 +90,7 @@
                 "--priority=${toString config.priority}"
               } \
               --options=${lib.concatStringsSep "," config.mountOptions} \
-              ${config.device}
+              "${config.device}"
           fi
         '';
       };
