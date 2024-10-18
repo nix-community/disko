@@ -25,14 +25,20 @@ in
   createScriptNoDeps = cfg: pkgs: builtins.trace "the create output is deprecated, use format instead" ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).formatScriptNoDeps;
 
   format = cfg: (eval cfg).config.disko.devices._create;
+  diskoFormat = cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).diskoFormat;
+  diskoFormatNoDeps = cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).diskoFormatNoDeps;
   formatScript = cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).formatScript;
   formatScriptNoDeps = cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).formatScriptNoDeps;
 
   mount = cfg: (eval cfg).config.disko.devices._mount;
+  diskoMount = cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).diskoMount;
+  diskoMountNoDeps = cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).diskoMountNoDeps;
   mountScript = cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).mountScript;
   mountScriptNoDeps = cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).mountScriptNoDeps;
 
   disko = cfg: (eval cfg).config.disko.devices._disko;
+  diskoDisko = cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).diskoDisko;
+  diskoDiskoNoDeps = cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).diskoDiskoNoDeps;
   diskoScript = cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).diskoScript;
   diskoScriptNoDeps = cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).diskoScriptNoDeps;
 
