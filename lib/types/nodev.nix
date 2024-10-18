@@ -42,7 +42,7 @@
       default = lib.optionalAttrs (config.mountpoint != null) {
         fs.${config.mountpoint} = ''
           if ! findmnt ${config.fsType} "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
-            mount -t ${config.fsType} ${config.device} "${rootMountPoint}${config.mountpoint}" \
+            mount -t ${config.fsType} "${config.device}" "${rootMountPoint}${config.mountpoint}" \
             ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
             -o X-mount.mkdir
           fi

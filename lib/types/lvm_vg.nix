@@ -84,23 +84,23 @@ in
         in
         ''
           ${lib.concatMapStringsSep "\n" (k: ''modprobe "${k}"'') kernelModules}
-          readarray -t lvm_devices < <(cat "$disko_devices_dir"/lvm_${config.name})
+          readarray -t lvm_devices < <(cat "$disko_devices_dir/lvm_${config.name}")
           if ! vgdisplay "${config.name}" >/dev/null; then
-            vgcreate ${config.name} \
+            vgcreate "${config.name}" \
               "''${lvm_devices[@]}"
           fi
           ${lib.concatMapStrings (lv: ''
-            if ! lvdisplay '${config.name}/${lv.name}'; then
+            if ! lvdisplay "${config.name}/${lv.name}"; then
               lvcreate \
                 --yes \
                 ${if (lv.lvm_type == "thinlv") then "-V"
                   else if lib.hasInfix "%" lv.size then "-l" else "-L"} \
                   ${lv.size} \
-                -n ${lv.name} \
+                -n "${lv.name}" \
                 ${lib.optionalString (lv.lvm_type == "thinlv") "--thinpool=${lv.pool}"} \
                 ${lib.optionalString (lv.lvm_type != null && lv.lvm_type != "thinlv") "--type=${lv.lvm_type}"} \
                 ${toString lv.extraArgs} \
-                ${config.name}
+                "${config.name}"
             fi
           '') sortedLvs}
 

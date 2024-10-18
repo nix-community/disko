@@ -79,7 +79,7 @@ in
                     };
                     cache = lib.mkOption {
                       type = lib.types.listOf lib.types.str;
-                      default = [];
+                      default = [ ];
                       description = ''
                         A dedicated zfs cache device (L2ARC). See
                         https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#Cache_Devices
@@ -146,14 +146,14 @@ in
           topology = lib.optionalAttrs hasTopology config.mode.topology;
         in
         ''
-          readarray -t zfs_devices < <(cat "$disko_devices_dir"/zfs_${config.name})
+          readarray -t zfs_devices < <(cat "$disko_devices_dir/zfs_${config.name}")
           if [ ''${#zfs_devices[@]} -eq 0 ]; then
             echo "no devices found for zpool ${config.name}. Did you misspell the pool name?" >&2
             exit 1
           fi
           # Try importing the pool without mounting anything if it exists.
           # This allows us to set mounpoints.
-          if zpool import -N -f '${config.name}' || zpool list '${config.name}'; then
+          if zpool import -N -f "${config.name}" || zpool list "${config.name}"; then
             echo "not creating zpool ${config.name} as a pool with that name already exists" >&2
           else
             continue=1
@@ -206,13 +206,13 @@ in
               fi
             fi
             if [ $continue -eq 1 ]; then
-              zpool create -f ${config.name} \
+              zpool create -f "${config.name}" \
                 -R ${rootMountPoint} \
                 ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") config.options)} \
                 ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-O ${n}=${v}") config.rootFsOptions)} \
                 ''${topology:+ $topology}
-              if [[ $(zfs get -H mounted ${config.name} | cut -f3) == "yes" ]]; then
-                zfs unmount ${config.name}
+              if [[ $(zfs get -H mounted "${config.name}" | cut -f3) == "yes" ]]; then
+                zfs unmount "${config.name}"
               fi
             fi
           fi
@@ -227,8 +227,8 @@ in
         in
         {
           dev = ''
-            zpool list '${config.name}' >/dev/null 2>/dev/null ||
-              zpool import -l -R ${rootMountPoint} '${config.name}'
+            zpool list "${config.name}" >/dev/null 2>/dev/null ||
+              zpool import -l -R ${rootMountPoint} "${config.name}"
             ${lib.concatMapStrings (x: x.dev or "") (lib.attrValues datasetMounts)}
           '';
           fs = datasetMounts.fs or { };

@@ -47,12 +47,12 @@
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = ''
-        if ! zfs get type ${config._parent.name}/${config.name} >/dev/null 2>&1; then
-          zfs create ${config._parent.name}/${config.name} \
+        if ! zfs get type "${config._parent.name}/${config.name}" >/dev/null 2>&1; then
+          zfs create "${config._parent.name}/${config.name}" \
             ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") config.options)} \
             -V ${config.size}
           zvol_wait
-          partprobe /dev/zvol/${config._parent.name}/${config.name}
+          partprobe "/dev/zvol/${config._parent.name}/${config.name}"
           udevadm trigger --subsystem-match=block
           udevadm settle
         fi
