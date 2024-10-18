@@ -444,6 +444,50 @@ let
                 ];
               in
               lib.mapAttrs throwIfNoDisksDetected {
+                destroy = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "/bin/disko-destroy" ''
+                  export PATH=${lib.makeBinPath destroyDependencies}:$PATH
+                  ${cfg.config._destroy}
+                '';
+                format = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "/bin/disko-format" ''
+                  export PATH=${lib.makeBinPath (cfg.config._packages pkgs)}:$PATH
+                  ${cfg.config._create}
+                '';
+                mount = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "/bin/disko-mount" ''
+                  export PATH=${lib.makeBinPath (cfg.config._packages pkgs)}:$PATH
+                  ${cfg.config._mount}
+                '';
+                formatMount = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "/bin/disko-format-mount" ''
+                  export PATH=${lib.makeBinPath ((cfg.config._packages pkgs) ++ [ pkgs.bash ])}:$PATH
+                  ${cfg.config._formatMount}
+                '';
+                destroyFormatMount = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "/bin/disko-destroy-format-mount" ''
+                  export PATH=${lib.makeBinPath ((cfg.config._packages pkgs) ++ [ pkgs.bash ] ++ destroyDependencies)}:$PATH
+                  ${cfg.config._disko}
+                '';
+
+                # These are useful to skip copying executables uploading a script to an in-memory installer
+                destroyNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "/bin/disko-destroy" ''
+                  ${cfg.config._destroy}
+                '';
+                formatNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "/bin/disko-format" ''
+                  ${cfg.config._create}
+                '';
+                mountNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "/bin/disko-mount" ''
+                  ${cfg.config._mount}
+                '';
+                formatMountNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "/bin/disko-format-mount" ''
+                  ${cfg.config._formatMount}
+                '';
+                destroyFormatMountNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "/bin/disko-destroy-format-mount" ''
+                  ${cfg.config._disko}
+                '';
+
+
+                # Legacy scripts, to be removed in version 2.0.0
+                # They are generally less useful, because the scripts are directly written to their $out path instead of
+                # into the $out/bin directory, which makes them incompatible with `nix run`
+                # (see https://github.com/nix-community/disko/pull/78), `lib.buildEnv` and thus `environment.systemPackages`,
+                # `user.users.<name>.packages` and `home.packages`, see https://github.com/nix-community/disko/issues/454
                 destroyScript = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-destroy" ''
                   export PATH=${lib.makeBinPath destroyDependencies}:$PATH
                   ${cfg.config._destroy}
@@ -545,6 +589,17 @@ let
             '';
             default = ''
               ${cfg.config._destroy}
+              ${cfg.config._create}
+              ${cfg.config._mount}
+            '';
+          };
+          _formatMount = lib.mkOption {
+            internal = true;
+            type = lib.types.str;
+            description = ''
+              The script to create and mount all devices defined by disko.devices, without wiping the disks first
+            '';
+            default = ''
               ${cfg.config._create}
               ${cfg.config._mount}
             '';
