@@ -21,8 +21,8 @@
             }
             {
               name = "name with spaces";
-              start = "1MiB";
-              end = "100MiB";
+              start = "100MiB";
+              end = "200MiB";
               bootable = true;
               content = {
                 type = "filesystem";
@@ -32,7 +32,7 @@
             }
             {
               name = "root";
-              start = "100MiB";
+              start = "200MiB";
               end = "100%";
               part-type = "primary";
               bootable = true;

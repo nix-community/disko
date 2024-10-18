@@ -135,7 +135,7 @@ in
       inherit config options;
       default = ''
         # create the filesystem only if the device seems empty
-        if ! (blkid '${config.device}' -o export | grep -q '^TYPE='); then
+        if ! (blkid "${config.device}" -o export | grep -q '^TYPE='); then
           mkfs.btrfs "${config.device}" ${toString config.extraArgs}
         fi
         ${lib.optionalString (config.swap != {} || config.subvolumes != {}) ''
@@ -151,7 +151,7 @@ in
             ${lib.concatMapStrings (subvol: ''
               (
                 MNTPOINT=$(mktemp -d)
-                mount ${config.device} "$MNTPOINT" -o subvol=/
+                mount "${config.device}" "$MNTPOINT" -o subvol=/
                 trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
                 SUBVOL_ABS_PATH="$MNTPOINT/${subvol.name}"
                 mkdir -p "$(dirname "$SUBVOL_ABS_PATH")"
@@ -177,8 +177,8 @@ in
                 (subvol.mountpoint != null)
                 {
                   ${subvol.mountpoint} = ''
-                    if ! findmnt ${config.device} "${rootMountPoint}${subvol.mountpoint}" > /dev/null 2>&1; then
-                      mount ${config.device} "${rootMountPoint}${subvol.mountpoint}" \
+                    if ! findmnt "${config.device}" "${rootMountPoint}${subvol.mountpoint}" > /dev/null 2>&1; then
+                      mount "${config.device}" "${rootMountPoint}${subvol.mountpoint}" \
                       ${lib.concatMapStringsSep " " (opt: "-o ${opt}") (subvol.mountOptions ++ [ "subvol=${subvol.name}" ])} \
                       -o X-mount.mkdir
                     fi
@@ -190,8 +190,8 @@ in
         {
           fs = subvolMounts // lib.optionalAttrs (config.mountpoint != null) {
             ${config.mountpoint} = ''
-              if ! findmnt ${config.device} "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
-                mount ${config.device} "${rootMountPoint}${config.mountpoint}" \
+              if ! findmnt "${config.device}" "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
+                mount "${config.device}" "${rootMountPoint}${config.mountpoint}" \
                 ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
                 -o X-mount.mkdir
               fi

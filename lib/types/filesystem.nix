@@ -44,10 +44,10 @@
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = ''
-        if ! (blkid '${config.device}' | grep -q 'TYPE='); then
+        if ! (blkid "${config.device}" | grep -q 'TYPE='); then
           mkfs.${config.format} \
             ${lib.escapeShellArgs config.extraArgs} \
-            ${config.device}
+            "${config.device}"
         fi
       '';
     };
@@ -55,8 +55,8 @@
       inherit config options;
       default = lib.optionalAttrs (config.mountpoint != null) {
         fs.${config.mountpoint} = ''
-          if ! findmnt ${config.device} "${rootMountPoint}${config.mountpoint}" >/dev/null 2>&1; then
-            mount ${config.device} "${rootMountPoint}${config.mountpoint}" \
+          if ! findmnt "${config.device}" "${rootMountPoint}${config.mountpoint}" >/dev/null 2>&1; then
+            mount "${config.device}" "${rootMountPoint}${config.mountpoint}" \
               -t "${config.format}" \
               ${lib.concatMapStringsSep " " (opt: "-o ${lib.escapeShellArg opt}") config.mountOptions} \
               -o X-mount.mkdir
