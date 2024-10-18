@@ -92,7 +92,7 @@ let
 
        indexOf (x: x == "x") [ 1 2 3 ] 0
        => 0
-    */
+      */
     indexOf = f: list: fallback:
       let
         iter = index: list:
@@ -403,42 +403,101 @@ let
                   gawk
                   coreutils-full
                 ];
+                # This function uses $<zero-width joiner>{ instead of $${ or $\{ to avoid shell interpolation because
+                # nix will print the $$ or \{ literally, making the output more confusing.
+                # The first empty line ensures the text is not indented.
+                warnDeprecated = oldAttr: newAttr: scriptName: lib.warn ''
+
+                  The output .${oldAttr} is deprecated in favor of .${newAttr} and will be removed in
+                  version 2.0.0! To fix this issue, you need to do the following:
+                    - If you're currently calling "$‍{system.build.${oldAttr}}" as a script,
+                      use "$‍{system.build.${newAttr}}/bin/${scriptName}" instead!
+                    - If you added "system.build.${oldAttr}" to your systemPackages, users.<name>.packages
+                      or home.packages, or used it with buildEnv or mkShell, this has never worked
+                      and using "system.build.${newAttr}" will fix it.
+                '';
               in
               lib.mapAttrs throwIfNoDisksDetected {
-                destroyScript = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-destroy" ''
+                diskoDestroy = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "/bin/disko-destroy" ''
                   export PATH=${lib.makeBinPath destroyDependencies}:$PATH
                   ${cfg.config._destroy}
                 '';
-
-                formatScript = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-format" ''
+                diskoFormat = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "/bin/disko-format" ''
                   export PATH=${lib.makeBinPath (cfg.config._packages pkgs)}:$PATH
                   ${cfg.config._create}
                 '';
-
-                mountScript = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-mount" ''
+                diskoMount = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "/bin/disko-mount" ''
                   export PATH=${lib.makeBinPath (cfg.config._packages pkgs)}:$PATH
                   ${cfg.config._mount}
                 '';
-
-                diskoScript = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko" ''
+                diskoDisko = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "/bin/disko-disko" ''
                   export PATH=${lib.makeBinPath ((cfg.config._packages pkgs) ++ [ pkgs.bash ] ++ destroyDependencies)}:$PATH
                   ${cfg.config._disko}
                 '';
 
                 # These are useful to skip copying executables uploading a script to an in-memory installer
-                destroyScriptNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko-destroy" ''
+                diskoDestroyNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "/bin/disko-destroy" ''
+                  ${cfg.config._destroy}
+                '';
+                diskoFormatNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "/bin/disko-format" ''
+                  ${cfg.config._create}
+                '';
+                diskoMountNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "/bin/disko-mount" ''
+                  ${cfg.config._mount}
+                '';
+                diskoDiskoNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "/bin/disko-disko" ''
+                  ${cfg.config._disko}
+                '';
+
+
+                # Legacy scripts, to be removed in version 2.0.0
+                # They are generally less useful, because the scripts are directly written to their $out path instead of
+                # into the $out/bin directory, which makes them incompatible with `nix run`
+                # (see https://github.com/nix-community/disko/pull/78), `lib.buildEnv` and thus `environment.systemPackages`,
+                # `user.users.<name>.packages` and `home.packages`, see https://github.com/nix-community/disko/issues/454
+                destroyScript = warnDeprecated "destroyScript" "diskoDestroy" "disko-destroy"
+                  (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-destroy" ''
+                  export PATH=${lib.makeBinPath destroyDependencies}:$PATH
                   ${cfg.config._destroy}
                 '';
 
-                formatScriptNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko-format" ''
+
+                formatScript = warnDeprecated "formatScript" "diskoFormat" "disko-format"
+                  (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-format" ''
+                  export PATH=${lib.makeBinPath (cfg.config._packages pkgs)}:$PATH
                   ${cfg.config._create}
                 '';
 
-                mountScriptNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko-mount" ''
+                mountScript = warnDeprecated "mountScript" "diskoMount" "disko-mount"
+                  (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-mount" ''
+                  export PATH=${lib.makeBinPath (cfg.config._packages pkgs)}:$PATH
                   ${cfg.config._mount}
                 '';
 
-                diskoScriptNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko" ''
+                diskoScript = warnDeprecated "diskoScript" "diskoDisko" "disko-disko"
+                  (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko" ''
+                  export PATH=${lib.makeBinPath ((cfg.config._packages pkgs) ++ [ pkgs.bash ] ++ destroyDependencies)}:$PATH
+                  ${cfg.config._disko}
+                '';
+
+                # These are useful to skip copying executables uploading a script to an in-memory installer
+                destroyScriptNoDeps = warnDeprecated "destroyScriptNoDeps" "diskoDestroyNoDeps" "disko-destroy"
+                  (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko-destroy" ''
+                  ${cfg.config._destroy}
+                '';
+
+                formatScriptNoDeps = warnDeprecated "formatScriptNoDeps" "diskoFormatNoDeps" "disko-format"
+                  (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko-format" ''
+                  ${cfg.config._create}
+                '';
+
+                mountScriptNoDeps = warnDeprecated "mountScriptNoDeps" "diskoMountNoDeps" "disko-mount"
+                  (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko-mount" ''
+                  ${cfg.config._mount}
+                '';
+
+                diskoScriptNoDeps = warnDeprecated "diskoScriptNoDeps" "diskoDiskoNoDeps" "disko-disko"
+                  (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko" ''
                   ${cfg.config._disko}
                 '';
               };

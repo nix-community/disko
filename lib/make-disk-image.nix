@@ -79,7 +79,7 @@ let
     ${lib.optionalString diskoCfg.testMode ''
       export IN_DISKO_TEST=1
     ''}
-    ${systemToInstall.config.system.build.diskoScript}
+    ${systemToInstall.config.system.build.diskoDisko}/bin/disko-disko
   '';
 
   installer = lib.optionalString cfg.copyNixStore ''
