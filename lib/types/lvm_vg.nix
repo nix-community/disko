@@ -84,7 +84,7 @@ in
         in
         ''
           ${lib.concatMapStringsSep "\n" (k: ''modprobe "${k}"'') kernelModules}
-          readarray -t lvm_devices < <(cat "$disko_devices_dir/lvm_${config.name}")
+          readarray -t lvm_devices < <(cat "$disko_devices_dir"/lvm_${lib.escapeShellArg config.name})
           if ! vgdisplay "${config.name}" >/dev/null; then
             vgcreate "${config.name}" \
               "''${lvm_devices[@]}"
