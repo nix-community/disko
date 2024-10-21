@@ -35,10 +35,10 @@
       inherit config options;
       default = ''
         if ! test -e "/dev/md/${config.name}"; then
-          readarray -t disk_devices < <(cat "$disko_devices_dir/raid_${config.name}")
+          readarray -t disk_devices < <(cat "$disko_devices_dir"/raid_${lib.escapeShellArg config.name})
           echo 'y' | mdadm --create "/dev/md/${config.name}" \
             --level=${toString config.level} \
-            --raid-devices="$(wc -l "$disko_devices_dir/raid_${config.name}" | cut -f 1 -d " ")" \
+            --raid-devices="$(wc -l "$disko_devices_dir"/raid_${lib.escapeShellArg config.name} | cut -f 1 -d " ")" \
             --metadata=${config.metadata} \
             --force \
             --homehost=any \
