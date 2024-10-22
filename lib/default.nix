@@ -456,7 +456,7 @@ let
                 '';
                 destroyFormatMount = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "/bin/disko-destroy-format-mount" ''
                   export PATH=${lib.makeBinPath ((cfg.config._packages pkgs) ++ [ pkgs.bash ] ++ destroyDependencies)}:$PATH
-                  ${cfg.config._disko}
+                  ${cfg.config._destroyFormatMount}
                 '';
 
                 # These are useful to skip copying executables uploading a script to an in-memory installer
@@ -473,7 +473,7 @@ let
                   ${cfg.config._formatMount}
                 '';
                 destroyFormatMountNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "/bin/disko-destroy-format-mount" ''
-                  ${cfg.config._disko}
+                  ${cfg.config._destroyFormatMount}
                 '';
 
 
@@ -484,7 +484,7 @@ let
                 # `user.users.<name>.packages` and `home.packages`, see https://github.com/nix-community/disko/issues/454
                 destroyScript = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-destroy" ''
                   export PATH=${lib.makeBinPath destroyDependencies}:$PATH
-                  ${cfg.config._destroy}
+                  ${cfg.config._legacyDestroy}
                 '';
 
                 formatScript = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-format" ''
@@ -504,7 +504,7 @@ let
 
                 # These are useful to skip copying executables uploading a script to an in-memory installer
                 destroyScriptNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko-destroy" ''
-                  ${cfg.config._destroy}
+                  ${cfg.config._legacyDestroy}
                 '';
 
                 formatScriptNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko-format" ''
@@ -520,11 +520,12 @@ let
                 '';
               };
           };
-          _destroy = lib.mkOption {
+          _legacyDestroy = lib.mkOption {
             internal = true;
             type = lib.types.str;
             description = ''
               The script to unmount (& destroy) all devices defined by disko.devices
+              Does not ask for confirmation! Depracated in favor of _destroy
             '';
             default = ''
               umount -Rv "${rootMountPoint}" || :
@@ -534,6 +535,44 @@ let
                 $BASH ${../disk-deactivate}/disk-deactivate "$dev"
               done
             '';
+          };
+          _destroy = lib.mkOption {
+            internal = true;
+            type = lib.types.str;
+            description = ''
+              The script to unmount (& destroy) all devices defined by disko.devices
+            '';
+            default =
+              let
+                selectedDisks = lib.escapeShellArgs (lib.catAttrs "device" (lib.attrValues devices.disk));
+              in
+              ''
+                if [ "$1" != "--yes-wipe-all-disks" ]; then
+                  echo "WARNING: This will destroy all data on the disks defined in disko.devices, which are:"
+                  echo
+                  # shellcheck disable=SC2043
+                  for dev in ${selectedDisks}; do
+                    echo "  - $dev"
+                  done
+                  echo
+                  echo "    (If you want to skip this dialogue, pass --yes-wipe-all-disks)"
+                  echo
+                  echo "Are you sure you want to wipe the devices listed above?"
+                  read -rp "Type 'yes' to continue, anything else to abort: " confirmation
+
+                  if [ "$confirmation" != "yes" ]; then
+                    echo "Aborted."
+                    exit 1
+                  fi
+                fi
+
+                umount -Rv "${rootMountPoint}" || :
+
+                # shellcheck disable=SC2043
+                for dev in ${selectedDisks}; do
+                  $BASH ${../disk-deactivate}/disk-deactivate "$dev"
+                done
+              '';
           };
           _create = lib.mkOption {
             internal = true;
@@ -580,6 +619,19 @@ let
             type = lib.types.str;
             description = ''
               The script to umount, create and mount all devices defined by disko.devices
+              Deprecated in favor of _destroyFormatMount
+            '';
+            default = ''
+              ${cfg.config._legacyDestroy}
+              ${cfg.config._create}
+              ${cfg.config._mount}
+            '';
+          };
+          _destroyFormatMount = lib.mkOption {
+            internal = true;
+            type = lib.types.str;
+            description = ''
+              The script to unmount, create and mount all devices defined by disko.devices
             '';
             default = ''
               ${cfg.config._destroy}
