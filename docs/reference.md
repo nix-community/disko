@@ -42,4 +42,6 @@ Options:
     requires all necessary dependencies to be available in the environment
 * --debug
   run with set -x
+* --yes-wipe-all-disks
+  skip the safety check for destroying partitions, useful for automation
 ```

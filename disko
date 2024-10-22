@@ -9,6 +9,7 @@ declare disko_config
 # mount was chosen as the default mode because it's less destructive
 mode=mount
 nix_args=()
+skip_destroy_safety_check=false
 
 # DISKO_VERSION is set by the wrapper in package.nix
 DISKO_VERSION="${DISKO_VERSION:="unknown! This is a bug, please report it!"}"
@@ -44,6 +45,8 @@ Options:
 * --no-deps
   avoid adding another dependency closure to an in-memory installer
     requires all necessary dependencies to be available in the environment
+* --yes-wipe-all-disks
+  skip the safety check for destroying partitions, useful for automation
 * --debug
   run with set -x
 * --help
@@ -94,6 +97,9 @@ while [[ $# -gt 0 ]]; do
       ;;
     --no-deps)
       nix_args+=(--arg noDeps true)
+      ;;
+    --yes-wipe-all-disks)
+      skip_destroy_safety_check=true
       ;;
     --show-trace)
       nix_args+=("$1")
@@ -169,8 +175,14 @@ script=$(nixBuild "${libexec_dir}"/cli.nix \
   --argstr mode "$mode" \
   "${nix_args[@]}"
 )
+
+command=("$(echo "$script"/bin/*)")
+if [[ $mode = "destroy,format,mount" && $skip_destroy_safety_check = true ]]; then
+  command+=("--yes-wipe-all-disks")
+fi
+
 if [[ -n "${dry_run+x}" ]]; then
-  echo "$script"
+  echo "${command[@]}"
 else
-  exec "$script"
+  exec "${command[@]}"
 fi

@@ -84,7 +84,7 @@ let
     ${lib.optionalString diskoCfg.testMode ''
       export IN_DISKO_TEST=1
     ''}
-    ${lib.getExe systemToInstall.config.system.build.destroyFormatMount}
+    ${lib.getExe systemToInstall.config.system.build.destroyFormatMount} --yes-wipe-all-disks
   '';
 
   installer = lib.optionalString cfg.copyNixStore ''

@@ -263,7 +263,7 @@ let
             machine.succeed("${lib.getExe tsp-format}")
             machine.succeed("${lib.getExe tsp-mount}")
             machine.succeed("${lib.getExe tsp-mount}") # verify that mount is idempotent
-            machine.succeed("${lib.getExe tsp-disko}") # verify that we can destroy and recreate
+            machine.succeed("${lib.getExe tsp-disko} --yes-wipe-all-disks") # verify that we can destroy and recreate
             machine.succeed("mkdir -p /mnt/home")
             machine.succeed("touch /mnt/home/testfile")
             machine.succeed("${lib.getExe tsp-format}") # verify that format is idempotent
@@ -274,7 +274,7 @@ let
             machine.succeed("${lib.getExe nodes.machine.system.build.format}")
             machine.succeed("${lib.getExe nodes.machine.system.build.mount}")
             machine.succeed("${lib.getExe nodes.machine.system.build.mount}") # verify that mount is idempotent
-            machine.succeed("${lib.getExe nodes.machine.system.build.destroyFormatMount}") # verify that we can destroy and recreate again
+            machine.succeed("${lib.getExe nodes.machine.system.build.destroyFormatMount} --yes-wipe-all-disks") # verify that we can destroy and recreate again
             machine.succeed("mkdir -p /mnt/home")
             machine.succeed("touch /mnt/home/testfile")
             machine.succeed("${lib.getExe nodes.machine.system.build.format}") # verify that format is idempotent
