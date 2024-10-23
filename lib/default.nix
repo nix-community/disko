@@ -105,15 +105,12 @@ let
       hexEscapeUdevSymlink "all0these@char#acters+_are-allow.ed"
       => "all0these@char#acters+_are-allow.ed"
     */
-    hexEscapeUdevSymlink = with lib; let
+    hexEscapeUdevSymlink = let
       allowedChars = "[0-9A-Za-z#+-.:=@_/]";
-      charToHex = c: toHexString (strings.charToInt c);
+      charToHex = c: lib.toHexString (lib.strings.charToInt c);
     in
-    str: pipe str [
-      (splitString "")
-      (map (c: if match allowedChars c != null || c == "" then c else "\\x" + charToHex c))
-      concatStrings
-    ];
+    lib.stringAsChars
+      (c: if lib.match allowedChars c != null || c == "" then c else "\\x" + charToHex c);
 
     /* get the index an item in a list
 
