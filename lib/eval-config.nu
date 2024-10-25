@@ -1,8 +1,10 @@
+use libexec-dir.nu
+
 alias nix = ^nix --extra-experimental-features nix-command --extra-experimental-features flakes
 alias nix-eval-expr = nix eval --impure --json --expr
 
 def eval-config [args: record]: nothing -> record {
-    let eval_config_nix = $env.FILE_PWD + "/lib/eval-config.nix"
+    let eval_config_nix = (libexec-dir) + "/lib/eval-config.nix"
 
     do { nix-eval-expr $"import ($eval_config_nix) \(builtins.fromJSON ''($args | to json -r)'')" }
     | complete

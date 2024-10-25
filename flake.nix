@@ -32,6 +32,8 @@
         in
         {
           disko = pkgs.callPackage ./package.nix { diskoVersion = version; };
+          disko2 = pkgs.callPackage ./package-disko2.nix { diskoVersion = version; };
+
           # alias to make `nix run` more convenient
           disko-install = self.packages.${system}.disko.overrideAttrs (_old: {
             name = "disko-install";
