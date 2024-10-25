@@ -1,5 +1,7 @@
 use libexec-dir.nu
 
+use std log
+
 alias nix = ^nix --extra-experimental-features nix-command --extra-experimental-features flakes
 alias nix-eval-expr = nix eval --impure --json --expr
 
@@ -11,10 +13,7 @@ def eval-config [args: record]: nothing -> record {
     | if $in.exit_code != 0 {
         {
             success: false
-            messages: [
-                $"Failed to evaluate disko config with args ($args)!"
-                $"Error from nix eval: ($in.stderr)"
-            ]
+            messages: [ { code: ERR_EVAL_CONFIG_FAILED, details: { args: $args, stderr: $in.stderr } } ]
         }
     } else {
         $in.stdout
@@ -32,9 +31,7 @@ export def eval-disko-file []: path -> record {
     if not ($config | path exists) {
         return {
             success: false
-            messages: [
-                $"File (ansi blue)($config)(ansi reset) does not exist."
-            ]
+            messages: [ { code: ERR_FILE_NOT_FOUND, details: { path: $config } } ]
         }
     }
 
@@ -56,10 +53,7 @@ export def eval-flake []: string -> record {
     } else {
         return {
             success: false
-            messages: [
-                $"Flake-uri ($flakeUri) does not contain an attribute."
-                "Please append an attribute like \"#foo\" to the flake-uri."
-            ]
+            messages: [ { code: ERR_FLAKE_URI_NO_ATTRIBUTE, details: { flakeUri: $flakeUri } } ]
         }
     }
 
