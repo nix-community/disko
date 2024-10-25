@@ -45,7 +45,7 @@
         type = "lvm_vg";
         lvs = {
           root = {
-            size = "100M";
+            size = "100%";
             content = {
               type = "filesystem";
               format = "ext4";

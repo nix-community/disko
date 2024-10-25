@@ -95,7 +95,7 @@ in
                 --yes \
                 ${if (lv.lvm_type == "thinlv") then "-V"
                   else if lib.hasInfix "%" lv.size then "-l" else "-L"} \
-                  ${lv.size} \
+                  ${if lib.hasSuffix "%" lv.size then "${lv.size}FREE" else lv.size} \
                 -n "${lv.name}" \
                 ${lib.optionalString (lv.lvm_type == "thinlv") "--thinpool=${lv.pool}"} \
                 ${lib.optionalString (lv.lvm_type != null && lv.lvm_type != "thinlv") "--type=${lv.lvm_type}"} \
