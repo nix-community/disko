@@ -38,7 +38,7 @@
           disko-install = self.packages.${system}.disko.overrideAttrs (_old: {
             name = "disko-install";
           });
-          default = self.packages.${system}.disko;
+          default = self.packages.${system}.disko2;
 
           create-release = pkgs.callPackage ./scripts/create-release.nix { };
         } // pkgs.lib.optionalAttrs (!pkgs.buildPlatform.isRiscV64) {
