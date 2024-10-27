@@ -244,4 +244,10 @@ main() {
   nixos-install --no-channel-copy --no-root-password --system "$nixos_system" --root "$mountPoint"
 }
 
-main "$@"
+if main "$@"; then
+  echo "disko-install succeeded"
+  exit 0
+else
+  echo "disko-install failed" >&2
+  exit 1
+fi
