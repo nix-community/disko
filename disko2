@@ -1,8 +1,8 @@
 #!/usr/bin/env nu
 
-use lib [eval-disko-file eval-flake exit-on-error print-info print-help]
+use lib [eval-disko-file eval-flake exit-on-error print-info print-help generate-config]
 
-def modes [] { ["destroy", "format", "mount", "format,mount", "destroy,format,mount"] }
+def modes [] { ["destroy", "format", "mount", "format,mount", "destroy,format,mount", "generate"] }
 
 def with-context [context: string] {
     $in | insert context $context
@@ -24,6 +24,18 @@ export def run [
         } 
     }
 
+
+    match $args.mode {
+        "generate" => (mode-generate $args)
+        _ => (mode-format $args)
+    }
+}
+
+export def mode-generate [args: record] {
+    generate-config | with-context "generate config"
+}
+
+export def mode-format [args: record] {
     if not ($args.flake? != null xor $args.disko_file? != null) {
         return {
             success: false,
@@ -49,7 +61,7 @@ export def run [
 }
 
 export def main [
-    mode: string@modes, # Mode to use. Allowed values are 'destroy', 'format', 'mount', 'format,mount', 'destroy,format,mount'
+    mode: string@modes, # Mode to use. Allowed values are 'destroy', 'format', 'mount', 'format,mount', 'destroy,format,mount', 'generate'
     disko_file?: path, # File to read the disko configuration from. Can be a .nix file or a .json file
     --flake (-f): string # Flake URI to search for the disko configuration
     ]: nothing -> nothing {
