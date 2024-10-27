@@ -74,7 +74,10 @@ def "lookup ERR_FLAKE_URI_NO_ATTRIBUTE" [ flakeUri ] {
     ]
 }
 
-def lookup-message []: record<code: string, details: record<any>> -> list<record<type: string, msg: string>> {
+def lookup-message []: [
+    record<code: string> -> list<record<type: string, msg: string>>
+    record<code: string, details: record<any>> -> list<record<type: string, msg: string>>
+] {
     let code = $in.code
     let details = $in.details? # Not all errors have details
     match $code {
@@ -138,7 +141,11 @@ def print-message []: record -> nothing {
     $in | lookup-message | each { render-message }
 }
 
-export def exit-on-error [context: string]: record -> any {
+export def exit-on-error [context: string]: [
+    record<success: bool, value: any> -> any
+    record<success: bool, messages: list<record<code: string>>> -> nothing
+    record<success: bool, messages: list<record<code: string, details: record<any>>>> -> nothing
+] {
     let result = $in
     if $result.success {
         log debug $"Success: ($context)"
