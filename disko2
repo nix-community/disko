@@ -4,29 +4,55 @@ use lib [eval-disko-file eval-flake exit-on-error print-info print-help]
 
 def modes [] { ["destroy", "format", "mount", "format,mount", "destroy,format,mount"] }
 
+def with-context [context: string] {
+    $in | insert context $context
+}
 
-def main [
+export def run [
+    args: record
+]: [
+    nothing -> record<success: bool, context: string, value: any>
+    nothing -> record<success: bool, context: string, messages: list<record<code: string>>>
+    nothing -> record<success: bool, context: string, messages: list<record<code: string, details: record<any>>>>
+] {
+
+    if not ($args.mode in (modes)) {
+        return {
+            success: false,
+            messages: [ { code: ERR_INVALID_MODE, details: { mode: $args.mode, valid_modes: (modes) } } ]
+            context: "validate mode"
+        } 
+    }
+
+    if not ($args.flake? != null xor $args.disko_file? != null) {
+        return {
+            success: false,
+            messages: [ { code: ERR_MISSING_ARGUMENTS } ],
+            context: "validate arguments"
+        }
+    }
+
+    let eval_result = if $args.disko_file? != null {
+        $args.disko_file | eval-disko-file | with-context "evaluate config"
+    } else {
+        $args.flake | eval-flake | with-context "evaluate flake"
+    }
+
+    # TODO: Continue implementation here
+    $eval_result
+}
+
+export def main [
     mode: string@modes, # Mode to use. Allowed values are 'destroy', 'format', 'mount', 'format,mount', 'destroy,format,mount'
     disko_file?: path, # File to read the disko configuration from. Can be a .nix file or a .json file
     --flake (-f): string # Flake URI to search for the disko configuration
     ]: nothing -> nothing {
 
-    if not ($mode in (modes)) {
-        {
-            success: false,
-            messages: [ { code: ERR_INVALID_MODE, details: { mode: $mode, valid_modes: (modes) } } ]
-        } | exit-on-error "validate mode"
+    run {
+        mode: $mode,
+        disko_file: $disko_file,
+        flake: $flake
     }
-
-    if not ($flake != null xor $disko_file != null) {
-        { success: false, messages: [ { code: ERR_MISSING_ARGUMENTS } ] } | exit-on-error "validate arguments"
-    }
-
-    let config = if $disko_file != null {
-        $disko_file | eval-disko-file | exit-on-error "evaluate config"
-    } else {
-        $flake | eval-flake | exit-on-error "evaluate flake"
-    }
-
-    $config | to json | print-info
+    | exit-on-error
+    | to json | print-info
 }

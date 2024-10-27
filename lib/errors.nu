@@ -11,7 +11,7 @@ def value [] { ansi green } # Values that are allowed
 def reset [] { ansi reset } # Shortcut to reset the color
 
 def "lookup ERR_INVALID_MODE" [mode: string, valid_modes: list] {
-    let valid_modes = modes
+    let modes_list = $valid_modes
         | each { |mode| $"(value)($mode)(reset)" }
         | str join ', '
 
@@ -22,7 +22,7 @@ def "lookup ERR_INVALID_MODE" [mode: string, valid_modes: list] {
         }
         { 
             type: help
-            msg: $"Valid modes are:\n($valid_modes)"
+            msg: $"Valid modes are:\n($modes_list)"
         }
     ]
 }
@@ -141,18 +141,18 @@ def print-message []: record -> nothing {
     $in | lookup-message | each { render-message }
 }
 
-export def exit-on-error [context: string]: [
-    record<success: bool, value: any> -> any
-    record<success: bool, messages: list<record<code: string>>> -> nothing
-    record<success: bool, messages: list<record<code: string, details: record<any>>>> -> nothing
+export def exit-on-error []: [
+    record<success: bool, context: string, value: any> -> any
+    record<success: bool, context: string, messages: list<record<code: string>>, context: string> -> nothing
+    record<success: bool, context: string, messages: list<record<code: string, details: record<any>>>> -> nothing
 ] {
     let result = $in
     if $result.success {
-        log debug $"Success: ($context)"
+        log debug $"Success: ($result.context)"
         log debug $"Return value: ($result.value)"
         return $result.value
     } else {
-        log debug $"Failure: ($context)"
+        log debug $"Failure: ($result.context)"
     }
 
     for message in $in.messages {

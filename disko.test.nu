@@ -1,10 +1,13 @@
 #!/usr/bin/env nu
 
-use disko.nu
+use lib [eval-disko-file eval-flake exit-on-error print-info print-help]
+use disko2
 
 use std assert
 
-assert equal ("example/simple-efi.nix" | path expand | disko eval-disko-file) {
+alias disko = disko2 run
+
+assert equal ("example/simple-efi.nix" | path expand | eval-disko-file) {
     success: true,
     value: {
         "disk": {
@@ -90,7 +93,7 @@ assert equal ("example/simple-efi.nix" | path expand | disko eval-disko-file) {
         }
     }
 
-assert equal ("example/with-lib.nix" | path expand | disko eval-disko-file) {
+assert equal ("example/with-lib.nix" | path expand | eval-disko-file) {
     success: true,
     value: {
         "disk": {
@@ -163,7 +166,7 @@ assert equal ("example/with-lib.nix" | path expand | disko eval-disko-file) {
     }
 }
 
-assert equal (".#testmachine" | disko eval-flake) {
+assert equal (".#testmachine" | eval-flake) {
     success: true,
     value: {
         "disk": {
@@ -262,12 +265,47 @@ assert equal (".#testmachine" | disko eval-flake) {
     }
 }
 
-assert equal ("." | disko eval-flake) {
+assert equal (disko { mode: "mount", flake: "."}) {
     success: false,
     messages: [
-        "Flake-uri . does not contain an attribute.",
-        "Please append an attribute like \"#foo\" to the flake-uri."
-    ]
+      {
+        code: ERR_FLAKE_URI_NO_ATTRIBUTE,
+        details: {
+          flakeUri: "."
+        }
+      }
+    ],
+    context: "evaluate flake"
+}
+
+assert equal (disko { mode: "qwert" }) {
+    success: false,
+    messages: [
+        {
+            code: ERR_INVALID_MODE,
+            details: {
+            mode: "qwert",
+            valid_modes: [
+                "destroy",
+                "format",
+                "mount",
+                "format,mount",
+                "destroy,format,mount"
+            ]
+            }
+        }
+    ],
+    context: "validate mode"
+}
+
+assert equal (disko { mode: "mount" }) {
+    success: false,
+    messages: [
+        {
+            code: ERR_MISSING_ARGUMENTS
+        }
+    ],
+    context: "validate arguments"
 }
 
 def main [] {
