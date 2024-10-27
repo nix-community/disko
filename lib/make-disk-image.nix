@@ -12,15 +12,19 @@ let
   checked = diskoCfg.checkScripts;
 
   configSupportsZfs = config.boot.supportedFilesystems.zfs or false;
-  vmTools = pkgs.vmTools.override {
-    rootModules = [ "9p" "9pnet_virtio" "virtio_pci" "virtio_blk" ]
-      ++ (lib.optional configSupportsZfs "zfs")
-      ++ cfg.extraRootModules;
-    customQemu = cfg.qemu;
-    kernel = pkgs.aggregateModules
-      (with cfg.kernelPackages; [ kernel ]
-        ++ lib.optional (lib.elem "zfs" cfg.extraRootModules || configSupportsZfs) zfs);
-  };
+  vmTools = pkgs.vmTools.override
+    {
+      rootModules = [ "9p" "9pnet_virtio" "virtio_pci" "virtio_blk" ]
+        ++ (lib.optional configSupportsZfs "zfs")
+        ++ cfg.extraRootModules;
+      kernel = pkgs.aggregateModules
+        (with cfg.kernelPackages; [ kernel ]
+          ++ lib.optional (lib.elem "zfs" cfg.extraRootModules || configSupportsZfs) zfs);
+    }
+  // lib.optionalAttrs (diskoLib.vmToolsSupportsCustomQemu pkgs)
+    {
+      customQemu = cfg.qemu;
+    };
   cleanedConfig = diskoLib.testLib.prepareDiskoConfig config diskoLib.testLib.devices;
   systemToInstall = extendModules {
     modules = [
