@@ -288,7 +288,7 @@ let
     */
     writeCheckedBash = { pkgs, checked ? false, noDeps ? false }: pkgs.writers.makeScriptWriter {
       interpreter = if noDeps then "/usr/bin/env bash" else "${pkgs.bash}/bin/bash";
-      check = lib.optionalString (checked && !pkgs.hostPlatform.isRiscV64 && !pkgs.hostPlatform.isx86_32) (pkgs.writeScript "check" ''
+      check = lib.optionalString (checked && !pkgs.stdenv.hostPlatform.isRiscV64 && !pkgs.stdenv.hostPlatform.isx86_32) (pkgs.writeScript "check" ''
         set -efu
         # SC2054: our toShellVars function doesn't quote list elements with commas
         # SC2034: We don't use all variables exported by hooks.
