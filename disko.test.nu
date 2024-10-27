@@ -308,6 +308,16 @@ assert equal (disko { mode: "mount" }) {
     context: "validate arguments"
 }
 
+assert equal (disko { mode: "mount", flake: "irrelevant", disko_file: "whatever" }) {
+    success: false,
+    messages: [
+        {
+            code: ERR_TOO_MANY_ARGUMENTS
+        }
+    ],
+    context: "validate arguments"
+}
+
 def main [] {
     echo "All tests passed"
 }

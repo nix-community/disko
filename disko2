@@ -27,7 +27,13 @@ export def run [
     if not ($args.flake? != null xor $args.disko_file? != null) {
         return {
             success: false,
-            messages: [ { code: ERR_MISSING_ARGUMENTS } ],
+            messages: [
+                { 
+                    code: (
+                        if ($args.flake? == null) { 'ERR_MISSING_ARGUMENTS' } else { 'ERR_TOO_MANY_ARGUMENTS' }
+                    )
+                }
+            ],
             context: "validate arguments"
         }
     }

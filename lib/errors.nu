@@ -27,16 +27,33 @@ def "lookup ERR_INVALID_MODE" [mode: string, valid_modes: list] {
     ]
 }
 
+def err-arguments-help [] {
+    ($"Provide either (placeholder)disko_file(reset) as the second argument or " +
+    $"(flag)--flake(reset)/(flag)-f(reset) (placeholder)flakeref(reset)")
+}
+
 def "lookup ERR_MISSING_ARGUMENTS" [] {
     [
         {
             type: error
-            msg: $"Missing arguments!"
+            msg: "Missing arguments!"
         }
         {
             type: help
-            msg: ($"Provide either (placeholder)disko_file(reset) as the second argument or " +
-                  $"(flag)--flake(reset)/(flag)-f(reset) (placeholder)flakeref(reset)")
+            msg: (err-arguments-help)
+        }
+    ]
+}
+
+def "lookup ERR_TOO_MANY_ARGUMENTS" [] {
+    [
+        {
+            type: error
+            msg: "Too many arguments!"
+        }
+        {
+            type: help
+            msg: (err-arguments-help)
         }
     ]
 }
@@ -83,6 +100,7 @@ def lookup-message []: [
     match $code {
         ERR_INVALID_MODE => (lookup ERR_INVALID_MODE $details.mode $details.valid_modes)
         ERR_MISSING_ARGUMENTS => (lookup ERR_MISSING_ARGUMENTS)
+        ERR_TOO_MANY_ARGUMENTS => (lookup ERR_TOO_MANY_ARGUMENTS)
         ERR_EVAL_CONFIG_FAILED => (lookup ERR_EVAL_CONFIG_FAILED $details.args $details.stderr)
         ERR_FILE_NOT_FOUND => (lookup ERR_FILE_NOT_FOUND $details.path)
         ERR_FLAKE_URI_NO_ATTRIBUTE => (lookup ERR_FLAKE_URI_NO_ATTRIBUTE $details.flakeUri)
