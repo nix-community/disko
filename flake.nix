@@ -39,7 +39,7 @@
           default = self.packages.${system}.disko;
 
           create-release = pkgs.callPackage ./scripts/create-release.nix { };
-        } // pkgs.lib.optionalAttrs (!pkgs.buildPlatform.isRiscV64) {
+        } // pkgs.lib.optionalAttrs (!pkgs.stdenv.buildPlatform.isRiscV64) {
           disko-doc = pkgs.callPackage ./doc.nix { };
         });
       # TODO: disable bios-related tests on aarch64...
@@ -48,7 +48,7 @@
         let
           pkgs = nixpkgs.legacyPackages.${system};
           # FIXME: aarch64-linux seems to hang on boot
-          nixosTests = lib.optionalAttrs pkgs.hostPlatform.isx86_64 (import ./tests {
+          nixosTests = lib.optionalAttrs pkgs.stdenv.hostPlatform.isx86_64 (import ./tests {
             inherit pkgs;
             makeTest = import (pkgs.path + "/nixos/tests/make-test-python.nix");
             eval-config = import (pkgs.path + "/nixos/lib/eval-config.nix");
@@ -66,8 +66,8 @@
           '';
         in
         # FIXME: aarch64-linux seems to hang on boot
-        lib.optionalAttrs pkgs.hostPlatform.isx86_64 (nixosTests // { inherit disko-install; }) //
-        pkgs.lib.optionalAttrs (!pkgs.buildPlatform.isRiscV64 && !pkgs.hostPlatform.isx86_32) {
+        lib.optionalAttrs pkgs.stdenv.hostPlatform.isx86_64 (nixosTests // { inherit disko-install; }) //
+        pkgs.lib.optionalAttrs (!pkgs.stdenv.buildPlatform.isRiscV64 && !pkgs.stdenv.hostPlatform.isx86_32) {
           inherit shellcheck;
           inherit (self.packages.${system}) disko-doc;
         });

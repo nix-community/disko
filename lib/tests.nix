@@ -50,7 +50,7 @@ let
       , bootCommands ? ""
       , extraInstallerConfig ? { }
       , extraSystemConfig ? { }
-      , efi ? !pkgs.hostPlatform.isRiscV64
+      , efi ? !pkgs.stdenv.hostPlatform.isRiscV64
       , postDisko ? ""
       , testMode ? "module" # can be one of direct module cli
       , testBoot ? true # if we actually want to test booting or just create/mount
