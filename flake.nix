@@ -72,6 +72,22 @@
           inherit (self.packages.${system}) disko-doc;
         });
 
+      devShells = forAllSystems (system:
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+        in
+        {
+          default = pkgs.mkShell {
+            name = "disko-dev";
+            packages = with pkgs; [
+              (python3.withPackages (ps: [
+                ps.black # Code formatter
+                ps.isort # Import sorter
+              ]))
+            ];
+          };
+        });
+
       nixosConfigurations.testmachine = lib.nixosSystem {
         system = "x86_64-linux";
         modules = [

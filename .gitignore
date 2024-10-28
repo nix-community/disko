@@ -1,4 +1,6 @@
 result
 
+.direnv
+
 # Created by the NixOS interactive test driver
 .nixos-test-history
