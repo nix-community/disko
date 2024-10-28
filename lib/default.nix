@@ -105,12 +105,13 @@ let
       hexEscapeUdevSymlink "all0these@char#acters+_are-allow.ed"
       => "all0these@char#acters+_are-allow.ed"
     */
-    hexEscapeUdevSymlink = let
-      allowedChars = "[0-9A-Za-z#+-.:=@_/]";
-      charToHex = c: lib.toHexString (lib.strings.charToInt c);
-    in
-    lib.stringAsChars
-      (c: if lib.match allowedChars c != null || c == "" then c else "\\x" + charToHex c);
+    hexEscapeUdevSymlink =
+      let
+        allowedChars = "[0-9A-Za-z#+-.:=@_/]";
+        charToHex = c: lib.toHexString (lib.strings.charToInt c);
+      in
+      lib.stringAsChars
+        (c: if lib.match allowedChars c != null || c == "" then c else "\\x" + charToHex c);
 
     /* get the index an item in a list
 
@@ -333,6 +334,14 @@ let
        packages :: lib.types.devices -> pkgs -> [ derivation ]
     */
     packages = toplevel: toplevel._packages;
+
+    /* Checks whether nixpkgs is recent enough for vmTools to support the customQemu argument.
+
+      Returns false, which is technically incorrect, for a few commits on 2024-07-08, but we can't be more accurate.
+
+      vmToolsSupportsCustomQemu :: pkgs -> bool
+    */
+    vmToolsSupportsCustomQemu = pkgs: lib.versionAtLeast pkgs.lib.version "24.11.20240709";
 
     optionTypes = rec {
       filename = lib.mkOptionType {

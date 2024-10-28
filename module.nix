@@ -194,6 +194,17 @@ in
   };
 
   config = {
+    assertions = [
+      {
+        assertion = config.disko.imageBuilder.qemu != null -> diskoLib.vmToolsSupportsCustomQemu pkgs;
+        message = ''
+          You have set config.disko.imageBuild.qemu, but vmTools in your nixpkgs version "${lib.version}"
+          does not support overriding the qemu package with the customQemu option yet.
+          Please upgrade nixpkgs so that `lib.version` is at least "24.11.20240709".
+        '';
+      }
+    ];
+
     _module.args.diskoLib = import ./lib {
       inherit lib;
       rootMountPoint = config.disko.rootMountPoint;
@@ -226,8 +237,11 @@ in
 
     # we need to specify the keys here, so we don't get an infinite recursion error
     # Remember to add config keys here if they are added to types
-    fileSystems = lib.mkIf cfg.enableConfig cfg.devices._config.fileSystems or { };
-    boot = lib.mkIf cfg.enableConfig cfg.devices._config.boot or { };
-    swapDevices = lib.mkIf cfg.enableConfig cfg.devices._config.swapDevices or [ ];
+    fileSystems = lib.mkIf
+      cfg.enableConfig cfg.devices._config.fileSystems or { };
+    boot = lib.mkIf
+      cfg.enableConfig cfg.devices._config.boot or { };
+    swapDevices = lib.mkIf
+      cfg.enableConfig cfg.devices._config.swapDevices or [ ];
   };
 }
