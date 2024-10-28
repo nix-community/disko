@@ -1,0 +1,93 @@
+#!/usr/bin/env python3
+
+import argparse
+from enum import Enum
+from pathlib import Path
+
+
+class Mode(Enum):
+    DESTROY = "destroy"
+    FORMAT = "format"
+    MOUNT = "mount"
+    DESTROY_FORMAT_MOUNT = "destroy,format,mount"
+    FORMAT_MOUNT = "format,mount"
+    GENERATE = "generate"
+
+
+# Modes to apply an existing configuration
+APPLY_MODES = [
+    Mode.DESTROY,
+    Mode.FORMAT,
+    Mode.MOUNT,
+    Mode.DESTROY_FORMAT_MOUNT,
+    Mode.FORMAT_MOUNT,
+]
+
+MODE_DESCRIPTION = {
+    Mode.DESTROY: "Destroy the partition tables on the specified disks",
+    Mode.FORMAT: "Change formatting and filesystems on the specified disks",
+    Mode.MOUNT: "Mount the specified disks",
+    Mode.DESTROY_FORMAT_MOUNT: "Run destroy, format and mount in sequence",
+    Mode.FORMAT_MOUNT: "Run format and mount in sequence",
+    Mode.GENERATE: "Generate a disko configuration file from the system's current state",
+}
+
+
+def run_apply(*, mode: str, disko_file=Path | None, flake=str):
+    print(f"{mode=} {disko_file=} {flake=}")
+
+
+def run_generate():
+    print("generate")
+
+
+def parse_args():
+    root_parser = argparse.ArgumentParser(
+        prog="disko2",
+        description="Automated disk partitioning and formatting tool for NixOS",
+    )
+
+    mode_parsers = root_parser.add_subparsers(dest="mode")
+
+    def create_apply_parser(mode: Mode) -> argparse.ArgumentParser:
+        parser = mode_parsers.add_parser(
+            mode.value,
+            help=MODE_DESCRIPTION[mode],
+        )
+        parser.add_argument(
+            "disko_file",
+            nargs="?",
+            default=None,
+            help="Path to the disko configuration file",
+        )
+        parser.add_argument(
+            "--flake",
+            "-f",
+            help="Flake to fetch the disko configuration from",
+        )
+        return parser
+
+    # Commands to apply an existing configuration
+    apply_parsers = [create_apply_parser(mode) for mode in APPLY_MODES]
+
+    # Other commands
+    generate_parser = mode_parsers.add_parser(
+        "generate",
+        help=MODE_DESCRIPTION[Mode.GENERATE],
+    )
+    return root_parser.parse_args()
+
+
+def main():
+    args = parse_args()
+    if args.mode == None:
+        print("No mode specified")
+        exit(1)
+    elif args.mode == "generate":
+        run_generate()
+    else:
+        run_apply(**vars(args))
+
+
+if __name__ == "__main__":
+    main()
