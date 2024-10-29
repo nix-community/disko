@@ -1,47 +1,71 @@
 #!/usr/bin/env python3
 
 import argparse
-from enum import Enum
 from pathlib import Path
+from typing import Literal
 
+from lib.logging import DiskoMessage, info
+from lib.result import DiskoError, DiskoSuccess, DiskoResult, exit_on_error
 
-class Mode(Enum):
-    DESTROY = "destroy"
-    FORMAT = "format"
-    MOUNT = "mount"
-    DESTROY_FORMAT_MOUNT = "destroy,format,mount"
-    FORMAT_MOUNT = "format,mount"
-    GENERATE = "generate"
+Mode = Literal[
+    "destroy", "format", "mount", "destroy,format,mount", "format,mount", "generate"
+]
 
 
 # Modes to apply an existing configuration
-APPLY_MODES = [
-    Mode.DESTROY,
-    Mode.FORMAT,
-    Mode.MOUNT,
-    Mode.DESTROY_FORMAT_MOUNT,
-    Mode.FORMAT_MOUNT,
+APPLY_MODES: list[Mode] = [
+    "destroy",
+    "format",
+    "mount",
+    "destroy,format,mount",
+    "format,mount",
 ]
+ALL_MODES: list[Mode] = APPLY_MODES + ["generate"]
 
-MODE_DESCRIPTION = {
-    Mode.DESTROY: "Destroy the partition tables on the specified disks",
-    Mode.FORMAT: "Change formatting and filesystems on the specified disks",
-    Mode.MOUNT: "Mount the specified disks",
-    Mode.DESTROY_FORMAT_MOUNT: "Run destroy, format and mount in sequence",
-    Mode.FORMAT_MOUNT: "Run format and mount in sequence",
-    Mode.GENERATE: "Generate a disko configuration file from the system's current state",
+MODE_DESCRIPTION: dict[Mode, str] = {
+    "destroy": "Destroy the partition tables on the specified disks",
+    "format": "Change formatting and filesystems on the specified disks",
+    "mount": "Mount the specified disks",
+    "destroy,format,mount": "Run destroy, format and mount in sequence",
+    "format,mount": "Run format and mount in sequence",
+    "generate": "Generate a disko configuration file from the system's current state",
 }
 
 
-def run_apply(*, mode: str, disko_file=Path | None, flake=str):
-    print(f"{mode=} {disko_file=} {flake=}")
+def run_apply(*, mode: str, disko_file: Path | None, flake: str | None) -> DiskoResult:
+    if flake is None and disko_file is None:
+        return DiskoError([DiskoMessage("ERR_MISSING_ARGUMENTS")], "validate args")
+    if flake is not None and disko_file is not None:
+        return DiskoError([DiskoMessage("ERR_TOO_MANY_ARGUMENTS")], "validate args")
+
+    return DiskoSuccess(
+        {
+            "mode": mode,
+            "disko_file": disko_file,
+            "flake": flake,
+        },
+        "apply configuration",
+    )
 
 
-def run_generate():
-    print("generate")
+def run_generate() -> DiskoResult:
+    return DiskoSuccess("generate", "generate config")
 
 
-def parse_args():
+def run(args: argparse.Namespace) -> DiskoResult:
+    if args.mode == None:
+        return DiskoError(
+            [DiskoMessage("ERR_MISSING_MODE", {"valid_modes": ALL_MODES})],
+            "select mode",
+        )
+
+    if args.mode == "generate":
+        return run_generate()
+
+    return run_apply(**vars(args))
+
+
+def parse_args() -> argparse.Namespace:
     root_parser = argparse.ArgumentParser(
         prog="disko2",
         description="Automated disk partitioning and formatting tool for NixOS",
@@ -51,7 +75,7 @@ def parse_args():
 
     def create_apply_parser(mode: Mode) -> argparse.ArgumentParser:
         parser = mode_parsers.add_parser(
-            mode.value,
+            mode,
             help=MODE_DESCRIPTION[mode],
         )
         parser.add_argument(
@@ -73,20 +97,16 @@ def parse_args():
     # Other commands
     generate_parser = mode_parsers.add_parser(
         "generate",
-        help=MODE_DESCRIPTION[Mode.GENERATE],
+        help=MODE_DESCRIPTION["generate"],
     )
     return root_parser.parse_args()
 
 
-def main():
+def main() -> None:
     args = parse_args()
-    if args.mode == None:
-        print("No mode specified")
-        exit(1)
-    elif args.mode == "generate":
-        run_generate()
-    else:
-        run_apply(**vars(args))
+    result = run(args)
+    output = exit_on_error(result)
+    info(str(output))
 
 
 if __name__ == "__main__":
