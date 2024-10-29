@@ -83,6 +83,7 @@
               (python3.withPackages (ps: [
                 ps.black # Code formatter
                 ps.isort # Import sorter
+                ps.mypy # Static type checker
               ]))
             ];
           };
