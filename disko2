@@ -2,7 +2,7 @@
 
 import argparse
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal, Union
 
 from lib.logging import LOGGER, DiskoMessage, debug, info
 from lib.result import DiskoError, DiskoSuccess, DiskoResult, exit_on_error
@@ -32,7 +32,9 @@ MODE_DESCRIPTION: dict[Mode, str] = {
 }
 
 
-def run_apply(*, mode: str, disko_file: Path | None, flake: str | None) -> DiskoResult:
+def run_apply(
+    *, mode: str, disko_file: Path | None, flake: str | None
+) -> DiskoResult[dict[str, Any]]:
     if flake is None and disko_file is None:
         return DiskoError([DiskoMessage("ERR_MISSING_ARGUMENTS")], "validate args")
     if flake is not None and disko_file is not None:
@@ -48,11 +50,13 @@ def run_apply(*, mode: str, disko_file: Path | None, flake: str | None) -> Disko
     )
 
 
-def run_generate() -> DiskoResult:
+def run_generate() -> DiskoResult[Literal["generate"]]:
     return DiskoSuccess("generate", "generate config")
 
 
-def run(args: argparse.Namespace) -> DiskoResult:
+def run(
+    args: argparse.Namespace,
+) -> DiskoResult[Literal["generate"] | dict[str, Any]]:
     if args.verbose == True:
         LOGGER.setLevel("DEBUG")
         debug("Enabled debug logging.")

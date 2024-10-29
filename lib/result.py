@@ -1,12 +1,14 @@
 from dataclasses import dataclass
-from typing import Literal, Union
+from typing import Generic, Literal, TypeVar
 
 from lib.logging import DiskoMessage, debug, print_msg
 
+T = TypeVar("T", covariant=True)
+
 
 @dataclass
-class DiskoSuccess:
-    value: object
+class DiskoSuccess(Generic[T]):
+    value: T
     context: None | str = None
     success: Literal[True] = True
 
@@ -18,10 +20,10 @@ class DiskoError:
     success: Literal[False] = False
 
 
-DiskoResult = Union[DiskoSuccess, DiskoError]
+DiskoResult = DiskoSuccess[T] | DiskoError
 
 
-def exit_on_error(result: DiskoResult) -> object:
+def exit_on_error(result: DiskoResult[T]) -> T:
     if isinstance(result, DiskoSuccess):
         if result.context is None:
             print_msg("BUG_SUCCESS_WITHOUT_CONTEXT", {"value": result.value})
