@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python Debugger: disko2",
+            "name": "disko2 mount disko_file",
             "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/disko2",
@@ -13,6 +13,18 @@
             "args": [
                 "mount",
                 "example/simple-efi.nix"
+            ]
+        },
+        {
+            "name": "disko2 mount flake",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/disko2",
+            "console": "integratedTerminal",
+            "args": [
+                "mount",
+                "--flake",
+                ".#testmachine"
             ]
         }
     ]

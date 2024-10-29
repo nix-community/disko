@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-from typing import Generic, Literal, TypeVar
+from typing import Any, Generic, Literal, TypeVar
 
-from lib.logging import DiskoMessage, debug, print_msg
+from lib.logging import DiskoMessage, debug, print_msg, MessageCode
 
 T = TypeVar("T", covariant=True)
 
@@ -18,6 +18,12 @@ class DiskoError:
     messages: list[DiskoMessage]
     context: str
     success: Literal[False] = False
+
+    @classmethod
+    def single_message(
+        cls, code: MessageCode, details: dict[str, Any], context: str
+    ) -> "DiskoError":
+        return cls([DiskoMessage(code, details)], context)
 
 
 DiskoResult = DiskoSuccess[T] | DiskoError

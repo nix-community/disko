@@ -17,6 +17,7 @@ let
   };
 in
 {
+  inherit eval;
   lib = lib.warn "the .lib.lib output is deprecated" diskoLib;
 
   # legacy alias

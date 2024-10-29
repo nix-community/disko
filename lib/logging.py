@@ -1,8 +1,7 @@
 # Logging functionality and global logging configuration
 from dataclasses import dataclass, field
-from enum import Enum
 import logging
-import textwrap
+import re
 from typing import Any, Literal, assert_never
 
 from lib.ansi import Colors
@@ -32,6 +31,10 @@ class ReadableMessage:
 # Note: Sort them alphabetically when adding new ones!
 MessageCode = Literal[
     "BUG_SUCCESS_WITHOUT_CONTEXT",
+    "ERR_COMMAND_FAILED",
+    "ERR_EVAL_CONFIG_FAILED",
+    "ERR_FILE_NOT_FOUND",
+    "ERR_FLAKE_URI_NO_ATTR",
     "ERR_MISSING_ARGUMENTS",
     "ERR_MISSING_MODE",
     "ERR_TOO_MANY_ARGUMENTS",
@@ -76,6 +79,44 @@ def to_readable(message: DiskoMessage) -> list[ReadableMessage]:
                 ),
                 bug_help_message(message.code),
             ]
+        case "ERR_COMMAND_FAILED":
+            return [
+                ReadableMessage(
+                    "error",
+                    f"""
+                        Command failed: {COMMAND}{message.details['command']}{COMMAND}
+                        Exit code: {INVALID}{message.details['exit_code']}{RESET}
+                        stderr: {message.details['stderr']}
+                    """,
+                )
+            ]
+        case "ERR_EVAL_CONFIG_FAILED":
+            return [
+                ReadableMessage(
+                    "error",
+                    f"""
+                        Failed to evaluate disko config with args {INVALID}{message.details['args']}{RESET}!
+                        Stderr from {COMMAND}nix eval{RESET}:\n{message.details['stderr']}
+                    """,
+                )
+            ]
+        case "ERR_FILE_NOT_FOUND":
+            return [
+                ReadableMessage(
+                    "error", f"File not found: {FILE}{message.details['path']}{RESET}"
+                )
+            ]
+        case "ERR_FLAKE_URI_NO_ATTR":
+            return [
+                ReadableMessage(
+                    "error",
+                    f"Flake URI {INVALID}{message.details['flake_uri']}{RESET} has no attribute.",
+                ),
+                ReadableMessage(
+                    "help",
+                    f"Append an attribute like {VALUE}#{PLACEHOLDER}foo{RESET} to the flake URI.",
+                ),
+            ]
         case "ERR_MISSING_ARGUMENTS":
             return [
                 ReadableMessage(
@@ -104,6 +145,36 @@ def to_readable(message: DiskoMessage) -> list[ReadableMessage]:
         # We could also remove these two lines, but assert_never emits a better error message
         case _ as c:
             assert_never(c)
+
+
+# Dedent lines based on the indent of the first line until a non-indented line is hit.
+# This will dedent the lines written in multiline f-strigns without breaking
+# indentation for verbatim output that is inserted at the end
+def dedent_start_lines(lines: list[str]) -> list[str]:
+    spaces_prefix_match = re.match(r"^( *)", lines[0])
+    # Regex will even match an empty string, match can't be none
+    assert spaces_prefix_match is not None
+    dedent_width = len(spaces_prefix_match.group(1))
+
+    if dedent_width == 0:
+        return lines
+
+    match_indent_regex = re.compile(f"^ {{1,{dedent_width}}}")
+
+    dedented_lines = []
+    stop_dedenting = False
+    for line in lines:
+        if not line.startswith(" "):
+            stop_dedenting = True
+
+        if stop_dedenting:
+            dedented_lines.append(line)
+            continue
+
+        dedented_line = re.sub(match_indent_regex, "", line)
+        dedented_lines.append(dedented_line)
+
+    return dedented_lines
 
 
 def render_message(message: ReadableMessage) -> None:
@@ -143,7 +214,7 @@ def render_message(message: ReadableMessage) -> None:
         "debug": LOGGER.debug,
     }[message.type]
 
-    msg_lines = textwrap.dedent(message.msg).splitlines()
+    msg_lines = message.msg.strip("\n").splitlines()
 
     # "WARNING:" is 8 characters long, center in 10 for space on each side
     title = f"{bg_color}{title_raw + ":":^10}{RESET}"
@@ -151,6 +222,8 @@ def render_message(message: ReadableMessage) -> None:
     if len(msg_lines) == 1:
         log_msg(f"  {title} {msg_lines[0]}")
         return
+
+    msg_lines = dedent_start_lines(msg_lines)
 
     log_msg(f"{decor_color}╭─{title} {msg_lines[0]}")
 

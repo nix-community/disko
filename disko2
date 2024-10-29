@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
 import argparse
+import json
 from pathlib import Path
-from typing import Any, Literal, Union
+from typing import Any, Literal
 
-from lib.logging import LOGGER, DiskoMessage, debug, info
+from lib.eval_config import eval_disko_file, eval_flake
+from lib.logging import LOGGER, debug, info
 from lib.result import DiskoError, DiskoSuccess, DiskoResult, exit_on_error
 
 Mode = Literal[
@@ -33,21 +35,17 @@ MODE_DESCRIPTION: dict[Mode, str] = {
 
 
 def run_apply(
-    *, mode: str, disko_file: Path | None, flake: str | None
+    *, mode: str, disko_file: str | None, flake: str | None, **_kwargs: dict[str, Any]
 ) -> DiskoResult[dict[str, Any]]:
-    if flake is None and disko_file is None:
-        return DiskoError([DiskoMessage("ERR_MISSING_ARGUMENTS")], "validate args")
-    if flake is not None and disko_file is not None:
-        return DiskoError([DiskoMessage("ERR_TOO_MANY_ARGUMENTS")], "validate args")
+    # match would be nicer, but mypy doesn't understand type narrowing in tuples
+    if not disko_file and not flake:
+        return DiskoError.single_message("ERR_MISSING_ARGUMENTS", {}, "validate args")
+    if not disko_file and flake:
+        return eval_flake(flake)
+    if disko_file and not flake:
+        return eval_disko_file(Path(disko_file))
 
-    return DiskoSuccess(
-        {
-            "mode": mode,
-            "disko_file": disko_file,
-            "flake": flake,
-        },
-        "apply configuration",
-    )
+    return DiskoError.single_message("ERR_TOO_MANY_ARGUMENTS", {}, "validate args")
 
 
 def run_generate() -> DiskoResult[Literal["generate"]]:
@@ -57,14 +55,13 @@ def run_generate() -> DiskoResult[Literal["generate"]]:
 def run(
     args: argparse.Namespace,
 ) -> DiskoResult[Literal["generate"] | dict[str, Any]]:
-    if args.verbose == True:
+    if args.verbose:
         LOGGER.setLevel("DEBUG")
         debug("Enabled debug logging.")
 
-    if args.mode == None:
-        return DiskoError(
-            [DiskoMessage("ERR_MISSING_MODE", {"valid_modes": ALL_MODES})],
-            "select mode",
+    if not args.mode:
+        return DiskoError.single_message(
+            "ERR_MISSING_MODE", {"valid_modes": ALL_MODES}, "select mode"
         )
 
     if args.mode == "generate":
@@ -122,7 +119,7 @@ def main() -> None:
     args = parse_args()
     result = run(args)
     output = exit_on_error(result)
-    info(str(output))
+    info("Output:\n" + json.dumps(output, indent=2))
 
 
 if __name__ == "__main__":
