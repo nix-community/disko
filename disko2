@@ -4,7 +4,7 @@ import argparse
 from pathlib import Path
 from typing import Literal
 
-from lib.logging import DiskoMessage, info
+from lib.logging import LOGGER, DiskoMessage, debug, info
 from lib.result import DiskoError, DiskoSuccess, DiskoResult, exit_on_error
 
 Mode = Literal[
@@ -53,6 +53,10 @@ def run_generate() -> DiskoResult:
 
 
 def run(args: argparse.Namespace) -> DiskoResult:
+    if args.verbose == True:
+        LOGGER.setLevel("DEBUG")
+        debug("Enabled debug logging.")
+
     if args.mode == None:
         return DiskoError(
             [DiskoMessage("ERR_MISSING_MODE", {"valid_modes": ALL_MODES})],
@@ -69,6 +73,14 @@ def parse_args() -> argparse.Namespace:
     root_parser = argparse.ArgumentParser(
         prog="disko2",
         description="Automated disk partitioning and formatting tool for NixOS",
+    )
+
+    root_parser.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        default=False,
+        help="Print more detailed output, helpful for debugging",
     )
 
     mode_parsers = root_parser.add_subparsers(dest="mode")
