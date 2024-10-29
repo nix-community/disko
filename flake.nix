@@ -84,6 +84,7 @@
                 ps.black # Code formatter
                 ps.isort # Import sorter
                 ps.mypy # Static type checker
+                ps.autoflake # Remove unused imports automatically
               ]))
             ];
           };

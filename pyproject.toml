@@ -1,2 +1,6 @@
 [tool.mypy]
 strict = true
+
+[tool.autoflake]
+remove_all_unused_imports = true
+in_place = true
