@@ -9,7 +9,7 @@ let
     ];
     installPhase = ''
       mkdir -p $out/bin $out/share/disko
-      cp -r install-cli.nix cli.nix default.nix disk-deactivate lib $out/share/disko
+      cp -r default.nix src $out/share/disko
 
       for i in disko disko-install; do
         sed -e "s|libexec_dir=\".*\"|libexec_dir=\"$out/share/disko\"|" "$i" > "$out/bin/$i"

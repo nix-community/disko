@@ -1,5 +1,5 @@
 { pkgs ? import <nixpkgs> { }
-, diskoLib ? pkgs.callPackage ../lib { }
+, diskoLib ? pkgs.callPackage ../src/disko_lib { }
 }:
 diskoLib.testLib.makeDiskoTest {
   inherit pkgs;

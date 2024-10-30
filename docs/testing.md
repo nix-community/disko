@@ -7,7 +7,7 @@ the example is working in [the tests directory](../tests/). They utilize the
 
 We use a wrapper around this called `makeDiskoTest`. There is currently (as of
 2024-10-16) no documentation for all its arguments, but you can have a look at
-[its current code](https://github.com/nix-community/disko/blob/master/lib/tests.nix#L44C5-L58C10),
+[its current code](https://github.com/nix-community/disko/blob/master/src/disko_lib/tests.nix#L44C5-L58C10),
 that should already be helpful.
 
 However, you don't need to know about all of the inner workings to interact with

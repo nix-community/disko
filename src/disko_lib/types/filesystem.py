@@ -1,6 +1,6 @@
 from typing import Any
-from lib.types.device import BlockDevice
-from lib.result import DiskoResult, DiskoSuccess
+from .device import BlockDevice
+from ..result import DiskoResult, DiskoSuccess
 
 
 def generate_config(device: BlockDevice) -> DiskoResult[dict[str, Any]]:

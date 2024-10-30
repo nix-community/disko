@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Any, Generic, Literal, TypeVar
 
-from lib.logging import DiskoMessage, debug, print_msg, MessageCode
+from .logging import DiskoMessage, debug, print_msg, MessageCode
 
 T = TypeVar("T", covariant=True)
 

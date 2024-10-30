@@ -79,7 +79,7 @@ let
         # so /dev/vdb becomes /dev/vda etc.
         testConfigBooted = testLib.prepareDiskoConfig diskoConfigWithArgs testLib.devices;
 
-        tsp-generator = pkgs.callPackage ../. { checked = true; };
+        tsp-generator = pkgs.callPackage ../../. { checked = true; };
         tsp-format = (tsp-generator.formatScript testConfigInstall) pkgs;
         tsp-mount = (tsp-generator.mountScript testConfigInstall) pkgs;
         tsp-disko = (tsp-generator.diskoScript testConfigInstall) pkgs;
@@ -92,7 +92,7 @@ let
             (lib.optionalAttrs (testMode == "module") {
               disko.enableConfig = true;
               imports = [
-                ../module.nix
+                ../../module.nix
                 testConfigBooted
               ];
             })
@@ -168,7 +168,7 @@ let
           imports = [
             (lib.optionalAttrs (testMode == "module") {
               imports = [
-                ../module.nix
+                ../../module.nix
               ];
               disko = {
                 enableConfig = false;

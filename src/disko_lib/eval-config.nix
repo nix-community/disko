@@ -36,7 +36,7 @@ let
 
   evaluatedConfig =
     if hasDiskoFile || hasFlakeDiskoConfig then
-      disko.eval diskFormat
+      disko.eval-disko diskFormat
     else if (lib.traceValSeq hasFlakeDiskoModule) then
       flake'.nixosConfigurations.${flakeAttr}
     else

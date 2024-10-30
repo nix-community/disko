@@ -1,3 +1,20 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "disko2"
+version = "2.0.0-preview"
+
+[project.scripts]
+disko2 = "disko:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.package-data]
+"*" = ["*.nix"]
+
 [tool.mypy]
 strict = true
 

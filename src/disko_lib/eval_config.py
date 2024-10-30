@@ -3,8 +3,8 @@ from pathlib import Path
 import re
 from typing import Any
 
-from lib.run_cmd import run
-from lib.result import DiskoError, DiskoResult, DiskoSuccess
+from .run_cmd import run
+from .result import DiskoError, DiskoResult, DiskoSuccess
 
 NIX_BASE_CMD = [
     "nix",

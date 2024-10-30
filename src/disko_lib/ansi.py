@@ -4,9 +4,6 @@
 # See https://gist.github.com/rene-d/9e584a7dd2935d0f461904b9f2950007
 
 
-from typing import Any
-
-
 class Colors:
     """
     ANSI escape sequences
@@ -180,7 +177,6 @@ class Colors:
 
 def disko_dev_ansi() -> str:
     import inspect
-    from lib.result import DiskoSuccess  # Import here to avoid circular dependency
 
     for name, value in inspect.getmembers(Colors):
         if value != "_" and not name.startswith("_") and name != "RESET":

@@ -4,7 +4,6 @@
 , eval-config ? import <nixpkgs/nixos/lib/eval-config.nix>
 }:
 let
-  outputs = import ../default.nix { inherit lib diskoLib; };
   diskoLib = {
     testLib = import ./tests.nix { inherit lib makeTest eval-config; };
     # like lib.types.oneOf but instead of a list takes an attrset
@@ -79,7 +78,7 @@ let
       then "${dev}p${toString index}" # /dev/mapper/vg-lv1 style
       else
         abort ''
-          ${dev} seems not to be a supported disk format. Please add this to disko in https://github.com/nix-community/disko/blob/master/lib/default.nix
+          ${dev} seems not to be a supported disk format. Please add this to disko in https://github.com/nix-community/disko/blob/master/src/disko_lib/default.nix
         '';
 
     /* Escape a string as required to be used in udev symlinks
@@ -213,11 +212,11 @@ let
         isAttrsOfSubmodule = o: o.type.name == "attrsOf" && o.type.nestedTypes.elemType.name == "submodule";
         isSerializable = n: o: !(
           lib.hasPrefix "_" n
-            || lib.hasSuffix "Hook" n
-            || isAttrsOfSubmodule o
-            # TODO don't hardcode diskoLib.subType options.
-            || n == "content" || n == "partitions" || n == "datasets" || n == "swap"
-            || n == "mode"
+          || lib.hasSuffix "Hook" n
+          || isAttrsOfSubmodule o
+          # TODO don't hardcode diskoLib.subType options.
+          || n == "content" || n == "partitions" || n == "datasets" || n == "swap"
+          || n == "mode"
         );
       in
       lib.toShellVars
@@ -294,6 +293,23 @@ let
         # SC2034: We don't use all variables exported by hooks.
         ${pkgs.shellcheck}/bin/shellcheck -e SC2034,SC2054 "$1"
       '');
+    };
+
+
+    /* Evaluate a disko configuration
+
+        eval :: lib.types.devices -> AttrSet
+    */
+    eval-disko = cfg: lib.evalModules {
+      modules = lib.singleton {
+        # _file = toString input;
+        imports = lib.singleton { disko.devices = cfg.disko.devices; };
+        options = {
+          disko.devices = lib.mkOption {
+            type = diskoLib.toplevel;
+          };
+        };
+      };
     };
 
 
@@ -638,6 +654,44 @@ let
         (lib.attrNames (builtins.readDir ./types))
     );
 
-  } // outputs;
+
+  };
+  outputs =
+    { lib ? import <nixpkgs/lib>
+    , rootMountPoint ? "/mnt"
+    , checked ? false
+    , diskoLib ? import ./. { inherit lib rootMountPoint; }
+    }:
+    let
+      eval = diskoLib.eval-disko;
+    in
+    {
+      # legacy alias
+      create = cfg: builtins.trace "the create output is deprecated, use format instead" (eval cfg).config.disko.devices._create;
+      createScript = cfg: pkgs: builtins.trace "the create output is deprecated, use format instead" ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).formatScript;
+      createScriptNoDeps = cfg: pkgs: builtins.trace "the create output is deprecated, use format instead" ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).formatScriptNoDeps;
+
+      format = cfg: (eval cfg).config.disko.devices._create;
+      formatScript = cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).formatScript;
+      formatScriptNoDeps = cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).formatScriptNoDeps;
+
+      mount = cfg: (eval cfg).config.disko.devices._mount;
+      mountScript = cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).mountScript;
+      mountScriptNoDeps = cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).mountScriptNoDeps;
+
+      disko = cfg: (eval cfg).config.disko.devices._disko;
+      diskoScript = cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).diskoScript;
+      diskoScriptNoDeps = cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).diskoScriptNoDeps;
+
+      # we keep this old output for backwards compatibility
+      diskoNoDeps = cfg: pkgs: builtins.trace "the diskoNoDeps output is deprecated, please use disko instead" ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).diskoScriptNoDeps;
+
+      config = cfg: (eval cfg).config.disko.devices._config;
+      packages = cfg: (eval cfg).config.disko.devices._packages;
+    };
 in
 diskoLib
+// (outputs {
+  inherit lib rootMountPoint;
+}) # Compatibility alias
+  // { inherit outputs; }

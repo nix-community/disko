@@ -153,7 +153,7 @@ else
 fi
 
 # The "--impure" is still pure, as the path is within the nix store.
-script=$(nixBuild "${libexec_dir}"/cli.nix \
+script=$(nixBuild "${libexec_dir}"/src/cli.nix \
   --no-out-link \
   --impure \
   --argstr mode "$mode" \

@@ -1,8 +1,8 @@
 from typing import Any
-from lib.logging import debug
-from lib.types import filesystem
-from lib.types.device import BlockDevice
-from lib.result import DiskoError, DiskoResult, DiskoSuccess
+from ..logging import debug
+from . import filesystem
+from .device import BlockDevice
+from ..result import DiskoError, DiskoResult, DiskoSuccess
 
 
 def _add_type_if_required(

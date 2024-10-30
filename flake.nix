@@ -23,7 +23,7 @@
     {
       nixosModules.default = self.nixosModules.disko; # convention
       nixosModules.disko.imports = [ ./module.nix ];
-      lib = import ./lib {
+      lib = import ./src/disko_lib {
         inherit (nixpkgs) lib;
       };
       packages = forAllSystems (system:
@@ -32,6 +32,7 @@
         in
         {
           disko = pkgs.callPackage ./package.nix { diskoVersion = version; };
+          disko2 = pkgs.callPackage ./package-disko2.nix { diskoVersion = version; };
           # alias to make `nix run` more convenient
           disko-install = self.packages.${system}.disko.overrideAttrs (_old: {
             name = "disko-install";
@@ -61,7 +62,7 @@
 
           shellcheck = pkgs.runCommand "shellcheck" { nativeBuildInputs = [ pkgs.shellcheck ]; } ''
             cd ${./.}
-            shellcheck disk-deactivate/disk-deactivate disko
+            shellcheck src/disk-deactivate/disk-deactivate disko disko2
             touch $out
           '';
         in

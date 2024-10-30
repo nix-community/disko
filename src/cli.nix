@@ -9,7 +9,7 @@
 , ...
 }@args:
 let
-  disko = import ./. {
+  disko = import ../. {
     inherit rootMountPoint;
     inherit lib;
   };

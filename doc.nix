@@ -1,7 +1,7 @@
 { lib, nixosOptionsDoc, runCommand, fetchurl, pandoc }:
 
 let
-  diskoLib = import ./lib {
+  diskoLib = import ./src/disko_lib {
     inherit lib;
     rootMountPoint = "/mnt";
   };

@@ -5,7 +5,7 @@ import logging
 import re
 from typing import Any, Literal, assert_never
 
-from lib.ansi import Colors
+from .ansi import Colors
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 LOGGER = logging.getLogger("disko_logger")

@@ -1,9 +1,9 @@
 from typing import Any
 
-from lib.logging import DiskoMessage, debug
-from lib.result import DiskoError, DiskoResult, DiskoSuccess
-from lib.types.device import BlockDevice, list_block_devices
-import lib.types.gpt as gpt
+from ..logging import DiskoMessage, debug
+from ..result import DiskoError, DiskoResult, DiskoSuccess
+from ..types.device import BlockDevice, list_block_devices
+from . import gpt
 
 
 def _generate_content(device: BlockDevice) -> DiskoResult[dict[str, Any]]:

@@ -4,13 +4,13 @@ let
 
   vmVariantWithDisko = extendModules {
     modules = [
-      ./lib/interactive-vm.nix
+      ./src/disko_lib/interactive-vm.nix
       config.disko.tests.extraConfig
     ];
   };
 in
 {
-  imports = [ ./lib/make-disk-image.nix ];
+  imports = [ ./src/disko_lib/make-disk-image.nix ];
 
   options.disko = {
     imageBuilder = {
@@ -205,7 +205,7 @@ in
       }
     ];
 
-    _module.args.diskoLib = import ./lib {
+    _module.args.diskoLib = import ./src/disko_lib {
       inherit lib;
       rootMountPoint = config.disko.rootMountPoint;
       makeTest = import (pkgs.path + "/nixos/tests/make-test-python.nix");

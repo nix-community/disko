@@ -3,8 +3,8 @@ import json
 from pathlib import Path
 from typing import Any
 
-from lib.result import DiskoError, DiskoResult, DiskoSuccess
-from lib.run_cmd import run
+from ..result import DiskoError, DiskoResult, DiskoSuccess
+from ..run_cmd import run
 
 # To see what other fields are available in the lsblk output and what
 # sort of values you can expect from them, run:

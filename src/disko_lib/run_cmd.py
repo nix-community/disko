@@ -1,7 +1,7 @@
 import subprocess
 
-from lib.logging import debug
-from lib.result import DiskoError, DiskoResult, DiskoSuccess
+from .logging import debug
+from .result import DiskoError, DiskoResult, DiskoSuccess
 
 
 def run(args: list[str]) -> DiskoResult[str]:

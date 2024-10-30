@@ -197,7 +197,7 @@ main() {
   # shellcheck disable=SC2064
   trap "cleanupMountPoint ${escapeMountPoint}" EXIT
 
-  outputs=$(nixBuild "${libexec_dir}"/install-cli.nix \
+  outputs=$(nixBuild "${libexec_dir}"/src/install-cli.nix \
     "${nix_args[@]}" \
     --no-out-link \
     --impure \
