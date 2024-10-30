@@ -8,6 +8,7 @@ from typing import Any, Literal
 from lib.eval_config import eval_disko_file, eval_flake
 from lib.logging import LOGGER, debug, info
 from lib.result import DiskoError, DiskoSuccess, DiskoResult, exit_on_error
+from lib.types.disk import generate_config
 
 Mode = Literal[
     "destroy", "format", "mount", "destroy,format,mount", "format,mount", "generate"
@@ -48,8 +49,8 @@ def run_apply(
     return DiskoError.single_message("ERR_TOO_MANY_ARGUMENTS", {}, "validate args")
 
 
-def run_generate() -> DiskoResult[Literal["generate"]]:
-    return DiskoSuccess("generate", "generate config")
+def run_generate() -> DiskoResult[dict[str, Any]]:
+    return generate_config()
 
 
 def run(

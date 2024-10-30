@@ -26,6 +26,16 @@
                 "--flake",
                 ".#testmachine"
             ]
+        },
+        {
+            "name": "disko2 generate",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/disko2",
+            "console": "integratedTerminal",
+            "args": [
+                "generate",
+            ]
         }
     ]
 }

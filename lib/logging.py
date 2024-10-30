@@ -1,5 +1,6 @@
 # Logging functionality and global logging configuration
 from dataclasses import dataclass, field
+import json
 import logging
 import re
 from typing import Any, Literal, assert_never
@@ -12,6 +13,8 @@ LOGGER = logging.getLogger("disko_logger")
 
 # Color definitions. Note: Sort them alphabetically when adding new ones!
 COMMAND = Colors.CYAN_ITALIC  # Commands that were run or can be run
+EM = Colors.WHITE_ITALIC  # Emphasized text
+EM_WARN = Colors.YELLOW_ITALIC  # Emphasized text that is a warning
 FILE = Colors.BLUE  # File paths
 FLAG = Colors.GREEN  # Command line flags (like --version or -f)
 INVALID = Colors.RED  # Invalid values
@@ -38,6 +41,8 @@ MessageCode = Literal[
     "ERR_MISSING_ARGUMENTS",
     "ERR_MISSING_MODE",
     "ERR_TOO_MANY_ARGUMENTS",
+    "ERR_UNSUPPORTED_PTTYPE",
+    "WARN_GENERATE_PARTIAL_FAILURE",
 ]
 
 
@@ -141,6 +146,41 @@ def to_readable(message: DiskoMessage) -> list[ReadableMessage]:
                 ReadableMessage("error", "Missing mode!"),
                 ReadableMessage("help", "Allowed modes are:\n" + modes_list),
             ]
+        case "ERR_UNSUPPORTED_PTTYPE":
+            return [
+                ReadableMessage(
+                    "error",
+                    f"Device {FILE}{message.details['device']}{RESET} has unsupported partition type {INVALID}{message.details['pttype']}{RESET}!",
+                ),
+            ]
+        case "WARN_GENERATE_PARTIAL_FAILURE":
+            return [
+                ReadableMessage(
+                    "info",
+                    f"""
+                        Successfully generated config for {EM}some{RESET} devices.
+                        Errors are printed above. The generated partial config is:
+                        {json.dumps(message.details["partial_config"], indent=2)}
+                        """,
+                ),
+                ReadableMessage(
+                    "warning",
+                    f"""
+                        Successfully generated config for {EM}some{RESET} devices, {EM_WARN}but not all{RESET}!
+                        Failed devices: {", ".join(f"{INVALID}{d}{RESET}" for d in message.details["failed_devices"])}
+                        Successful devices: {", ".join(f"{VALUE}{d}{RESET}" for d in message.details["successful_devices"])}
+                    """,
+                ),
+                ReadableMessage(
+                    "help",
+                    f"""
+                        The {INVALID}ERROR{RESET} messages are printed {EM}above the generated config{RESET}.
+                        Take a look at them and see if you can fix or safely ignore them.
+                        If you can't, but you need a solution now, you can try to use the generated config,
+                        but there is {EM_WARN}no guarantee{RESET} that it will work!
+                    """,
+                ),
+            ]
 
         # We could also remove these two lines, but assert_never emits a better error message
         case _ as c:
@@ -159,7 +199,7 @@ def dedent_start_lines(lines: list[str]) -> list[str]:
     if dedent_width == 0:
         return lines
 
-    match_indent_regex = re.compile(f"^ {{1,{dedent_width}}}")
+    match_indent_regex = re.compile(f"^ {{{dedent_width}}}")
 
     dedented_lines = []
     stop_dedenting = False
@@ -214,7 +254,7 @@ def render_message(message: ReadableMessage) -> None:
         "debug": LOGGER.debug,
     }[message.type]
 
-    msg_lines = message.msg.strip("\n").splitlines()
+    msg_lines = message.msg.strip("\n").rstrip(" \n").splitlines()
 
     # "WARNING:" is 8 characters long, center in 10 for space on each side
     title = f"{bg_color}{title_raw + ":":^10}{RESET}"
