@@ -3,7 +3,8 @@
 # Inspired by rene-d's colors.py, published in 2018
 # See https://gist.github.com/rene-d/9e584a7dd2935d0f461904b9f2950007
 
-# Run as a script to see all available colors and styles
+
+from typing import Any
 
 
 class Colors:
@@ -177,9 +178,12 @@ class Colors:
             del kernel32
 
 
-if __name__ == "__main__":
+def disko_dev_ansi() -> str:
     import inspect
+    from lib.result import DiskoSuccess  # Import here to avoid circular dependency
 
     for name, value in inspect.getmembers(Colors):
         if value != "_" and not name.startswith("_") and name != "RESET":
             print("{:>30} {}".format(name, value + name + Colors.RESET))
+
+    return "run disko dev ansi"

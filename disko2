@@ -3,15 +3,23 @@
 import argparse
 import json
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, assert_never
 
+from lib.ansi import disko_dev_ansi
 from lib.eval_config import eval_disko_file, eval_flake
 from lib.logging import LOGGER, debug, info
 from lib.result import DiskoError, DiskoSuccess, DiskoResult, exit_on_error
 from lib.types.disk import generate_config
+from lib.types.device import disko_dev_lsblk
 
 Mode = Literal[
-    "destroy", "format", "mount", "destroy,format,mount", "format,mount", "generate"
+    "destroy",
+    "format",
+    "mount",
+    "destroy,format,mount",
+    "format,mount",
+    "generate",
+    "dev",
 ]
 
 
@@ -23,7 +31,7 @@ APPLY_MODES: list[Mode] = [
     "destroy,format,mount",
     "format,mount",
 ]
-ALL_MODES: list[Mode] = APPLY_MODES + ["generate"]
+ALL_MODES: list[Mode] = APPLY_MODES + ["generate", "dev"]
 
 MODE_DESCRIPTION: dict[Mode, str] = {
     "destroy": "Destroy the partition tables on the specified disks",
@@ -32,6 +40,7 @@ MODE_DESCRIPTION: dict[Mode, str] = {
     "destroy,format,mount": "Run destroy, format and mount in sequence",
     "format,mount": "Run format and mount in sequence",
     "generate": "Generate a disko configuration file from the system's current state",
+    "dev": "Print information useful for developers",
 }
 
 
@@ -53,22 +62,34 @@ def run_generate() -> DiskoResult[dict[str, Any]]:
     return generate_config()
 
 
+def run_dev(args: argparse.Namespace) -> DiskoResult[None]:
+    match args.dev_command:
+        case "lsblk":
+            return disko_dev_lsblk()
+        case "ansi":
+            return DiskoSuccess(None, disko_dev_ansi())
+        case _:
+            assert_never(args.dev_command)
+
+
 def run(
     args: argparse.Namespace,
-) -> DiskoResult[Literal["generate"] | dict[str, Any]]:
+) -> DiskoResult[None | dict[str, Any]]:
     if args.verbose:
         LOGGER.setLevel("DEBUG")
         debug("Enabled debug logging.")
 
-    if not args.mode:
-        return DiskoError.single_message(
-            "ERR_MISSING_MODE", {"valid_modes": ALL_MODES}, "select mode"
-        )
-
-    if args.mode == "generate":
-        return run_generate()
-
-    return run_apply(**vars(args))
+    match args.mode:
+        case None:
+            return DiskoError.single_message(
+                "ERR_MISSING_MODE", {"valid_modes": ALL_MODES}, "select mode"
+            )
+        case "generate":
+            return run_generate()
+        case "dev":
+            return run_dev(args)
+        case _:
+            return run_apply(**vars(args))
 
 
 def parse_args() -> argparse.Namespace:
@@ -113,6 +134,14 @@ def parse_args() -> argparse.Namespace:
         "generate",
         help=MODE_DESCRIPTION["generate"],
     )
+
+    # Commands for developers
+    dev_parsers = mode_parsers.add_parser(
+        "dev",
+        help=MODE_DESCRIPTION["dev"],
+    ).add_subparsers(dest="dev_command")
+    dev_parsers.add_parser("lsblk", help="List block devices the way disko sees them")
+    dev_parsers.add_parser("ansi", help="Print defined ansi color codes")
     return root_parser.parse_args()
 
 
@@ -120,7 +149,8 @@ def main() -> None:
     args = parse_args()
     result = run(args)
     output = exit_on_error(result)
-    info("Output:\n" + json.dumps(output, indent=2))
+    if output:
+        info("Output:\n" + json.dumps(output, indent=2))
 
 
 if __name__ == "__main__":
