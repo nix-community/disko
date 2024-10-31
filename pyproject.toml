@@ -17,6 +17,10 @@ package-dir = { "" = "src" }
 
 [tool.mypy]
 strict = true
+mypy_path = "src"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
 
 [tool.autoflake]
 remove_all_unused_imports = true

@@ -15,4 +15,7 @@
     "nixos",
     "nixpkgs"
   ],
+  "python.analysis.extraPaths": [
+    "./src"
+  ]
 }
