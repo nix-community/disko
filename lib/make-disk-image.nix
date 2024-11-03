@@ -45,6 +45,7 @@ let
     nix
     util-linux
     findutils
+    kmod
   ] ++ cfg.extraDependencies;
   preVM = ''
     ${lib.concatMapStringsSep "\n" (disk: "${pkgs.qemu}/bin/qemu-img create -f ${imageFormat} ${disk.imageName}.${imageFormat} ${disk.imageSize}") (lib.attrValues diskoCfg.devices.disk)}
