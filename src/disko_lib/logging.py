@@ -17,10 +17,45 @@ from .messages.colors import RESET
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 LOGGER = logging.getLogger("disko_logger")
 
+MessageTypes = Literal["bug", "error", "warning", "info", "help", "debug"]
+
+BG_COLOR_MAP = {
+    "bug": Colors.BG_RED,
+    "error": Colors.BG_RED,
+    "warning": Colors.BG_YELLOW,
+    "info": Colors.BG_GREEN,
+    "help": Colors.BG_LIGHT_MAGENTA,
+    "debug": Colors.BG_LIGHT_CYAN,
+}
+DECOR_COLOR_MAP = {
+    "bug": Colors.RED,
+    "error": Colors.RED,
+    "warning": Colors.YELLOW,
+    "info": Colors.GREEN,
+    "help": Colors.LIGHT_MAGENTA,
+    "debug": Colors.LIGHT_CYAN,
+}
+TITLE_RAW_MAP = {
+    "bug": "BUG",
+    "error": "ERROR",
+    "warning": "WARNING",
+    "info": "INFO",
+    "help": "HELP",
+    "debug": "DEBUG",
+}
+LOG_MSG_FUNCTION_MAP = {
+    "bug": LOGGER.error,
+    "error": LOGGER.error,
+    "warning": LOGGER.warning,
+    "info": LOGGER.info,
+    "help": LOGGER.info,
+    "debug": LOGGER.debug,
+}
+
 
 @dataclass
 class ReadableMessage:
-    type: Literal["bug", "error", "warning", "info", "help", "debug"]
+    type: MessageTypes
     msg: str
 
 
@@ -83,41 +118,10 @@ def dedent_start_lines(lines: list[str]) -> list[str]:
 
 
 def render_message(message: ReadableMessage) -> None:
-    bg_color = {
-        "bug": Colors.BG_RED,
-        "error": Colors.BG_RED,
-        "warning": Colors.BG_YELLOW,
-        "info": Colors.BG_GREEN,
-        "help": Colors.BG_LIGHT_MAGENTA,
-        "debug": Colors.BG_LIGHT_CYAN,
-    }[message.type]
-
-    decor_color = {
-        "bug": Colors.RED,
-        "error": Colors.RED,
-        "warning": Colors.YELLOW,
-        "info": Colors.GREEN,
-        "help": Colors.LIGHT_MAGENTA,
-        "debug": Colors.LIGHT_CYAN,
-    }[message.type]
-
-    title_raw = {
-        "bug": "BUG",
-        "error": "ERROR",
-        "warning": "WARNING",
-        "info": "INFO",
-        "help": "HELP",
-        "debug": "DEBUG",
-    }[message.type]
-
-    log_msg = {
-        "bug": LOGGER.error,
-        "error": LOGGER.error,
-        "warning": LOGGER.warning,
-        "info": LOGGER.info,
-        "help": LOGGER.info,
-        "debug": LOGGER.debug,
-    }[message.type]
+    bg_color = BG_COLOR_MAP[message.type]
+    decor_color = DECOR_COLOR_MAP[message.type]
+    title_raw = TITLE_RAW_MAP[message.type]
+    log_msg = LOG_MSG_FUNCTION_MAP[message.type]
 
     msg_lines = message.msg.strip("\n").rstrip(" \n").splitlines()
 
