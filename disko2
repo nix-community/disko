@@ -4,7 +4,4 @@
 # Check src/disko/cli.py for the actual entrypoint
 
 set -euo pipefail
-(
-    cd "$(dirname "$(realpath "$0")")"/src
-    python3 -m disko "$@"
-)
+PYTHONPATH="$(dirname "$(realpath "$0")")"/src python3 -m disko "$@"
