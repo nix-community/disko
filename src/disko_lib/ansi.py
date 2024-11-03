@@ -173,13 +173,3 @@ class Colors:
             kernel32 = __import__("ctypes").windll.kernel32
             kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
             del kernel32
-
-
-def disko_dev_ansi() -> str:
-    import inspect
-
-    for name, value in inspect.getmembers(Colors):
-        if value != "_" and not name.startswith("_") and name != "RESET":
-            print("{:>30} {}".format(name, value + name + Colors.RESET))
-
-    return "run disko dev ansi"

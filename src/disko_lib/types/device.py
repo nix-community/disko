@@ -110,13 +110,13 @@ class BlockDevice:
         )
 
 
-def _run_lsblk() -> DiskoResult[str]:
+def run_lsblk() -> DiskoResult[str]:
     return run(["lsblk", "--json", "--tree", "--output", ",".join(LSBLK_OUTPUT_FIELDS)])
 
 
 def list_block_devices(lsblk_output: str = "") -> DiskoResult[list[BlockDevice]]:
     if not lsblk_output:
-        lsblk_result = _run_lsblk()
+        lsblk_result = run_lsblk()
 
         if isinstance(lsblk_result, DiskoError):
             return lsblk_result
@@ -129,12 +129,3 @@ def list_block_devices(lsblk_output: str = "") -> DiskoResult[list[BlockDevice]]
     blockdevices = [BlockDevice.from_json_dict(dev) for dev in lsblk_json]
 
     return DiskoSuccess(blockdevices, "list block devices")
-
-
-def disko_dev_lsblk() -> DiskoResult[None]:
-    output = _run_lsblk()
-    if isinstance(output, DiskoError):
-        return output
-
-    print(output.value)
-    return DiskoSuccess(None, "run disko dev lsblk")

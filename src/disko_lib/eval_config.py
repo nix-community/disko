@@ -7,6 +7,8 @@ from disko_lib.messages.msgs import (
     err_eval_config_failed,
     err_file_not_found,
     err_flake_uri_no_attr,
+    err_missing_arguments,
+    err_too_many_arguments,
 )
 
 from .run_cmd import run
@@ -28,7 +30,7 @@ assert (
 ), f"Can't find `eval-config.nix`, expected it next to {__file__}"
 
 
-def eval_config(args: dict[str, str]) -> DiskoResult[dict[str, Any]]:
+def _eval_config(args: dict[str, str]) -> DiskoResult[dict[str, Any]]:
     args_as_json = json.dumps(args)
 
     result = run(
@@ -43,13 +45,12 @@ def eval_config(args: dict[str, str]) -> DiskoResult[dict[str, Any]]:
             args=args,
             stderr=result.messages[0].details["stderr"],
         )
-        return result
 
     # We trust the output of `nix eval` to be valid JSON
     return DiskoSuccess(json.loads(result.value), "evaluate disko config")
 
 
-def eval_disko_file(config_file: Path) -> DiskoResult[dict[str, Any]]:
+def _eval_disko_file(config_file: Path) -> DiskoResult[dict[str, Any]]:
     abs_path = config_file.absolute()
 
     if not abs_path.exists():
@@ -59,10 +60,10 @@ def eval_disko_file(config_file: Path) -> DiskoResult[dict[str, Any]]:
             path=abs_path,
         )
 
-    return eval_config({"diskoFile": str(abs_path)})
+    return _eval_config({"diskoFile": str(abs_path)})
 
 
-def eval_flake(flake_uri: str) -> DiskoResult[dict[str, Any]]:
+def _eval_flake(flake_uri: str) -> DiskoResult[dict[str, Any]]:
     # arg parser should not allow empty strings
     assert len(flake_uri) > 0
 
@@ -83,4 +84,18 @@ def eval_flake(flake_uri: str) -> DiskoResult[dict[str, Any]]:
     if flake_path.exists():
         flake = str(flake_path.absolute())
 
-    return eval_config({"flake": flake, "flakeAttr": flake_attr})
+    return _eval_config({"flake": flake, "flakeAttr": flake_attr})
+
+
+def eval_config(
+    *, disko_file: str | None, flake: str | None
+) -> DiskoResult[dict[str, Any]]:
+    # match would be nicer, but mypy doesn't understand type narrowing in tuples
+    if not disko_file and not flake:
+        return DiskoError.single_message(err_missing_arguments, "validate args")
+    if not disko_file and flake:
+        return _eval_flake(flake)
+    if disko_file and not flake:
+        return _eval_disko_file(Path(disko_file))
+
+    return DiskoError.single_message(err_too_many_arguments, "validate args")

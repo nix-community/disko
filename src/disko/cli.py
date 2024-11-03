@@ -2,17 +2,14 @@
 
 import argparse
 import json
-from pathlib import Path
-from typing import Any, Literal, assert_never
+from typing import Any, Literal
 
-from disko_lib.ansi import disko_dev_ansi
-from disko_lib.eval_config import eval_disko_file, eval_flake
+from disko.mode_dev import run_dev
+from disko_lib.eval_config import eval_config
 from disko_lib.logging import LOGGER, debug, info
-from disko_lib.messages import err_missing_arguments
-from disko_lib.messages.msgs import err_missing_mode, err_too_many_arguments
-from disko_lib.result import DiskoError, DiskoSuccess, DiskoResult, exit_on_error
+from disko_lib.messages.msgs import err_missing_mode
+from disko_lib.result import DiskoError, DiskoResult, exit_on_error
 from disko_lib.types.disk import generate_config
-from disko_lib.types.device import disko_dev_lsblk
 
 Mode = Literal[
     "destroy",
@@ -49,29 +46,11 @@ MODE_DESCRIPTION: dict[Mode, str] = {
 def run_apply(
     *, mode: str, disko_file: str | None, flake: str | None, **_kwargs: dict[str, Any]
 ) -> DiskoResult[dict[str, Any]]:
-    # match would be nicer, but mypy doesn't understand type narrowing in tuples
-    if not disko_file and not flake:
-        return DiskoError.single_message(err_missing_arguments, "validate args")
-    if not disko_file and flake:
-        return eval_flake(flake)
-    if disko_file and not flake:
-        return eval_disko_file(Path(disko_file))
-
-    return DiskoError.single_message(err_too_many_arguments, "validate args")
+    return eval_config(disko_file=disko_file, flake=flake)
 
 
 def run_generate() -> DiskoResult[dict[str, Any]]:
     return generate_config()
-
-
-def run_dev(args: argparse.Namespace) -> DiskoResult[None]:
-    match args.dev_command:
-        case "lsblk":
-            return disko_dev_lsblk()
-        case "ansi":
-            return DiskoSuccess(None, disko_dev_ansi())
-        case _:
-            assert_never(args.dev_command)
 
 
 def run(
@@ -115,6 +94,9 @@ def parse_args() -> argparse.Namespace:
             mode,
             help=MODE_DESCRIPTION[mode],
         )
+        return parser
+
+    def add_common_apply_args(parser: argparse.ArgumentParser) -> None:
         parser.add_argument(
             "disko_file",
             nargs="?",
@@ -126,10 +108,11 @@ def parse_args() -> argparse.Namespace:
             "-f",
             help="Flake to fetch the disko configuration from",
         )
-        return parser
 
     # Commands to apply an existing configuration
     apply_parsers = [create_apply_parser(mode) for mode in APPLY_MODES]
+    for parser in apply_parsers:
+        add_common_apply_args(parser)
 
     # Other commands
     generate_parser = mode_parsers.add_parser(
@@ -144,6 +127,12 @@ def parse_args() -> argparse.Namespace:
     ).add_subparsers(dest="dev_command")
     dev_parsers.add_parser("lsblk", help="List block devices the way disko sees them")
     dev_parsers.add_parser("ansi", help="Print defined ansi color codes")
+
+    dev_eval_parser = dev_parsers.add_parser(
+        "eval", help="Evaluate a disko configuration and print the result as JSON"
+    )
+    add_common_apply_args(dev_eval_parser)
+
     return root_parser.parse_args()
 
 
