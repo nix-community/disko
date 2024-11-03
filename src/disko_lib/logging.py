@@ -1,27 +1,21 @@
 # Logging functionality and global logging configuration
-from dataclasses import dataclass, field
-import json
+from dataclasses import dataclass
 import logging
 import re
-from typing import Any, Literal, assert_never
+from typing import (
+    Any,
+    Callable,
+    Generic,
+    Literal,
+    ParamSpec,
+    TypeAlias,
+)
 
 from .ansi import Colors
+from .messages.colors import RESET
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 LOGGER = logging.getLogger("disko_logger")
-
-
-# Color definitions. Note: Sort them alphabetically when adding new ones!
-COMMAND = Colors.CYAN_ITALIC  # Commands that were run or can be run
-EM = Colors.WHITE_ITALIC  # Emphasized text
-EM_WARN = Colors.YELLOW_ITALIC  # Emphasized text that is a warning
-FILE = Colors.BLUE  # File paths
-FLAG = Colors.GREEN  # Command line flags (like --version or -f)
-INVALID = Colors.RED  # Invalid values
-PLACEHOLDER = Colors.MAGENTA_ITALIC  # Values that need to be replaced
-VALUE = Colors.GREEN  # Values that are allowed
-
-RESET = Colors.RESET  # Shortcut to reset the color
 
 
 @dataclass
@@ -30,161 +24,32 @@ class ReadableMessage:
     msg: str
 
 
-# Codes for every single message that disko can print
-# Note: Sort them alphabetically when adding new ones!
-MessageCode = Literal[
-    "BUG_SUCCESS_WITHOUT_CONTEXT",
-    "ERR_COMMAND_FAILED",
-    "ERR_EVAL_CONFIG_FAILED",
-    "ERR_FILE_NOT_FOUND",
-    "ERR_FLAKE_URI_NO_ATTR",
-    "ERR_MISSING_ARGUMENTS",
-    "ERR_MISSING_MODE",
-    "ERR_TOO_MANY_ARGUMENTS",
-    "ERR_UNSUPPORTED_PTTYPE",
-    "WARN_GENERATE_PARTIAL_FAILURE",
-]
+P = ParamSpec("P")
+
+MessageFactory: TypeAlias = Callable[P, ReadableMessage | list[ReadableMessage]]
 
 
 @dataclass
-class DiskoMessage:
-    code: MessageCode
-    details: dict[str, Any] = field(default_factory=dict)
+class DiskoMessage(Generic[P]):
+    factory: MessageFactory[P]
+    # Can't infer a TypedDict from a ParamSpec yet (mypy 1.10.1, python 3.12.5)
+    # This is only safe to use because the type of __init__ ensures that the
+    # keys in details are the same as the keys in the factory kwargs
+    details: dict[str, Any]
 
+    def __init__(self, factory: MessageFactory[P], **details: P.kwargs) -> None:
+        self.factory = factory
+        self.details = details
 
-ERR_ARGUMENTS_HELP_TXT = f"Provide either {PLACEHOLDER}disko_file{RESET} as the second argument or \
-{FLAG}--flake{RESET}/{FLAG}-f{RESET} {PLACEHOLDER}flake-uri{RESET}."
+    def to_readable(self) -> list[ReadableMessage]:
+        result = self.factory(**self.details)
+        if isinstance(result, list):
+            return result
+        return [result]
 
-
-def bug_help_message(error_code: MessageCode) -> ReadableMessage:
-    return ReadableMessage(
-        "help",
-        f"""
-            Please report this bug!
-            First, check if has already been reported at
-                https://github.com/nix-community/disko/issues?q=is%3Aissue+{error_code}
-            If not, open a new issue at
-                https://github.com/nix-community/disko/issues/new?title={error_code}
-            and include the full logs printed above!
-        """,
-    )
-
-
-def to_readable(message: DiskoMessage) -> list[ReadableMessage]:
-    match message.code:
-        case "BUG_SUCCESS_WITHOUT_CONTEXT":
-            return [
-                ReadableMessage(
-                    "bug",
-                    f"""
-                        Success message without context!
-                        Returned value:
-                        {message.details['value']}
-                    """,
-                ),
-                bug_help_message(message.code),
-            ]
-        case "ERR_COMMAND_FAILED":
-            return [
-                ReadableMessage(
-                    "error",
-                    f"""
-                        Command failed: {COMMAND}{message.details['command']}{COMMAND}
-                        Exit code: {INVALID}{message.details['exit_code']}{RESET}
-                        stderr: {message.details['stderr']}
-                    """,
-                )
-            ]
-        case "ERR_EVAL_CONFIG_FAILED":
-            return [
-                ReadableMessage(
-                    "error",
-                    f"""
-                        Failed to evaluate disko config with args {INVALID}{message.details['args']}{RESET}!
-                        Stderr from {COMMAND}nix eval{RESET}:\n{message.details['stderr']}
-                    """,
-                )
-            ]
-        case "ERR_FILE_NOT_FOUND":
-            return [
-                ReadableMessage(
-                    "error", f"File not found: {FILE}{message.details['path']}{RESET}"
-                )
-            ]
-        case "ERR_FLAKE_URI_NO_ATTR":
-            return [
-                ReadableMessage(
-                    "error",
-                    f"Flake URI {INVALID}{message.details['flake_uri']}{RESET} has no attribute.",
-                ),
-                ReadableMessage(
-                    "help",
-                    f"Append an attribute like {VALUE}#{PLACEHOLDER}foo{RESET} to the flake URI.",
-                ),
-            ]
-        case "ERR_MISSING_ARGUMENTS":
-            return [
-                ReadableMessage(
-                    "error",
-                    f"Missing arguments!",
-                ),
-                ReadableMessage("help", ERR_ARGUMENTS_HELP_TXT),
-            ]
-        case "ERR_TOO_MANY_ARGUMENTS":
-            return [
-                ReadableMessage(
-                    "error",
-                    f"Too many arguments!",
-                ),
-                ReadableMessage("help", ERR_ARGUMENTS_HELP_TXT),
-            ]
-        case "ERR_MISSING_MODE":
-            modes_list = "\n".join(
-                [f"  - {VALUE}{m}{RESET}" for m in message.details["valid_modes"]]
-            )
-            return [
-                ReadableMessage("error", "Missing mode!"),
-                ReadableMessage("help", "Allowed modes are:\n" + modes_list),
-            ]
-        case "ERR_UNSUPPORTED_PTTYPE":
-            return [
-                ReadableMessage(
-                    "error",
-                    f"Device {FILE}{message.details['device']}{RESET} has unsupported partition type {INVALID}{message.details['pttype']}{RESET}!",
-                ),
-            ]
-        case "WARN_GENERATE_PARTIAL_FAILURE":
-            return [
-                ReadableMessage(
-                    "info",
-                    f"""
-                        Successfully generated config for {EM}some{RESET} devices.
-                        Errors are printed above. The generated partial config is:
-                        {json.dumps(message.details["partial_config"], indent=2)}
-                        """,
-                ),
-                ReadableMessage(
-                    "warning",
-                    f"""
-                        Successfully generated config for {EM}some{RESET} devices, {EM_WARN}but not all{RESET}!
-                        Failed devices: {", ".join(f"{INVALID}{d}{RESET}" for d in message.details["failed_devices"])}
-                        Successful devices: {", ".join(f"{VALUE}{d}{RESET}" for d in message.details["successful_devices"])}
-                    """,
-                ),
-                ReadableMessage(
-                    "help",
-                    f"""
-                        The {INVALID}ERROR{RESET} messages are printed {EM}above the generated config{RESET}.
-                        Take a look at them and see if you can fix or safely ignore them.
-                        If you can't, but you need a solution now, you can try to use the generated config,
-                        but there is {EM_WARN}no guarantee{RESET} that it will work!
-                    """,
-                ),
-            ]
-
-        # We could also remove these two lines, but assert_never emits a better error message
-        case _ as c:
-            assert_never(c)
+    def print(self) -> None:
+        for msg in self.to_readable():
+            render_message(msg)
 
 
 # Dedent lines based on the indent of the first line until a non-indented line is hit.
@@ -271,11 +136,6 @@ def render_message(message: ReadableMessage) -> None:
         log_msg(f"{decor_color}│ {RESET} {line}")
 
     log_msg(f"{decor_color}╰───────────{RESET}")  # Exactly as long as the heading
-
-
-def print_msg(code: MessageCode, details: dict[str, Any]) -> None:
-    for msg in to_readable(DiskoMessage(code, details)):
-        render_message(msg)
 
 
 def debug(msg: str) -> None:

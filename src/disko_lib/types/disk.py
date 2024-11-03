@@ -1,5 +1,10 @@
 from typing import Any
 
+from disko_lib.messages.msgs import (
+    err_unsupported_pttype,
+    warn_generate_partial_failure,
+)
+
 from ..logging import DiskoMessage, debug
 from ..result import DiskoError, DiskoResult, DiskoSuccess
 from ..types.device import BlockDevice, list_block_devices
@@ -12,9 +17,10 @@ def _generate_content(device: BlockDevice) -> DiskoResult[dict[str, Any]]:
             return gpt.generate_config(device)
         case _:
             return DiskoError.single_message(
-                "ERR_UNSUPPORTED_PTTYPE",
-                {"device": device.path, "pttype": device.pttype},
+                err_unsupported_pttype,
                 "generate disk content",
+                device=device.path,
+                pttype=device.pttype,
             )
 
 
@@ -63,12 +69,10 @@ def generate_config(devices: list[BlockDevice] = []) -> DiskoResult[dict[str, An
         error_messages
         + [
             DiskoMessage(
-                "WARN_GENERATE_PARTIAL_FAILURE",
-                {
-                    "partial_config": {"disks": disks},
-                    "failed_devices": failed_devices,
-                    "successful_devices": successful_devices,
-                },
+                warn_generate_partial_failure,
+                partial_config={"disks": disks},
+                failed_devices=failed_devices,
+                successful_devices=successful_devices,
             )
         ],
         "generate disk config",

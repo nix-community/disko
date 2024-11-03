@@ -2,6 +2,7 @@ import json
 from pathlib import Path, PosixPath
 import pytest
 
+from disko_lib.messages import err_unsupported_pttype, warn_generate_partial_failure
 from disko_lib.result import DiskoError, DiskoSuccess
 from disko_lib.types import disk
 from disko_lib.types import device
@@ -19,13 +20,13 @@ def test_generate_config_partial_failure_dos_table() -> None:
 
     assert isinstance(result, DiskoError)
 
-    assert result.messages[0].code == "ERR_UNSUPPORTED_PTTYPE"
+    assert result.messages[0].factory == err_unsupported_pttype
     assert result.messages[0].details == {
         "pttype": "dos",
         "device": PosixPath("/dev/sdc"),
     }
 
-    assert result.messages[1].code == "WARN_GENERATE_PARTIAL_FAILURE"
+    assert result.messages[1].factory == warn_generate_partial_failure
     with open(CURRENT_DIR / "generate-result.json") as f:
         assert result.messages[1].details["partial_config"] == json.load(f)
     assert result.messages[1].details["failed_devices"] == [PosixPath("/dev/sdc")]

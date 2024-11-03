@@ -3,6 +3,12 @@ from pathlib import Path
 import re
 from typing import Any
 
+from disko_lib.messages.msgs import (
+    err_eval_config_failed,
+    err_file_not_found,
+    err_flake_uri_no_attr,
+)
+
 from .run_cmd import run
 from .result import DiskoError, DiskoResult, DiskoSuccess
 
@@ -32,9 +38,10 @@ def eval_config(args: dict[str, str]) -> DiskoResult[dict[str, Any]]:
 
     if isinstance(result, DiskoError):
         return DiskoError.single_message(
-            "ERR_EVAL_CONFIG_FAILED",
-            {"args": args, "stderr": result.messages[0].details["stderr"]},
+            err_eval_config_failed,
             "evaluate disko configuration",
+            args=args,
+            stderr=result.messages[0].details["stderr"],
         )
         return result
 
@@ -47,9 +54,9 @@ def eval_disko_file(config_file: Path) -> DiskoResult[dict[str, Any]]:
 
     if not abs_path.exists():
         return DiskoError.single_message(
-            "ERR_FILE_NOT_FOUND",
-            {"path": abs_path},
+            err_file_not_found,
             "evaluate disko_file",
+            path=abs_path,
         )
 
     return eval_config({"diskoFile": str(abs_path)})
@@ -69,7 +76,7 @@ def eval_flake(flake_uri: str) -> DiskoResult[dict[str, Any]]:
 
     if not flake_attr:
         return DiskoError.single_message(
-            "ERR_FLAKE_URI_NO_ATTR", {"flake_uri": flake_uri}, "evaluate flake"
+            err_flake_uri_no_attr, "evaluate flake", flake_uri=flake_uri
         )
 
     flake_path = Path(flake)

@@ -8,6 +8,8 @@ from typing import Any, Literal, assert_never
 from disko_lib.ansi import disko_dev_ansi
 from disko_lib.eval_config import eval_disko_file, eval_flake
 from disko_lib.logging import LOGGER, debug, info
+from disko_lib.messages import err_missing_arguments
+from disko_lib.messages.msgs import err_missing_mode, err_too_many_arguments
 from disko_lib.result import DiskoError, DiskoSuccess, DiskoResult, exit_on_error
 from disko_lib.types.disk import generate_config
 from disko_lib.types.device import disko_dev_lsblk
@@ -49,13 +51,13 @@ def run_apply(
 ) -> DiskoResult[dict[str, Any]]:
     # match would be nicer, but mypy doesn't understand type narrowing in tuples
     if not disko_file and not flake:
-        return DiskoError.single_message("ERR_MISSING_ARGUMENTS", {}, "validate args")
+        return DiskoError.single_message(err_missing_arguments, "validate args")
     if not disko_file and flake:
         return eval_flake(flake)
     if disko_file and not flake:
         return eval_disko_file(Path(disko_file))
 
-    return DiskoError.single_message("ERR_TOO_MANY_ARGUMENTS", {}, "validate args")
+    return DiskoError.single_message(err_too_many_arguments, "validate args")
 
 
 def run_generate() -> DiskoResult[dict[str, Any]]:
@@ -82,7 +84,7 @@ def run(
     match args.mode:
         case None:
             return DiskoError.single_message(
-                "ERR_MISSING_MODE", {"valid_modes": ALL_MODES}, "select mode"
+                err_missing_mode, "select mode", valid_modes=[str(m) for m in ALL_MODES]
             )
         case "generate":
             return run_generate()
