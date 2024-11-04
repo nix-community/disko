@@ -1,5 +1,7 @@
 result
 
+disko-config.nix
+
 .direnv
 
 __pycache__/

@@ -5,6 +5,7 @@ import json
 from typing import Any, Literal
 
 from disko.mode_dev import run_dev
+from disko.mode_generate import run_generate
 from disko_lib.eval_config import eval_config
 from disko_lib.logging import LOGGER, debug, info
 from disko_lib.messages.msgs import err_missing_mode
@@ -47,10 +48,6 @@ def run_apply(
     *, mode: str, disko_file: str | None, flake: str | None, **_kwargs: dict[str, Any]
 ) -> DiskoResult[dict[str, Any]]:
     return eval_config(disko_file=disko_file, flake=flake)
-
-
-def run_generate() -> DiskoResult[dict[str, Any]]:
-    return generate_config()
 
 
 def run(

@@ -28,6 +28,14 @@ class DiskoError:
     ) -> "DiskoError":
         return cls([DiskoMessage(factory, **details)], context)
 
+    def find_message(
+        self, message_factory: MessageFactory[P]
+    ) -> None | DiskoMessage[P]:
+        for message in self.messages:
+            if message.factory == message_factory:
+                return message
+        return None
+
 
 DiskoResult = DiskoSuccess[T] | DiskoError
 
