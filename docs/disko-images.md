@@ -104,10 +104,6 @@ In the this example we create a flake containing a nixos configuration for
   disko.devices.disk.<drive>.imageSize = "32G"; # Set your preferred size
   ```
 
-- If the `.raw` image size is not optimal, use `--write-to-disk` to write
-  directly to a drive. This bypasses the `.raw` file generation, which saves on
-  read/write operations and is suitable for single disk setups.
-
 ## Understanding the Image Generation Process
 
 1. Files specified in `--pre-format-files` and `--post-format-files` are
