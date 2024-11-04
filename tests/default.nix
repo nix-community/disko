@@ -12,7 +12,7 @@ let
         (x: lib.hasSuffix ".nix" x && x != "default.nix")
         (lib.attrNames (builtins.readDir ./.))
     );
-  incompatibleTests = lib.optionals pkgs.buildPlatform.isRiscV64 [ "zfs" "zfs-over-legacy" "cli" "module" "complex" ];
+  incompatibleTests = lib.optionals pkgs.stdenv.buildPlatform.isRiscV64 [ "zfs" "zfs-over-legacy" "cli" "module" "complex" ];
   allCompatibleFilenames = lib.subtractLists incompatibleTests allTestFilenames;
 
   allTests = lib.genAttrs allCompatibleFilenames (test: import (./. + "/${test}.nix") { inherit diskoLib pkgs; });
