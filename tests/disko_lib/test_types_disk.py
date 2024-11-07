@@ -1,6 +1,5 @@
 import json
 from pathlib import Path, PosixPath
-import pytest
 
 from disko_lib.messages import err_unsupported_pttype, warn_generate_partial_failure
 from disko_lib.result import DiskoError, DiskoSuccess

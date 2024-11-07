@@ -1,6 +1,5 @@
 import argparse
 import json
-from logging import info
 from typing import Any, assert_never
 
 from disko_lib.ansi import Colors

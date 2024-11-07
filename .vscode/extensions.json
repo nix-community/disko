@@ -4,8 +4,7 @@
         "jnoortheen.nix-ide",
         "ms-python.python",
         "ms-python.debugpy",
-        "ms-python.black-formatter",
-        "ms-python.isort",
-        "ms-python.mypy-type-checker"
+        "ms-python.mypy-type-checker",
+        "charliermarsh.ruff"
     ]
 }

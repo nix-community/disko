@@ -80,15 +80,13 @@
         {
           default = pkgs.mkShell {
             name = "disko-dev";
-            packages = with pkgs; [
+            packages = (with pkgs; [
+              ruff # Formatter and linter
               (python3.withPackages (ps: [
-                ps.black # Code formatter
-                ps.isort # Import sorter
                 ps.mypy # Static type checker
-                ps.autoflake # Remove unused imports automatically
                 ps.pytest # Test runner
               ]))
-            ];
+            ]);
           };
         });
 
@@ -110,6 +108,7 @@
             nixpkgs-fmt
             deno
             deadnix
+            ruff
           ];
           text = ''
             showUsage() {
@@ -154,12 +153,16 @@
                 nixpkgs-fmt -- "''${files[@]}"
                 deno fmt -- "''${files[@]}"
                 deadnix --edit -- "''${files[@]}"
+                ruff check --fix
+                ruff format
               else
                 set -o xtrace
 
                 nixpkgs-fmt --check -- "''${files[@]}"
                 deno fmt --check -- "''${files[@]}"
                 deadnix -- "''${files[@]}"
+                ruff check
+                ruff format --check
               fi
             }
 

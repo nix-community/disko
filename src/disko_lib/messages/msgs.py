@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from typing import Any
 from disko_lib.logging import ReadableMessage
-from .colors import *
+from .colors import PLACEHOLDER, RESET, FLAG, COMMAND, INVALID, FILE, VALUE, EM, EM_WARN
 
 ERR_ARGUMENTS_HELP_TXT = f"Provide either {PLACEHOLDER}disko_file{RESET} as the second argument or \
 {FLAG}--flake{RESET}/{FLAG}-f{RESET} {PLACEHOLDER}flake-uri{RESET}."
@@ -12,7 +12,7 @@ def err_command_failed(*, command: str, exit_code: int, stderr: str) -> Readable
     return ReadableMessage(
         "error",
         f"""
-            Command failed: {COMMAND}{command}{COMMAND}
+            Command failed: {COMMAND}{command}{RESET}
             Exit code: {INVALID}{exit_code}{RESET}
             stderr: {stderr}
         """,
@@ -20,7 +20,6 @@ def err_command_failed(*, command: str, exit_code: int, stderr: str) -> Readable
 
 
 def err_eval_config_failed(*, args: dict[str, Any], stderr: str) -> ReadableMessage:
-
     return ReadableMessage(
         "error",
         f"""
@@ -51,7 +50,7 @@ def err_missing_arguments() -> list[ReadableMessage]:
     return [
         ReadableMessage(
             "error",
-            f"Missing arguments!",
+            "Missing arguments!",
         ),
         ReadableMessage("help", ERR_ARGUMENTS_HELP_TXT),
     ]
@@ -61,7 +60,7 @@ def err_too_many_arguments() -> list[ReadableMessage]:
     return [
         ReadableMessage(
             "error",
-            f"Too many arguments!",
+            "Too many arguments!",
         ),
         ReadableMessage("help", ERR_ARGUMENTS_HELP_TXT),
     ]

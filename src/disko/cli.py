@@ -112,7 +112,7 @@ def parse_args() -> argparse.Namespace:
         add_common_apply_args(parser)
 
     # Other commands
-    generate_parser = mode_parsers.add_parser(
+    _generate_parser = mode_parsers.add_parser(
         "generate",
         help=MODE_DESCRIPTION["generate"],
     )
