@@ -54,6 +54,7 @@ let
       , postDisko ? ""
       , testMode ? "module" # can be one of direct module cli
       , testBoot ? true # if we actually want to test booting or just create/mount
+      , enableOCR ? false
       }:
       let
         makeTest' = args:
@@ -163,6 +164,8 @@ let
       in
       makeTest' {
         name = "disko-${name}";
+        meta.timeout = 600; # 10 minutes
+        inherit enableOCR;
 
         nodes.machine = { pkgs, ... }: {
           imports = [
