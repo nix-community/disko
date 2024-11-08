@@ -17,21 +17,29 @@ let
   diskoAttr =
     if noDeps then
       {
-        format = "formatScriptNoDeps";
-        mount = "mountScriptNoDeps";
-        disko = "diskoScriptNoDeps";
+        destroy = "_cliDestroyNoDeps";
+        format = "_cliFormatNoDeps";
+        mount = "_cliMountNoDeps";
+
+        "format,mount" = "_cliFormatMountNoDeps";
+        "destroy,format,mount" = "_cliDestroyFormatMountNoDeps";
 
         # legacy aliases
+        disko = "diskoScriptNoDeps";
         create = "createScriptNoDeps";
         zap_create_mount = "diskoScriptNoDeps";
       }.${mode}
     else
       {
-        format = "formatScript";
-        mount = "mountScript";
-        disko = "diskoScript";
+        destroy = "_cliDestroy";
+        format = "_cliFormat";
+        mount = "_cliMount";
+
+        "format,mount" = "_cliFormatMount";
+        "destroy,format,mount" = "_cliDestroyFormatMount";
 
         # legacy aliases
+        disko = "diskoScript";
         create = "createScript";
         zap_create_mount = "diskoScript";
       }.${mode};

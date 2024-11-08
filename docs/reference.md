@@ -21,10 +21,12 @@ or else from the disko module of a NixOS configuration of that name under .nixos
 Options:
 
 * -m, --mode mode
-  set the mode, either format, mount or disko
-    format: create partition tables, zpools, lvms, raids and filesystems
-    mount: mount the partition at the specified root-mountpoint
-    disko: first unmount and destroy all filesystems on the disks we want to format, then run the create and mount mode
+  set the mode, either distroy, format, mount, format,mount or destroy,format,mount
+    destroy: unmount filesystems and destroy partition tables of the selected disks
+    format: create partition tables, zpools, lvms, raids and filesystems if they don't exist yet
+    mount: mount the partitions at the specified root-mountpoint
+    format,mount: run format and mount in sequence
+    destroy,format,mount: run all three modes in sequence. Previously known as --mode disko
 * -f, --flake uri
   fetch the disko config relative to this flake's root
 * --arg name value
@@ -40,4 +42,6 @@ Options:
     requires all necessary dependencies to be available in the environment
 * --debug
   run with set -x
+* --yes-wipe-all-disks
+  skip the safety check for destroying partitions, useful for automation
 ```

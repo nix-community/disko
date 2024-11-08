@@ -9,6 +9,7 @@ declare disko_config
 # mount was chosen as the default mode because it's less destructive
 mode=mount
 nix_args=()
+skip_destroy_safety_check=false
 
 # DISKO_VERSION is set by the wrapper in package.nix
 DISKO_VERSION="${DISKO_VERSION:="unknown! This is a bug, please report it!"}"
@@ -25,10 +26,12 @@ or else from the disko module of a NixOS configuration of that name under .nixos
 Options:
 
 * -m, --mode mode
-  set the mode, either format, mount or disko
-    format: create partition tables, zpools, lvms, raids and filesystems
-    mount: mount the partition at the specified root-mountpoint
-    disko: first unmount and destroy all filesystems on the disks we want to format, then run the create and mount mode
+  set the mode, either distroy, format, mount, format,mount or destroy,format,mount
+    destroy: unmount filesystems and destroy partition tables of the selected disks
+    format: create partition tables, zpools, lvms, raids and filesystems if they don't exist yet
+    mount: mount the partitions at the specified root-mountpoint
+    format,mount: run format and mount in sequence
+    destroy,format,mount: run all three modes in sequence. Previously known as --mode disko
 * -f, --flake uri
   fetch the disko config relative to this flake's root
 * --arg name value
@@ -42,6 +45,8 @@ Options:
 * --no-deps
   avoid adding another dependency closure to an in-memory installer
     requires all necessary dependencies to be available in the environment
+* --yes-wipe-all-disks
+  skip the safety check for destroying partitions, useful for automation
 * --debug
   run with set -x
 * --help
@@ -93,6 +98,9 @@ while [[ $# -gt 0 ]]; do
     --no-deps)
       nix_args+=(--arg noDeps true)
       ;;
+    --yes-wipe-all-disks)
+      skip_destroy_safety_check=true
+      ;;
     --show-trace)
       nix_args+=("$1")
       ;;
@@ -126,8 +134,16 @@ nixBuild() {
   fi
 }
 
-if ! { [[ $mode = "format" ]] || [[ $mode = "mount" ]] || [[ $mode = "disko" ]] || [[ $mode = "create" ]] || [[ $mode = "zap_create_mount" ]] ; }; then
-  abort "mode must be either format, mount or disko"
+if ! {
+  # Base modes
+  [[ $mode = "destroy" ]] || [[ $mode = "format" ]] || [[ $mode = "mount" ]] ||
+  # Combined modes
+  [[ $mode = "format,mount" ]] ||
+  [[ $mode = "destroy,format,mount" ]] || # Replaces --mode disko
+  # Legacy modes, will be removed in next major version
+  [[ $mode = "disko" ]] || [[ $mode = "create" ]] || [[ $mode = "zap_create_mount" ]] ;
+}; then
+  abort 'mode must be one of "destroy", "format", "mount", "destroy,format,mount" or "format,mount"'
 fi
 
 if [[ -n "${flake+x}" ]]; then
@@ -159,8 +175,14 @@ script=$(nixBuild "${libexec_dir}"/cli.nix \
   --argstr mode "$mode" \
   "${nix_args[@]}"
 )
+
+command=("$(echo "$script"/bin/*)")
+if [[ $mode = "destroy,format,mount" && $skip_destroy_safety_check = true ]]; then
+  command+=("--yes-wipe-all-disks")
+fi
+
 if [[ -n "${dry_run+x}" ]]; then
-  echo "$script"
+  echo "${command[@]}"
 else
-  exec "$script"
+  exec "${command[@]}"
 fi
