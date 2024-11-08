@@ -97,6 +97,47 @@ in
         default = { };
       };
 
+      preFormatFiles = lib.mkOption {
+        type = lib.types.attrsOf (lib.types.either lib.types.str lib.types.path);
+        description = ''
+          Files to copy into the image builder VM before disko is run.
+          This is useful to provide secrets like LUKS keys, or other files you need for formatting.
+
+          Names are interpreted as destination paths. If the value is a store path,
+          that path will be copied as-is. If it's not a store path, the value will be interpreted
+          as shell code is expected to write files into $out.
+        '';
+        default = {};
+        example = lib.literalExpression ''
+          {
+            "/tmp/pre/file" = pkgs.writeText "foo" "bar";
+            "/tmp/pre/script" = "mkdir -p $out/foo; echo bar > $out/foo";
+          }
+        '';
+      };
+
+      postFormatFiles = lib.mkOption {
+        type = lib.types.attrsOf (lib.types.either lib.types.str lib.types.path);
+        description = ''
+          Files to copy into the final image, after disko has run.
+          These end up in the images later and is useful if you want to add some extra stateful files
+          They will have the same permissions but will be owned by root:root.
+
+          Names are interpreted as destination paths. If the value is a store path,
+          that path will be copied as-is. If it's not a store path, the value will be interpreted
+          as shell code is expected to write files into $out.
+        '';
+        default = {};
+        example = lib.literalExpression ''
+          {
+            "/tmp/pre/file" = pkgs.writeText "foo" "bar";
+            "/tmp/pre/script" = "mkdir -p $out/foo; echo bar > $out/foo";
+          }
+        '';
+        };
+
+
+
       imageFormat = lib.mkOption {
         type = lib.types.enum [ "raw" "qcow2" ];
         description = "QEMU image format to use for the disk images";
