@@ -7,8 +7,8 @@ let
     (self.nixosConfigurations.testmachine.pkgs.closureInfo { rootPaths = [ ]; }).drvPath
 
     # https://github.com/NixOS/nixpkgs/blob/f2fd33a198a58c4f3d53213f01432e4d88474956/nixos/modules/system/activation/top-level.nix#L342
-    self.nixosConfigurations.your-machine.pkgs.perlPackages.ConfigIniFiles
-    self.nixosConfigurations.your-machine.pkgs.perlPackages.FileSlurp
+    self.nixosConfigurations.testmachine.pkgs.perlPackages.ConfigIniFiles
+    self.nixosConfigurations.testmachine.pkgs.perlPackages.FileSlurp
 
     self.nixosConfigurations.testmachine.config.system.build.toplevel
     self.nixosConfigurations.testmachine.config.system.build.diskoScript
