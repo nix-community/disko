@@ -22,7 +22,7 @@ For a fresh installation, where **disko-install** will handle partitioning and
 setting up the disk, use the following syntax:
 
 ```console
-sudo nix run 'github:nix-community/disko#disko-install/latest' -- --flake <flake-url>#<flake-attr> --disk <disk-name> <disk-device>
+sudo nix run 'github:nix-community/disko/latest#disko-install' -- --flake <flake-url>#<flake-attr> --disk <disk-name> <disk-device>
 ```
 
 Example:
@@ -137,7 +137,7 @@ from other devices if needed.
 
 If you want to use **disko-install** from a custom installer without internet,
 you need to make sure that in addition to the toplevel of your NixOS closure
-that you plan to install, it also needs to contain  **diskoScript** and all the
+that you plan to install, it also needs to contain **diskoScript** and all the
 flake inputs for evaluation.
 
 #### Example configuration to install
