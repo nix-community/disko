@@ -1,9 +1,10 @@
 import argparse
 import json
-from typing import Any, assert_never
+from typing import Any
 
 from disko_lib.ansi import Colors
 from disko_lib.eval_config import eval_config
+from disko_lib.messages.msgs import err_missing_mode
 from disko_lib.result import DiskoError, DiskoSuccess, DiskoResult
 from disko_lib.types.device import run_lsblk
 
@@ -48,4 +49,6 @@ def run_dev(args: argparse.Namespace) -> DiskoResult[None]:
         case "eval":
             return run_dev_eval(**vars(args))
         case _:
-            assert_never(args.dev_command)
+            return DiskoError.single_message(
+                err_missing_mode, "select mode", valid_modes=["lsblk", "ansi", "eval"]
+            )
