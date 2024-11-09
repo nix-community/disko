@@ -157,6 +157,7 @@ in
 	      ${sdCryptEnroll}
 	    else
 	      echo "TPM module not found! Aborted."
+	    fi
 	  ''}
           ${cryptsetupOpen} --persistent
           ${toString (lib.forEach config.additionalKeyFiles (keyFile: ''
