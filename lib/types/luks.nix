@@ -32,7 +32,7 @@ let
   '';
   sdCryptEnroll = ''
     ${lib.optionalString (config.tpmEnroll && tpmList != null) "systemd-cryptenroll"} \
-    ${lib.optionalString (keyFile != null) "--unlock-key-file ${keyFile}"} \
+    ${lib.optionalString (config.tpmEnroll && tpmList != null && keyFile != null) "--unlock-key-file ${keyFile}"} \
     ${lib.optionalString (config.tpmEnroll && tpmList != null) "--tpm2-device=auto ${config.device}"}
   '';
 in
