@@ -144,15 +144,20 @@ in
           ''}
           cryptsetup -q luksFormat "${config.device}" ${toString config.extraFormatArgs} ${keyFileArgs}
           ${lib.optionalString config.tpmEnroll '' 
-	    addTPMToken() {
-              check="ls /dev/tpm*"
-              if [[ -n ''${check} ]] ; then
-                ${sdCryptEnroll}
-	      else
-	        echo "TPM is not supported on your machine!"
-              fi
+	    TPMParse() {
+              check="$(ls /dev/tpm*)"
+              if [[ -n $(check) ]] ; then
+                echo 0;
+		return;
+	      fi
+	      echo 1;
+	      return;
 	    }
-	    ''}
+	    if [[ $(TPMParse) == "0" ]] ;then
+	      ${sdCryptEnroll}
+	    else
+	      echo "TPM module not found! Aborted."
+	  ''}
           ${cryptsetupOpen} --persistent
           ${toString (lib.forEach config.additionalKeyFiles (keyFile: ''
             cryptsetup luksAddKey "${config.device}" ${keyFile} ${keyFileArgs}
