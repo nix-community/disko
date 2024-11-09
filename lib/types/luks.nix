@@ -150,7 +150,8 @@ in
                 ${sdCryptEnroll}
 	      else
 	        echo "TPM is not supported on your machine!"
-              fi;
+              fi
+	    }
 	    ''}
           ${cryptsetupOpen} --persistent
           ${toString (lib.forEach config.additionalKeyFiles (keyFile: ''
