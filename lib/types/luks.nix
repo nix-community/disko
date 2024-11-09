@@ -27,13 +27,10 @@ let
       ${toString config.extraOpenArgs} \
       ${keyFileArgs} \
   '';
-  tpmList = ''
-    find /dev/tpm*
-  '';
   sdCryptEnroll = ''
-    ${lib.optionalString (config.tpmEnroll && tpmList != null) "systemd-cryptenroll"} \
-    ${lib.optionalString (config.tpmEnroll && tpmList != null && keyFile != null) "--unlock-key-file ${keyFile}"} \
-    ${lib.optionalString (config.tpmEnroll && tpmList != null) "--tpm2-device=auto ${config.device}"}
+    systemd-cryptenroll \
+    ${lib.optionalString (keyFile != null) "--unlock-key-file ${keyFile}"} \
+    --tpm2-device=auto ${config.device}
   '';
 in
 {
@@ -146,7 +143,15 @@ in
             done
           ''}
           cryptsetup -q luksFormat "${config.device}" ${toString config.extraFormatArgs} ${keyFileArgs}
-          ${sdCryptEnroll}
+          ${lib.optionalString config.tpmEnroll '' 
+	    addTPMToken() {
+              check="ls /dev/tpm*"
+              if [ -n ''${check} ] ; then
+                ${sdCryptEnroll}
+	      else
+	        echo "TPM is not supported on your machine!"
+              fi;
+	    ''}
           ${cryptsetupOpen} --persistent
           ${toString (lib.forEach config.additionalKeyFiles (keyFile: ''
             cryptsetup luksAddKey "${config.device}" ${keyFile} ${keyFileArgs}
@@ -183,7 +188,7 @@ in
         };
     };
     _config = lib.mkOption {
-      internal = true;
+      internal = true; 
       readOnly = true;
       default = [ ]
         # If initrdUnlock is true, then add a device entry to the initrd.luks.devices config.
