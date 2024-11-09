@@ -28,7 +28,7 @@ let
       ${keyFileArgs} \
   '';
   tpmList = ''
-    ls /dev/tpm*
+    find /dev/tpm*
   '';
   sdCryptEnroll = ''
     ${lib.optionalString (config.tpmEnroll && tpmList != null) "systemd-cryptenroll"} \
