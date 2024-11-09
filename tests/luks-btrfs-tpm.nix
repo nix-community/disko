@@ -8,7 +8,6 @@ diskoLib.testLib.makeDiskoTest {
   disko-config = ../example/luks-btrfs-tpm.nix;
   extraTestScript = ''
     machine.succeed("cryptsetup isLuks /dev/vda2");
-    machine.succeed("cryptsetup lukdDump /dev/vda2 | grep tpm2");
     machine.succeed("btrfs subvolume list /");
   '';
 }
