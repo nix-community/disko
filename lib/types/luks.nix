@@ -146,7 +146,7 @@ in
           ${lib.optionalString config.tpmEnroll '' 
 	    addTPMToken() {
               check="ls /dev/tpm*"
-              if [ -n ''${check} ] ; then
+              if [[ -n ''${check} ]] ; then
                 ${sdCryptEnroll}
 	      else
 	        echo "TPM is not supported on your machine!"
