@@ -27,6 +27,14 @@ let
       ${toString config.extraOpenArgs} \
       ${keyFileArgs} \
   '';
+  tpmList = ''
+    ls /dev/tpm*
+  '';
+  sdCryptEnroll = ''
+    ${lib.optionalString (config.tpmEnroll && tpmList != null) "systemd-cryptenroll"} \
+    ${lib.optionalString (keyFile != null) "--unlock-key-file ${keyFile}"} \
+    ${lib.optionalString (config.tpmEnroll && tpmList != null) "--tpm2-device=auto ${config.device}"}
+  '';
 in
 {
   options = {
@@ -78,6 +86,11 @@ in
       default = [ ];
       description = "Path to additional key files for encryption";
       example = [ "/tmp/disk2.key" ];
+    };
+    tpmEnroll = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Whether to use Trusted Platform Module for encryption";
     };
     initrdUnlock = lib.mkOption {
       type = lib.types.bool;
@@ -133,6 +146,7 @@ in
             done
           ''}
           cryptsetup -q luksFormat "${config.device}" ${toString config.extraFormatArgs} ${keyFileArgs}
+          ${sdCryptEnroll}
           ${cryptsetupOpen} --persistent
           ${toString (lib.forEach config.additionalKeyFiles (keyFile: ''
             cryptsetup luksAddKey "${config.device}" ${keyFile} ${keyFileArgs}
