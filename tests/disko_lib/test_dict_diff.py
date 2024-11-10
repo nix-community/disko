@@ -99,6 +99,9 @@ def test_dict_diff_nested() -> None:
             "h": 4,
             "i": 5,
         },
+        "o": {
+            "p": 6,
+        },
     }
     assert dict_diff(left, right) == {
         "a": {
@@ -111,6 +114,10 @@ def test_dict_diff_nested() -> None:
             "i": 5,
         },
         "k": None,
+        "o": {
+            "p": 6,
+            "_new": True,
+        },
     }
     assert dict_diff(right, left) == {
         "a": {
@@ -125,8 +132,11 @@ def test_dict_diff_nested() -> None:
         "k": {
             "l": {
                 "m": 5,
+                "_new": True,
             },
+            "_new": True,
         },
+        "o": None,
     }
     assert dict_diff(left, left) == {}
     assert dict_diff(right, right) == {}
@@ -135,4 +145,23 @@ def test_dict_diff_nested() -> None:
         "g": None,
         "k": None,
     }
-    assert dict_diff({}, right) == right
+    assert dict_diff({}, right) == {
+        "a": {
+            "b": {
+                "c": 1,
+                "d": 3,
+                "_new": True,
+            },
+            "e": 3,
+            "_new": True,
+        },
+        "g": {
+            "h": 4,
+            "i": 5,
+            "_new": True,
+        },
+        "o": {
+            "p": 6,
+            "_new": True,
+        },
+    }
