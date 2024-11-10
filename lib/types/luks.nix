@@ -144,21 +144,7 @@ in
           ''}
           cryptsetup -q luksFormat "${config.device}" ${toString config.extraFormatArgs} ${keyFileArgs}
           ${lib.optionalString config.tpmEnroll '' 
-	    TPMParse() {
-              check="$(ls /dev/tpm*)"
-              if [[ -n $(check) ]] ; then
-                echo 0;
-		return;
-	      fi
-	      echo 1;
-	      return;
-	    }
-	    if [[ $(TPMParse) == "0" ]] ;then
-	      ${sdCryptEnroll}
-	    else
-	      echo "TPM module not found! Aborted."
-	    fi
-	  ''}
+	  ${sdCryptEnroll}
           ${cryptsetupOpen} --persistent
           ${toString (lib.forEach config.additionalKeyFiles (keyFile: ''
             cryptsetup luksAddKey "${config.device}" ${keyFile} ${keyFileArgs}
@@ -195,7 +181,7 @@ in
         };
     };
     _config = lib.mkOption {
-      internal = true; 
+      internal = true;
       readOnly = true;
       default = [ ]
         # If initrdUnlock is true, then add a device entry to the initrd.luks.devices config.
