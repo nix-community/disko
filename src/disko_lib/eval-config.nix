@@ -44,6 +44,7 @@ let
 
   diskoConfig = evaluatedConfig.config.disko.devices;
 
-  finalConfig = lib.filterAttrsRecursive (name: value: !lib.hasPrefix "_" name) diskoConfig;
+  shouldBeEvaluated = name: (!lib.hasPrefix "_" name) || (name == "_index");
+  finalConfig = lib.filterAttrsRecursive (name: value: shouldBeEvaluated name) diskoConfig;
 in
 finalConfig

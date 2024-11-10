@@ -6,6 +6,7 @@
         "efiGptPartitionFirst": true,
         "partitions": {
           "ESP": {
+            "_index": 2,
             "alignment": 0,
             "content": {
               "device": "/dev/disk/by-partlabel/disk-main-ESP",
@@ -32,6 +33,7 @@
             "type": "EF00"
           },
           "boot": {
+            "_index": 1,
             "alignment": 0,
             "content": null,
             "device": "/dev/disk/by-partlabel/disk-main-boot",
@@ -45,6 +47,7 @@
             "type": "EF02"
           },
           "root": {
+            "_index": 3,
             "alignment": 0,
             "content": {
               "device": "/dev/disk/by-partlabel/disk-main-root",
