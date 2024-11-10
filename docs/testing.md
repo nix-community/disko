@@ -1,5 +1,20 @@
 # Running and debugging tests
 
+This assumes you've already set up your development environment!
+
+See [Setting up your development environment](./dev-setup.md)
+
+## Python tests
+
+Big parts of disko are written in Python. You can test all Python
+functionality by simply running
+
+```
+pytest
+```
+
+## VM tests
+
 Disko makes extensive use of VM tests. All examples you can find in
 [the example directory](../example) have a respective test suite that verifies
 the example is working in [the tests directory](../tests/). They utilize the
@@ -14,7 +29,7 @@ However, you don't need to know about all of the inner workings to interact with
 the tests effectively. For some of the most common operations, see the sections
 below.
 
-## Run just one of the tests
+### Run just one of the tests
 
 ```sh
 nix build --no-link .#checks.x86_64-linux.simple-efi
@@ -27,7 +42,7 @@ virtual devices, run disko to format them, reboot, verify the VM boots properly,
 and then run the code specified in `extraTestScript` to validate that the
 partitions have been created and were mounted as expected.
 
-### How `extraTestScript` works
+#### How `extraTestScript` works
 
 This is written in Python. The most common lines you'll see look something like
 this:
@@ -45,7 +60,7 @@ Disko currently (as of 2024-10-16) doesn't have any tests that utilize multiple
 VMs at once, so the only machine available in these scripts is always just the
 default `machine`.
 
-## Debugging tests
+### Debugging tests
 
 If you make changes to disko, you might break a test, or you may want to modify
 a test to prevent regressions. In these cases, running the full test with
@@ -131,7 +146,7 @@ vdb    253:16   0    4G  0 disk
 You can find some additional details in
 [the NixOS manual's section on interactive testing](https://nixos.org/manual/nixos/stable/#sec-running-nixos-tests-interactively).
 
-## Running all tests at once
+### Running all tests at once
 
 If you have a bit of experience, you might be inclined to run `nix flake check`
 to run all tests at once. However, we instead recommend using

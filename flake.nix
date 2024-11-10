@@ -60,6 +60,14 @@
             diskoVersion = version;
           };
 
+          # TODO: Add a CI pipeline instead that runs nix run .#pytest inside nix develop
+          pytest-ci-only = pkgs.runCommand "pytest" { nativeBuildInputs = [ pkgs.python3Packages.pytest ]; } ''
+            cd ${./.}
+            # eval_config runs nix, which is forbidden inside of nix derivations by default
+            pytest -vv --doctest-modules -p no:cacheprovider --ignore=tests/disko_lib/eval_config
+            touch $out
+          '';
+
           shellcheck = pkgs.runCommand "shellcheck" { nativeBuildInputs = [ pkgs.shellcheck ]; } ''
             cd ${./.}
             shellcheck src/disk-deactivate/disk-deactivate disko disko2
@@ -69,7 +77,7 @@
         # FIXME: aarch64-linux seems to hang on boot
         lib.optionalAttrs pkgs.hostPlatform.isx86_64 (nixosTests // { inherit disko-install; }) //
         pkgs.lib.optionalAttrs (!pkgs.buildPlatform.isRiscV64 && !pkgs.hostPlatform.isx86_32) {
-          inherit shellcheck;
+          inherit pytest-ci-only shellcheck;
           inherit (self.packages.${system}) disko-doc;
         });
 
@@ -81,7 +89,9 @@
           default = pkgs.mkShell {
             name = "disko-dev";
             packages = (with pkgs; [
-              ruff # Formatter and linter
+              nixpkgs-fmt # Formatter for Nix code
+              shellcheck # Linter for shell scripts
+              ruff # Formatter and linter for Python
               (python3.withPackages (ps: [
                 ps.mypy # Static type checker
                 ps.pytest # Test runner

@@ -19,4 +19,5 @@
 
 ### For contributors
 
+- [Setting up your development environment](./dev-setup.md)
 - [Running and debugging tests](./testing.md)

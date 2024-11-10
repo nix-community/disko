@@ -12,6 +12,9 @@ way to help us fix issues quickly. Check out
 For more information on how to run and debug tests, check out
 [Running and debugging tests](./docs/testing.md).
 
+Also refer to [Setting up your development environment](./dev-setup.md) to get
+the best possible development experience.
+
 ## How to find issues to work on
 
 If you're looking for a low-hanging fruit, check out

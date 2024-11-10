@@ -21,6 +21,7 @@ mypy_path = "src"
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
+addopts = ["--doctest-modules"]
 
 [tool.autoflake]
 remove_all_unused_imports = true
