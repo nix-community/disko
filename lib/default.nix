@@ -556,7 +556,7 @@ let
                 if [ "$1" != "--yes-wipe-all-disks" ]; then
                   echo "WARNING: This will destroy all data on the disks defined in disko.devices, which are:"
                   echo
-                  # shellcheck disable=SC2043
+                  # shellcheck disable=SC2043,2041
                   for dev in ${selectedDisks}; do
                     echo "  - $dev"
                   done
