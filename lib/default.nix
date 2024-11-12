@@ -23,9 +23,10 @@ let
     };
 
     # option for valid contents of partitions (basically like devices, but without tables)
+    _partitionTypes = { inherit (diskoLib.types) btrfs filesystem zfs mdraid luks lvm_pv swap; };
     partitionType = extraArgs: lib.mkOption {
       type = lib.types.nullOr (diskoLib.subType {
-        types = { inherit (diskoLib.types) btrfs filesystem zfs mdraid luks lvm_pv swap; };
+        types = diskoLib._partitionTypes;
         inherit extraArgs;
       });
       default = null;
@@ -33,9 +34,10 @@ let
     };
 
     # option for valid contents of devices
+    _deviceTypes = { inherit (diskoLib.types) table gpt btrfs filesystem zfs mdraid luks lvm_pv swap; };
     deviceType = extraArgs: lib.mkOption {
       type = lib.types.nullOr (diskoLib.subType {
-        types = { inherit (diskoLib.types) table gpt btrfs filesystem zfs mdraid luks lvm_pv swap; };
+        types = diskoLib._deviceTypes;
         inherit extraArgs;
       });
       default = null;
@@ -699,11 +701,22 @@ let
     typesSerializerLib = {
       rootMountPoint = "";
       options = null;
-      config._module.args.name = "self.name";
-      lib = {
+      config = {
+        _module = {
+          args.name = "<self.name>";
+          args._parent.name = "<parent.name>";
+          args._parent.type = "<parent.type>";
+        };
+        name = "<config.name>";
+      };
+      parent = { };
+      device = "/dev/<device>";
+      # Spoof part of nixpkgs/lib to analyze the types
+      lib = lib // {
         mkOption = option: {
-          inherit (option) type description;
-          default = option.default or null;
+          inherit (option) type;
+          description = option.description or null;
+          default = option.defaultText or option.default or null;
         };
         types = {
           attrsOf = subType: {
@@ -718,32 +731,61 @@ let
             type = "nullOr";
             inherit subType;
           };
+          oneOf = types: {
+            type = "oneOf";
+            inherit types;
+          };
+          either = t1: t2: {
+            type = "oneOf";
+            types = [ t1 t2 ];
+          };
           enum = choices: {
             type = "enum";
             inherit choices;
           };
+          anything = "anything";
+          nonEmptyStr = "str";
+          strMatching = _: "str";
           str = "str";
           bool = "bool";
           int = "int";
-          submodule = x: x { inherit (diskoLib.typesSerializerLib) lib config options; };
+          submodule = x: x {
+            inherit (diskoLib.typesSerializerLib) lib config options;
+            name = "<self.name>";
+          };
         };
       };
       diskoLib = {
         optionTypes.absolute-pathname = "absolute-pathname";
-        deviceType = "devicetype";
-        partitionType = "partitiontype";
-        subType = types: "onOf ${toString (lib.attrNames types)}";
+        # Spoof these types to avoid infinite recursion
+        deviceType = _: "<deviceType>";
+        partitionType = _: "<partitionType>";
+        subType = { types, ... }: {
+          type = "oneOf";
+          types = lib.attrNames types;
+        };
+        mkCreateOption = option: "_create";
       };
     };
 
-    jsonTypes = lib.listToAttrs (
-      map
-        (file: lib.nameValuePair
-          (lib.removeSuffix ".nix" file)
-          (diskoLib.serializeType (import ./types/${file} diskoLib.typesSerializerLib))
-        )
-        (lib.attrNames (builtins.readDir ./types))
-    );
+    jsonTypes = lib.listToAttrs
+      (
+        map
+          (file: lib.nameValuePair
+            (lib.removeSuffix ".nix" file)
+            (diskoLib.serializeType (import ./types/${file} diskoLib.typesSerializerLib))
+          )
+          (lib.filter (name: lib.hasSuffix ".nix" name) (lib.attrNames (builtins.readDir ./types)))
+      ) // {
+      partitionType = {
+        type = "oneOf";
+        types = lib.attrNames diskoLib._partitionTypes;
+      };
+      deviceType = {
+        type = "oneOf";
+        types = lib.attrNames diskoLib._deviceTypes;
+      };
+    };
 
   } // outputs;
 in
