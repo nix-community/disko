@@ -25,7 +25,7 @@ let
     _partitionTypes = { inherit (diskoLib.types) btrfs filesystem zfs mdraid luks lvm_pv swap; };
     partitionType = extraArgs: lib.mkOption {
       type = lib.types.nullOr (diskoLib.subType {
-        types = diskoLib.partitionTypes;
+        types = diskoLib._partitionTypes;
         inherit extraArgs;
       });
       default = null;
@@ -36,7 +36,7 @@ let
     _deviceTypes = { inherit (diskoLib.types) table gpt btrfs filesystem zfs mdraid luks lvm_pv swap; };
     deviceType = extraArgs: lib.mkOption {
       type = lib.types.nullOr (diskoLib.subType {
-        types = diskoLib.deviceTypes;
+        types = diskoLib._deviceTypes;
         inherit extraArgs;
       });
       default = null;
@@ -666,9 +666,9 @@ let
       };
       diskoLib = {
         optionTypes.absolute-pathname = "absolute-pathname";
-        # Spoof these tyeps 
-        deviceType = _: "<deviceType>";
-        partitionType = _: "<partitionType>";
+        # Spoof these types to avoid infinite recursion
+        deviceType = _: "deviceType";
+        partitionType = _: "partitionType";
         subType = { types, ... }: {
           type = "oneOf";
           types = lib.attrNames types;
