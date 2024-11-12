@@ -63,8 +63,10 @@
             };
             content = diskoLib.partitionType { parent = config; device = diskoLib.deviceNumbering config.device partition.config._index; };
             _index = lib.mkOption {
+              type = lib.types.int;
               internal = true;
               default = lib.toInt (lib.head (builtins.match ".*entry ([[:digit:]]+)]" name));
+              defaultText = null;
             };
           };
         }));

@@ -19,13 +19,15 @@
 
       versionInfo = import ./version.nix;
       version = versionInfo.version + (lib.optionalString (!versionInfo.released) "-dirty");
-    in
-    {
-      nixosModules.default = self.nixosModules.disko; # convention
-      nixosModules.disko.imports = [ ./module.nix ];
-      lib = import ./src/disko_lib {
+
+      diskoLib = import ./src/disko_lib {
         inherit (nixpkgs) lib;
       };
+    in
+    {
+      lib = diskoLib;
+      nixosModules.default = self.nixosModules.disko; # convention
+      nixosModules.disko.imports = [ ./module.nix ];
       packages = forAllSystems (system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
@@ -73,11 +75,13 @@
             shellcheck src/disk-deactivate/disk-deactivate disko disko2
             touch $out
           '';
+
+          jsonTypes = pkgs.writeTextFile { name = "jsonTypes"; text = (builtins.toJSON diskoLib.jsonTypes); };
         in
         # FIXME: aarch64-linux seems to hang on boot
         lib.optionalAttrs pkgs.hostPlatform.isx86_64 (nixosTests // { inherit disko-install; }) //
         pkgs.lib.optionalAttrs (!pkgs.buildPlatform.isRiscV64 && !pkgs.hostPlatform.isx86_32) {
-          inherit pytest-ci-only shellcheck;
+          inherit pytest-ci-only shellcheck jsonTypes;
           inherit (self.packages.${system}) disko-doc;
         });
 
