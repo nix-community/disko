@@ -70,7 +70,17 @@ let
     if hasDiskoConfigFlake then
       diskoEval
     else if (lib.traceValSeq hasDiskoModuleFlake) then
-      (builtins.getFlake flake).nixosConfigurations.${flakeAttr}.config.system.build.${diskoAttr}
+      (builtins.getFlake flake).nixosConfigurations.${flakeAttr}.config.system.build.${diskoAttr} or (
+        pkgs.writeShellScriptBin "disko-compat-error" ''
+          echo 'Error: Attribute `nixosConfigurations.${flakeAttr}.config.system.build.${diskoAttr}` >&2
+          echo '       not found in flake `${flake}`!' >&2
+          echo '       This is probably caused by the locked version of disko in the flake' >&2
+          echo '       being different from the version of disko you executed.' >&2
+          echo 'EITHER set the `disko` input of your flake to `github:nix-community/disko/latest`,' >&2
+          echo '       run `nix flake update disko` in the flake directory and then try again,' >&2
+          echo 'OR run `nix run github:nix-community/disko/v1.9.0 -- --help` and use one of its modes.' >&2
+          exit 1;''
+      )
     else
       (builtins.abort "couldn't find `diskoConfigurations.${flakeAttr}` or `nixosConfigurations.${flakeAttr}.config.disko.devices`");
 
