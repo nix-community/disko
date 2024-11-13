@@ -14,46 +14,70 @@ let
     inherit lib;
   };
 
+  hasDiskoFile = diskoFile != null;
+
   diskoAttr =
-    if noDeps then
-      {
-        destroy = "_cliDestroyNoDeps";
-        format = "_cliFormatNoDeps";
-        mount = "_cliMountNoDeps";
+    (if noDeps then
+      (if hasDiskoFile then
+        {
+          destroy = "_cliDestroyNoDeps";
+          format = "_cliFormatNoDeps";
+          mount = "_cliMountNoDeps";
 
-        "format,mount" = "_cliFormatMountNoDeps";
-        "destroy,format,mount" = "_cliDestroyFormatMountNoDeps";
+          "format,mount" = "_cliFormatMountNoDeps";
+          "destroy,format,mount" = "_cliDestroyFormatMountNoDeps";
+        }
+      else
+        {
+          destroy = "destroyNoDeps";
+          format = "formatNoDeps";
+          mount = "mountNoDeps";
 
+          "format,mount" = "formatMountNoDeps";
+          "destroy,format,mount" = "destroyFormatMountNoDeps";
+        }) // {
         # legacy aliases
         disko = "diskoScriptNoDeps";
         create = "createScriptNoDeps";
         zap_create_mount = "diskoScriptNoDeps";
-      }.${mode}
+      }
     else
-      {
-        destroy = "_cliDestroy";
-        format = "_cliFormat";
-        mount = "_cliMount";
+      (if hasDiskoFile then
+        {
+          destroy = "_cliDestroy";
+          format = "_cliFormat";
+          mount = "_cliMount";
 
-        "format,mount" = "_cliFormatMount";
-        "destroy,format,mount" = "_cliDestroyFormatMount";
+          "format,mount" = "_cliFormatMount";
+          "destroy,format,mount" = "_cliDestroyFormatMount";
+        }
+      else
+        {
+          destroy = "destroy";
+          format = "format";
+          mount = "munt";
 
+          "format,mount" = "formatMount";
+          "destroy,format,mount" = "destroyFormatMount";
+        }) // {
         # legacy aliases
         disko = "diskoScript";
         create = "createScript";
         zap_create_mount = "diskoScript";
-      }.${mode};
+      }
+    ).${mode};
 
   hasDiskoConfigFlake =
-    diskoFile != null || lib.hasAttrByPath [ "diskoConfigurations" flakeAttr ] (builtins.getFlake flake);
+    hasDiskoFile || lib.hasAttrByPath [ "diskoConfigurations" flakeAttr ] (builtins.getFlake flake);
 
   hasDiskoModuleFlake =
     lib.hasAttrByPath [ "nixosConfigurations" flakeAttr "config" "disko" "devices" ] (builtins.getFlake flake);
 
+
   diskFormat =
     let
       diskoConfig =
-        if diskoFile != null then
+        if hasDiskoFile then
           import diskoFile
         else
           (builtins.getFlake flake).diskoConfigurations.${flakeAttr};
