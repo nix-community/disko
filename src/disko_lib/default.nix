@@ -631,26 +631,32 @@ let
           attrsOf = subType: {
             type = "attrsOf";
             inherit subType;
+            "__isCompositeType" = true;
           };
           listOf = subType: {
             type = "listOf";
             inherit subType;
+            "__isCompositeType" = true;
           };
           nullOr = subType: {
             type = "nullOr";
             inherit subType;
+            "__isCompositeType" = true;
           };
           oneOf = types: {
             type = "oneOf";
             inherit types;
+            "__isCompositeType" = true;
           };
           either = t1: t2: {
             type = "oneOf";
             types = [ t1 t2 ];
+            "__isCompositeType" = true;
           };
           enum = choices: {
             type = "enum";
             inherit choices;
+            "__isCompositeType" = true;
           };
           anything = "anything";
           nonEmptyStr = "str";
@@ -672,6 +678,7 @@ let
         subType = { types, ... }: {
           type = "oneOf";
           types = lib.attrNames types;
+          "__isCompositeType" = true;
         };
         mkCreateOption = option: "_create";
       };
@@ -689,10 +696,12 @@ let
       partitionType = {
         type = "oneOf";
         types = lib.attrNames diskoLib._partitionTypes;
+        "__isCompositeType" = true;
       };
       deviceType = {
         type = "oneOf";
         types = lib.attrNames diskoLib._deviceTypes;
+        "__isCompositeType" = true;
       };
     };
   };

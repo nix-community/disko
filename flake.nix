@@ -99,6 +99,9 @@
               (python3.withPackages (ps: [
                 ps.mypy # Static type checker
                 ps.pytest # Test runner
+
+                # Actual runtime depedencies
+                ps.pydantic # Validation of nixos configuration
               ]))
             ]);
           };
