@@ -16,8 +16,39 @@ package-dir = { "" = "src" }
 "*" = ["*.nix"]
 
 [tool.mypy]
-strict = true
 mypy_path = "src"
+warn_unused_configs = true
+# We don't use `strict = true` but write out all individual flags because
+# strict is not strict enough and its meaning may change in the future.
+# See https://mypy.readthedocs.io/en/stable/config_file.html#confval-strict
+# Disallow dynamic typing
+disallow_any_unimported = true
+disallow_any_expr = true
+disallow_any_decorated = true
+disallow_any_explicit = false   # We need to be able to use `Any` as an input parameter to some functions
+disallow_any_generics = true
+disallow_subclassing_any = true
+# Untyped definitions and calls
+disallow_untyped_calls = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+# Warnings
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_return_any = true
+warn_unreachable = true
+# Miscellaneous strictness flags
+no_implicit_reexport = true
+strict_concatenate = true
+strict_equality = true
+extra_checks = true
+# Error message control
+show_error_context = true
+show_error_code_links = true
+pretty = true
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
