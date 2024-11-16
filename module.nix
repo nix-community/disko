@@ -171,6 +171,14 @@ in
         default = config.boot.loader.systemd-boot.enable || config.boot.loader.grub.efiSupport;
       };
 
+      enableOCR = lib.mkOption {
+        description = ''
+          Sets the enableOCR option in the NixOS VM test driver.
+        '';
+        type = lib.types.bool;
+        default = false;
+      };
+
       extraChecks = lib.mkOption {
         description = ''
           extra checks to run in the `system.build.installTest`.
@@ -236,6 +244,7 @@ in
           testMode = "direct";
           bootCommands = cfg.tests.bootCommands;
           efi = cfg.tests.efi;
+          enableOCR = cfg.tests.enableOCR;
           extraSystemConfig = cfg.tests.extraConfig;
           extraTestScript = cfg.tests.extraChecks;
         };
