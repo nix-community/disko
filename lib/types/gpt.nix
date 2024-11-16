@@ -42,6 +42,13 @@ in
                 "/dev/disk/by-id/md-name-any:${config._parent.name}-part${toString partition.config._index}"
               else
                 "/dev/disk/by-partlabel/${diskoLib.hexEscapeUdevSymlink partition.config.label}";
+            defaultText = ''
+              if the parent is an mdadm device:
+                /dev/disk/by-id/md-name-any:''${config._parent.name}-part''${toString partition.config._index}
+              
+              otherwise:
+                /dev/disk/by-partlabel/''${diskoLib.hexEscapeUdevSymlink partition.config.label}
+            '';
             description = "Device to use for the partition";
           };
           priority = lib.mkOption {
@@ -80,6 +87,11 @@ in
                 builtins.substring 0 limit (builtins.hashString "sha256" label)
               else
                 label;
+            defaultText = ''
+              ''${config._parent.type}-''${config._parent.name}-''${partition.config.name}
+
+              or a truncated hash of the above if it is longer than 36 characters
+            '';
           };
           size = lib.mkOption {
             type = lib.types.either (lib.types.enum [ "100%" ]) (lib.types.strMatching "[0-9]+[KMGTP]?");
@@ -93,6 +105,7 @@ in
           alignment = lib.mkOption {
             type = lib.types.int;
             default = if (builtins.substring (builtins.stringLength partition.config.start - 1) 1 partition.config.start == "s" || (builtins.substring (builtins.stringLength partition.config.end - 1) 1 partition.config.end == "s")) then 1 else 0;
+            defaultText = "1 if the unit of start or end is sectors, 0 otherwise";
             description = "Alignment of the partition, if sectors are used as start or end it can be aligned to 1";
           };
           start = lib.mkOption {
@@ -103,6 +116,9 @@ in
           end = lib.mkOption {
             type = lib.types.str;
             default = if partition.config.size == "100%" then "-0" else "+${partition.config.size}";
+            defaultText = ''
+              if partition.config.size == "100%" then "-0" else "+''${partition.config.size}";
+            '';
             description = ''
               End of the partition, in sgdisk format.
               Use + for relative sizes from the partitions start
@@ -142,8 +158,10 @@ in
             description = "Entry to add to the Hybrid MBR table";
           };
           _index = lib.mkOption {
+            type = lib.types.int;
             internal = true;
             default = diskoLib.indexOf (x: x.name == partition.config.name) sortedPartitions 0;
+            defaultText = null;
           };
         };
       }));

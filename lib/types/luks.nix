@@ -59,9 +59,11 @@ in
     askPassword = lib.mkOption {
       type = lib.types.bool;
       default = config.keyFile == null && config.passwordFile == null && (! config.settings ? "keyFile");
+      defaultText = "true if neither keyFile nor passwordFile are set";
       description = "Whether to ask for a password for initial encryption";
     };
     settings = lib.mkOption {
+      type = lib.types.attrsOf lib.types.anything;
       default = { };
       description = "LUKS settings (as defined in configuration.nix in boot.initrd.luks.devices.<name>)";
       example = ''{
