@@ -153,6 +153,14 @@ in
     };
 
     tests = {
+      bootCommands = lib.mkOption {
+        description = ''
+          NixOS test script commands to run after the machine has started. Can
+          be used to enter an interactive password.
+        '';
+        type = lib.types.lines;
+      };
+
       efi = lib.mkOption {
         description = ''
           Whether efi is enabled for the `system.build.installTest`.
@@ -226,6 +234,7 @@ in
           name = "${config.networking.hostName}-disko";
           disko-config = builtins.removeAttrs config [ "_module" ];
           testMode = "direct";
+          bootCommands = cfg.tests.bootCommands;
           efi = cfg.tests.efi;
           extraSystemConfig = cfg.tests.extraConfig;
           extraTestScript = cfg.tests.extraChecks;
