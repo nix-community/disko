@@ -181,6 +181,11 @@ if [[ $mode = "destroy,format,mount" && $skip_destroy_safety_check = true ]]; th
   command+=("--yes-wipe-all-disks")
 fi
 
+# Legacy modes don't support --yes-wipe-all-disks and are not in `$script/bin`
+if [[ $mode = "disko" ]] || [[ $mode = "create" ]] || [[ $mode = "zap_create_mount" ]] ; then
+  command=("$script")
+fi
+
 if [[ -n "${dry_run+x}" ]]; then
   echo "${command[@]}"
 else
