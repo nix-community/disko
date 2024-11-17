@@ -9,7 +9,6 @@ from typing import (
     Literal,
     ParamSpec,
     TypeAlias,
-    cast,
 )
 
 from .ansi import Colors

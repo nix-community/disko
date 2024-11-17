@@ -664,10 +664,10 @@ let
           str = "str";
           bool = "bool";
           int = "int";
-          submodule = x: x {
+          submodule = x: (x {
             inherit (diskoLib.typesSerializerLib) lib config options;
             name = "<self.name>";
-          };
+          }).options;
         };
       };
       diskoLib = {
@@ -692,18 +692,12 @@ let
             (diskoLib.serializeType (import ./types/${file} diskoLib.typesSerializerLib))
           )
           (lib.filter (name: lib.hasSuffix ".nix" name) (lib.attrNames (builtins.readDir ./types)))
-      ) // {
-      partitionType = {
-        type = "oneOf";
-        types = lib.attrNames diskoLib._partitionTypes;
-        "__isCompositeType" = true;
-      };
-      deviceType = {
-        type = "oneOf";
-        types = lib.attrNames diskoLib._deviceTypes;
-        "__isCompositeType" = true;
-      };
-    };
+      ) // (
+      let types = diskoLib.typesSerializerLib.lib.types; in {
+        partitionType = types.nullOr (types.oneOf (lib.attrNames diskoLib._partitionTypes));
+        deviceType = types.nullOr (types.oneOf (lib.attrNames diskoLib._deviceTypes));
+      }
+    );
   };
 
   outputs =

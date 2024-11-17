@@ -1,8 +1,7 @@
 from dataclasses import dataclass
 import json
 from pathlib import Path
-from typing import Any, cast
-import typing
+from typing import cast
 
 from ..result import DiskoError, DiskoResult, DiskoSuccess
 from ..run_cmd import run

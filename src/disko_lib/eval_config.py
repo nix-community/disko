@@ -1,7 +1,12 @@
 import json
 from pathlib import Path
 import re
-from typing import cast
+from typing import Any, cast
+
+from pydantic import ValidationError
+
+from disko_lib.config_type import DiskoConfig
+from disko_lib.messages.bugs import bug_validate_config_failed
 
 from .json_types import JsonDict
 
@@ -90,7 +95,9 @@ def _eval_flake(flake_uri: str) -> DiskoResult[JsonDict]:
     return _eval_config({"flake": flake, "flakeAttr": flake_attr})
 
 
-def eval_config(*, disko_file: str | None, flake: str | None) -> DiskoResult[JsonDict]:
+def eval_config_as_json(
+    *, disko_file: str | None, flake: str | None
+) -> DiskoResult[JsonDict]:
     # match would be nicer, but mypy doesn't understand type narrowing in tuples
     if not disko_file and not flake:
         return DiskoError.single_message(err_missing_arguments, "validate args")
@@ -100,3 +107,24 @@ def eval_config(*, disko_file: str | None, flake: str | None) -> DiskoResult[Jso
         return _eval_disko_file(Path(disko_file))
 
     return DiskoError.single_message(err_too_many_arguments, "validate args")
+
+
+def eval_and_validate_config(
+    *, disko_file: str | None, flake: str | None
+) -> DiskoResult[DiskoConfig]:
+    json_config = eval_config_as_json(disko_file=disko_file, flake=flake)
+
+    if isinstance(json_config, DiskoError):
+        return json_config
+
+    try:
+        result = DiskoConfig(**cast(dict[str, Any], json_config.value))  # type: ignore[misc]
+    except ValidationError as e:
+        return DiskoError.single_message(
+            bug_validate_config_failed,
+            "validate disko config",
+            error=e,
+            config=json_config.value,
+        )
+
+    return DiskoSuccess(result, "validate disko config")

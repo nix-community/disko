@@ -4,44 +4,32 @@
 # Disable auto-formatting for this file
 # fmt: off
 from typing import Any, Literal, Union
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 
 
-class btrfs_subvolumes_options_swap_options(BaseModel):
+class btrfs_subvolumes_swap(BaseModel):
     options: list[str]
     path: str
     priority: None | int
     size: str
 
 
-class btrfs_subvolumes_options_swap(BaseModel):
-    options: btrfs_subvolumes_options_swap_options
-
-
-class btrfs_subvolumes_options(BaseModel):
+class btrfs_subvolumes(BaseModel):
     extraArgs: list[str]
     mountOptions: list[str]
     mountpoint: None | str
     name: str
-    swap: dict[str, btrfs_subvolumes_options_swap]
+    swap: dict[str, btrfs_subvolumes_swap]
     type: Literal['btrfs_subvol']
 
 
-class btrfs_subvolumes(BaseModel):
-    options: btrfs_subvolumes_options
-
-
-class btrfs_swap_options(BaseModel):
+class btrfs_swap(BaseModel):
     options: list[str]
     path: str
     priority: None | int
     size: str
-
-
-class btrfs_swap(BaseModel):
-    options: btrfs_swap_options
 
 
 class btrfs(BaseModel):
@@ -56,10 +44,10 @@ class btrfs(BaseModel):
 
 
 
-deviceType = Union["btrfs", "filesystem", "gpt", "luks", "lvm_pv", "mdraid", "swap", "table", "zfs"]
+deviceType = None | Union["btrfs", "filesystem", "gpt", "luks", "lvm_pv", "mdraid", "swap", "table", "zfs"]
 
 class disk(BaseModel):
-    content: "deviceType"
+    content: "deviceType" = Field(..., discriminator="type")
     device: str
     imageName: str
     imageSize: str
@@ -78,32 +66,24 @@ class filesystem(BaseModel):
 
 
 
-class gpt_partitions_options_hybrid_options(BaseModel):
+class gpt_partitions_hybrid(BaseModel):
     mbrBootableFlag: bool
     mbrPartitionType: None | str
 
 
-class gpt_partitions_options_hybrid(BaseModel):
-    options: gpt_partitions_options_hybrid_options
-
-
-class gpt_partitions_options(BaseModel):
+class gpt_partitions(BaseModel):
     _index: int
     alignment: int
-    content: "partitionType"
+    content: "partitionType" = Field(..., discriminator="type")
     device: str
     end: str
-    hybrid: None | gpt_partitions_options_hybrid
+    hybrid: None | gpt_partitions_hybrid
     label: str
     name: str
     priority: int
     size: Union[Literal['100%'], str]
     start: str
     type: Union[str, str]
-
-
-class gpt_partitions(BaseModel):
-    options: gpt_partitions_options
 
 
 class gpt(BaseModel):
@@ -116,7 +96,7 @@ class gpt(BaseModel):
 class luks(BaseModel):
     additionalKeyFiles: list[str]
     askPassword: bool
-    content: "deviceType"
+    content: "deviceType" = Field(..., discriminator="type")
     device: str
     extraFormatArgs: list[str]
     extraOpenArgs: list[str]
@@ -136,18 +116,14 @@ class lvm_pv(BaseModel):
 
 
 
-class lvm_vg_lvs_options(BaseModel):
-    content: "partitionType"
+class lvm_vg_lvs(BaseModel):
+    content: "partitionType" = Field(..., discriminator="type")
     extraArgs: list[str]
     lvm_type: None | Literal['mirror', 'raid0', 'raid1', 'raid4', 'raid5', 'raid6', 'thin-pool', 'thinlv']
     name: str
     pool: None | str
     priority: int
     size: str
-
-
-class lvm_vg_lvs(BaseModel):
-    options: lvm_vg_lvs_options
 
 
 class lvm_vg(BaseModel):
@@ -157,7 +133,7 @@ class lvm_vg(BaseModel):
 
 
 class mdadm(BaseModel):
-    content: "deviceType"
+    content: "deviceType" = Field(..., discriminator="type")
     level: int
     metadata: Literal['1', '1.0', '1.1', '1.2', 'default', 'ddf', 'imsm']
     name: str
@@ -180,7 +156,7 @@ class nodev(BaseModel):
 
 
 
-partitionType = Union["btrfs", "filesystem", "luks", "lvm_pv", "mdraid", "swap", "zfs"]
+partitionType = None | Union["btrfs", "filesystem", "luks", "lvm_pv", "mdraid", "swap", "zfs"]
 
 class swap(BaseModel):
     device: str
@@ -195,20 +171,16 @@ class swap(BaseModel):
 
 
 
-class table_partitions_options(BaseModel):
+class table_partitions(BaseModel):
     _index: int
     bootable: bool
-    content: "partitionType"
+    content: "partitionType" = Field(..., discriminator="type")
     end: str
     flags: list[str]
     fs_type: None | Literal['btrfs', 'ext2', 'ext3', 'ext4', 'fat16', 'fat32', 'hfs', 'hfs+', 'linux-swap', 'ntfs', 'reiserfs', 'udf', 'xfs']
     name: None | str
     part_type: Literal['primary', 'logical', 'extended']
     start: str
-
-
-class table_partitions(BaseModel):
-    options: table_partitions_options
 
 
 class table(BaseModel):
@@ -233,7 +205,7 @@ class zfs_fs(BaseModel):
 
 
 class zfs_volume(BaseModel):
-    content: "partitionType"
+    content: "partitionType" = Field(..., discriminator="type")
     mountOptions: list[str]
     name: str
     options: dict[str, str]

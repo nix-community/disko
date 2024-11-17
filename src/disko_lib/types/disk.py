@@ -1,4 +1,3 @@
-from typing import cast
 from disko_lib.messages.msgs import (
     err_unsupported_pttype,
     warn_generate_partial_failure,

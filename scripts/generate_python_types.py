@@ -112,6 +112,11 @@ def _parse_simple_type(type_str: str) -> str:
             return "int"
         case "anything":
             return "Any"
+        # Set up discriminated unions to reduce error messages when validation fails
+        case "deviceType":
+            return '"deviceType" = Field(..., discriminator="type")'
+        case "partitionType":
+            return '"partitionType" = Field(..., discriminator="type")'
         case _:
             # Probably a type alias, needs to be quoted in case the type is defined later
             return f'"{type_str}"'
@@ -212,7 +217,7 @@ def generate_python_code(schema: JsonDict) -> io.StringIO:
 # Disable auto-formatting for this file
 # fmt: off
 from typing import Any, Literal, Union
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 """

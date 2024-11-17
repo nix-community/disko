@@ -3,7 +3,7 @@ import json
 from typing import Any, cast
 
 from disko_lib.ansi import Colors
-from disko_lib.eval_config import eval_config
+from disko_lib.eval_config import eval_and_validate_config, eval_config_as_json
 from disko_lib.messages.msgs import err_missing_mode
 from disko_lib.result import DiskoError, DiskoSuccess, DiskoResult
 from disko_lib.types.device import run_lsblk
@@ -31,13 +31,25 @@ def run_dev_ansi() -> DiskoResult[None]:
 def run_dev_eval(
     *, disko_file: str | None, flake: str | None, **_: Any
 ) -> DiskoResult[None]:
-    result = eval_config(disko_file=disko_file, flake=flake)
+    result = eval_config_as_json(disko_file=disko_file, flake=flake)
 
     if isinstance(result, DiskoError):
         return result
 
     print(json.dumps(result.value, indent=2))
     return DiskoSuccess(None, "run disko dev eval")
+
+
+def run_dev_validate(
+    *, disko_file: str | None, flake: str | None, **_: Any
+) -> DiskoResult[None]:
+    result = eval_and_validate_config(disko_file=disko_file, flake=flake)
+
+    if isinstance(result, DiskoError):
+        return result
+
+    print(result.value.model_dump_json(indent=2))
+    return DiskoSuccess(None, "run disko dev validate")
 
 
 def run_dev(args: argparse.Namespace) -> DiskoResult[None]:
@@ -48,7 +60,11 @@ def run_dev(args: argparse.Namespace) -> DiskoResult[None]:
             return run_dev_ansi()
         case "eval":
             return run_dev_eval(**vars(args))  # type: ignore[misc]
+        case "validate":
+            return run_dev_validate(**vars(args))  # type: ignore[misc]
         case _:
             return DiskoError.single_message(
-                err_missing_mode, "select mode", valid_modes=["lsblk", "ansi", "eval"]
+                err_missing_mode,
+                "select mode",
+                valid_modes=["lsblk", "ansi", "eval", "validate"],
             )

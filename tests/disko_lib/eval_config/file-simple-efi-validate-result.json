@@ -1,0 +1,66 @@
+{
+  "disk": {
+    "main": {
+      "content": {
+        "device": "/dev/disk/by-id/some-disk-id",
+        "efiGptPartitionFirst": true,
+        "partitions": {
+          "ESP": {
+            "alignment": 0,
+            "content": {
+              "device": "/dev/disk/by-partlabel/disk-main-ESP",
+              "extraArgs": [],
+              "format": "vfat",
+              "mountOptions": [
+                "umask=0077"
+              ],
+              "mountpoint": "/boot",
+              "type": "filesystem"
+            },
+            "device": "/dev/disk/by-partlabel/disk-main-ESP",
+            "end": "+500M",
+            "hybrid": null,
+            "label": "disk-main-ESP",
+            "name": "ESP",
+            "priority": 1000,
+            "size": "500M",
+            "start": "0",
+            "type": "EF00"
+          },
+          "root": {
+            "alignment": 0,
+            "content": {
+              "device": "/dev/disk/by-partlabel/disk-main-root",
+              "extraArgs": [],
+              "format": "ext4",
+              "mountOptions": [
+                "defaults"
+              ],
+              "mountpoint": "/",
+              "type": "filesystem"
+            },
+            "device": "/dev/disk/by-partlabel/disk-main-root",
+            "end": "-0",
+            "hybrid": null,
+            "label": "disk-main-root",
+            "name": "root",
+            "priority": 9001,
+            "size": "100%",
+            "start": "0",
+            "type": "8300"
+          }
+        },
+        "type": "gpt"
+      },
+      "device": "/dev/disk/by-id/some-disk-id",
+      "imageName": "main",
+      "imageSize": "2G",
+      "name": "main",
+      "type": "disk"
+    }
+  },
+  "lvm_vg": {},
+  "mdadm": {},
+  "nodev": {},
+  "zpool": {}
+}
