@@ -1,14 +1,15 @@
 from disko_lib.dict_diff import dict_diff
+from disko_lib.json_types import JsonDict
 
 
 def test_dict_diff_basic() -> None:
-    left = {
+    left: JsonDict = {
         "a": 1,
         "b": 2,
         "c": 3,
         "d": 4,
     }
-    right = {
+    right: JsonDict = {
         "a": 1,
         "b": 3,
         "c": 4,
@@ -39,12 +40,12 @@ def test_dict_diff_basic() -> None:
 
 
 def test_dict_diff_arrays() -> None:
-    left = {
+    left: JsonDict = {
         "a": [1, 2, 3],
         "b": [4, 5, 6],
         "c": [7, 8, 9],
     }
-    right = {
+    right: JsonDict = {
         "a": [1, 2, 3],
         "b": [4, 5, 7],
         "c": [7, 8, 9],
@@ -69,7 +70,7 @@ def test_dict_diff_arrays() -> None:
 
 
 def test_dict_diff_nested() -> None:
-    left = {
+    left: JsonDict = {
         "a": {
             "b": {
                 "c": 1,
@@ -87,7 +88,7 @@ def test_dict_diff_nested() -> None:
             },
         },
     }
-    right = {
+    right: JsonDict = {
         "a": {
             "b": {
                 "c": 1,

@@ -2,7 +2,7 @@
 
 import argparse
 import json
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 from disko.mode_dev import run_dev
 from disko.mode_generate import run_generate
@@ -10,7 +10,7 @@ from disko_lib.eval_config import eval_config
 from disko_lib.logging import LOGGER, debug, info
 from disko_lib.messages.msgs import err_missing_mode
 from disko_lib.result import DiskoError, DiskoResult, exit_on_error
-from disko_lib.types.disk import generate_config
+from disko_lib.json_types import JsonDict
 
 Mode = Literal[
     "destroy",
@@ -46,18 +46,18 @@ MODE_DESCRIPTION: dict[Mode, str] = {
 
 def run_apply(
     *, mode: str, disko_file: str | None, flake: str | None, **_kwargs: dict[str, Any]
-) -> DiskoResult[dict[str, Any]]:
+) -> DiskoResult[JsonDict]:
     return eval_config(disko_file=disko_file, flake=flake)
 
 
 def run(
     args: argparse.Namespace,
-) -> DiskoResult[None | dict[str, Any]]:
-    if args.verbose:
+) -> DiskoResult[None | JsonDict]:
+    if cast(bool, args.verbose):
         LOGGER.setLevel("DEBUG")
         debug("Enabled debug logging.")
 
-    match args.mode:
+    match cast(Mode | None, args.mode):
         case None:
             return DiskoError.single_message(
                 err_missing_mode, "select mode", valid_modes=[str(m) for m in ALL_MODES]
@@ -67,7 +67,7 @@ def run(
         case "dev":
             return run_dev(args)
         case _:
-            return run_apply(**vars(args))
+            return run_apply(**vars(args))  # type: ignore[misc]
 
 
 def parse_args() -> argparse.Namespace:

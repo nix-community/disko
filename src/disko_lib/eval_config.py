@@ -1,7 +1,9 @@
 import json
 from pathlib import Path
 import re
-from typing import Any
+from typing import cast
+
+from .json_types import JsonDict
 
 from disko_lib.messages.msgs import (
     err_eval_config_failed,
@@ -30,7 +32,7 @@ assert (
 ), f"Can't find `eval-config.nix`, expected it next to {__file__}"
 
 
-def _eval_config(args: dict[str, str]) -> DiskoResult[dict[str, Any]]:
+def _eval_config(args: dict[str, str]) -> DiskoResult[JsonDict]:
     args_as_json = json.dumps(args)
 
     result = run(
@@ -43,14 +45,16 @@ def _eval_config(args: dict[str, str]) -> DiskoResult[dict[str, Any]]:
             err_eval_config_failed,
             "evaluate disko configuration",
             args=args,
-            stderr=result.messages[0].details["stderr"],
+            stderr=cast(str, result.messages[0].details["stderr"]),
         )
 
     # We trust the output of `nix eval` to be valid JSON
-    return DiskoSuccess(json.loads(result.value), "evaluate disko config")
+    return DiskoSuccess(
+        cast(JsonDict, json.loads(result.value)), "evaluate disko config"
+    )
 
 
-def _eval_disko_file(config_file: Path) -> DiskoResult[dict[str, Any]]:
+def _eval_disko_file(config_file: Path) -> DiskoResult[JsonDict]:
     abs_path = config_file.absolute()
 
     if not abs_path.exists():
@@ -63,7 +67,7 @@ def _eval_disko_file(config_file: Path) -> DiskoResult[dict[str, Any]]:
     return _eval_config({"diskoFile": str(abs_path)})
 
 
-def _eval_flake(flake_uri: str) -> DiskoResult[dict[str, Any]]:
+def _eval_flake(flake_uri: str) -> DiskoResult[JsonDict]:
     # arg parser should not allow empty strings
     assert len(flake_uri) > 0
 
@@ -71,9 +75,8 @@ def _eval_flake(flake_uri: str) -> DiskoResult[dict[str, Any]]:
 
     # Match can't be none if we receive at least one character
     assert flake_match is not None
-
-    flake = flake_match.group(1)
-    flake_attr = flake_match.group(2)
+    flake = cast(str, flake_match.group(1))
+    flake_attr = cast(str, flake_match.group(2))
 
     if not flake_attr:
         return DiskoError.single_message(
@@ -87,9 +90,7 @@ def _eval_flake(flake_uri: str) -> DiskoResult[dict[str, Any]]:
     return _eval_config({"flake": flake, "flakeAttr": flake_attr})
 
 
-def eval_config(
-    *, disko_file: str | None, flake: str | None
-) -> DiskoResult[dict[str, Any]]:
+def eval_config(*, disko_file: str | None, flake: str | None) -> DiskoResult[JsonDict]:
     # match would be nicer, but mypy doesn't understand type narrowing in tuples
     if not disko_file and not flake:
         return DiskoError.single_message(err_missing_arguments, "validate args")

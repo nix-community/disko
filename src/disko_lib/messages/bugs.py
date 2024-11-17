@@ -1,4 +1,3 @@
-from typing import Any
 from disko_lib.logging import ReadableMessage
 
 
@@ -16,7 +15,7 @@ def __bug_help_message(error_code: str) -> ReadableMessage:
     )
 
 
-def bug_success_without_context(*, value: Any) -> list[ReadableMessage]:
+def bug_success_without_context(*, value: object) -> list[ReadableMessage]:
     return [
         ReadableMessage(
             "bug",

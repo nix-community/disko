@@ -42,9 +42,9 @@ warn_return_any = true
 warn_unreachable = true
 # Miscellaneous strictness flags
 no_implicit_reexport = true
-strict_concatenate = true
 strict_equality = true
 extra_checks = true
+enable_error_code = "ignore-without-code"
 # Error message control
 show_error_context = true
 show_error_code_links = true

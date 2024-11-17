@@ -17,5 +17,6 @@
   ],
   "python.analysis.extraPaths": [
     "./src"
-  ]
+  ],
+  "mypy-type-checker.importStrategy": "fromEnvironment"
 }

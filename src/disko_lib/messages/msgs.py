@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
-from typing import Any
 from disko_lib.logging import ReadableMessage
 from .colors import PLACEHOLDER, RESET, FLAG, COMMAND, INVALID, FILE, VALUE, EM, EM_WARN
+from ..json_types import JsonDict
 
 ERR_ARGUMENTS_HELP_TXT = f"Provide either {PLACEHOLDER}disko_file{RESET} as the second argument or \
 {FLAG}--flake{RESET}/{FLAG}-f{RESET} {PLACEHOLDER}flake-uri{RESET}."
@@ -19,7 +19,7 @@ def err_command_failed(*, command: str, exit_code: int, stderr: str) -> Readable
     )
 
 
-def err_eval_config_failed(*, args: dict[str, Any], stderr: str) -> ReadableMessage:
+def err_eval_config_failed(*, args: dict[str, str], stderr: str) -> ReadableMessage:
     return ReadableMessage(
         "error",
         f"""
@@ -83,7 +83,7 @@ def err_unsupported_pttype(*, device: Path, pttype: str) -> ReadableMessage:
 
 def warn_generate_partial_failure(
     *,
-    partial_config: dict[Any, str],
+    partial_config: JsonDict,
     failed_devices: list[str],
     successful_devices: list[str],
 ) -> list[ReadableMessage]:

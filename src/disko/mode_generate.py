@@ -1,11 +1,11 @@
 import json
 import re
-from typing import Any
 from disko_lib.logging import info
 from disko_lib.messages.msgs import warn_generate_partial_failure
 from disko_lib.result import DiskoResult, DiskoError
 from disko_lib.types.disk import generate_config
 from disko_lib.run_cmd import run
+from disko_lib.json_types import JsonDict
 
 DEFAULT_CONFIG_FILE = "disko-config.nix"
 
@@ -25,7 +25,7 @@ PARTIAL_FAILURE_COMMENT = """
 """
 
 
-def run_generate() -> DiskoResult[dict[str, Any]]:
+def run_generate() -> DiskoResult[JsonDict]:
     generated_config_result = generate_config()
     generated_config = None
 

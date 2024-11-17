@@ -9,6 +9,7 @@ from typing import (
     Literal,
     ParamSpec,
     TypeAlias,
+    cast,
 )
 
 from .ansi import Colors
@@ -68,16 +69,16 @@ MessageFactory: TypeAlias = Callable[P, ReadableMessage | list[ReadableMessage]]
 class DiskoMessage(Generic[P]):
     factory: MessageFactory[P]
     # Can't infer a TypedDict from a ParamSpec yet (mypy 1.10.1, python 3.12.5)
-    # This is only safe to use because the type of __init__ ensures that the
-    # keys in details are the same as the keys in the factory kwargs
-    details: dict[str, Any]
+    details: dict[str, object]
 
     def __init__(self, factory: MessageFactory[P], **details: P.kwargs) -> None:
         self.factory = factory
         self.details = details
 
     def to_readable(self) -> list[ReadableMessage]:
-        result = self.factory(**self.details)
+        # This is only safe because the type of __init__ ensures that the
+        # keys in details are the same as the keys in the factory kwargs
+        result = self.factory(**self.details)  # type: ignore[arg-type]
         if isinstance(result, list):
             return result
         return [result]
@@ -86,6 +87,9 @@ class DiskoMessage(Generic[P]):
         for msg in self.to_readable():
             render_message(msg)
 
+    def is_message(self, factory: MessageFactory[Any]) -> bool:
+        return self.factory == factory  # type: ignore[misc]
+
 
 # Dedent lines based on the indent of the first line until a non-indented line is hit.
 # This will dedent the lines written in multiline f-strigns without breaking
@@ -93,8 +97,7 @@ class DiskoMessage(Generic[P]):
 def dedent_start_lines(lines: list[str]) -> list[str]:
     spaces_prefix_match = re.match(r"^( *)", lines[0])
     # Regex will even match an empty string, match can't be none
-    assert spaces_prefix_match is not None
-    dedent_width = len(spaces_prefix_match.group(1))
+    dedent_width = len(spaces_prefix_match.group(1))  # type: ignore[union-attr, misc]
 
     if dedent_width == 0:
         return lines

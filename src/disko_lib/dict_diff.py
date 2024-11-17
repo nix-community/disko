@@ -1,7 +1,7 @@
-from typing import Any
+from .json_types import JsonDict
 
 
-def dict_diff(left: dict[str, Any], right: dict[str, Any]) -> dict[str, Any]:
+def dict_diff(left: JsonDict, right: JsonDict) -> JsonDict:
     """Return a dict that only contains the keys and values of `right`
     that are different from those in `left`.
 
@@ -24,7 +24,7 @@ def dict_diff(left: dict[str, Any], right: dict[str, Any]) -> dict[str, Any]:
     >>> dict_diff({"a": {"b": 1}}, {"a": {"b": 3}, "c": {"d": 4}})
     {'a': {'b': 3}, 'c': {'d': 4, '_new': True}}
     """
-    new_dict: dict[str, Any] = {}
+    new_dict: JsonDict = {}
 
     for k, right_val in right.items():
         left_val = left.get(k)
@@ -32,12 +32,17 @@ def dict_diff(left: dict[str, Any], right: dict[str, Any]) -> dict[str, Any]:
             continue
 
         if not isinstance(right_val, dict):
-            new_dict[k] = right[k]
+            new_dict[k] = right_val
             continue
 
-        new_dict[k] = dict_diff(left.get(k, {}), right[k])
+        if not isinstance(left_val, dict):
+            left_val = {}
+
+        diffed_right_val = dict_diff(left_val, right_val)
         if not left_val:
-            new_dict[k]["_new"] = True
+            diffed_right_val["_new"] = True
+
+        new_dict[k] = diffed_right_val
 
     for k, left_val in left.items():
         if k not in right:

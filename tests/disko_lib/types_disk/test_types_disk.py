@@ -19,15 +19,15 @@ def test_generate_config_partial_failure_dos_table() -> None:
 
     assert isinstance(result, DiskoError)
 
-    assert result.messages[0].factory == err_unsupported_pttype
+    assert result.messages[0].is_message(err_unsupported_pttype)
     assert result.messages[0].details == {
         "pttype": "dos",
         "device": PosixPath("/dev/sdc"),
     }
 
-    assert result.messages[1].factory == warn_generate_partial_failure
+    assert result.messages[1].is_message(warn_generate_partial_failure)
     with open(CURRENT_DIR / "partial_failure_dos_table-generate-result.json") as f:
-        assert result.messages[1].details["partial_config"] == json.load(f)
+        assert result.messages[1].details["partial_config"] == json.load(f)  # type: ignore[misc]
     assert result.messages[1].details["failed_devices"] == [PosixPath("/dev/sdc")]
     assert result.messages[1].details["successful_devices"] == [
         PosixPath("/dev/sda"),

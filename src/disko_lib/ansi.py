@@ -3,6 +3,8 @@
 # Inspired by rene-d's colors.py, published in 2018
 # See https://gist.github.com/rene-d/9e584a7dd2935d0f461904b9f2950007
 
+import sys
+
 
 class Colors:
     """
@@ -163,13 +165,17 @@ class Colors:
     ATTR_STRIKE = "\033[9m"
 
     # cancel SGR codes if we don't write to a terminal
-    if not __import__("sys").stdout.isatty():
+    if not sys.stdout.isatty():
         for _ in dir():
             if isinstance(_, str) and _[0] != "_":
-                locals()[_] = ""
+                locals()[_] = ""  # type: ignore[misc]
     else:
+        import platform
+
         # set Windows console in VT mode
-        if __import__("platform").system() == "Windows":
-            kernel32 = __import__("ctypes").windll.kernel32
-            kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
+        if platform.system() == "Windows":
+            import ctypes
+
+            kernel32 = ctypes.windll.kernel32  # type: ignore[attr-defined, misc]
+            kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)  # type: ignore[misc]
             del kernel32

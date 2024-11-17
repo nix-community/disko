@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Generic, Literal, ParamSpec, TypeVar
+from typing import Any, Generic, Literal, ParamSpec, TypeVar, cast
 
 from disko_lib.messages.bugs import bug_success_without_context
 
@@ -18,7 +18,7 @@ class DiskoSuccess(Generic[T]):
 
 @dataclass
 class DiskoError:
-    messages: list[DiskoMessage[Any]]
+    messages: list[DiskoMessage[object]]
     context: str
     success: Literal[False] = False
 
@@ -26,18 +26,25 @@ class DiskoError:
     def single_message(
         cls, factory: MessageFactory[P], context: str, *_: P.args, **details: P.kwargs
     ) -> "DiskoError":
-        return cls([DiskoMessage(factory, **details)], context)
+        _factory = cast(MessageFactory[object], factory)
+        return cls([DiskoMessage(_factory, **details)], context)
 
     def find_message(
         self, message_factory: MessageFactory[P]
     ) -> None | DiskoMessage[P]:
         for message in self.messages:
             if message.factory == message_factory:
-                return message
+                return cast(DiskoMessage[P], message)
         return None
 
+    def append(self, message: DiskoMessage[Any]) -> None:
+        self.messages.append(message)  # type: ignore[misc]
 
-DiskoResult = DiskoSuccess[T] | DiskoError
+    def extend(self, other_error: "DiskoError") -> None:
+        self.messages.extend(other_error.messages)
+
+
+DiskoResult = DiskoSuccess[T] | DiskoError  # type: ignore[misc, unused-ignore]
 
 
 def exit_on_error(result: DiskoResult[T]) -> T:
