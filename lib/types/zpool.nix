@@ -68,11 +68,38 @@ in
                         members = [ "x" "y" "/dev/sda1" ];
                       }];
                     };
-                    special = lib.mkOption {
-                      type = lib.types.nullOr vdev;
-                      default = null;
+                    spare = lib.mkOption {
+                      type = lib.types.listOf lib.types.str;
+                      default = [ ];
                       description = ''
-                        A vdev definition for a special device. See
+                        A list of devices to use as hot spares. See
+                        https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#Hot_Spares
+                        for details.
+                      '';
+                    };
+                    log = lib.mkOption {
+                      type = lib.types.listOf vdev;
+                      default = [ ];
+                      description = ''
+                        A list of vdevs used for the zfs intent log (ZIL). See
+                        https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#Intent_Log
+                        for details.
+                      '';
+                    };
+                    dedup = lib.mkOption {
+                      type = lib.types.listOf vdev;
+                      default = [ ];
+                      description = ''
+                        A list of vdevs used for the deduplication table. See
+                        https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#dedup
+                        for details.
+                      '';
+                    };
+                    special = lib.mkOption {
+                      type = lib.types.either (lib.types.listOf vdev) (lib.types.nullOr vdev);
+                      default = [ ];
+                      description = ''
+                        A list of vdevs used as special devices. See
                         https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#special
                         for details.
                       '';
@@ -86,7 +113,6 @@ in
                         for details.
                       '';
                     };
-                    # TODO: Consider supporting log, spare, and dedup options.
                   };
                 });
           };
@@ -182,8 +208,17 @@ in
                 entries=()
                 ${lib.optionalString (hasTopology && topology.vdev != null)
                     (lib.concatMapStrings formatVdev topology.vdev)}
-                ${lib.optionalString (hasTopology && topology.special != null)
-                    (formatOutput "special ${topology.special.mode}" topology.special.members)}
+                ${lib.optionalString (hasTopology && topology.spare != [])
+                    (formatOutput "spare" topology.spare)}
+                ${lib.optionalString (hasTopology && topology.log != [])
+                    (lib.concatMapStrings (vdev: formatOutput "log ${vdev.mode}" vdev.members) topology.log)}
+                ${lib.optionalString (hasTopology && topology.dedup != [])
+                    (lib.concatMapStrings (vdev: formatOutput "dedup ${vdev.mode}" vdev.members) topology.dedup)}
+                ${lib.optionalString (hasTopology && topology.special != null && topology.special != [])
+                    (lib.concatMapStrings
+                      (vdev: formatOutput "special ${vdev.mode}" vdev.members)
+                      (lib.lists.toList topology.special) 
+                    )}
                 ${lib.optionalString (hasTopology && topology.cache != [])
                     (formatOutput "cache" topology.cache)}
                 all_devices=()

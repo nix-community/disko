@@ -38,7 +38,7 @@ let
       };
 
     # list of devices generated inside qemu
-    devices = [ "/dev/vda" "/dev/vdb" "/dev/vdc" "/dev/vdd" "/dev/vde" "/dev/vdf" ];
+    devices = [ "/dev/vda" "/dev/vdb" "/dev/vdc" "/dev/vdd" "/dev/vde" "/dev/vdf" "/dev/vdg" "/dev/vdh" ];
 
     # This is the test generator for a disko test
     makeDiskoTest =

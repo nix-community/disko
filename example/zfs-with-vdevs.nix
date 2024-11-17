@@ -43,9 +43,57 @@
           };
         };
       };
-      z = {
+      spare = {
         type = "disk";
-        device = "/dev/sdz";
+        device = "/dev/vdc";
+        content = {
+          type = "gpt";
+          partitions = {
+            zfs = {
+              size = "100%";
+              content = {
+                type = "zfs";
+                pool = "zroot";
+              };
+            };
+          };
+        };
+      };
+      log = {
+        type = "disk";
+        device = "/dev/vdd";
+        content = {
+          type = "gpt";
+          partitions = {
+            zfs = {
+              size = "100%";
+              content = {
+                type = "zfs";
+                pool = "zroot";
+              };
+            };
+          };
+        };
+      };
+      dedup = {
+        type = "disk";
+        device = "/dev/vde";
+        content = {
+          type = "gpt";
+          partitions = {
+            zfs = {
+              size = "100%";
+              content = {
+                type = "zfs";
+                pool = "zroot";
+              };
+            };
+          };
+        };
+      };
+      special = {
+        type = "disk";
+        device = "/dev/vdf";
         content = {
           type = "gpt";
           partitions = {
@@ -61,7 +109,7 @@
       };
       cache = {
         type = "disk";
-        device = "/dev/vdc";
+        device = "/dev/vdg";
         content = {
           type = "gpt";
           partitions = {
@@ -91,9 +139,22 @@
                 ];
               }
             ];
-            special = {
-              members = [ "z" ];
-            };
+            spare = [ "spare" ];
+            log = [
+              {
+                members = [ "log" ];
+              }
+            ];
+            dedup = [
+              {
+                members = [ "dedup" ];
+              }
+            ];
+            special = [
+              {
+                members = [ "special" ];
+              }
+            ];
             cache = [ "cache" ];
           };
         };
