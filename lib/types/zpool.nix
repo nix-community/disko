@@ -160,13 +160,14 @@ in
       inherit config options;
       default =
         let
-          formatOutput = mode: members: ''
-            entries+=("${mode}=${
+          formatOutput = type: mode: members: ''
+            entries+=("${type} ${mode}=${
               lib.concatMapStringsSep " "
               (d: if lib.strings.hasPrefix "/" d then d else "/dev/disk/by-partlabel/disk-${d}-zfs") members
             }")
           '';
-          formatVdev = vdev: formatOutput vdev.mode vdev.members;
+          formatVdev = type: vdev: formatOutput type vdev.mode vdev.members;
+          formatVdevList = type: vdevs: lib.concatMapStrings (formatVdev type) vdevs;
           hasTopology = !(builtins.isString config.mode);
           mode = if hasTopology then "prescribed" else config.mode;
           topology = lib.optionalAttrs hasTopology config.mode.topology;
@@ -207,27 +208,31 @@ in
               else
                 entries=()
                 ${lib.optionalString (hasTopology && topology.vdev != null)
-                    (lib.concatMapStrings formatVdev topology.vdev)}
+                    (formatVdevList "" topology.vdev)}
                 ${lib.optionalString (hasTopology && topology.spare != [])
-                    (formatOutput "spare" topology.spare)}
+                    (formatOutput "spare" "" topology.spare)}
                 ${lib.optionalString (hasTopology && topology.log != [])
-                    (lib.concatMapStrings (vdev: formatOutput "log ${vdev.mode}" vdev.members) topology.log)}
+                    (formatVdevList "log" topology.log)}
                 ${lib.optionalString (hasTopology && topology.dedup != [])
-                    (lib.concatMapStrings (vdev: formatOutput "dedup ${vdev.mode}" vdev.members) topology.dedup)}
+                    (formatVdevList "dedup" topology.dedup)}
                 ${lib.optionalString (hasTopology && topology.special != null && topology.special != [])
-                    (lib.concatMapStrings
-                      (vdev: formatOutput "special ${vdev.mode}" vdev.members)
-                      (lib.lists.toList topology.special) 
-                    )}
+                    (formatVdevList "special" (lib.lists.toList topology.special))}
                 ${lib.optionalString (hasTopology && topology.cache != [])
-                    (formatOutput "cache" topology.cache)}
+                    (formatOutput "cache" "" topology.cache)}
                 all_devices=()
+                last_type=
                 for line in "''${entries[@]}"; do
-                  # lineformat is mode=device1 device2 device3
-                  mode=''${line%%=*}
-                  devs=''${line#*=}
+                  # lineformat is type mode=device1 device2 device3
+                  mode="''${line%%=*}"
+                  type="''${mode%% *}"
+                  mode="''${mode#"$type "}"
+                  devs="''${line#*=}"
                   IFS=' ' read -r -a devices <<< "$devs"
                   all_devices+=("''${devices[@]}")
+                  if ! [ "$type" = "$last_type" ]; then
+                    topology+=" $type"
+                    last_type="$type"
+                  fi
                   topology+=" ''${mode} ''${devices[*]}"
                 done
                 # all_devices sorted should equal zfs_devices sorted
