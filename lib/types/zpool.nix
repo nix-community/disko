@@ -1,6 +1,6 @@
 { config, options, lib, diskoLib, rootMountPoint, ... }:
 let
-  # TODO: Consider expanding to handle `disk` `file` and `draid` mode options.
+  # TODO: Consider expanding to handle `file` and `draid` mode options.
   modeOptions = [
     ""
     "mirror"
@@ -167,7 +167,9 @@ in
             }")
           '';
           formatVdev = type: vdev: formatOutput type vdev.mode vdev.members;
-          formatVdevList = type: vdevs: lib.concatMapStrings (formatVdev type) vdevs;
+          formatVdevList = type: vdevs: lib.concatMapStrings
+            (formatVdev type)
+            (builtins.sort (a: b: a.mode < b.mode) vdevs);
           hasTopology = !(builtins.isString config.mode);
           mode = if hasTopology then "prescribed" else config.mode;
           topology = lib.optionalAttrs hasTopology config.mode.topology;
