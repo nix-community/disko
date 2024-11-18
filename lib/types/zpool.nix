@@ -63,10 +63,15 @@ in
                         https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#Virtual_Devices_(vdevs)
                         for details.
                       '';
-                      example = [{
-                        mode = "mirror";
-                        members = [ "x" "y" "/dev/sda1" ];
-                      }];
+                      example = [
+                        {
+                          mode = "mirror";
+                          members = [ "x" "y" ];
+                        }
+                        {
+                          members = [ "z" ];
+                        }
+                      ];
                     };
                     spare = lib.mkOption {
                       type = lib.types.listOf lib.types.str;
@@ -76,6 +81,7 @@ in
                         https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#Hot_Spares
                         for details.
                       '';
+                      example = [ "x" "y" ];
                     };
                     log = lib.mkOption {
                       type = lib.types.listOf vdev;
@@ -85,6 +91,15 @@ in
                         https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#Intent_Log
                         for details.
                       '';
+                      example = [
+                        {
+                          mode = "mirror";
+                          members = [ "x" "y" ];
+                        }
+                        {
+                          members = [ "z" ];
+                        }
+                      ];
                     };
                     dedup = lib.mkOption {
                       type = lib.types.listOf vdev;
@@ -94,6 +109,15 @@ in
                         https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#dedup
                         for details.
                       '';
+                      example = [
+                        {
+                          mode = "mirror";
+                          members = [ "x" "y" ];
+                        }
+                        {
+                          members = [ "z" ];
+                        }
+                      ];
                     };
                     special = lib.mkOption {
                       type = lib.types.either (lib.types.listOf vdev) (lib.types.nullOr vdev);
@@ -103,6 +127,15 @@ in
                         https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#special
                         for details.
                       '';
+                      example = [
+                        {
+                          mode = "mirror";
+                          members = [ "x" "y" ];
+                        }
+                        {
+                          members = [ "z" ];
+                        }
+                      ];
                     };
                     cache = lib.mkOption {
                       type = lib.types.listOf lib.types.str;
@@ -112,6 +145,7 @@ in
                         https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#Cache_Devices
                         for details.
                       '';
+                      example = [ "x" "y" ];
                     };
                   };
                 });
