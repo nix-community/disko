@@ -169,7 +169,7 @@ in
           formatVdev = type: vdev: formatOutput type vdev.mode vdev.members;
           formatVdevList = type: vdevs: lib.concatMapStrings
             (formatVdev type)
-            (builtins.sort (a: b: a.mode < b.mode) vdevs);
+            (builtins.sort (a: _: a.mode == "") vdevs);
           hasTopology = !(builtins.isString config.mode);
           mode = if hasTopology then "prescribed" else config.mode;
           topology = lib.optionalAttrs hasTopology config.mode.topology;
