@@ -48,6 +48,7 @@
           "root/zfs_fs" = {
             type = "zfs_fs";
             mountpoint = "/zfs_fs";
+            options.mountpoint = "legacy";
             options."com.sun:auto-snapshot" = "true";
           };
         };
