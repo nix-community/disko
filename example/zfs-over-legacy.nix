@@ -1,3 +1,4 @@
+# systemd will mount an ext4 filesystem at / and zfs will mount the dataset underneath it
 {
   disko.devices = {
     disk = {
