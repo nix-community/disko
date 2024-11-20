@@ -1,9 +1,8 @@
 #include <any>
-#include <cstdlib>
 #include <cstring>
+#include <filesystem>
 #include <getopt.h>
 #include <iostream>
-#include <ostream>
 #include <string>
 
 /*help message*/
@@ -52,7 +51,7 @@ bool verbose = false;
 
 std::any parseArgs(int argc, char **argv) {
 
-  const char *const short_opts = "f:m:dhv";
+  const char *const short_opts = "f:m:dhvF";
   const option long_opts[] = {
       {"flake", required_argument, nullptr, 'f'},
       {"mount", required_argument, nullptr, 'm'},
@@ -60,9 +59,10 @@ std::any parseArgs(int argc, char **argv) {
       {"yes-wipe-everything", no_argument, nullptr, 'y'},
       {"help", no_argument, nullptr, 'h'},
       {"verbose", no_argument, nullptr, 'v'},
-      {"arg", required_argument, nullptr, 'a'}};
+      {"arg", required_argument, nullptr, 'a'},
+      {"file", required_argument, nullptr, 'F'}};
 
-  // break program and show help message if no arguments passed:
+  // break program if no args set:
   if (argc == 1) {
     std::cout << "No mode set!\n" << std::endl;
     showUsage();
@@ -85,8 +85,6 @@ std::any parseArgs(int argc, char **argv) {
       showUsage();
       exit(1);
     }
-
-    // find configuration file:
   }
   // parse additional flags
   while (true) {
@@ -99,6 +97,8 @@ std::any parseArgs(int argc, char **argv) {
     case 'f':
       flake_Path = std::string(optarg);
       break;
+    case 'F':
+      disko_Config = std::string(optarg);
     case 'm':
       mount_Path = std::string(optarg);
       break;
@@ -118,31 +118,31 @@ std::any parseArgs(int argc, char **argv) {
     case 'h':
       showUsage();
       exit(0);
-
-    default:
-      std::cerr << "An error occurred! Check --help or, if a bug, report it."
-                << std::endl;
+    case '?':
+      std::cerr << "Unknown option: " << (char)optopt << std::endl;
       exit(1);
     }
   }
-  return disko_Mode;
-  return flake_Path;
-  return mount_Path;
-  return nix_Args;
-  return dry_Run;
-  return omit_Check;
-  return verbose;
+
+  // check if disko_Mode and disko_Config is set and exit if variable is empty:
+  if (disko_Config.empty() || !std::filesystem::exists(disko_Config)) {
+    std::cerr << "Configuration file is not set or file does not exist."
+              << std::endl;
+    exit(1);
+  }
+
+  // return values
+  return std::make_tuple(disko_Mode, disko_Config, flake_Path, mount_Path,
+                         dry_Run, omit_Check, verbose, nix_Args);
 }
 
 /* main part - pass arguments to nix */
 void disko_Run() {
   std::string base_Command = "nix"
                              " --extra-experimental-features"
-                             "nix-command"
-                             "--extra-experimental-features"
-                             "flakes";
-
-  std::cout << base_Command << std::endl;
+                             " nix-command"
+                             " --extra-experimental-features"
+                             " flakes";
 };
 
 int main(int argc, char *argv[]) {
