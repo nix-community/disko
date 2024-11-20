@@ -3,7 +3,6 @@
 #include <filesystem>
 #include <getopt.h>
 #include <iostream>
-#include <string>
 
 /*help message*/
 void showUsage() {
@@ -19,11 +18,11 @@ void showUsage() {
       << "    generate   ->   generate configuration from current disks "
          "configuration\n\n"
       << "Args:\n"
-      << "    -f/--flake <path/url>    ->   define config location (default: "
-         "./disko.nix)\n"
+      << "    -f/--flake <path/url>    ->   define flake location\n"
+      << "    -c/--config <file.nix>   ->   define config file\n"
       << "    -m/--mount <path>        ->   sets path where disks should be "
          "mounted (default: /mnt)\n"
-      << "--arg 'name value'           ->   arguments for nix-build\n"
+      << "    --arg 'name value'       ->   arguments for nix-build\n"
       << "    -d/--dry-run             ->   show what script WOULD do\n"
       << "    --yes-wipe-everything    ->   skip safety check\n"
       << "    -v/--verbose             ->   increase verbosity of output\n"
@@ -51,7 +50,7 @@ bool verbose = false;
 
 std::any parseArgs(int argc, char **argv) {
 
-  const char *const short_opts = "f:m:dhvF";
+  const char *const short_opts = "f:m:dhvc:";
   const option long_opts[] = {
       {"flake", required_argument, nullptr, 'f'},
       {"mount", required_argument, nullptr, 'm'},
@@ -60,7 +59,7 @@ std::any parseArgs(int argc, char **argv) {
       {"help", no_argument, nullptr, 'h'},
       {"verbose", no_argument, nullptr, 'v'},
       {"arg", required_argument, nullptr, 'a'},
-      {"file", required_argument, nullptr, 'F'}};
+      {"config", required_argument, nullptr, 'c'}};
 
   // break program if no args set:
   if (argc == 1) {
@@ -97,8 +96,9 @@ std::any parseArgs(int argc, char **argv) {
     case 'f':
       flake_Path = std::string(optarg);
       break;
-    case 'F':
+    case 'n':
       disko_Config = std::string(optarg);
+      break;
     case 'm':
       mount_Path = std::string(optarg);
       break;
@@ -119,34 +119,53 @@ std::any parseArgs(int argc, char **argv) {
       showUsage();
       exit(0);
     case '?':
-      std::cerr << "Unknown option: " << (char)optopt << std::endl;
+      std::cerr << "Unknown option: " << char(optopt) << std::endl;
       exit(1);
     }
   }
 
-  // check if disko_Mode and disko_Config is set and exit if variable is empty:
-  if (disko_Config.empty() || !std::filesystem::exists(disko_Config)) {
-    std::cerr << "Configuration file is not set or file does not exist."
+  // check if disko_Mode and disko_Config is set and exit if variable is empty
+  // or both are used:
+  if ((disko_Config.empty() || !std::filesystem::exists(disko_Config)) and
+      (flake_Path.empty() || !std::filesystem::exists(flake_Path))) {
+    std::cerr << "Configuration file or flake is not set or does not exist."
               << std::endl;
+    exit(1);
+  }
+  if (!disko_Config.empty() and !flake_Path.empty()) {
+    std::cerr << "You cannot define both flake and config.nix file. Please "
+                 "choose only one option and try again";
     exit(1);
   }
 
   // return values
-  return std::make_tuple(disko_Mode, disko_Config, flake_Path, mount_Path,
-                         dry_Run, omit_Check, verbose, nix_Args);
+  return disko_Config;
+  return disko_Mode;
+  return flake_Path;
+  return mount_Path;
+  return nix_Args;
+  return dry_Run;
+  return omit_Check;
+  return verbose;
 }
 
 /* main part - pass arguments to nix */
-void disko_Run() {
-  std::string base_Command = "nix"
-                             " --extra-experimental-features"
-                             " nix-command"
-                             " --extra-experimental-features"
-                             " flakes";
-};
 
 int main(int argc, char *argv[]) {
+  // get args
   parseArgs(argc, argv);
-  disko_Run();
+
+  // make a command to eval config:
+  std::string nix_CMD = "nix"
+                        " --extra-experimental-features"
+                        " nix-command"
+                        " --extra-experimental-features"
+                        " flakes";
+  if (!flake_Path.empty()) {
+    nix_CMD += " --arg"
+               " diskoFile ";
+    nix_CMD += flake_Path;
+  }
+  std::cout << nix_CMD;
   return 0;
 }
