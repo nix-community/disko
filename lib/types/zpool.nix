@@ -1,6 +1,6 @@
 { config, options, lib, diskoLib, rootMountPoint, ... }:
 let
-  # TODO: Consider expanding to handle `disk` `file` and `draid` mode options.
+  # TODO: Consider expanding to handle `file` and `draid` mode options.
   modeOptions = [
     ""
     "mirror"
@@ -63,19 +63,79 @@ in
                         https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#Virtual_Devices_(vdevs)
                         for details.
                       '';
-                      example = [{
-                        mode = "mirror";
-                        members = [ "x" "y" "/dev/sda1" ];
-                      }];
+                      example = [
+                        {
+                          mode = "mirror";
+                          members = [ "x" "y" ];
+                        }
+                        {
+                          members = [ "z" ];
+                        }
+                      ];
+                    };
+                    spare = lib.mkOption {
+                      type = lib.types.listOf lib.types.str;
+                      default = [ ];
+                      description = ''
+                        A list of devices to use as hot spares. See
+                        https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#Hot_Spares
+                        for details.
+                      '';
+                      example = [ "x" "y" ];
+                    };
+                    log = lib.mkOption {
+                      type = lib.types.listOf vdev;
+                      default = [ ];
+                      description = ''
+                        A list of vdevs used for the zfs intent log (ZIL). See
+                        https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#Intent_Log
+                        for details.
+                      '';
+                      example = [
+                        {
+                          mode = "mirror";
+                          members = [ "x" "y" ];
+                        }
+                        {
+                          members = [ "z" ];
+                        }
+                      ];
+                    };
+                    dedup = lib.mkOption {
+                      type = lib.types.listOf vdev;
+                      default = [ ];
+                      description = ''
+                        A list of vdevs used for the deduplication table. See
+                        https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#dedup
+                        for details.
+                      '';
+                      example = [
+                        {
+                          mode = "mirror";
+                          members = [ "x" "y" ];
+                        }
+                        {
+                          members = [ "z" ];
+                        }
+                      ];
                     };
                     special = lib.mkOption {
-                      type = lib.types.nullOr vdev;
-                      default = null;
+                      type = lib.types.either (lib.types.listOf vdev) (lib.types.nullOr vdev);
+                      default = [ ];
                       description = ''
-                        A vdev definition for a special device. See
+                        A list of vdevs used as special devices. See
                         https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#special
                         for details.
                       '';
+                      example = [
+                        {
+                          mode = "mirror";
+                          members = [ "x" "y" ];
+                        }
+                        {
+                          members = [ "z" ];
+                        }
+                      ];
                     };
                     cache = lib.mkOption {
                       type = lib.types.listOf lib.types.str;
@@ -85,8 +145,8 @@ in
                         https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#Cache_Devices
                         for details.
                       '';
+                      example = [ "x" "y" ];
                     };
-                    # TODO: Consider supporting log, spare, and dedup options.
                   };
                 });
           };
@@ -134,13 +194,16 @@ in
       inherit config options;
       default =
         let
-          formatOutput = mode: members: ''
-            entries+=("${mode}=${
+          formatOutput = type: mode: members: ''
+            entries+=("${type} ${mode}=${
               lib.concatMapStringsSep " "
               (d: if lib.strings.hasPrefix "/" d then d else "/dev/disk/by-partlabel/disk-${d}-zfs") members
             }")
           '';
-          formatVdev = vdev: formatOutput vdev.mode vdev.members;
+          formatVdev = type: vdev: formatOutput type vdev.mode vdev.members;
+          formatVdevList = type: vdevs: lib.concatMapStrings
+            (formatVdev type)
+            (builtins.sort (a: _: a.mode == "") vdevs);
           hasTopology = !(builtins.isString config.mode);
           mode = if hasTopology then "prescribed" else config.mode;
           topology = lib.optionalAttrs hasTopology config.mode.topology;
@@ -181,18 +244,31 @@ in
               else
                 entries=()
                 ${lib.optionalString (hasTopology && topology.vdev != null)
-                    (lib.concatMapStrings formatVdev topology.vdev)}
-                ${lib.optionalString (hasTopology && topology.special != null)
-                    (formatOutput "special ${topology.special.mode}" topology.special.members)}
+                    (formatVdevList "" topology.vdev)}
+                ${lib.optionalString (hasTopology && topology.spare != [])
+                    (formatOutput "spare" "" topology.spare)}
+                ${lib.optionalString (hasTopology && topology.log != [])
+                    (formatVdevList "log" topology.log)}
+                ${lib.optionalString (hasTopology && topology.dedup != [])
+                    (formatVdevList "dedup" topology.dedup)}
+                ${lib.optionalString (hasTopology && topology.special != null && topology.special != [])
+                    (formatVdevList "special" (lib.lists.toList topology.special))}
                 ${lib.optionalString (hasTopology && topology.cache != [])
-                    (formatOutput "cache" topology.cache)}
+                    (formatOutput "cache" "" topology.cache)}
                 all_devices=()
+                last_type=
                 for line in "''${entries[@]}"; do
-                  # lineformat is mode=device1 device2 device3
-                  mode=''${line%%=*}
-                  devs=''${line#*=}
+                  # lineformat is type mode=device1 device2 device3
+                  mode="''${line%%=*}"
+                  type="''${mode%% *}"
+                  mode="''${mode#"$type "}"
+                  devs="''${line#*=}"
                   IFS=' ' read -r -a devices <<< "$devs"
                   all_devices+=("''${devices[@]}")
+                  if ! [ "$type" = "$last_type" ]; then
+                    topology+=" $type"
+                    last_type="$type"
+                  fi
                   topology+=" ''${mode} ''${devices[*]}"
                 done
                 # all_devices sorted should equal zfs_devices sorted

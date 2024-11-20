@@ -1,9 +1,9 @@
 {
   disko.devices = {
     disk = {
-      x = {
+      data1 = {
         type = "disk";
-        device = "/dev/sdx";
+        device = "/dev/vda";
         content = {
           type = "gpt";
           partitions = {
@@ -27,9 +27,9 @@
           };
         };
       };
-      y = {
+      data2 = {
         type = "disk";
-        device = "/dev/sdy";
+        device = "/dev/vdb";
         content = {
           type = "gpt";
           partitions = {
@@ -43,9 +43,169 @@
           };
         };
       };
-      z = {
+      data3 = {
         type = "disk";
-        device = "/dev/sdz";
+        device = "/dev/vdc";
+        content = {
+          type = "gpt";
+          partitions = {
+            zfs = {
+              size = "100%";
+              content = {
+                type = "zfs";
+                pool = "zroot";
+              };
+            };
+          };
+        };
+      };
+      spare = {
+        type = "disk";
+        device = "/dev/vdd";
+        content = {
+          type = "gpt";
+          partitions = {
+            zfs = {
+              size = "100%";
+              content = {
+                type = "zfs";
+                pool = "zroot";
+              };
+            };
+          };
+        };
+      };
+      log1 = {
+        type = "disk";
+        device = "/dev/vde";
+        content = {
+          type = "gpt";
+          partitions = {
+            zfs = {
+              size = "100%";
+              content = {
+                type = "zfs";
+                pool = "zroot";
+              };
+            };
+          };
+        };
+      };
+      log2 = {
+        type = "disk";
+        device = "/dev/vdf";
+        content = {
+          type = "gpt";
+          partitions = {
+            zfs = {
+              size = "100%";
+              content = {
+                type = "zfs";
+                pool = "zroot";
+              };
+            };
+          };
+        };
+      };
+      log3 = {
+        type = "disk";
+        device = "/dev/vdg";
+        content = {
+          type = "gpt";
+          partitions = {
+            zfs = {
+              size = "100%";
+              content = {
+                type = "zfs";
+                pool = "zroot";
+              };
+            };
+          };
+        };
+      };
+      dedup1 = {
+        type = "disk";
+        device = "/dev/vdh";
+        content = {
+          type = "gpt";
+          partitions = {
+            zfs = {
+              size = "100%";
+              content = {
+                type = "zfs";
+                pool = "zroot";
+              };
+            };
+          };
+        };
+      };
+      dedup2 = {
+        type = "disk";
+        device = "/dev/vdi";
+        content = {
+          type = "gpt";
+          partitions = {
+            zfs = {
+              size = "100%";
+              content = {
+                type = "zfs";
+                pool = "zroot";
+              };
+            };
+          };
+        };
+      };
+      dedup3 = {
+        type = "disk";
+        device = "/dev/vdj";
+        content = {
+          type = "gpt";
+          partitions = {
+            zfs = {
+              size = "100%";
+              content = {
+                type = "zfs";
+                pool = "zroot";
+              };
+            };
+          };
+        };
+      };
+      special1 = {
+        type = "disk";
+        device = "/dev/vdk";
+        content = {
+          type = "gpt";
+          partitions = {
+            zfs = {
+              size = "100%";
+              content = {
+                type = "zfs";
+                pool = "zroot";
+              };
+            };
+          };
+        };
+      };
+      special2 = {
+        type = "disk";
+        device = "/dev/vdl";
+        content = {
+          type = "gpt";
+          partitions = {
+            zfs = {
+              size = "100%";
+              content = {
+                type = "zfs";
+                pool = "zroot";
+              };
+            };
+          };
+        };
+      };
+      special3 = {
+        type = "disk";
+        device = "/dev/vdm";
         content = {
           type = "gpt";
           partitions = {
@@ -61,7 +221,7 @@
       };
       cache = {
         type = "disk";
-        device = "/dev/vdc";
+        device = "/dev/vdn";
         content = {
           type = "gpt";
           partitions = {
@@ -85,15 +245,40 @@
             vdev = [
               {
                 mode = "mirror";
-                members = [
-                  "x"
-                  "y"
-                ];
+                members = [ "data1" "data2" ];
+              }
+              {
+                members = [ "data3" ];
               }
             ];
-            special = {
-              members = [ "z" ];
-            };
+            spare = [ "spare" ];
+            log = [
+              {
+                mode = "mirror";
+                members = [ "log1" "log2" ];
+              }
+              {
+                members = [ "log3" ];
+              }
+            ];
+            dedup = [
+              {
+                mode = "mirror";
+                members = [ "dedup1" "dedup2" ];
+              }
+              {
+                members = [ "dedup3" ];
+              }
+            ];
+            special = [
+              {
+                mode = "mirror";
+                members = [ "special1" "special2" ];
+              }
+              {
+                members = [ "special3" ];
+              }
+            ];
             cache = [ "cache" ];
           };
         };
