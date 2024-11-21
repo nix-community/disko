@@ -26,7 +26,7 @@ or else from the disko module of a NixOS configuration of that name under .nixos
 Options:
 
 * -m, --mode mode
-  set the mode, either distroy, format, mount, format,mount or destroy,format,mount
+  set the mode, either distroy, format, mount, unmount, format,mount or destroy,format,mount
     destroy: unmount filesystems and destroy partition tables of the selected disks
     format: create partition tables, zpools, lvms, raids and filesystems if they don't exist yet
     mount: mount the partitions at the specified root-mountpoint
@@ -136,7 +136,7 @@ nixBuild() {
 
 if ! {
   # Base modes
-  [[ $mode = "destroy" ]] || [[ $mode = "format" ]] || [[ $mode = "mount" ]] ||
+  [[ $mode = "destroy" ]] || [[ $mode = "format" ]] || [[ $mode = "mount" ]] || [[ $mode = "unmount" ]] ||
   # Combined modes
   [[ $mode = "format,mount" ]] ||
   [[ $mode = "destroy,format,mount" ]] || # Replaces --mode disko

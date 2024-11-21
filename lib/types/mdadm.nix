@@ -58,6 +58,20 @@
         lib.optionalAttrs (config.content != null) config.content._mount;
       # TODO we probably need to assemble the mdadm somehow
     };
+    _unmount = diskoLib.mkUnmountOption {
+      inherit config options;
+      default = let
+        content = lib.optionalAttrs (config.content != null) config.content._unmount;
+      in {
+        fs = content.fs;
+        dev = ''
+          ${content.dev or ""}
+          if [ -e "/dev/md/${config.name}" ]; then
+            mdadm --stop "/dev/md/${config.name}"
+          fi
+        '';
+      };
+    };
     _config = lib.mkOption {
       internal = true;
       readOnly = true;

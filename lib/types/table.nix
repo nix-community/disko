@@ -137,6 +137,21 @@
             fs = partMounts.fs or { };
           };
       };
+      _unmount = diskoLib.mkUnmountOption {
+        inherit config options;
+        default =
+          let
+            partMounts = lib.foldr lib.recursiveUpdate { } (map
+              (partition:
+                lib.optionalAttrs (partition.content != null) partition.content._unmount
+              )
+              config.partitions);
+          in
+          {
+            dev = partMounts.dev or "";
+            fs = partMounts.fs or { };
+          };
+      };
       _config = lib.mkOption {
         internal = true;
         readOnly = true;

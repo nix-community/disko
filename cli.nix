@@ -23,6 +23,7 @@ let
           destroy = "_cliDestroyNoDeps";
           format = "_cliFormatNoDeps";
           mount = "_cliMountNoDeps";
+          unmount = "_cliUnmountNoDeps";
 
           "format,mount" = "_cliFormatMountNoDeps";
           "destroy,format,mount" = "_cliDestroyFormatMountNoDeps";
@@ -32,6 +33,7 @@ let
           destroy = "destroyNoDeps";
           format = "formatNoDeps";
           mount = "mountNoDeps";
+          unmount = "unmountNoDeps";
 
           "format,mount" = "formatMountNoDeps";
           "destroy,format,mount" = "destroyFormatMountNoDeps";
@@ -47,6 +49,7 @@ let
           destroy = "_cliDestroy";
           format = "_cliFormat";
           mount = "_cliMount";
+          unmount = "_cliUnmount";
 
           "format,mount" = "_cliFormatMount";
           "destroy,format,mount" = "_cliDestroyFormatMount";
@@ -55,7 +58,8 @@ let
         {
           destroy = "destroy";
           format = "format";
-          mount = "munt";
+          mount = "mount";
+          unmount = "unmount";
 
           "format,mount" = "formatMount";
           "destroy,format,mount" = "destroyFormatMount";

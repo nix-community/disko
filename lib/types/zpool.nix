@@ -310,6 +310,23 @@ in
           fs = datasetMounts.fs or { };
         };
     };
+    _unmount = diskoLib.mkUnmountOption {
+      inherit config options;
+      default =
+        let
+          datasetUnmounts = diskoLib.deepMergeMap (dataset: dataset._unmount) (lib.attrValues config.datasets);
+        in
+        {
+          dev = ''
+            ${lib.concatMapStrings (x: x.dev or "") (lib.attrValues datasetUnmounts)}
+
+            if zpool list "${config.name}" >/dev/null 2>/dev/null; then
+              zpool export "${config.name}"
+            fi
+          '';
+          fs = datasetUnmounts.fs or { };
+        };
+    };
     _config = lib.mkOption {
       internal = true;
       readOnly = true;

@@ -170,6 +170,21 @@ in
           fs = lib.optionalAttrs (config.content != null) contentMount.fs or { };
         };
     };
+    _unmount = diskoLib.mkUnmountOption {
+      inherit config options;
+      default =
+        let
+          contentUnmount = config.content._unmount;
+        in
+          {
+            dev = ''
+              ${lib.optionalString (config.content != null) contentUnmount.dev or ""}
+              if cryptsetup status "${config.name}" >/dev/null 2>/dev/null; then
+                cryptsetup close "${config.name}"
+              fi
+            '';
+          };
+    };
     _config = lib.mkOption {
       internal = true;
       readOnly = true;

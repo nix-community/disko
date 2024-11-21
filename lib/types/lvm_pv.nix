@@ -41,6 +41,10 @@
       inherit config options;
       default = { };
     };
+    _unmount = diskoLib.mkUnmountOption {
+      inherit config options;
+      default = { };
+    };
     _config = lib.mkOption {
       internal = true;
       readOnly = true;

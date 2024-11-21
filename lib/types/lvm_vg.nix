@@ -127,6 +127,23 @@ in
           fs = lvMounts.fs or { };
         };
     };
+    _unmount = diskoLib.mkUnmountOption {
+      inherit config options;
+      default =
+        let
+          lvMounts = diskoLib.deepMergeMap
+            (lv:
+              lib.optionalAttrs (lv.content != null) lv.content._unmount
+            )
+            (lib.attrValues config.lvs);
+        in {
+          dev = ''
+            ${lib.concatMapStrings (x: x.dev or "") (lib.attrValues lvMounts)}
+            vgchange -a n
+          '';
+          fs = lvMounts.fs or { };
+        };
+    };
     _config = lib.mkOption {
       internal = true;
       readOnly = true;

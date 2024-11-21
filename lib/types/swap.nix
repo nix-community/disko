@@ -95,6 +95,16 @@
         '';
       };
     };
+    _unmount = diskoLib.mkUnmountOption {
+      inherit config options;
+      default = lib.optionalAttrs (!config.randomEncryption) {
+        fs.${config.device} = ''
+          if swapon --show | grep -q "^$(readlink -f "${config.device}") "; then
+            swapoff "${config.device}"
+          fi
+        '';
+      };
+    };
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
