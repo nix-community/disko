@@ -80,7 +80,7 @@
       # TODO: we don't support encrypted swap yet
       default = lib.optionalAttrs (!config.randomEncryption) {
         fs.${config.device} = ''
-          if ! swapon --show | grep -q "^$(readlink -f "${config.device}") "; then
+          if test "''${DISKO_SKIP_SWAP:-}" != 1 && ! swapon --show | grep -q "^$(readlink -f "${config.device}") "; then
             swapon ${
               lib.optionalString (config.discardPolicy != null)
                 "--discard${lib.optionalString (config.discardPolicy != "both")

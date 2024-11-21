@@ -240,7 +240,9 @@ main() {
     exit 0
   fi
 
-  "$disko_script"
+  # We don't want swap as can break your running system in weird ways if you eject the disk
+  # Hopefully disko-install has enough RAM to run without swap, otherwise we can make this configurable in future.
+  DISKO_SKIP_SWAP=1 "$disko_script"
 
   for source in "${!extraFiles[@]}"; do
     destination=${extraFiles[$source]}
