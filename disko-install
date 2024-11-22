@@ -20,6 +20,8 @@ Usage: $0 [OPTIONS]
                               Specify this option if you plan to boot from this disk on the current machine,
                               but not if you plan to move the disk to another machine.
   --system-config JSON        Merges the specified JSON object into the NixOS configuration.
+  --mount-point PATH          Specify the mount point for the NixOS installation.
+                              Default: /mnt/disko-install-root
 EOF
 }
 
@@ -46,6 +48,7 @@ dry_run=
 extraSystemConfig="{}"
 diskoAttr=diskoScript
 writeEfiBootEntries=false
+mountPoint=/mnt/disko-install-root
 declare -A diskMappings
 declare -A extraFiles
 
@@ -135,6 +138,14 @@ parseArgs() {
       shift
       shift
       ;;
+    --mount-point)
+      if [[ $# -lt 2 ]]; then
+        echo "Option $1 requires an argument" >&2
+        exit 1
+      fi
+      mountPoint=$2
+      shift
+      ;;
     *)
       echo "Unknown option: $1" >&2
       showUsage
@@ -146,7 +157,6 @@ parseArgs() {
 }
 
 cleanupMountPoint() {
-  mountPoint=$1
   if mountpoint -q "${mountPoint}"; then
     umount -R "${mountPoint}"
   fi
@@ -161,6 +171,14 @@ nixBuild() {
   fi
 }
 
+maybeRun () {
+  if [[ -z ${dry_run-} ]]; then
+    "$@"
+  else
+    echo "Would run: $*"
+  fi
+}
+
 main() {
   parseArgs "$@"
 
@@ -170,7 +188,7 @@ main() {
   fi
 
   # check if we are root
-  if [[ "$EUID" -ne 0 ]]; then
+  if [[ "$EUID" -ne 0 ]] && [[ -z ${dry_run-} ]]; then
     echo "This script must be run as root" >&2
     exit 1
   fi
@@ -190,12 +208,12 @@ main() {
     exit 1
   fi
 
-  mountPoint="/mnt/disko-install-root"
-  mkdir -p "${mountPoint}"
-  chmod 755 "${mountPoint}" # bcachefs wants 755
-  escapeMountPoint=$(printf '%q' "$mountPoint")
+  maybeRun mkdir -p "${mountPoint}"
+  maybeRun chmod 755 "${mountPoint}" # bcachefs wants 755
   # shellcheck disable=SC2064
-  trap "cleanupMountPoint ${escapeMountPoint}" EXIT
+  if [[ -z ${dry_run-} ]]; then
+     trap cleanupMountPoint EXIT
+  fi
 
   outputs=$(nixBuild "${libexec_dir}"/install-cli.nix \
     "${nix_args[@]}" \
@@ -222,7 +240,9 @@ main() {
     exit 0
   fi
 
-  "$disko_script"
+  # We don't want swap as can break your running system in weird ways if you eject the disk
+  # Hopefully disko-install has enough RAM to run without swap, otherwise we can make this configurable in future.
+  DISKO_SKIP_SWAP=1 "$disko_script"
 
   for source in "${!extraFiles[@]}"; do
     destination=${extraFiles[$source]}
