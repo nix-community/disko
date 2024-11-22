@@ -678,7 +678,7 @@ let
       map
         (file: lib.nameValuePair
           (lib.removeSuffix ".nix" file)
-          (diskoLib.mkSubType ./types/${file})
+          (diskoLib.mkSubType (./types + "/${file}"))
         )
         (lib.attrNames (builtins.readDir ./types))
     );
@@ -773,7 +773,7 @@ let
         map
           (file: lib.nameValuePair
             (lib.removeSuffix ".nix" file)
-            (diskoLib.serializeType (import ./types/${file} diskoLib.typesSerializerLib))
+            (diskoLib.serializeType (import (./types + "/${file}") diskoLib.typesSerializerLib))
           )
           (lib.filter (name: lib.hasSuffix ".nix" name) (lib.attrNames (builtins.readDir ./types)))
       ) // {
