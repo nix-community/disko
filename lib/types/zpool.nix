@@ -332,6 +332,7 @@ in
       type = "zfs_fs";
       mountpoint = config.mountpoint;
       options = config.rootFsOptions;
+      mountOptions = config.mountOptions;
     };
   };
 }
