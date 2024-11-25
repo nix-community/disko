@@ -1,11 +1,18 @@
 from dataclasses import dataclass
-from typing import Any, Generic, Literal, ParamSpec, TypeVar, cast
+from typing import Any, Generic, ParamSpec, TypeVar, cast
 
 from disko_lib.messages.bugs import bug_success_without_context
 
-from .logging import DiskoMessage, debug, MessageFactory
+from .logging import (
+    DiskoMessage,
+    ReadableMessage,
+    debug,
+    MessageFactory,
+    render_message,
+)
 
 T = TypeVar("T", covariant=True)
+S = TypeVar("S")
 P = ParamSpec("P")
 
 
@@ -13,14 +20,15 @@ P = ParamSpec("P")
 class DiskoSuccess(Generic[T]):
     value: T
     context: None | str = None
-    success: Literal[True] = True
 
 
 @dataclass
 class DiskoError:
     messages: list[DiskoMessage[object]]
     context: str
-    success: Literal[False] = False
+
+    def __len__(self) -> int:
+        return len(self.messages)
 
     @classmethod
     def single_message(
@@ -43,8 +51,19 @@ class DiskoError:
     def extend(self, other_error: "DiskoError") -> None:
         self.messages.extend(other_error.messages)
 
+    def with_context(self, context: str) -> "DiskoError":
+        return DiskoError(self.messages, context)
 
-DiskoResult = DiskoSuccess[T] | DiskoError  # type: ignore[misc, unused-ignore]
+    def to_partial_success(self, value: S) -> "DiskoPartialSuccess[S]":
+        return DiskoPartialSuccess(self.messages, self.context, value)
+
+
+@dataclass
+class DiskoPartialSuccess(Generic[T], DiskoError):
+    value: T
+
+
+DiskoResult = DiskoSuccess[T] | DiskoPartialSuccess[T] | DiskoError  # type: ignore[misc, unused-ignore]
 
 
 def exit_on_error(result: DiskoResult[T]) -> T:
@@ -55,6 +74,8 @@ def exit_on_error(result: DiskoResult[T]) -> T:
             debug(f"Success in '{result.context}'")
             debug(f"Returned value: {result.value}")
         return result.value
+
+    render_message(ReadableMessage("error", f"Failed to {result.context}!"))
 
     for message in result.messages:
         message.print()

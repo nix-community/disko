@@ -1,50 +1,65 @@
 {
-    // Use IntelliSense to learn about possible attributes.
-    // Hover to view descriptions of existing attributes.
-    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-    "version": "0.2.0",
-    "configurations": [
-        {
-            "name": "disko2 mount disko_file",
-            "type": "debugpy",
-            "request": "launch",
-            "module": "disko",
-            "env": {
-                "PYTHONPATH": "${workspaceFolder}/src"
-            },
-            "console": "integratedTerminal",
-            "args": [
-                "mount",
-                "example/simple-efi.nix"
-            ]
-        },
-        {
-            "name": "disko2 mount flake",
-            "type": "debugpy",
-            "request": "launch",
-            "module": "disko",
-            "env": {
-                "PYTHONPATH": "${workspaceFolder}/src"
-            },
-            "console": "integratedTerminal",
-            "args": [
-                "mount",
-                "--flake",
-                ".#testmachine"
-            ]
-        },
-        {
-            "name": "disko2 generate",
-            "type": "debugpy",
-            "request": "launch",
-            "module": "disko",
-            "env": {
-                "PYTHONPATH": "${workspaceFolder}/src"
-            },
-            "console": "integratedTerminal",
-            "args": [
-                "generate",
-            ]
-        }
-    ]
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "disko2 mount disko_file",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "disko",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
+      "console": "integratedTerminal",
+      "args": [
+        "mount",
+        "example/simple-efi.nix"
+      ]
+    },
+    {
+      "name": "disko2 mount flake",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "disko",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
+      "console": "integratedTerminal",
+      "args": [
+        "mount",
+        "--flake",
+        ".#testmachine"
+      ]
+    },
+    {
+      "name": "disko2 generate",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "disko",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
+      "console": "integratedTerminal",
+      "args": [
+        "generate"
+      ]
+    },
+    {
+      "name": "disko2 destroy,format,mount dry-run",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "disko",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
+      "console": "integratedTerminal",
+      "args": [
+        "destroy,format,mount",
+        "--dry-run",
+        "disko-config.nix"
+      ]
+    }
+  ]
 }

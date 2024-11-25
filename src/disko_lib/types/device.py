@@ -62,7 +62,7 @@ class BlockDevice:
     serial: str
     size: str
     start: str
-    mountpoint: str
+    mountpoint: str | None
     mountpoints: list[str]
     type: str
     uuid: str
@@ -104,9 +104,9 @@ class BlockDevice:
             pttype=cast(str, json_dict["pttype"]),
             rev=cast(str, json_dict["rev"]) or "",
             serial=cast(str, json_dict["serial"]) or "",
-            size=cast(str, json_dict["size"]),
+            size=str(cast(int, json_dict["size"])),
             start=cast(str, json_dict["start"]) or "",
-            mountpoint=cast(str, json_dict["mountpoint"]) or "",
+            mountpoint=cast(str, json_dict["mountpoint"]) or None,
             mountpoints=mountpoints,
             type=cast(str, json_dict["type"]),
             uuid=cast(str, json_dict["uuid"]) or "",
@@ -114,7 +114,18 @@ class BlockDevice:
 
 
 def run_lsblk() -> DiskoResult[str]:
-    return run(["lsblk", "--json", "--tree", "--output", ",".join(LSBLK_OUTPUT_FIELDS)])
+    return run(
+        [
+            "lsblk",
+            "--json",  # JSON output
+            "--tree",  # Tree structure with `children` field
+            # Show sizes in bytes. The human readable abbreviation can be less precise and harder to parse
+            "--bytes",
+            # Determine and output only the fields we are interested in
+            "--output",
+            ",".join(LSBLK_OUTPUT_FIELDS),
+        ]
+    )
 
 
 def list_block_devices(lsblk_output: str = "") -> DiskoResult[list[BlockDevice]]:

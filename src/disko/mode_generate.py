@@ -1,9 +1,9 @@
 import json
 import re
+from disko_lib.eval_config import eval_config_dict_as_json
 from disko_lib.logging import info
-from disko_lib.messages.msgs import warn_generate_partial_failure
-from disko_lib.result import DiskoResult, DiskoError
-from disko_lib.types.disk import generate_config
+from disko_lib.result import DiskoPartialSuccess, DiskoResult, DiskoError
+from disko_lib.generate_config import generate_config
 from disko_lib.run_cmd import run
 from disko_lib.json_types import JsonDict
 
@@ -25,29 +25,35 @@ PARTIAL_FAILURE_COMMENT = """
 """
 
 
+def filter_internal_keys(d: JsonDict) -> JsonDict:
+    return {
+        k: (v if not isinstance(v, dict) else filter_internal_keys(v))
+        for k, v in d.items()
+        if not k.startswith("_")
+    }
+
+
 def run_generate() -> DiskoResult[JsonDict]:
-    generated_config_result = generate_config()
-    generated_config = None
+    generate_result = generate_config()
 
-    if isinstance(generated_config_result, DiskoError):
-        partial_failure_warning = generated_config_result.find_message(
-            warn_generate_partial_failure
-        )
-        if not partial_failure_warning:
-            return generated_config_result
+    if isinstance(generate_result, DiskoError) and not isinstance(
+        generate_result, DiskoPartialSuccess
+    ):
+        return generate_result
 
-        generated_config = partial_failure_warning.details["partial_config"]
-    else:
-        generated_config = generated_config_result.value
+    config_to_write = filter_internal_keys(generate_result.value)
+
+    evaluate_result = eval_config_dict_as_json(config_to_write)
+    if isinstance(evaluate_result, DiskoError):
+        # TODO: Add --no-validate flag and explanatory text
+        return evaluate_result
 
     config_as_nix = run(
         [
             "nix",
             "eval",
             "--expr",
-            "{ disko.devices = ("
-            f"builtins.fromJSON(''{json.dumps(generated_config)}'')"
-            "); }",
+            f"builtins.fromJSON(''{json.dumps(config_to_write)}'')",
         ]
     )
     if isinstance(config_as_nix, DiskoError):
@@ -59,11 +65,11 @@ def run_generate() -> DiskoResult[JsonDict]:
 
     with open(DEFAULT_CONFIG_FILE, "w") as f:
         f.write(HEADER_COMMENT)
-        if isinstance(generated_config_result, DiskoError):
+        if isinstance(generate_result, DiskoError):
             f.write(PARTIAL_FAILURE_COMMENT)
         f.write(nix_code)
         info(f"Wrote generated config to {DEFAULT_CONFIG_FILE}")
 
     run(["nixfmt", DEFAULT_CONFIG_FILE])
 
-    return generated_config_result
+    return generate_result

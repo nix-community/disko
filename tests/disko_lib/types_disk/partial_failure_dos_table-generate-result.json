@@ -1,110 +1,131 @@
 {
-    "disks": {
-        "MODEL:ST2000LM003 HN-M201RAD,SN:S321J9GFC01497": {
-            "device": "sda",
-            "type": "disk",
-            "content": {
-                "partitions": {
-                    "PARTUUID:c090741b-68e2-4867-96df-2ec00765f2c0": {
-                        "size": "128M",
-                        "content": {
-                            "type": "filesystem",
-                            "format": "",
-                            "mountpoint": ""
-                        }
-                    },
-                    "UUID:7CA41E5EA41E1B6A": {
-                        "size": "1.8T",
-                        "content": {
-                            "type": "filesystem",
-                            "format": "ntfs",
-                            "mountpoint": "/mnt/g"
-                        }
-                    }
-                }
-            }
-        },
+  "disko": {
+    "devices": {
+      "disk": {
         "MODEL:SanDisk SD8TB8U256G1001,SN:171887425854": {
-            "device": "sdb",
-            "type": "disk",
-            "content": {
-                "partitions": {
-                    "UUID:01D60069CEED69C0": {
-                        "size": "499.5M",
-                        "content": {
-                            "type": "filesystem",
-                            "format": "ntfs",
-                            "mountpoint": ""
-                        }
-                    },
-                    "UUID:01D6006B90875FE0": {
-                        "size": "236.8G",
-                        "content": {
-                            "type": "filesystem",
-                            "format": "ntfs",
-                            "mountpoint": ""
-                        }
-                    },
-                    "UUID:708B-C192": {
-                        "size": "100M",
-                        "content": {
-                            "type": "filesystem",
-                            "format": "vfat",
-                            "mountpoint": ""
-                        },
-                        "type": "EF00"
-                    },
-                    "UUID:90B6FB81B6FB65DE": {
-                        "size": "544M",
-                        "content": {
-                            "type": "filesystem",
-                            "format": "ntfs",
-                            "mountpoint": ""
-                        }
-                    }
+          "device": "/dev/sdb",
+          "type": "disk",
+          "content": {
+            "type": "gpt",
+            "partitions": {
+              "UUID:01D60069CEED69C0": {
+                "_index": 1,
+                "size": "523730944",
+                "content": {
+                  "type": "filesystem",
+                  "format": "ntfs",
+                  "mountpoint": null
                 }
+              },
+              "UUID:01D6006B90875FE0": {
+                "_index": 2,
+                "size": "254301093376",
+                "content": {
+                  "type": "filesystem",
+                  "format": "ntfs",
+                  "mountpoint": null
+                }
+              },
+              "UUID:708B-C192": {
+                "_index": 3,
+                "size": "104857600",
+                "content": {
+                  "type": "filesystem",
+                  "format": "vfat",
+                  "mountpoint": null
+                },
+                "type": "EF00"
+              },
+              "UUID:90B6FB81B6FB65DE": {
+                "_index": 4,
+                "size": "570425344",
+                "content": {
+                  "type": "filesystem",
+                  "format": "ntfs",
+                  "mountpoint": null
+                }
+              }
             }
+          }
         },
         "MODEL:CT2000MX500SSD1,SN:2105E4F0DE85": {
-            "device": "sdd",
-            "type": "disk",
-            "content": {
-                "partitions": {
-                    "UUID:2740-1628": {
-                        "size": "1000M",
-                        "content": {
-                            "type": "filesystem",
-                            "format": "vfat",
-                            "mountpoint": "/boot"
-                        },
-                        "type": "EF00"
-                    },
-                    "UUID:ca548f68-4e51-4364-b366-690ecc27590f": {
-                        "size": "588.4G",
-                        "content": {
-                            "type": "filesystem",
-                            "format": "ext4",
-                            "mountpoint": "/"
-                        }
-                    },
-                    "UUID:879299db-4147-4fac-9f34-5e8e92073efc": {
-                        "size": "588.4G",
-                        "content": {
-                            "type": "filesystem",
-                            "format": "crypto_LUKS",
-                            "mountpoint": ""
-                        }
-                    },
-                    "UUID:9A48E8C248E89E6F": {
-                        "size": "685.2G",
-                        "content": {
-                            "type": "filesystem",
-                            "format": "ntfs",
-                            "mountpoint": "/mnt/s"
-                        }
-                    }
+          "device": "/dev/sdc",
+          "type": "disk",
+          "content": {
+            "type": "gpt",
+            "partitions": {
+              "UUID:2740-1628": {
+                "_index": 1,
+                "size": "1048576000",
+                "content": {
+                  "type": "filesystem",
+                  "format": "vfat",
+                  "mountpoint": "/boot"
+                },
+                "type": "EF00"
+              },
+              "UUID:ca548f68-4e51-4364-b366-690ecc27590f": {
+                "_index": 2,
+                "size": "631794302976",
+                "content": {
+                  "type": "filesystem",
+                  "format": "ext4",
+                  "mountpoint": "/"
                 }
+              },
+              "UUID:879299db-4147-4fac-9f34-5e8e92073efc": {
+                "_index": 3,
+                "size": "631810031616",
+                "content": {
+                  "type": "filesystem",
+                  "format": "crypto_LUKS",
+                  "mountpoint": null
+                }
+              },
+              "UUID:9A48E8C248E89E6F": {
+                "_index": 4,
+                "size": "735743836160",
+                "content": {
+                  "type": "filesystem",
+                  "format": "ntfs",
+                  "mountpoint": "/mnt/s"
+                }
+              }
             }
+          }
+        },
+        "MODEL:ST2000LM003 HN-M201RAD,SN:S321J9GFC01497": {
+          "device": "/dev/sdd",
+          "type": "disk",
+          "content": {
+            "type": "gpt",
+            "partitions": {
+              "PARTUUID:c090741b-68e2-4867-96df-2ec00765f2c0": {
+                "_index": 1,
+                "size": "134217728",
+                "content": {
+                  "type": "filesystem",
+                  "format": "",
+                  "mountpoint": null
+                }
+              },
+              "UUID:7CA41E5EA41E1B6A": {
+                "_index": 2,
+                "size": "2000263577600",
+                "content": {
+                  "type": "filesystem",
+                  "format": "ntfs",
+                  "mountpoint": "/mnt/g"
+                }
+              }
+            }
+          }
         }
+      },
+      "lvm_vg": {},
+      "mdadm": {},
+      "nodev": {},
+      "zpool": {}
     }
+  }
 }

@@ -95,7 +95,7 @@ def _eval_flake(flake_uri: str) -> DiskoResult[JsonDict]:
     return _eval_config({"flake": flake, "flakeAttr": flake_attr})
 
 
-def eval_config_as_json(
+def eval_config_file_as_json(
     *, disko_file: str | None, flake: str | None
 ) -> DiskoResult[JsonDict]:
     # match would be nicer, but mypy doesn't understand type narrowing in tuples
@@ -109,22 +109,19 @@ def eval_config_as_json(
     return DiskoError.single_message(err_too_many_arguments, "validate args")
 
 
-def eval_and_validate_config(
-    *, disko_file: str | None, flake: str | None
-) -> DiskoResult[DiskoConfig]:
-    json_config = eval_config_as_json(disko_file=disko_file, flake=flake)
+def eval_config_dict_as_json(config: JsonDict) -> DiskoResult[JsonDict]:
+    return _eval_config({"configJsonStr": json.dumps(config)})
 
-    if isinstance(json_config, DiskoError):
-        return json_config
 
+def validate_config(json_config: JsonDict) -> DiskoResult[DiskoConfig]:
     try:
-        result = DiskoConfig(**cast(dict[str, Any], json_config.value))  # type: ignore[misc]
+        result = DiskoConfig(**cast(dict[str, Any], json_config))  # type: ignore[misc]
     except ValidationError as e:
         return DiskoError.single_message(
             bug_validate_config_failed,
             "validate disko config",
             error=e,
-            config=json_config.value,
+            config=json_config,
         )
 
     return DiskoSuccess(result, "validate disko config")

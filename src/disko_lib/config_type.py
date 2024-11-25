@@ -72,7 +72,7 @@ class gpt_partitions_hybrid(BaseModel):
 
 
 class gpt_partitions(BaseModel):
-    _index: int
+    index: int = Field(alias="_index")
     alignment: int
     content: "partitionType" = Field(..., discriminator="type")
     device: str
@@ -172,7 +172,7 @@ class swap(BaseModel):
 
 
 class table_partitions(BaseModel):
-    _index: int
+    index: int = Field(alias="_index")
     bootable: bool
     content: "partitionType" = Field(..., discriminator="type")
     end: str

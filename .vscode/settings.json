@@ -18,5 +18,10 @@
   "python.analysis.extraPaths": [
     "./src"
   ],
-  "mypy-type-checker.importStrategy": "fromEnvironment"
+  "mypy-type-checker.importStrategy": "fromEnvironment",
+  "python.testing.pytestArgs": [
+    "tests"
+  ],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true
 }

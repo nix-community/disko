@@ -1,7 +1,7 @@
 import json
 import pydantic
 from disko_lib.logging import ReadableMessage
-from disko_lib.messages.colors import INVALID, RESET, VALUE
+from disko_lib.messages.colors import FILE, INVALID, RESET, VALUE
 from ..json_types import JsonDict
 
 
@@ -55,10 +55,40 @@ def bug_validate_config_failed(
         ReadableMessage(
             "bug",
             f"""
-                Configuration was evaluated successfully, but failed validation!
+                Configuration validation failed!
                 Most likely, the types in python are out-of-sync with those in nix.
                 The {INVALID}validation errors{RESET} and the {VALUE}evaluated configuration{RESET} are printed above.
             """,
         ),
         __bug_help_message("bug_validate_config_failed"),
+    ]
+
+
+def bug_unsupported_device_content_type(
+    *, name: str, device: str, type: str
+) -> list[ReadableMessage]:
+    return [
+        ReadableMessage(
+            "bug",
+            f"""
+                Configuration for device {FILE}{device}{RESET} (name={VALUE}{name}{RESET}) specifies unsupported
+                device content type {INVALID}{type}{RESET}, which was not implemented yet!
+            """,
+        ),
+        __bug_help_message("err_unsupported_device_content_type"),
+    ]
+
+
+def bug_unsupported_partition_content_type(
+    *, name: str, device: str, type: str
+) -> list[ReadableMessage]:
+    return [
+        ReadableMessage(
+            "bug",
+            f"""
+                Configuration for partition {FILE}{device}{RESET} (name={VALUE}{name}{RESET}) specifies unsupported
+                partition content type {INVALID}{type}{RESET}, which was not implemented yet!
+            """,
+        ),
+        __bug_help_message("bug_unsupported_partition_content_type"),
     ]

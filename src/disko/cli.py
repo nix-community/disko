@@ -1,27 +1,49 @@
 #!/usr/bin/env python3
 
 import argparse
+import dataclasses
 import json
 from typing import Any, Literal, cast
 
 from disko.mode_dev import run_dev
 from disko.mode_generate import run_generate
+from disko_lib.action import Action
 from disko_lib.config_type import DiskoConfig
-from disko_lib.eval_config import eval_and_validate_config
+from disko_lib.eval_config import (
+    eval_config_dict_as_json,
+    eval_config_file_as_json,
+    validate_config,
+)
+from disko_lib.generate_config import generate_config
+from disko_lib.generate_plan import generate_plan
 from disko_lib.logging import LOGGER, debug, info
 from disko_lib.messages.msgs import err_missing_mode
-from disko_lib.result import DiskoError, DiskoResult, exit_on_error
+from disko_lib.result import (
+    DiskoError,
+    DiskoPartialSuccess,
+    DiskoResult,
+    DiskoSuccess,
+    exit_on_error,
+)
 from disko_lib.json_types import JsonDict
 
-Mode = Literal[
-    "destroy",
-    "format",
-    "mount",
-    "destroy,format,mount",
-    "format,mount",
-    "generate",
-    "dev",
-]
+Mode = (
+    Action
+    | Literal[
+        "destroy,format,mount",
+        "format,mount",
+        "generate",
+        "dev",
+    ]
+)
+
+MODE_TO_ACTIONS: dict[Mode, set[Action]] = {
+    "destroy": {"destroy"},
+    "format": {"format"},
+    "mount": {"mount"},
+    "destroy,format,mount": {"destroy", "format", "mount"},
+    "format,mount": {"format", "mount"},
+}
 
 
 # Modes to apply an existing configuration
@@ -46,9 +68,52 @@ MODE_DESCRIPTION: dict[Mode, str] = {
 
 
 def run_apply(
-    *, mode: str, disko_file: str | None, flake: str | None, **_kwargs: dict[str, Any]
-) -> DiskoResult[DiskoConfig]:
-    return eval_and_validate_config(disko_file=disko_file, flake=flake)
+    *,
+    mode: Mode,
+    disko_file: str | None,
+    flake: str | None,
+    dry_run: bool,
+    **_kwargs: dict[str, Any],
+) -> DiskoResult[JsonDict]:
+    assert mode in APPLY_MODES
+
+    target_config_json = eval_config_file_as_json(disko_file=disko_file, flake=flake)
+    if isinstance(target_config_json, DiskoError):
+        return target_config_json
+
+    target_config = validate_config(target_config_json.value)
+    if isinstance(target_config, DiskoError):
+        return target_config.with_context("validate evaluated config")
+
+    current_status_dict = generate_config()
+    if isinstance(current_status_dict, DiskoError) and not isinstance(
+        current_status_dict, DiskoPartialSuccess
+    ):
+        return current_status_dict.with_context("generate current status")
+
+    current_status_evaluated = eval_config_dict_as_json(current_status_dict.value)
+    if isinstance(current_status_evaluated, DiskoError):
+        return current_status_evaluated.with_context("eval current status")
+
+    current_status = validate_config(current_status_evaluated.value)
+    if isinstance(current_status, DiskoError):
+        return current_status.with_context("validate current status")
+
+    actions = MODE_TO_ACTIONS[mode]
+
+    plan = generate_plan(actions, current_status.value, target_config.value)
+    if isinstance(plan, DiskoError):
+        return plan
+
+    plan_as_dict: JsonDict = dataclasses.asdict(plan.value)
+    steps = {"steps": plan_as_dict.get("steps", [])}
+
+    if dry_run:
+        return DiskoSuccess(steps, "generate plan")
+
+    info("Plan execution is not implemented yet!")
+
+    return DiskoSuccess(steps, "generate plan")
 
 
 def run(
@@ -105,6 +170,13 @@ def parse_args() -> argparse.Namespace:
             "--flake",
             "-f",
             help="Flake to fetch the disko configuration from",
+        )
+        parser.add_argument(
+            "--dry-run",
+            "-n",
+            action="store_true",
+            default=False,
+            help="Print the plan without executing it",
         )
 
     # Commands to apply an existing configuration

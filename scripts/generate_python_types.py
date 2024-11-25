@@ -181,7 +181,15 @@ def generate_class(name: str, fields: dict[str, Any]) -> tuple[str, io.StringIO 
         if type_code:
             contained_classes_buffer.write(type_code.getvalue())
 
-        buffer.write(f"    {field_name}: {type_name}\n")
+        # Fields starting with _ are swallowed, see https://github.com/pydantic/pydantic/issues/2105
+        if field_name.startswith("_"):
+            field_definition = (
+                f'{field_name.lstrip("_")}: {type_name} = Field(alias="{field_name}")'
+            )
+        else:
+            field_definition = f"{field_name}: {type_name}"
+
+        buffer.write(f"    {field_definition}\n")
 
     if contained_classes_buffer.tell() == 0:
         return buffer.getvalue(), None

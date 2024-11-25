@@ -3,6 +3,7 @@
 , flake ? null
 , flakeAttr ? null
 , diskoFile ? null
+, configJsonStr ? null
 , rootMountPoint ? "/mnt"
 , ...
 }@args:
@@ -18,6 +19,8 @@ let
 
   hasFlakeDiskoConfig = lib.hasAttrByPath [ "diskoConfigurations" flakeAttr ] flake';
 
+  hasConfigStr = configJsonStr != null;
+
   hasFlakeDiskoModule =
     lib.hasAttrByPath [ "nixosConfigurations" flakeAttr "config" "disko" "devices" ] flake';
 
@@ -26,6 +29,8 @@ let
       diskoConfig =
         if hasDiskoFile then
           import diskoFile
+        else if hasConfigStr then
+          (builtins.fromJSON configJsonStr)
         else
           flake'.diskoConfigurations.${flakeAttr};
     in
@@ -35,7 +40,7 @@ let
       diskoConfig;
 
   evaluatedConfig =
-    if hasDiskoFile || hasFlakeDiskoConfig then
+    if hasDiskoFile || hasConfigStr || hasFlakeDiskoConfig then
       disko.eval-disko diskFormat
     else if (lib.traceValSeq hasFlakeDiskoModule) then
       flake'.nixosConfigurations.${flakeAttr}
