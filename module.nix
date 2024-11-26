@@ -159,6 +159,7 @@ in
           be used to enter an interactive password.
         '';
         type = lib.types.lines;
+        default = "";
       };
 
       efi = lib.mkOption {
