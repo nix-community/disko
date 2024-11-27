@@ -12,13 +12,13 @@ from typing import (
 )
 
 from .ansi import Colors
-from .messages.colors import RESET
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 LOGGER = logging.getLogger("disko_logger")
 
 MessageTypes = Literal["bug", "error", "warning", "info", "help", "debug"]
 
+RESET = Colors.RESET
 BG_COLOR_MAP = {
     "bug": Colors.BG_RED,
     "error": Colors.BG_RED,
@@ -101,19 +101,19 @@ def dedent_start_lines(lines: list[str]) -> list[str]:
     if dedent_width == 0:
         return lines
 
-    match_indent_regex = re.compile(f"^ {{{dedent_width}}}")
+    indent_string = " " * dedent_width
 
     dedented_lines = []
     stop_dedenting = False
     for line in lines:
-        if not line.startswith(" "):
-            stop_dedenting = True
-
         if stop_dedenting:
             dedented_lines.append(line)
             continue
 
-        dedented_line = re.sub(match_indent_regex, "", line)
+        if not line.startswith(indent_string):
+            stop_dedenting = True
+
+        dedented_line = re.sub(indent_string, "", line)
         dedented_lines.append(dedented_line)
 
     return dedented_lines
