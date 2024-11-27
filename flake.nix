@@ -99,6 +99,7 @@
               (python3.withPackages (ps: [
                 ps.mypy # Static type checker
                 ps.pytest # Test runner
+                ps.ipykernel # Jupyter kernel for experimenting
 
                 # Actual runtime depedencies
                 ps.pydantic # Validation of nixos configuration

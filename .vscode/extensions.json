@@ -1,10 +1,11 @@
 {
-    "recommendations": [
-        "mkhl.direnv",
-        "jnoortheen.nix-ide",
-        "ms-python.python",
-        "ms-python.debugpy",
-        "ms-python.mypy-type-checker",
-        "charliermarsh.ruff"
-    ]
+  "recommendations": [
+    "mkhl.direnv",
+    "jnoortheen.nix-ide",
+    "ms-python.python",
+    "ms-python.debugpy",
+    "ms-python.mypy-type-checker",
+    "charliermarsh.ruff",
+    "ms-toolsai.jupyter"
+  ]
 }
