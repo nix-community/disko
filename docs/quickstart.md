@@ -1,6 +1,6 @@
 # disko - Declarative disk partitioning
 
-<img src="./logo.jpeg" title="" alt="Project logo" width="247">
+<img src="./logo.png" title="" alt="Project logo" width="247">
 
 [Documentation Index](./INDEX.md)
 
