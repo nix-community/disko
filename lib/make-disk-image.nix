@@ -21,7 +21,7 @@ let
         (with cfg.kernelPackages; [ kernel ]
           ++ lib.optional (lib.elem "zfs" cfg.extraRootModules || configSupportsZfs) zfs);
     }
-  // lib.optionalAttrs (diskoLib.vmToolsSupportsCustomQemu pkgs)
+  // lib.optionalAttrs (diskoLib.vmToolsSupportsCustomQemu lib)
     {
       customQemu = cfg.qemu;
     };

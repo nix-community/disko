@@ -213,7 +213,7 @@ in
   config = {
     assertions = [
       {
-        assertion = config.disko.imageBuilder.qemu != null -> diskoLib.vmToolsSupportsCustomQemu pkgs;
+        assertion = config.disko.imageBuilder.qemu != null -> diskoLib.vmToolsSupportsCustomQemu lib;
         message = ''
           You have set config.disko.imageBuild.qemu, but vmTools in your nixpkgs version "${lib.version}"
           does not support overriding the qemu package with the customQemu option yet.
