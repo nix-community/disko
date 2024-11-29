@@ -199,6 +199,34 @@ in
           };
         };
     };
+    _unmount = diskoLib.mkUnmountOption {
+      inherit config options;
+      default =
+        let
+          subvolMounts = lib.concatMapAttrs
+            (_: subvol:
+              lib.optionalAttrs
+              (subvol.mountpoint != null)
+              {
+                ${subvol.mountpoint} = ''
+                  if findmnt "${config.device}" "${rootMountPoint}${subvol.mountpoint}" > /dev/null 2>&1; then
+                    umount "${rootMountPoint}${subvol.mountpoint}"
+                  fi
+                '';
+              }
+            )
+            config.subvolumes;
+        in
+        {
+          fs = subvolMounts // lib.optionalAttrs (config.mountpoint != null) {
+            ${config.mountpoint} = ''
+              if findmnt "${config.device}" "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
+                umount "${rootMountPoint}${config.mountpoint}"
+              fi
+            '';
+          };
+        };
+    };
     _config = lib.mkOption {
       internal = true;
       readOnly = true;

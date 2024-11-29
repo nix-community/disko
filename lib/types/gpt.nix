@@ -45,7 +45,7 @@ in
             defaultText = ''
               if the parent is an mdadm device:
                 /dev/disk/by-id/md-name-any:''${config._parent.name}-part''${toString partition.config._index}
-              
+
               otherwise:
                 /dev/disk/by-partlabel/''${diskoLib.hexEscapeUdevSymlink partition.config.label}
             '';
@@ -241,6 +241,21 @@ in
           partMounts = lib.foldr lib.recursiveUpdate { } (map
             (partition:
               lib.optionalAttrs (partition.content != null) partition.content._mount
+            )
+            (lib.attrValues config.partitions));
+        in
+        {
+          dev = partMounts.dev or "";
+          fs = partMounts.fs or { };
+        };
+    };
+    _unmount = diskoLib.mkUnmountOption {
+      inherit config options;
+      default =
+        let
+          partMounts = lib.foldr lib.recursiveUpdate { } (map
+            (partition:
+              lib.optionalAttrs (partition.content != null) partition.content._unmount
             )
             (lib.attrValues config.partitions));
         in

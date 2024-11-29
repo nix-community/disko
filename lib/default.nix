@@ -242,6 +242,8 @@ let
           postCreateHook = diskoLib.mkHook "shell commands to run after create";
           preMountHook = diskoLib.mkHook "shell commands to run before mount";
           postMountHook = diskoLib.mkHook "shell commands to run after mount";
+          preUnmountHook = diskoLib.mkHook "shell commands to run before unmount";
+          postUnmountHook = diskoLib.mkHook "shell commands to run after unmount";
         };
         config._module.args = {
           inherit diskoLib rootMountPoint;
@@ -282,6 +284,25 @@ let
             '' else value)
           attrs.default;
         description = "Mount script";
+      };
+
+    mkUnmountOption = { config, options, default }@attrs:
+      lib.mkOption {
+        internal = true;
+        readOnly = true;
+        type = diskoLib.jsonType;
+        default = lib.mapAttrsRecursive
+          (_name: value:
+            if builtins.isString value then ''
+              (
+                ${diskoLib.indent (diskoLib.defineHookVariables { inherit options; })}
+                ${diskoLib.indent config.preUnmountHook}
+                ${diskoLib.indent value}
+                ${diskoLib.indent config.postUnmountHook}
+              )
+            '' else value)
+          attrs.default;
+        description = "Unmount script";
       };
 
     /* Writer for optionally checking bash scripts before writing them to the store
@@ -458,6 +479,10 @@ let
                   export PATH=${lib.makeBinPath (cfg.config._packages pkgs)}:$PATH
                   ${cfg.config._mount}
                 '';
+                unmount = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "/bin/disko-unmount" ''
+                  export PATH=${lib.makeBinPath (cfg.config._packages pkgs)}:$PATH
+                  ${cfg.config._unmount}
+                '';
                 formatMount = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "/bin/disko-format-mount" ''
                   export PATH=${lib.makeBinPath ((cfg.config._packages pkgs) ++ [ pkgs.bash ])}:$PATH
                   ${cfg.config._formatMount}
@@ -476,6 +501,9 @@ let
                 '';
                 mountNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "/bin/disko-mount" ''
                   ${cfg.config._mount}
+                '';
+                unmountNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "/bin/disko-unmount" ''
+                  ${cfg.config._unmount}
                 '';
                 formatMountNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "/bin/disko-format-mount" ''
                   ${cfg.config._formatMount}
@@ -620,6 +648,26 @@ let
 
                 # and then mount the filesystems in alphabetical order
                 ${concatStrings (attrValues fsMounts)}
+              '';
+          };
+          _unmount = lib.mkOption {
+            internal = true;
+            type = lib.types.str;
+            description = ''
+              The script to unmount all devices defined by disko.devices
+            '';
+            default =
+              with lib; let
+                fsMounts = diskoLib.deepMergeMap (dev: dev._unmount.fs or { }) (flatten (map attrValues (attrValues devices)));
+                sortedDeviceList = diskoLib.sortDevicesByDependencies (cfg.config._meta.deviceDependencies or { }) devices;
+              in
+              ''
+                set -efux
+                # first unmount the filesystems in reverse alphabetical order
+                ${concatStrings (lib.reverseList (attrValues fsMounts))}
+
+                # Than close the devices
+                ${concatMapStrings (dev: (attrByPath (dev ++ [ "_unmount" ]) {} devices).dev or "") (lib.reverseList sortedDeviceList)}
               '';
           };
           _disko = lib.mkOption {

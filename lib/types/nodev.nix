@@ -49,6 +49,16 @@
         '';
       };
     };
+    _unmount = diskoLib.mkUnmountOption {
+      inherit config options;
+      default = lib.optionalAttrs (config.mountpoint != null) {
+        fs.${config.mountpoint} = ''
+          if findmnt ${config.fsType} "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
+            umount "${rootMountPoint}${config.mountpoint}"
+          fi
+        '';
+      };
+    };
     _config = lib.mkOption {
       internal = true;
       readOnly = true;

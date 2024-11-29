@@ -31,6 +31,9 @@ in
   _cliMount = cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).mount;
   _cliMountNoDeps = cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).mountNoDeps;
 
+  _cliUnmount = cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).unmount;
+  _cliUnmountNoDeps = cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).unmountNoDeps;
+
   _cliFormatMount = cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).formatMount;
   _cliFormatMountNoDeps = cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).formatMountNoDeps;
 

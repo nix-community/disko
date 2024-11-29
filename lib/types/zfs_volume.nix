@@ -64,6 +64,11 @@
       default =
         lib.optionalAttrs (config.content != null) config.content._mount;
     };
+    _unmount = diskoLib.mkUnmountOption {
+      inherit config options;
+      default =
+        lib.optionalAttrs (config.content != null) config.content._unmount;
+    };
     _config = lib.mkOption {
       internal = true;
       readOnly = true;

@@ -99,6 +99,7 @@ let
         tsp-generator = pkgs.callPackage ../. { checked = true; };
         tsp-format = (tsp-generator._cliFormat testConfigInstall) pkgs;
         tsp-mount = (tsp-generator._cliMount testConfigInstall) pkgs;
+        tsp-unmount = (tsp-generator._cliUnmount testConfigInstall) pkgs;
         tsp-disko = (tsp-generator._cliDestroyFormatMount testConfigInstall) pkgs;
         tsp-config = tsp-generator.config testConfigBooted;
         num-disks = builtins.length (lib.attrNames testConfigBooted.disko.devices.disk);
@@ -281,6 +282,9 @@ let
             # running direct mode
             machine.succeed("${lib.getExe tsp-format}")
             machine.succeed("${lib.getExe tsp-mount}")
+            machine.succeed("${lib.getExe tsp-mount}") # verify that mount is idempotent
+            machine.succeed("${lib.getExe tsp-unmount}")
+            machine.succeed("${lib.getExe tsp-unmount}") # verify that umount is idempotent
             machine.succeed("${lib.getExe tsp-mount}") # verify that mount is idempotent
             machine.succeed("${lib.getExe tsp-disko} --yes-wipe-all-disks") # verify that we can destroy and recreate
             machine.succeed("mkdir -p /mnt/home")
