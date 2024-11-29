@@ -361,10 +361,11 @@ let
     /* Checks whether nixpkgs is recent enough for vmTools to support the customQemu argument.
 
       Returns false, which is technically incorrect, for a few commits on 2024-07-08, but we can't be more accurate.
+      Make sure to pass lib, not pkgs.lib! See https://github.com/nix-community/disko/issues/904
 
-      vmToolsSupportsCustomQemu :: pkgs -> bool
+      vmToolsSupportsCustomQemu :: final_lib -> bool
     */
-    vmToolsSupportsCustomQemu = pkgs: lib.versionAtLeast pkgs.lib.version "24.11.20240709";
+    vmToolsSupportsCustomQemu = final_lib: lib.versionAtLeast final_lib.version "24.11.20240709";
 
     optionTypes = rec {
       filename = lib.mkOptionType {
