@@ -201,7 +201,7 @@ in
         done
         ${installer}
       ''}
-      echo "export origBuilder=$origBuilder" > xchg/saved-env
+      echo "export origBuilder=$origBuilder" >> xchg/saved-env
       ${preVM}
     ''}
     export postVM=${diskoLib.writeCheckedBash { inherit pkgs checked; } "postVM.sh" postVM}
