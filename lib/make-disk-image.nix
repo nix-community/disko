@@ -125,6 +125,10 @@ in
       inherit preVM QEMU_OPTS;
       postVm = cfg.extraPostVM;
       inherit (diskoCfg) memSize;
+
+      __structuredAttrs = true;
+      # We don't want nix to pick up any references to the store paths for images
+      unsafeDiscardReferences.out = true;
     }
     (partitioner + installer));
 
