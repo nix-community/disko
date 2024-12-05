@@ -3,6 +3,7 @@
 , lib
 , extendModules
 , options
+, pkgs
 , ...
 }:
 let
@@ -11,10 +12,15 @@ let
   inherit (cfg) pkgs imageFormat;
   checked = diskoCfg.checkScripts;
 
+  xcp' = pkgs.callPackage ../xcp.nix {
+    inherit (pkgs) xcp;
+  };
+
   configSupportsZfs = config.boot.supportedFilesystems.zfs or false;
   vmTools = pkgs.vmTools.override
     {
-      rootModules = [ "9p" "9pnet_virtio" "virtio_pci" "virtio_blk" ]
+      # FIXME: drop 9p after the next release: https://github.com/NixOS/nixpkgs/pull/362081
+      rootModules = [ "virtiofs" "9p" "9pnet_virtio" "virtio_pci" "virtio_blk" ]
         ++ (lib.optional configSupportsZfs "zfs")
         ++ cfg.extraRootModules;
       kernel = pkgs.aggregateModules
@@ -46,19 +52,19 @@ let
     util-linux
     findutils
     kmod
+    xcp'
   ] ++ cfg.extraDependencies;
   preVM = ''
-    ${lib.concatMapStringsSep "\n" (disk: "${pkgs.qemu}/bin/qemu-img create -f ${imageFormat} ${disk.imageName}.${imageFormat} ${disk.imageSize}") (lib.attrValues diskoCfg.devices.disk)}
+    # shellcheck disable=SC2154
+    mkdir -p "$out"
+    ${lib.concatMapStringsSep "\n" (disk:
+       # shellcheck disable=SC2154
+      "${pkgs.qemu}/bin/qemu-img create -f ${imageFormat} \"$out/${disk.imageName}.${imageFormat}\" ${disk.imageSize}"
+    ) (lib.attrValues diskoCfg.devices.disk)}
     # This makes disko work, when canTouchEfiVariables is set to true.
     # Technically these boot entries will no be persisted this way, but
     # in most cases this is OK, because we can rely on the standard location for UEFI executables.
     install -m600 ${pkgs.OVMF.variables} efivars.fd
-  '';
-  postVM = ''
-    # shellcheck disable=SC2154
-    mkdir -p "$out"
-    ${lib.concatMapStringsSep "\n" (disk: "mv ${disk.imageName}.${imageFormat} \"$out\"/${disk.imageName}.${imageFormat}") (lib.attrValues diskoCfg.devices.disk)}
-    ${cfg.extraPostVM}
   '';
 
   closureInfo = pkgs.closureInfo {
@@ -94,9 +100,12 @@ let
 
     # We copy files with cp because `nix copy` seems to have a large memory leak
     mkdir -p ${systemToInstall.config.disko.rootMountPoint}/nix/store
-    xargs cp --recursive --target ${systemToInstall.config.disko.rootMountPoint}/nix/store < ${closureInfo}/store-paths
+    xargs xcp --recursive --target-directory ${systemToInstall.config.disko.rootMountPoint}/nix/store < ${closureInfo}/store-paths
 
-    ${systemToInstall.config.system.build.nixos-install}/bin/nixos-install --root ${systemToInstall.config.disko.rootMountPoint} --system ${systemToInstall.config.system.build.toplevel} --keep-going --no-channel-copy -v --no-root-password --option binary-caches ""
+    ${systemToInstall.config.system.build.nixos-install}/bin/nixos-install \
+      --root ${systemToInstall.config.disko.rootMountPoint} \
+      --system ${systemToInstall.config.system.build.toplevel} \
+      --keep-going --no-channel-copy -v --no-root-password --option binary-caches ""
     umount -Rv ${systemToInstall.config.disko.rootMountPoint}
   '';
 
@@ -105,7 +114,7 @@ let
     "-drive if=pflash,format=raw,unit=1,file=efivars.fd"
   ] ++ builtins.map
     (disk:
-      "-drive file=${disk.imageName}.${imageFormat},if=virtio,cache=unsafe,werror=report,format=${imageFormat}"
+      "-drive file=\"$out\"/${disk.imageName}.${imageFormat},if=virtio,cache=unsafe,werror=report,format=${imageFormat}"
     )
     (lib.attrValues diskoCfg.devices.disk));
 in
@@ -113,8 +122,13 @@ in
   system.build.diskoImages = vmTools.runInLinuxVM (pkgs.runCommand cfg.name
     {
       buildInputs = dependencies;
-      inherit preVM postVM QEMU_OPTS;
+      inherit preVM QEMU_OPTS;
+      postVm = cfg.extraPostVM;
       inherit (diskoCfg) memSize;
+
+      __structuredAttrs = true;
+      # We don't want nix to pick up any references to the store paths for images
+      unsafeDiscardReferences.out = true;
     }
     (partitioner + installer));
 
@@ -188,7 +202,7 @@ in
           [ -e "$src" ] || continue
           dst=$(basename "$src" | base64 -d)
           mkdir -p "$(dirname "$dst")"
-          cp -r "$src" "$dst"
+          cp --reflink=auto -r "$src" "$dst"
         done
         set -f
         ${partitioner}
@@ -197,18 +211,26 @@ in
           [ -e "$src" ] || continue
           dst=/mnt/$(basename "$src" | base64 -d)
           mkdir -p "$(dirname "$dst")"
-          cp -r "$src" "$dst"
+          cp --reflink=auto -r "$src" "$dst"
         done
         ${installer}
       ''}
       echo "export origBuilder=$origBuilder" >> xchg/saved-env
       ${preVM}
     ''}
-    export postVM=${diskoLib.writeCheckedBash { inherit pkgs checked; } "postVM.sh" postVM}
+    export postVM=${diskoLib.writeCheckedBash { inherit pkgs checked; } "postVM.sh" cfg.extraPostVM}
 
     build_memory=''${build_memory:-${builtins.toString diskoCfg.memSize}}
+    # shellcheck disable=SC2016
     QEMU_OPTS=${lib.escapeShellArg QEMU_OPTS}
+    # replace quoted $out with the actual path
+    QEUM_OPTS=''${QEMU_OPTS//\$out/$out}
     QEMU_OPTS+=" -m $build_memory"
+    if [ "''${NIX_BUILD_CORES:-0}" = 0 ]; then
+      QEMU_OPTS+=" -smp cpus=$(nproc)"
+    else
+      QEMU_OPTS+=" -smp cpus=$NIX_BUILD_CORES"
+    fi
     export QEMU_OPTS
 
     ${pkgs.bash}/bin/sh -e ${vmTools.vmRunCommand vmTools.qemuCommandLinux}
