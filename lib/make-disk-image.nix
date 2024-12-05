@@ -48,17 +48,16 @@ let
     kmod
   ] ++ cfg.extraDependencies;
   preVM = ''
-    ${lib.concatMapStringsSep "\n" (disk: "${pkgs.qemu}/bin/qemu-img create -f ${imageFormat} ${disk.imageName}.${imageFormat} ${disk.imageSize}") (lib.attrValues diskoCfg.devices.disk)}
+    # shellcheck disable=SC2154
+    mkdir -p "$out"
+    ${lib.concatMapStringsSep "\n" (disk:
+       # shellcheck disable=SC2154
+      "${pkgs.qemu}/bin/qemu-img create -f ${imageFormat} \"$out/${disk.imageName}.${imageFormat}\" ${disk.imageSize}"
+    ) (lib.attrValues diskoCfg.devices.disk)}
     # This makes disko work, when canTouchEfiVariables is set to true.
     # Technically these boot entries will no be persisted this way, but
     # in most cases this is OK, because we can rely on the standard location for UEFI executables.
     install -m600 ${pkgs.OVMF.variables} efivars.fd
-  '';
-  postVM = ''
-    # shellcheck disable=SC2154
-    mkdir -p "$out"
-    ${lib.concatMapStringsSep "\n" (disk: "mv ${disk.imageName}.${imageFormat} \"$out\"/${disk.imageName}.${imageFormat}") (lib.attrValues diskoCfg.devices.disk)}
-    ${cfg.extraPostVM}
   '';
 
   closureInfo = pkgs.closureInfo {
@@ -94,7 +93,7 @@ let
 
     # We copy files with cp because `nix copy` seems to have a large memory leak
     mkdir -p ${systemToInstall.config.disko.rootMountPoint}/nix/store
-    xargs cp --recursive --target ${systemToInstall.config.disko.rootMountPoint}/nix/store < ${closureInfo}/store-paths
+    time xargs cp --recursive --target ${systemToInstall.config.disko.rootMountPoint}/nix/store < ${closureInfo}/store-paths
 
     ${systemToInstall.config.system.build.nixos-install}/bin/nixos-install --root ${systemToInstall.config.disko.rootMountPoint} --system ${systemToInstall.config.system.build.toplevel} --keep-going --no-channel-copy -v --no-root-password --option binary-caches ""
     umount -Rv ${systemToInstall.config.disko.rootMountPoint}
@@ -105,7 +104,7 @@ let
     "-drive if=pflash,format=raw,unit=1,file=efivars.fd"
   ] ++ builtins.map
     (disk:
-      "-drive file=${disk.imageName}.${imageFormat},if=virtio,cache=unsafe,werror=report,format=${imageFormat}"
+      "-drive file=\"$out\"/${disk.imageName}.${imageFormat},if=virtio,cache=unsafe,werror=report,format=${imageFormat}"
     )
     (lib.attrValues diskoCfg.devices.disk));
 in
@@ -113,7 +112,8 @@ in
   system.build.diskoImages = vmTools.runInLinuxVM (pkgs.runCommand cfg.name
     {
       buildInputs = dependencies;
-      inherit preVM postVM QEMU_OPTS;
+      inherit preVM QEMU_OPTS;
+      postVm = cfg.extraPostVM;
       inherit (diskoCfg) memSize;
     }
     (partitioner + installer));
@@ -204,10 +204,13 @@ in
       echo "export origBuilder=$origBuilder" >> xchg/saved-env
       ${preVM}
     ''}
-    export postVM=${diskoLib.writeCheckedBash { inherit pkgs checked; } "postVM.sh" postVM}
+    export postVM=${diskoLib.writeCheckedBash { inherit pkgs checked; } "postVM.sh" cfg.extraPostVM}
 
     build_memory=''${build_memory:-${builtins.toString diskoCfg.memSize}}
+    # shellcheck disable=SC2016
     QEMU_OPTS=${lib.escapeShellArg QEMU_OPTS}
+    # replace quoted $out with the actual path
+    QEUM_OPTS=''${QEMU_OPTS//\$out/$out}
     QEMU_OPTS+=" -m $build_memory"
     export QEMU_OPTS
 

@@ -253,7 +253,7 @@ main() {
   # nix copy uses up a lot of memory and we work around issues with incorrect checksums in our store
   # that can be caused by using closureInfo in combination with multiple builders and non-deterministic builds.
   # Therefore if we have a blank store, we copy the store paths and registration from the closureInfo.
-  if [[ ! -d "${mountPoint}/nix/store" ]]; then
+  if [[ ! -f "${mountPoint}/nix/var/nix/db/db.sqlite" ]]; then
     echo "Copying store paths" >&2
     mkdir -p "${mountPoint}/nix/store"
     xargs cp --recursive --target "${mountPoint}/nix/store"  < "${closure_info}/store-paths"
