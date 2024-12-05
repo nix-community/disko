@@ -219,6 +219,11 @@ in
     # replace quoted $out with the actual path
     QEUM_OPTS=''${QEMU_OPTS//\$out/$out}
     QEMU_OPTS+=" -m $build_memory"
+    if [ "''${NIX_BUILD_CORES:-0}" = 0 ]; then
+      QEMU_OPTS+=" -smp cpus=$(nproc)"
+    else
+      QEMU_OPTS+=" -smp cpus=$NIX_BUILD_CORES"
+    fi
     export QEMU_OPTS
 
     ${pkgs.bash}/bin/sh -e ${vmTools.vmRunCommand vmTools.qemuCommandLinux}
