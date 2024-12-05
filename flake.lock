@@ -10,8 +10,8 @@
         "type": "github"
       },
       "original": {
-        "owner": "NixOS",
-        "ref": "nixpkgs-unstable",
+        "owner": "Mic92",
+        "ref": "virtiofs",
         "repo": "nixpkgs",
         "type": "github"
       }
