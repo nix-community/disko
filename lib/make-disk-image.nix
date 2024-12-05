@@ -198,7 +198,7 @@ in
           [ -e "$src" ] || continue
           dst=$(basename "$src" | base64 -d)
           mkdir -p "$(dirname "$dst")"
-          cp -r "$src" "$dst"
+          cp --reflink=auto -r "$src" "$dst"
         done
         set -f
         ${partitioner}
@@ -207,7 +207,7 @@ in
           [ -e "$src" ] || continue
           dst=/mnt/$(basename "$src" | base64 -d)
           mkdir -p "$(dirname "$dst")"
-          cp -r "$src" "$dst"
+          cp --reflink=auto -r "$src" "$dst"
         done
         ${installer}
       ''}
