@@ -19,7 +19,8 @@ let
   configSupportsZfs = config.boot.supportedFilesystems.zfs or false;
   vmTools = pkgs.vmTools.override
     {
-      rootModules = [ "9p" "9pnet_virtio" "virtio_pci" "virtio_blk" ]
+      # FIXME: drop 9p after the next release: https://github.com/NixOS/nixpkgs/pull/362081
+      rootModules = [ "virtiofs" "9p" "9pnet_virtio" "virtio_pci" "virtio_blk" ]
         ++ (lib.optional configSupportsZfs "zfs")
         ++ cfg.extraRootModules;
       kernel = pkgs.aggregateModules
