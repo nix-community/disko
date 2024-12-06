@@ -87,14 +87,21 @@ let
     ${lib.getExe systemToInstall.config.system.build.destroyFormatMount} --yes-wipe-all-disks
   '';
 
-  installer = lib.optionalString cfg.copyNixStore ''
+  installer =
+    let
+      # let xargs stop directly when cp fails
+      cpEarlyExit = pkgs.writeScript "cp-early-exit" ''
+        cp --recursive --target ${systemToInstall.config.disko.rootMountPoint}/nix/store "$@" || exit 255
+      '';
+    in
+    lib.optionalString cfg.copyNixStore ''
     # populate nix db, so nixos-install doesn't complain
     export NIX_STATE_DIR=${systemToInstall.config.disko.rootMountPoint}/nix/var/nix
     nix-store --load-db < "${closureInfo}/registration"
 
     # We copy files with cp because `nix copy` seems to have a large memory leak
     mkdir -p ${systemToInstall.config.disko.rootMountPoint}/nix/store
-    xargs cp --recursive --target ${systemToInstall.config.disko.rootMountPoint}/nix/store < ${closureInfo}/store-paths
+    xargs ${cfg.xargsFlags} ${cpEarlyExit} < ${closureInfo}/store-paths
 
     ${systemToInstall.config.system.build.nixos-install}/bin/nixos-install --root ${systemToInstall.config.disko.rootMountPoint} --system ${systemToInstall.config.system.build.toplevel} --keep-going --no-channel-copy -v --no-root-password --option binary-caches ""
     umount -Rv ${systemToInstall.config.disko.rootMountPoint}
