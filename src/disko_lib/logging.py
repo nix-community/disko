@@ -136,12 +136,12 @@ def render_message(message: ReadableMessage) -> None:
 
     msg_lines = dedent_start_lines(msg_lines)
 
-    log_msg(f"{decor_color}╭─{title} {msg_lines[0]}")
+    log_msg(f"{decor_color}┌─{title} {msg_lines[0]}")
 
     for line in msg_lines[1:]:
         log_msg(f"{decor_color}│ {RESET} {line}")
 
-    log_msg(f"{decor_color}╰───────────{RESET}")  # Exactly as long as the heading
+    log_msg(f"{decor_color}└───────────{RESET}")  # Exactly as long as the heading
 
 
 def debug(msg: str) -> None:
