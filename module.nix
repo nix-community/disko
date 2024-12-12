@@ -102,6 +102,13 @@ in
         description = "QEMU image format to use for the disk images";
         default = "raw";
       };
+
+      xargsFlags = lib.mkOption {
+        type = lib.types.str;
+        description = "flags for xargs invocation";
+        default = "";
+        example = "-L 100 -P 0";
+      };
     };
 
     memSize = lib.mkOption {
