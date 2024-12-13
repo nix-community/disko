@@ -4,7 +4,9 @@
   # FIXME: in future we don't want lock here to give precedence to a USB live-installer's registry,
   # but garnix currently does not allow this.
   #inputs.nixpkgs.url = "nixpkgs";
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+  #inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+  # Depends on https://github.com/NixOS/nixpkgs/pull/362081
+  inputs.nixpkgs.url = "github:Mic92/nixpkgs/virtiofs";
 
   outputs = { self, nixpkgs, ... }:
     let
