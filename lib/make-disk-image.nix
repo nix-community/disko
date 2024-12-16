@@ -14,7 +14,15 @@ let
   configSupportsZfs = config.boot.supportedFilesystems.zfs or false;
   vmTools = pkgs.vmTools.override
     {
-      rootModules = [ "9p" "9pnet_virtio" "virtio_pci" "virtio_blk" ]
+      rootModules = [
+        "9p" "9pnet_virtio" # we can drop those in future if we stop supporting 24.11
+
+        "virtiofs"
+        "virtio_pci"
+        "virtio_blk"
+        "virtio_balloon"
+        "virtio_rng"
+      ]
         ++ (lib.optional configSupportsZfs "zfs")
         ++ cfg.extraRootModules;
       kernel = pkgs.aggregateModules
