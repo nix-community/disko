@@ -67,7 +67,19 @@
     _mount = diskoLib.mkMountOption {
       inherit config options;
       default =
-        lib.optionalAttrs (config.content != null) config.content._mount;
+        let
+          contentMount = config.content._mount;
+        in
+        {
+          dev = ''
+            zfs_values=($(zfs get keystatus,keylocation ${config._name} -H -o value))
+            if [ "''${zfs_values[0]}" == "unavailable" ] && [ "''${zfs_values[1]}" != "none" ]; then
+              zfs load-key ${config._name}
+            fi
+            ${lib.optionalString (config.content != null) contentMount.dev or ""}
+          '';
+          fs = lib.optionalAttrs (config.content != null) contentMount.fs or { };
+        };
     };
     _unmount = diskoLib.mkUnmountOption {
       inherit config options;

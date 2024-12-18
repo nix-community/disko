@@ -101,7 +101,14 @@
     _mount = diskoLib.mkMountOption {
       inherit config options;
       default =
-        lib.optionalAttrs (config.options.mountpoint or "" != "none" && config.options.canmount or "" != "off") {
+        {
+          dev = ''
+            zfs_values=($(zfs get keystatus,keylocation ${config._name} -H -o value))
+            if [ "''${zfs_values[0]}" == "unavailable" ] && [ "''${zfs_values[1]}" != "none" ]; then
+              zfs load-key ${config._name}
+            fi
+          '';
+        } // lib.optionalAttrs (config.options.mountpoint or "" != "none" && config.options.canmount or "" != "off") {
           fs.${config.mountpoint} = ''
             if ! findmnt ${config._name} "${rootMountPoint}${config.mountpoint}" >/dev/null 2>&1; then
               mount ${config._name} "${rootMountPoint}${config.mountpoint}" \
