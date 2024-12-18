@@ -72,13 +72,27 @@
             options.mountpoint = "legacy";
             mountpoint = "/zfs_legacy_fs";
           };
-          zfs_testvolume = {
+          zfs_volume = {
             type = "zfs_volume";
             size = "10M";
             content = {
               type = "filesystem";
               format = "ext4";
               mountpoint = "/ext4onzfs";
+            };
+          };
+          zfs_encryptedvolume = {
+            type = "zfs_volume";
+            size = "10M";
+            options = {
+              encryption = "aes-256-gcm";
+              keyformat = "passphrase";
+              keylocation = "file:///tmp/secret.key";
+            };
+            content = {
+              type = "filesystem";
+              format = "ext4";
+              mountpoint = "/ext4onzfsencrypted";
             };
           };
           encrypted = {

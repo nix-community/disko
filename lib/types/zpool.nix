@@ -299,33 +299,30 @@ in
       inherit config options;
       default =
         let
-          datasetMounts = diskoLib.deepMergeMap (dataset: dataset._mount) (lib.attrValues config.datasets);
+          datasetFilesystemsMounts = diskoLib.deepMergeMap (dataset: dataset._mount.fs or {}) (lib.attrValues config.datasets);
         in
         {
           dev = ''
             zpool list "${config.name}" >/dev/null 2>/dev/null ||
               zpool import -l -R ${rootMountPoint} "${config.name}"
-            ${lib.concatMapStrings (x: x.dev or "") (lib.attrValues datasetMounts)}
+
+            ${lib.concatMapStrings (x: x._mount.dev or "") (lib.attrValues config.datasets)}
           '';
-          fs = datasetMounts.fs or { };
+          fs = datasetFilesystemsMounts;
         };
     };
     _unmount = diskoLib.mkUnmountOption {
       inherit config options;
-      default =
-        let
-          datasetUnmounts = diskoLib.deepMergeMap (dataset: dataset._unmount) (lib.attrValues config.datasets);
-        in
-        {
-          dev = ''
-            ${lib.concatMapStrings (x: x.dev or "") (lib.attrValues datasetUnmounts)}
+      default = {
+        dev = ''
+          ${lib.concatMapStrings (dataset: dataset._unmount.dev or "") (lib.attrValues config.datasets)}
 
-            if zpool list "${config.name}" >/dev/null 2>/dev/null; then
-              zpool export "${config.name}"
-            fi
-          '';
-          fs = datasetUnmounts.fs or { };
-        };
+          if zpool list "${config.name}" >/dev/null 2>/dev/null; then
+            zpool export "${config.name}"
+          fi
+        '';
+        fs = diskoLib.deepMergeMap (dataset: dataset._unmount.fs or {}) (lib.attrValues config.datasets);
+      };
     };
     _config = lib.mkOption {
       internal = true;
