@@ -66,13 +66,30 @@
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
-      default =
-        lib.optionalAttrs (config.content != null) config.content._mount;
+      default = {
+        dev = ''
+          ${lib.optionalString (config.options.keylocation or "none" != "none") ''
+            if [ "$(zfs get keystatus ${config.name} -H -o value)" == "unavailable" ]; then
+              zfs load-key ${config.name}
+            fi
+          ''}
+
+          ${config.content._mount.dev or ""}
+        '';
+        fs = config.content._mount.fs or { };
+      };
     };
     _unmount = diskoLib.mkUnmountOption {
       inherit config options;
-      default =
-        lib.optionalAttrs (config.content != null) config.content._unmount;
+      default = {
+        dev = ''
+          ${lib.optionalString (config.options.keylocation or "none" != "none") "zfs unload-key ${config.name}"}
+
+          ${config.content._unmount.dev or ""}
+        '';
+
+        fs = config.content._unmount.fs;
+      };
     };
     _config = lib.mkOption {
       internal = true;

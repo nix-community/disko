@@ -101,7 +101,13 @@
     _mount = diskoLib.mkMountOption {
       inherit config options;
       default =
-        lib.optionalAttrs (config.options.mountpoint or "" != "none" && config.options.canmount or "" != "off") {
+        (lib.optionalAttrs (config.options.keylocation or "none" != "none") {
+          dev = ''
+            if [ "$(zfs get keystatus ${config._name} -H -o value)" == "unavailable" ]; then
+              zfs load-key ${config._name}
+            fi
+          '';
+        }) // lib.optionalAttrs (config.options.mountpoint or "" != "none" && config.options.canmount or "" != "off") {
           fs.${config.mountpoint} = ''
             if ! findmnt ${config._name} "${rootMountPoint}${config.mountpoint}" >/dev/null 2>&1; then
               mount ${config._name} "${rootMountPoint}${config.mountpoint}" \
@@ -117,7 +123,9 @@
     _unmount = diskoLib.mkUnmountOption {
       inherit config options;
       default =
-        lib.optionalAttrs (config.options.mountpoint or "" != "none" && config.options.canmount or "" != "off") {
+        (lib.optionalAttrs (config.options.keylocation or "none" != "none") {
+          dev = "zfs unload-key ${config.name}";
+        }) // lib.optionalAttrs (config.options.mountpoint or "" != "none" && config.options.canmount or "" != "off") {
           fs.${config.mountpoint} = ''
             if findmnt ${config._name} "${rootMountPoint}${config.mountpoint}" >/dev/null 2>&1; then
               umount "${rootMountPoint}${config.mountpoint}"
