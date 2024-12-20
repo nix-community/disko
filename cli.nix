@@ -97,7 +97,7 @@ let
   diskoScript =
     if hasDiskoConfigFlake then
       diskoEval
-    else if (lib.traceValSeq hasDiskoModuleFlake) then
+    else if hasDiskoModuleFlake then
       (builtins.getFlake flake).nixosConfigurations.${flakeAttr}.config.system.build.${diskoAttr} or (
         pkgs.writeShellScriptBin "disko-compat-error" ''
           echo 'Error: Attribute `nixosConfigurations.${flakeAttr}.config.system.build.${diskoAttr}` >&2
