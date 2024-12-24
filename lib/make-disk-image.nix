@@ -121,7 +121,7 @@ in
     {
       buildInputs = dependencies;
       inherit preVM QEMU_OPTS;
-      postVm = cfg.extraPostVM;
+      postVM = cfg.extraPostVM;
       inherit (diskoCfg) memSize;
     }
     (partitioner + installer));
