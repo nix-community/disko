@@ -244,11 +244,14 @@
             type = "topology";
             vdev = [
               {
-                mode = "mirror";
-                members = [ "data1" "data2" ];
+                # This syntax expects a disk called 'data3' with a gpt partition called 'zfs'.
+                members = [ "data1" ];
+                # It's also possible to use the full path of the device or partition
+                # members = [ "/dev/disk/by-id/wwn-0x5000c500af8b2a14" ];
               }
               {
-                members = [ "data3" ];
+                mode = "mirror";
+                members = [ "data2" "data3" ];
               }
             ];
             spare = [ "spare" ];

@@ -57,9 +57,9 @@ diskoLib.testLib.makeDiskoTest {
             vdev = ""
     actual.sort()
     expected=sorted([
-      'zroot /dev/disk/by-partlabel/disk-data3-zfs',
-      'zroot mirror /dev/disk/by-partlabel/disk-data1-zfs',
+      'zroot /dev/disk/by-partlabel/disk-data1-zfs',
       'zroot mirror /dev/disk/by-partlabel/disk-data2-zfs',
+      'zroot mirror /dev/disk/by-partlabel/disk-data3-zfs',
       'dedup /dev/disk/by-partlabel/disk-dedup3-zfs',
       'dedup mirror /dev/disk/by-partlabel/disk-dedup1-zfs',
       'dedup mirror /dev/disk/by-partlabel/disk-dedup2-zfs',

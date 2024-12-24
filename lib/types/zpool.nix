@@ -25,6 +25,44 @@ in
     };
     mode = lib.mkOption {
       default = "";
+      example = {
+        mode = {
+          topology = {
+            type = "topology";
+            vdev = [
+              {
+                # Members can be either specified by a full path or by a disk name
+                # This is example uses the full path
+                members = [ "/dev/disk/by-id/wwn-0x5000c500af8b2a14" ];
+              }
+            ];
+            log = [
+              {
+                # Example using gpt partition labels
+                # This expects an disk called `ssd` with a gpt partition called `zfs`
+                #   disko.devices.disk.ssd = {
+                #    type = "disk";
+                #    device = "/dev/nvme0n1";
+                #    content = {
+                #      type = "gpt";
+                #      partitions = {
+                #        zfs = {
+                #          size = "100%";
+                #          content = {
+                #            type = "zfs";
+                #            # use your own pool name here
+                #            pool = "zroot";
+                #          };
+                #        };
+                #      };
+                #    };
+                #  };
+                members = [ "ssd" ];
+              }
+            ];
+          };
+        };
+      };
       type = (lib.types.oneOf [
         (lib.types.enum modeOptions)
         (lib.types.attrsOf (diskoLib.subType {
