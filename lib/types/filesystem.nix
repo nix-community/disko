@@ -101,6 +101,7 @@
           else if (config.format == "ext4") then [ pkgs.e2fsprogs ]
           else if (config.format == "bcachefs") then [ pkgs.bcachefs-tools ]
           else if (config.format == "f2fs") then [ pkgs.f2fs-tools ]
+          else if (config.format == "exfat") then [ pkgs.exfatprogs ]
           else [ ]
         );
       description = "Packages";
