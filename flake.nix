@@ -26,7 +26,7 @@
     in
     {
       nixosModules.default = self.nixosModules.disko; # convention
-      nixosModules.disko.imports = [ ./module.nix ];
+      nixosModules.disko = ./module.nix;
       lib = diskoLib;
       packages = forAllSystems (system:
         let
