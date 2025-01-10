@@ -13,7 +13,7 @@ let
 
   configSupportsZfs = config.boot.supportedFilesystems.zfs or false;
   vmTools = pkgs.vmTools.override
-    {
+    ({
       rootModules = [
         "9p" "9pnet_virtio" # we can drop those in future if we stop supporting 24.11
 
@@ -32,7 +32,7 @@ let
   // lib.optionalAttrs (diskoLib.vmToolsSupportsCustomQemu lib)
     {
       customQemu = cfg.qemu;
-    };
+    });
   cleanedConfig = diskoLib.testLib.prepareDiskoConfig config diskoLib.testLib.devices;
   systemToInstall = extendModules {
     modules = [
