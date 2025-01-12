@@ -204,7 +204,7 @@ of the NixOS manual. The following configuration for `grub` works for both EFI
 and BIOS systems. Add this to your configuration.nix, commenting out the
 existing lines that configure `systemd-boot`. The entries will look like this:
 
-**Note:** Its not necessary to set `boot.loader.grub.device` here, since Disko
+**Note:** It's not necessary to set `boot.loader.grub.device` here, since Disko
 will take care of that automatically.
 
 ```nix
