@@ -81,6 +81,10 @@
               mountpoint = "/ext4onzfs";
             };
           };
+          zfs_volume_no_content = {
+            type = "zfs_volume";
+            size = "10M";
+          };
           zfs_encryptedvolume = {
             type = "zfs_volume";
             size = "10M";
