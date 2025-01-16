@@ -3,6 +3,7 @@
 , lib
 , extendModules
 , options
+, imagePkgs
 , ...
 }:
 let
@@ -12,6 +13,12 @@ let
   checked = diskoCfg.checkScripts;
 
   configSupportsZfs = config.boot.supportedFilesystems.zfs or false;
+  binfmt = diskoLib.binfmt { inherit diskoLib lib pkgs imagePkgs; };
+  binfmtSetup = lib.optionalString (cfg.enableBinfmt && binfmt.systemsAreDifferent) ''
+    mount binfmt_misc -t binfmt_misc /proc/sys/fs/binfmt_misc
+    ${pkgs.systemdMinimal}/lib/systemd/systemd-binfmt <(echo ${lib.strings.escapeShellArg binfmt.binfmtRegistration})
+  '';
+
   vmTools = pkgs.vmTools.override
     ({
       rootModules = [
@@ -124,7 +131,7 @@ in
       postVM = cfg.extraPostVM;
       inherit (diskoCfg) memSize;
     }
-    (partitioner + installer));
+    (binfmtSetup + partitioner + installer));
 
   system.build.diskoImagesScript = diskoLib.writeCheckedBash { inherit checked pkgs; } cfg.name ''
     set -efu

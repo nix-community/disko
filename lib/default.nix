@@ -905,6 +905,7 @@ let
       };
     };
 
+    binfmt = import ./binfmt.nix;
   } // outputs;
 in
 diskoLib
