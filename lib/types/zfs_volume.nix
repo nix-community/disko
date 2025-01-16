@@ -88,7 +88,7 @@
           ${config.content._unmount.dev or ""}
         '';
 
-        fs = config.content._unmount.fs;
+        fs = config.content._unmount.fs or {};
       };
     };
     _config = lib.mkOption {
