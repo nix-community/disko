@@ -27,10 +27,6 @@
         content = {
           type = "gpt";
           partitions = {
-            boot = {
-              size = "1M";
-              type = "EF02"; # for grub MBR
-            };
             mdadm = {
               size = "100%";
               content = {
