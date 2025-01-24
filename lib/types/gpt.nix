@@ -38,7 +38,7 @@ in
             type = lib.types.str;
             default =
               if partition.config.uuid != null then
-                "/dev/disk/by-partuuid/${diskoLib.hexEscapeUdevSymlink partition.config.uuid}"
+                "/dev/disk/by-partuuid/${partition.config.uuid}"
               else if config._parent.type == "mdadm" then
                 # workaround because mdadm partlabel do not appear in /dev/disk/by-partlabel
                 "/dev/disk/by-id/md-name-any:${config._parent.name}-part${toString partition.config._index}"
@@ -46,7 +46,7 @@ in
                 "/dev/disk/by-partlabel/${diskoLib.hexEscapeUdevSymlink partition.config.label}";
             defaultText = ''
               if `uuid` is provided:
-                /dev/disk/by-partuuid/''${diskoLib.hexEscapeUdevSymlink partition.config.uuid}
+                /dev/disk/by-partuuid/''${partition.config.uuid}
 
               otherwise, if the parent is an mdadm device:
                 /dev/disk/by-id/md-name-any:''${config._parent.name}-part''${toString partition.config._index}
@@ -80,13 +80,14 @@ in
             default = name;
           };
           uuid = lib.mkOption {
-            type = lib.types.nullOr lib.types.str;
+            type = lib.types.nullOr (lib.types.strMatching "[[:xdigit:]]{8}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{12}");
             default = null;
+            defaultText = "`null` - generate a UUID when creating the partition";
             example = "809b3a2b-828a-4730-95e1-75b6343e415a";
             description = ''
               The UUID (also known as GUID) of the partition. Note that this is distinct from the UUID of the filesystem.
 
-              If none is provided, a random UUID will be generated when creating the partition.
+              You can generate a UUID with the command `uuidgen -r`.
             '';
           };
           label = lib.mkOption {
