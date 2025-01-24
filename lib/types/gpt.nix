@@ -210,7 +210,7 @@ in
         if ! blkid "${config.device}" >&2; then
           sgdisk --clear "${config.device}"
         fi
-        ${lib.concatStrings (map (partition:
+        ${lib.concatMapStrings (partition:
           let
             args = ''
               --partition-guid="${toString partition._index}:${if partition.uuid == null then "R" else partition.uuid}" \
@@ -234,7 +234,7 @@ in
               udevadm trigger --subsystem-match=block
               udevadm settle
             ''
-        ) sortedPartitions)}
+        ) sortedPartitions}
 
         ${
           lib.optionalString (sortedHybridPartitions != [])
