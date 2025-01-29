@@ -37,13 +37,18 @@ in
           device = lib.mkOption {
             type = lib.types.str;
             default =
-              if config._parent.type == "mdadm" then
-              # workaround because mdadm partlabel do not appear in /dev/disk/by-partlabel
+              if partition.config.uuid != null then
+                "/dev/disk/by-partuuid/${partition.config.uuid}"
+              else if config._parent.type == "mdadm" then
+                # workaround because mdadm partlabel do not appear in /dev/disk/by-partlabel
                 "/dev/disk/by-id/md-name-any:${config._parent.name}-part${toString partition.config._index}"
               else
                 "/dev/disk/by-partlabel/${diskoLib.hexEscapeUdevSymlink partition.config.label}";
             defaultText = ''
-              if the parent is an mdadm device:
+              if `uuid` is provided:
+                /dev/disk/by-partuuid/''${partition.config.uuid}
+
+              otherwise, if the parent is an mdadm device:
                 /dev/disk/by-id/md-name-any:''${config._parent.name}-part''${toString partition.config._index}
 
               otherwise:
@@ -73,6 +78,17 @@ in
             type = lib.types.str;
             description = "Name of the partition";
             default = name;
+          };
+          uuid = lib.mkOption {
+            type = lib.types.nullOr (lib.types.strMatching "[[:xdigit:]]{8}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{12}");
+            default = null;
+            defaultText = "`null` - generate a UUID when creating the partition";
+            example = "809b3a2b-828a-4730-95e1-75b6343e415a";
+            description = ''
+              The UUID (also known as GUID) of the partition. Note that this is distinct from the UUID of the filesystem.
+
+              You can generate a UUID with the command `uuidgen -r`.
+            '';
           };
           label = lib.mkOption {
             type = lib.types.str;
@@ -195,24 +211,31 @@ in
         if ! blkid "${config.device}" >&2; then
           sgdisk --clear "${config.device}"
         fi
-        ${lib.concatStrings (map (partition: ''
-          # try to create the partition, if it fails, try to change the type and name
-          if ! sgdisk \
-            --align-end ${lib.optionalString (partition.alignment != 0) ''--set-alignment=${builtins.toString partition.alignment}''} \
-            --new=${toString partition._index}:${partition.start}:${partition.end} \
-            --change-name="${toString partition._index}:${partition.label}" \
-            --typecode=${toString partition._index}:${partition.type} \
-            "${config.device}"
-          then sgdisk \
-            --change-name="${toString partition._index}:${partition.label}" \
-            --typecode=${toString partition._index}:${partition.type} \
-            "${config.device}"
-          fi
-          # ensure /dev/disk/by-path/..-partN exists before continuing
-          partprobe "${config.device}" || : # sometimes partprobe fails, but the partitions are still up2date
-          udevadm trigger --subsystem-match=block
-          udevadm settle
-        '') sortedPartitions)}
+        ${lib.concatMapStrings (partition:
+          let
+            args = ''
+              --partition-guid="${toString partition._index}:${if partition.uuid == null then "R" else partition.uuid}" \
+              --change-name="${toString partition._index}:${partition.label}" \
+              --typecode=${toString partition._index}:${partition.type} \
+              "${config.device}" \
+            '';
+            createArgs = ''
+              --align-end ${lib.optionalString (partition.alignment != 0) ''--set-alignment=${builtins.toString partition.alignment}''} \
+              --new=${toString partition._index}:${partition.start}:${partition.end} \
+            '';
+          in
+            ''
+              # try to create the partition, if it fails, try to change the type and name
+              if ! sgdisk ${createArgs} ${args}
+              then
+                sgdisk ${args}
+              fi
+              # ensure /dev/disk/by-path/..-partN exists before continuing
+              partprobe "${config.device}" || : # sometimes partprobe fails, but the partitions are still up2date
+              udevadm trigger --subsystem-match=block
+              udevadm settle
+            ''
+        ) sortedPartitions}
 
         ${
           lib.optionalString (sortedHybridPartitions != [])
