@@ -14,6 +14,15 @@ in
 
   options.disko = {
     imageBuilder = {
+      enableBinfmt = lib.mkOption {
+        type = lib.types.bool;
+        description = ''
+          enable emulation of foreign architecture binaries in the builder.
+          Makes it possible to build disk images for a foreign architecture in a VM with native performance.
+          Required for the bootloader installation step, which chroots into the target environment.
+        '';
+        default = false;
+      };
       qemu = lib.mkOption {
         type = lib.types.nullOr lib.types.str;
         description = ''
@@ -222,6 +231,7 @@ in
       }
     ];
 
+    _module.args.imagePkgs = pkgs;
     _module.args.diskoLib = import ./lib {
       inherit lib;
       rootMountPoint = config.disko.rootMountPoint;
