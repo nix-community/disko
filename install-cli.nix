@@ -2,6 +2,7 @@
 , flakeAttr
 , diskMappings
 , extraSystemConfig ? "{}"
+, extraDiskoSystemConfig ? "{}"
 , writeEfiBootEntries ? false
 , rootMountPoint ? "/mnt"
 ,
@@ -41,6 +42,9 @@ let
       {
         disko.rootMountPoint = rootMountPoint;
         disko.devices.disk = lib.mkVMOverride cleanedDisks;
+        imports = [
+          ({ _file = "disko-install --system-config"; } // (builtins.fromJSON extraDiskoSystemConfig))
+        ];
       }
     ];
   };

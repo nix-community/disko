@@ -110,6 +110,15 @@ parseArgs() {
       extraSystemConfig="$2"
       shift
       ;;
+    --disko-system-config)
+      if [[ $# -lt 2 ]]; then
+        echo "Option $1 requires one JSON argument." >&2
+        exit 1
+      fi
+      # shellcheck disable=SC2034
+      extraDiskoSystemConfig="$2"
+      shift
+      ;;
     --extra-files)
       if [[ $# -lt 3 ]]; then
         echo "Option $1 requires two arguments: source, destination" >&2
