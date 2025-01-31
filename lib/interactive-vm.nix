@@ -65,6 +65,7 @@ in
   boot.zfs.devNodes = "/dev/disk/by-uuid"; # needed because /dev/disk/by-id is empty in qemu-vms
   boot.zfs.forceImportAll = true;
   boot.zfs.forceImportRoot = lib.mkForce true;
+  boot.zfs.package = pkgs.zfs_2_3;
 
   system.build.vmWithDisko = hostPkgs.writers.writeDashBin "disko-vm" ''
     set -efux

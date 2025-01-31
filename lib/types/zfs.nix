@@ -52,7 +52,7 @@
       internal = true;
       readOnly = true;
       type = lib.types.functionTo (lib.types.listOf lib.types.package);
-      default = pkgs: [ pkgs.zfs ];
+      default = pkgs: [ pkgs.zfs_2_3 ];
       description = "Packages";
     };
   };
