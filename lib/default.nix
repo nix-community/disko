@@ -44,6 +44,75 @@ let
       description = "The type of device";
     };
 
+
+    /** 
+      like lib.recursiveUpdate but supports merging of lists
+
+      # Inputs:
+
+       `left`
+
+       : Left  attribute set of the merge
+
+       `right`
+
+      : Right attribute set of the merge
+
+      recursiveUpdate :: AttrSet -> AttrSet -> AttrSet
+
+      # Examples
+      :::{.example}
+      ```nix
+      recursiveUpdate {
+        boot.loader.grub.enable = true;
+        boot.loader.grub.devices = [ "/dev/hda" ];
+      } {
+        boot.loader.grub.devices = [ "/dev/hdb" ];
+      }
+
+      returns: {
+        boot.loader.grub.enable = true;
+        boot.loader.grub.devices = [ "/dev/hda" "/dev/hdb" ];
+      }
+      ```
+    **/
+    recursiveUpdate = left: right:
+      let
+        inherit (lib) zipAttrsWith length elemAt head isAttrs isList concatLists all reverseList;
+
+        recursiveMergeUntil =
+          pred:
+          lhs:
+          rhs:
+          let
+            f = attrPath:
+              zipAttrsWith (n: values:
+                let here = attrPath ++ [ n ]; in
+                if length values == 1
+                  || pred here (elemAt values 1) (head values) then
+                  (
+                    if all isList values then concatLists (reverseList values)
+                    else head values
+                  )
+                else
+                  f here values
+              );
+          in
+          f [ ] [ rhs lhs ];
+
+        recursiveMerge =
+          lhs:
+          rhs:
+          recursiveMergeUntil
+            (_path: lhs: rhs:
+              !(isAttrs lhs && isAttrs rhs))
+            lhs
+            rhs;
+
+
+      in
+      recursiveMerge left right;
+
     /* deepMergeMap takes a function and a list of attrsets and deep merges them
 
        deepMergeMap :: (AttrSet -> AttrSet ) -> [ AttrSet ] -> Attrset
@@ -52,7 +121,7 @@ let
          deepMergeMap (x: x.t = "test") [ { x = { y = 1; z = 3; }; } { x = { bla = 234; }; } ]
          => { x = { y = 1; z = 3; bla = 234; t = "test"; }; }
     */
-    deepMergeMap = f: lib.foldr (attr: acc: (lib.recursiveUpdate acc (f attr))) { };
+    deepMergeMap = f: lib.foldr (attr: acc: (diskoLib.recursiveUpdate acc (f attr))) { };
 
     /* get a device and an index to get the matching device name
 
