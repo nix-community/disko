@@ -103,17 +103,29 @@ in
                 default = name;
               };
               uuid = lib.mkOption {
-                type = lib.types.nullOr (
-                  lib.types.strMatching "[[:xdigit:]]{8}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{12}"
-                );
-                default = null;
-                defaultText = "`null` - generate a UUID when creating the partition";
-                example = "809b3a2b-828a-4730-95e1-75b6343e415a";
-                description = ''
-                  The UUID (also known as GUID) of the partition. Note that this is distinct from the UUID of the filesystem.
+                type = lib.types.nullOr (lib.types.strMatching "[[:xdigit:]]{8}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{4}-[[:xdigit:]]{12}");
+                default = let 
+                # Generate a deterministic but random-looking UUID based on the partition name
+                # This avoids the need for impure access to nixpkgs at evaluation time
+                hash = builtins.hashString "sha256" "${config._parent.name}-${partition.config.name}";
+                hexChars = builtins.substring 0 32 hash;
 
-                  You can generate a UUID with the command `uuidgen -r`.
-                '';
+                p1 = builtins.substring 0 8 hexChars;
+                p2 = builtins.substring 8 4 hexChars;
+                p3 = builtins.substring 12 4 hexChars;
+                p4 = builtins.substring 16 4 hexChars;
+                p5 = builtins.substring 20 12 hexChars;
+              in
+                if config._parent.type == "bcachefs_member" then
+                  "${p1}-${p2}-${p3}-${p4}-${p5}"
+                else
+                  null;
+              defaultText = "generated deterministically based on partition name";
+              example = "809b3a2b-828a-4730-95e1-75b6343e415a";
+              description = ''
+                The UUID (also known as GUID) of the partition. Note that this is distinct from the UUID of the filesystem.
+                If not provided, a deterministic UUID will be generated based on the partition name. You can generate a UUID with the command `uuidgen -r`
+              '';
               };
               label = lib.mkOption {
                 type = lib.types.str;

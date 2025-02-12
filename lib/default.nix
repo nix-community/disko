@@ -46,6 +46,7 @@ let
       inherit (diskoLib.types)
         btrfs
         filesystem
+        bcachefs_member
         zfs
         mdraid
         luks
@@ -71,6 +72,7 @@ let
       inherit (diskoLib.types)
         table
         gpt
+        bcachefs_member
         btrfs
         filesystem
         zfs
@@ -92,6 +94,19 @@ let
         default = null;
         description = "The type of device";
       };
+
+    /**
+      Generate a random UUID using uuidgen
+  
+      mkUUID :: AttrSet -> str
+    **/
+    mkUUID =
+      { pkgs
+      , lib ? pkgs.lib
+      }: 
+      lib.removeSuffix "\n" (builtins.readFile (pkgs.runCommand "gen-uuid" {} ''
+        ${pkgs.util-linux}/bin/uuidgen -r > $out
+      ''));
 
     /**
         like lib.recursiveUpdate but supports merging of lists
@@ -612,6 +627,7 @@ let
         devices = {
           inherit (cfg.config)
             disk
+            bcachefs
             mdadm
             zpool
             lvm_vg
@@ -625,6 +641,11 @@ let
             type = lib.types.attrsOf diskoLib.types.disk;
             default = { };
             description = "Block device";
+          };
+          bcachefs = lib.mkOption {
+            type = lib.types.attrsOf diskoLib.types.bcachefs;
+            default = { };
+            description = "bcachefs device";
           };
           mdadm = lib.mkOption {
             type = lib.types.attrsOf diskoLib.types.mdadm;
