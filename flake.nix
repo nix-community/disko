@@ -80,8 +80,11 @@
         system = "x86_64-linux";
         modules = [
           ./tests/disko-install/configuration.nix
-          ./example/hybrid.nix
+          # ./example/hybrid.nix
           ./module.nix
+          ./example/bcachefs-multi-disk.nix
+          ./example/mdadm.nix
+          # ./example/zfs-with-vdevs.nix
         ];
       };
       formatter = forAllSystems (system:
