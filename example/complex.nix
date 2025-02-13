@@ -33,7 +33,7 @@
               content = {
                 type = "luks";
                 name = "crypted1";
-                settings.keyFile = "/tmp/secret.key";
+                settings.passwordFile = "/tmp/secret.key";
                 additionalKeyFiles = [ "/tmp/additionalSecret.key" ];
                 extraFormatArgs = [
                   "--iter-time 1" # insecure but fast for tests
