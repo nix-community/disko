@@ -148,8 +148,11 @@ in
     USAGE
     }
 
-    export out=$PWD
+    # emulate basic build environment https://github.com/NixOS/nix/blob/fc83c6ccb3b300256508297bb92dd95e18a81213/src/nix-build/nix-build.cc#L541
     TMPDIR=$(mktemp -d); export TMPDIR
+    export NIX_BUILD_TOP=$TMPDIR
+    export out=$PWD
+    export stdenv=${pkgs.stdenv}
     trap 'rm -rf "$TMPDIR"' EXIT
     cd "$TMPDIR"
 
