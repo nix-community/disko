@@ -51,6 +51,18 @@ let
       }
     ];
   };
+  systemToInstallNative = if binfmt.systemsAreDifferent then extendModules {
+    modules = [
+      cfg.extraConfig
+      {
+        disko.testMode = true;
+        disko.devices = lib.mkForce cleanedConfig.disko.devices;
+        boot.loader.grub.devices = lib.mkForce cleanedConfig.boot.loader.grub.devices;
+        nixpkgs.hostPlatform = lib.mkForce pkgs.stdenv.hostPlatform;
+      }
+    ];
+  }
+  else systemToInstall;
   dependencies = with pkgs; [
     bash
     coreutils
@@ -88,7 +100,7 @@ let
     ln -sfn /proc/self/fd/2 /dev/stderr
     mkdir -p /etc/udev
     mount -t efivarfs none /sys/firmware/efi/efivars
-    ln -sfn ${systemToInstall.config.system.build.etc}/etc/udev/rules.d /etc/udev/rules.d
+    ln -sfn ${systemToInstallNative.config.system.build.etc}/etc/udev/rules.d /etc/udev/rules.d
     mkdir -p /dev/.mdadm
     ${pkgs.systemdMinimal}/lib/systemd/systemd-udevd --daemon
     partprobe
@@ -98,10 +110,11 @@ let
     ${lib.optionalString diskoCfg.testMode ''
       export IN_DISKO_TEST=1
     ''}
-    ${lib.getExe systemToInstall.config.system.build.destroyFormatMount} --yes-wipe-all-disks
+    ${lib.getExe systemToInstallNative.config.system.build.destroyFormatMount} --yes-wipe-all-disks
   '';
 
   installer = lib.optionalString cfg.copyNixStore ''
+    ${binfmtSetup}
     # populate nix db, so nixos-install doesn't complain
     export NIX_STATE_DIR=${systemToInstall.config.disko.rootMountPoint}/nix/var/nix
     nix-store --load-db < "${closureInfo}/registration"
