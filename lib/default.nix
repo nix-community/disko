@@ -242,23 +242,15 @@ let
        sortDevicesByDependencies :: AttrSet -> AttrSet -> [ [ str str ] ]
     */
     sortDevicesByDependencies = deviceDependencies: devices:
-    let
-      # First separate disk devices from other devices
-      deviceList = diskoLib.deviceList devices;
-      diskDevices = lib.filter (dev: lib.head dev == "disk") deviceList;
-      nonDiskDevices = lib.filter (dev: lib.head dev != "disk") deviceList;
-    
-      # Regular dependency sorting for non-disk devices
-      dependsOn = a: b:
-        lib.elem a (lib.attrByPath b [ ] deviceDependencies);
-      maybeSortedDevices = lib.toposort dependsOn nonDiskDevices;
-    in
-    if (lib.hasAttr "cycle" maybeSortedDevices) then
-      abort "detected a cycle in your disk setup: ${maybeSortedDevices.cycle}"
-    else
-      # Combine disk devices first, then the sorted non-disk devices
-      diskDevices ++ maybeSortedDevices.result;
-
+      let
+        dependsOn = a: b:
+          lib.elem a (lib.attrByPath b [ ] deviceDependencies);
+        maybeSortedDevices = lib.toposort dependsOn (diskoLib.deviceList devices);
+      in
+      if (lib.hasAttr "cycle" maybeSortedDevices) then
+        abort "detected a cycle in your disk setup: ${maybeSortedDevices.cycle}"
+      else
+        maybeSortedDevices.result;
 
     /* Takes a devices attrSet and returns it as a list
 
