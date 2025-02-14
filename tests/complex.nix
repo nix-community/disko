@@ -13,7 +13,7 @@ diskoLib.testLib.makeDiskoTest {
   };
   extraTestScript = ''
     machine.succeed("test -b /dev/md/raid1p1");
-
+    machine.succeed("test -b /dev/disk/by-partuuid/f0f0f0f0-f0f0-f0f0-f0f0-f0f0f0f0f0f0")
 
     machine.succeed("mountpoint /zfs_fs");
     machine.succeed("mountpoint /zfs_legacy_fs");

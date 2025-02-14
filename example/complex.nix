@@ -28,6 +28,7 @@
           type = "gpt";
           partitions = {
             luks = {
+              uuid = "f0f0f0f0-f0f0-f0f0-f0f0-f0f0f0f0f0f0";
               start = "1M";
               size = "100%";
               content = {
