@@ -49,7 +49,7 @@
       default = lib.optionalAttrs (config.content != null) (
         config.content._meta [
           "disk"
-          config.device
+          config.name
         ]
       );
       description = "Metadata";
