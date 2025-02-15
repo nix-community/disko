@@ -1,4 +1,12 @@
-{ config, options, lib, diskoLib, parent, device, ... }:
+{
+  config,
+  options,
+  lib,
+  diskoLib,
+  parent,
+  device,
+  ...
+}:
 {
   options = {
     type = lib.mkOption {

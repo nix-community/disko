@@ -1,4 +1,10 @@
-{ config, options, lib, diskoLib, ... }:
+{
+  config,
+  options,
+  lib,
+  diskoLib,
+  ...
+}:
 {
   options = {
     name = lib.mkOption {
@@ -18,17 +24,32 @@
       description = "mdadm level";
     };
     metadata = lib.mkOption {
-      type = lib.types.enum [ "1" "1.0" "1.1" "1.2" "default" "ddf" "imsm" ];
+      type = lib.types.enum [
+        "1"
+        "1.0"
+        "1.1"
+        "1.2"
+        "default"
+        "ddf"
+        "imsm"
+      ];
       default = "default";
       description = "Metadata";
     };
-    content = diskoLib.deviceType { parent = config; device = "/dev/md/${config.name}"; };
+    content = diskoLib.deviceType {
+      parent = config;
+      device = "/dev/md/${config.name}";
+    };
     _meta = lib.mkOption {
       internal = true;
       readOnly = true;
       type = diskoLib.jsonType;
-      default =
-        lib.optionalAttrs (config.content != null) (config.content._meta [ "mdadm" config.name ]);
+      default = lib.optionalAttrs (config.content != null) (
+        config.content._meta [
+          "mdadm"
+          config.name
+        ]
+      );
       description = "Metadata";
     };
     _create = diskoLib.mkCreateOption {
@@ -54,45 +75,52 @@
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
-      default =
-        lib.optionalAttrs (config.content != null) config.content._mount;
+      default = lib.optionalAttrs (config.content != null) config.content._mount;
       # TODO we probably need to assemble the mdadm somehow
     };
     _unmount = diskoLib.mkUnmountOption {
       inherit config options;
-      default = let
-        content = lib.optionalAttrs (config.content != null) config.content._unmount;
-      in {
-        fs = content.fs;
-        dev = ''
-          ${content.dev or ""}
-          if [ -e "/dev/md/${config.name}" ]; then
-            mdadm --stop "/dev/md/${config.name}"
-          fi
-        '';
-      };
+      default =
+        let
+          content = lib.optionalAttrs (config.content != null) config.content._unmount;
+        in
+        {
+          fs = content.fs;
+          dev = ''
+            ${content.dev or ""}
+            if [ -e "/dev/md/${config.name}" ]; then
+              mdadm --stop "/dev/md/${config.name}"
+            fi
+          '';
+        };
     };
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
-      default =
-        [
-          (if lib.versionAtLeast (lib.versions.majorMinor lib.version) "23.11" then {
-            boot.swraid.enable = true;
-          } else {
-            boot.initrd.services.swraid.enable = true;
-          })
-        ] ++
-        lib.optional (config.content != null) config.content._config;
+      default = [
+        (
+          if lib.versionAtLeast (lib.versions.majorMinor lib.version) "23.11" then
+            {
+              boot.swraid.enable = true;
+            }
+          else
+            {
+              boot.initrd.services.swraid.enable = true;
+            }
+        )
+      ] ++ lib.optional (config.content != null) config.content._config;
       description = "NixOS configuration";
     };
     _pkgs = lib.mkOption {
       internal = true;
       readOnly = true;
       type = lib.types.functionTo (lib.types.listOf lib.types.package);
-      default = pkgs: [
-        pkgs.parted # for partprobe
-      ] ++ (lib.optionals (config.content != null) (config.content._pkgs pkgs));
+      default =
+        pkgs:
+        [
+          pkgs.parted # for partprobe
+        ]
+        ++ (lib.optionals (config.content != null) (config.content._pkgs pkgs));
       description = "Packages";
     };
   };

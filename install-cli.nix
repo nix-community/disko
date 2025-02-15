@@ -1,10 +1,10 @@
-{ flake
-, flakeAttr
-, diskMappings
-, extraSystemConfig ? "{}"
-, writeEfiBootEntries ? false
-, rootMountPoint ? "/mnt"
-,
+{
+  flake,
+  flakeAttr,
+  diskMappings,
+  extraSystemConfig ? "{}",
+  writeEfiBootEntries ? false,
+  rootMountPoint ? "/mnt",
 }:
 let
   originalSystem = (builtins.getFlake "${flake}").nixosConfigurations."${flakeAttr}";
@@ -17,21 +17,19 @@ let
     else
       throw "No device passed for disk '${name}'. Pass `--disk ${name} /dev/name` via commandline";
 
-  modifiedDisks = builtins.mapAttrs
-    (
-      name: value:
-        let
-          dev = deviceName name;
-        in
-        value
-        // {
-          device = dev;
-          content = value.content // {
-            device = dev;
-          };
-        }
-    )
-    originalSystem.config.disko.devices.disk;
+  modifiedDisks = builtins.mapAttrs (
+    name: value:
+    let
+      dev = deviceName name;
+    in
+    value
+    // {
+      device = dev;
+      content = value.content // {
+        device = dev;
+      };
+    }
+  ) originalSystem.config.disko.devices.disk;
 
   # filter all nixos module internal attributes
   cleanedDisks = lib.filterAttrsRecursive (n: _: !lib.hasPrefix "_" n) modifiedDisks;

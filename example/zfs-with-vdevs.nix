@@ -251,14 +251,20 @@
               }
               {
                 mode = "mirror";
-                members = [ "data2" "data3" ];
+                members = [
+                  "data2"
+                  "data3"
+                ];
               }
             ];
             spare = [ "spare" ];
             log = [
               {
                 mode = "mirror";
-                members = [ "log1" "log2" ];
+                members = [
+                  "log1"
+                  "log2"
+                ];
               }
               {
                 members = [ "log3" ];
@@ -267,7 +273,10 @@
             dedup = [
               {
                 mode = "mirror";
-                members = [ "dedup1" "dedup2" ];
+                members = [
+                  "dedup1"
+                  "dedup2"
+                ];
               }
               {
                 members = [ "dedup3" ];
@@ -276,7 +285,10 @@
             special = [
               {
                 mode = "mirror";
-                members = [ "special1" "special2" ];
+                members = [
+                  "special1"
+                  "special2"
+                ];
               }
               {
                 members = [ "special3" ];

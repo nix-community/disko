@@ -1,5 +1,6 @@
-{ pkgs ? import <nixpkgs> { }
-, diskoLib ? pkgs.callPackage ../lib { }
+{
+  pkgs ? import <nixpkgs> { },
+  diskoLib ? pkgs.callPackage ../lib { },
 }:
 diskoLib.testLib.makeDiskoTest {
   inherit pkgs;
@@ -9,7 +10,11 @@ diskoLib.testLib.makeDiskoTest {
     machine.succeed("mountpoint /home");
   '';
   extraInstallerConfig = {
-    boot.kernelModules = [ "dm-raid" "raid0" "dm-mirror" ];
+    boot.kernelModules = [
+      "dm-raid"
+      "raid0"
+      "dm-mirror"
+    ];
   };
   extraSystemConfig = {
     # sadly systemd-boot fails to install to a raid /boot device

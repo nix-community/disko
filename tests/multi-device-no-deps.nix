@@ -1,6 +1,7 @@
 # this is a regression test for https://github.com/nix-community/disko/issues/52
-{ pkgs ? import <nixpkgs> { }
-, diskoLib ? pkgs.callPackage ../lib { }
+{
+  pkgs ? import <nixpkgs> { },
+  diskoLib ? pkgs.callPackage ../lib { },
 }:
 diskoLib.testLib.makeDiskoTest {
   inherit pkgs;

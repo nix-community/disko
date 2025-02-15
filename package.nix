@@ -1,4 +1,14 @@
-{ stdenvNoCC, makeWrapper, lib, path, nix, coreutils, nixos-install-tools, binlore, diskoVersion }:
+{
+  stdenvNoCC,
+  makeWrapper,
+  lib,
+  path,
+  nix,
+  coreutils,
+  nixos-install-tools,
+  binlore,
+  diskoVersion,
+}:
 
 let
   self = stdenvNoCC.mkDerivation (finalAttrs: {
@@ -16,7 +26,13 @@ let
         chmod 755 "$out/bin/$i"
         wrapProgram "$out/bin/$i" \
           --set DISKO_VERSION "${diskoVersion}" \
-          --prefix PATH : ${lib.makeBinPath [ nix coreutils nixos-install-tools ]} \
+          --prefix PATH : ${
+            lib.makeBinPath [
+              nix
+              coreutils
+              nixos-install-tools
+            ]
+          } \
           --prefix NIX_PATH : "nixpkgs=${path}"
       done
     '';

@@ -1,10 +1,11 @@
-{ config
-, diskoLib
-, lib
-, extendModules
-, options
-, imagePkgs
-, ...
+{
+  config,
+  diskoLib,
+  lib,
+  extendModules,
+  options,
+  imagePkgs,
+  ...
 }:
 let
   diskoCfg = config.disko;
@@ -13,33 +14,45 @@ let
   checked = diskoCfg.checkScripts;
 
   configSupportsZfs = config.boot.supportedFilesystems.zfs or false;
-  binfmt = diskoLib.binfmt { inherit diskoLib lib pkgs imagePkgs; };
+  binfmt = diskoLib.binfmt {
+    inherit
+      diskoLib
+      lib
+      pkgs
+      imagePkgs
+      ;
+  };
   binfmtSetup = lib.optionalString (cfg.enableBinfmt && binfmt.systemsAreDifferent) ''
     mount binfmt_misc -t binfmt_misc /proc/sys/fs/binfmt_misc
     ${pkgs.systemdMinimal}/lib/systemd/systemd-binfmt <(echo ${lib.strings.escapeShellArg binfmt.binfmtRegistration})
   '';
 
-  vmTools = pkgs.vmTools.override
-    ({
-      rootModules = [
-        "9p" "9pnet_virtio" # we can drop those in future if we stop supporting 24.11
+  vmTools = pkgs.vmTools.override (
+    {
+      rootModules =
+        [
+          "9p"
+          "9pnet_virtio" # we can drop those in future if we stop supporting 24.11
 
-        "virtiofs"
-        "virtio_pci"
-        "virtio_blk"
-        "virtio_balloon"
-        "virtio_rng"
-      ]
+          "virtiofs"
+          "virtio_pci"
+          "virtio_blk"
+          "virtio_balloon"
+          "virtio_rng"
+        ]
         ++ (lib.optional configSupportsZfs "zfs")
         ++ cfg.extraRootModules;
-      kernel = pkgs.aggregateModules
-        ([ cfg.kernelPackages.kernel ]
-          ++ lib.optional (lib.elem "zfs" cfg.extraRootModules || configSupportsZfs) cfg.kernelPackages.${config.boot.zfs.package.kernelModuleAttribute});
+      kernel = pkgs.aggregateModules (
+        [ cfg.kernelPackages.kernel ]
+        ++ lib.optional (
+          lib.elem "zfs" cfg.extraRootModules || configSupportsZfs
+        ) cfg.kernelPackages.${config.boot.zfs.package.kernelModuleAttribute}
+      );
     }
-  // lib.optionalAttrs (diskoLib.vmToolsSupportsCustomQemu lib)
-    {
+    // lib.optionalAttrs (diskoLib.vmToolsSupportsCustomQemu lib) {
       customQemu = cfg.qemu;
-    });
+    }
+  );
   cleanedConfig = diskoLib.testLib.prepareDiskoConfig config diskoLib.testLib.devices;
   systemToInstall = extendModules {
     modules = [
@@ -51,34 +64,41 @@ let
       }
     ];
   };
-  systemToInstallNative = if binfmt.systemsAreDifferent then extendModules {
-    modules = [
-      cfg.extraConfig
-      {
-        disko.testMode = true;
-        disko.devices = lib.mkForce cleanedConfig.disko.devices;
-        boot.loader.grub.devices = lib.mkForce cleanedConfig.boot.loader.grub.devices;
-        nixpkgs.hostPlatform = lib.mkForce pkgs.stdenv.hostPlatform;
+  systemToInstallNative =
+    if binfmt.systemsAreDifferent then
+      extendModules {
+        modules = [
+          cfg.extraConfig
+          {
+            disko.testMode = true;
+            disko.devices = lib.mkForce cleanedConfig.disko.devices;
+            boot.loader.grub.devices = lib.mkForce cleanedConfig.boot.loader.grub.devices;
+            nixpkgs.hostPlatform = lib.mkForce pkgs.stdenv.hostPlatform;
+          }
+        ];
       }
-    ];
-  }
-  else systemToInstall;
-  dependencies = with pkgs; [
-    bash
-    coreutils
-    gnused
-    parted # for partprobe
-    systemdMinimal
-    nix
-    util-linux
-    findutils
-    kmod
-  ] ++ cfg.extraDependencies;
+    else
+      systemToInstall;
+  dependencies =
+    with pkgs;
+    [
+      bash
+      coreutils
+      gnused
+      parted # for partprobe
+      systemdMinimal
+      nix
+      util-linux
+      findutils
+      kmod
+    ]
+    ++ cfg.extraDependencies;
   preVM = ''
     # shellcheck disable=SC2154
     mkdir -p "$out"
-    ${lib.concatMapStringsSep "\n" (disk:
-       # shellcheck disable=SC2154
+    ${lib.concatMapStringsSep "\n" (
+      disk:
+      # shellcheck disable=SC2154
       "${pkgs.qemu}/bin/qemu-img create -f ${imageFormat} \"$out/${disk.imageName}.${imageFormat}\" ${disk.imageSize}"
     ) (lib.attrValues diskoCfg.devices.disk)}
     # This makes disko work, when canTouchEfiVariables is set to true.
@@ -127,24 +147,26 @@ let
     umount -Rv ${systemToInstall.config.disko.rootMountPoint}
   '';
 
-  QEMU_OPTS = lib.concatStringsSep " " ([
-    "-drive if=pflash,format=raw,unit=0,readonly=on,file=${pkgs.OVMF.firmware}"
-    "-drive if=pflash,format=raw,unit=1,file=efivars.fd"
-  ] ++ builtins.map
-    (disk:
+  QEMU_OPTS = lib.concatStringsSep " " (
+    [
+      "-drive if=pflash,format=raw,unit=0,readonly=on,file=${pkgs.OVMF.firmware}"
+      "-drive if=pflash,format=raw,unit=1,file=efivars.fd"
+    ]
+    ++ builtins.map (
+      disk:
       "-drive file=\"$out\"/${disk.imageName}.${imageFormat},if=virtio,cache=unsafe,werror=report,format=${imageFormat}"
-    )
-    (lib.attrValues diskoCfg.devices.disk));
+    ) (lib.attrValues diskoCfg.devices.disk)
+  );
 in
 {
-  system.build.diskoImages = vmTools.runInLinuxVM (pkgs.runCommand cfg.name
-    {
+  system.build.diskoImages = vmTools.runInLinuxVM (
+    pkgs.runCommand cfg.name {
       buildInputs = dependencies;
       inherit preVM QEMU_OPTS;
       postVM = cfg.extraPostVM;
       inherit (diskoCfg) memSize;
-    }
-    (binfmtSetup + partitioner + installer));
+    } (binfmtSetup + partitioner + installer)
+  );
 
   system.build.diskoImagesScript = diskoLib.writeCheckedBash { inherit checked pkgs; } cfg.name ''
     set -efu
@@ -209,32 +231,34 @@ in
       shift
     done
 
-    export preVM=${diskoLib.writeCheckedBash { inherit pkgs checked; } "preVM.sh" ''
-      set -efu
-      mv copy_before_disko copy_after_disko xchg/
-      origBuilder=${pkgs.writeScript "disko-builder" ''
-        set -eu
-        export PATH=${lib.makeBinPath dependencies}
-        for src in /tmp/xchg/copy_before_disko/*; do
-          [ -e "$src" ] || continue
-          dst=$(basename "$src" | base64 -d)
-          mkdir -p "$(dirname "$dst")"
-          cp -r "$src" "$dst"
-        done
-        set -f
-        ${partitioner}
-        set +f
-        for src in /tmp/xchg/copy_after_disko/*; do
-          [ -e "$src" ] || continue
-          dst=/mnt/$(basename "$src" | base64 -d)
-          mkdir -p "$(dirname "$dst")"
-          cp -r "$src" "$dst"
-        done
-        ${installer}
-      ''}
-      echo "export origBuilder=$origBuilder" >> xchg/saved-env
-      ${preVM}
-    ''}
+    export preVM=${
+      diskoLib.writeCheckedBash { inherit pkgs checked; } "preVM.sh" ''
+        set -efu
+        mv copy_before_disko copy_after_disko xchg/
+        origBuilder=${pkgs.writeScript "disko-builder" ''
+          set -eu
+          export PATH=${lib.makeBinPath dependencies}
+          for src in /tmp/xchg/copy_before_disko/*; do
+            [ -e "$src" ] || continue
+            dst=$(basename "$src" | base64 -d)
+            mkdir -p "$(dirname "$dst")"
+            cp -r "$src" "$dst"
+          done
+          set -f
+          ${partitioner}
+          set +f
+          for src in /tmp/xchg/copy_after_disko/*; do
+            [ -e "$src" ] || continue
+            dst=/mnt/$(basename "$src" | base64 -d)
+            mkdir -p "$(dirname "$dst")"
+            cp -r "$src" "$dst"
+          done
+          ${installer}
+        ''}
+        echo "export origBuilder=$origBuilder" >> xchg/saved-env
+        ${preVM}
+      ''
+    }
     export postVM=${diskoLib.writeCheckedBash { inherit pkgs checked; } "postVM.sh" cfg.extraPostVM}
 
     build_memory=''${build_memory:-${builtins.toString diskoCfg.memSize}}

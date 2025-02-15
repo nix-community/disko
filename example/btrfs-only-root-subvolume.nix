@@ -26,7 +26,10 @@
                 type = "btrfs";
                 extraArgs = [ "-f" ]; # Override existing partition
                 mountpoint = "/";
-                mountOptions = [ "compress=zstd" "noatime" ];
+                mountOptions = [
+                  "compress=zstd"
+                  "noatime"
+                ];
               };
             };
           };
@@ -35,4 +38,3 @@
     };
   };
 }
-

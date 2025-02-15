@@ -1,4 +1,13 @@
-{ config, options, lib, diskoLib, rootMountPoint, parent, device, ... }:
+{
+  config,
+  options,
+  lib,
+  diskoLib,
+  rootMountPoint,
+  parent,
+  device,
+  ...
+}:
 {
   options = {
     type = lib.mkOption {
@@ -90,18 +99,32 @@
       internal = true;
       readOnly = true;
       # type = lib.types.functionTo (lib.types.listOf lib.types.package);
-      default = pkgs:
-        [ pkgs.util-linux pkgs.gnugrep ] ++ (
+      default =
+        pkgs:
+        [
+          pkgs.util-linux
+          pkgs.gnugrep
+        ]
+        ++ (
           # TODO add many more
-          if (config.format == "xfs") then [ pkgs.xfsprogs ]
-          else if (config.format == "btrfs") then [ pkgs.btrfs-progs ]
-          else if (config.format == "vfat") then [ pkgs.dosfstools ]
-          else if (config.format == "ext2") then [ pkgs.e2fsprogs ]
-          else if (config.format == "ext3") then [ pkgs.e2fsprogs ]
-          else if (config.format == "ext4") then [ pkgs.e2fsprogs ]
-          else if (config.format == "bcachefs") then [ pkgs.bcachefs-tools ]
-          else if (config.format == "f2fs") then [ pkgs.f2fs-tools ]
-          else [ ]
+          if (config.format == "xfs") then
+            [ pkgs.xfsprogs ]
+          else if (config.format == "btrfs") then
+            [ pkgs.btrfs-progs ]
+          else if (config.format == "vfat") then
+            [ pkgs.dosfstools ]
+          else if (config.format == "ext2") then
+            [ pkgs.e2fsprogs ]
+          else if (config.format == "ext3") then
+            [ pkgs.e2fsprogs ]
+          else if (config.format == "ext4") then
+            [ pkgs.e2fsprogs ]
+          else if (config.format == "bcachefs") then
+            [ pkgs.bcachefs-tools ]
+          else if (config.format == "f2fs") then
+            [ pkgs.f2fs-tools ]
+          else
+            [ ]
         );
       description = "Packages";
     };

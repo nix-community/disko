@@ -1,5 +1,10 @@
 # Example to create a bios compatible gpt partition
-{ disks ? [ "/dev/vdb" ], lib, ... }: {
+{
+  disks ? [ "/dev/vdb" ],
+  lib,
+  ...
+}:
+{
   disko.devices = {
     disk = lib.genAttrs disks (device: {
       name = lib.replaceStrings [ "/" ] [ "_" ] device;

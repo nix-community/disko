@@ -1,4 +1,10 @@
-{ config, options, lib, diskoLib, ... }:
+{
+  config,
+  options,
+  lib,
+  diskoLib,
+  ...
+}:
 {
   options = {
     name = lib.mkOption {
@@ -32,13 +38,20 @@
       '';
       default = "2G";
     };
-    content = diskoLib.deviceType { parent = config; device = config.device; };
+    content = diskoLib.deviceType {
+      parent = config;
+      device = config.device;
+    };
     _meta = lib.mkOption {
       internal = true;
       readOnly = true;
       type = diskoLib.jsonType;
-      default =
-        lib.optionalAttrs (config.content != null) (config.content._meta [ "disk" config.device ]);
+      default = lib.optionalAttrs (config.content != null) (
+        config.content._meta [
+          "disk"
+          config.device
+        ]
+      );
       description = "Metadata";
     };
     _create = diskoLib.mkCreateOption {
@@ -56,8 +69,7 @@
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
-      default =
-        lib.optional (config.content != null) config.content._config;
+      default = lib.optional (config.content != null) config.content._config;
       description = "NixOS configuration";
     };
     _pkgs = lib.mkOption {

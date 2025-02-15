@@ -6,7 +6,8 @@
   #inputs.nixpkgs.url = "nixpkgs";
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
-  outputs = { self, nixpkgs, ... }:
+  outputs =
+    { self, nixpkgs, ... }:
     let
       lib = nixpkgs.lib;
       supportedSystems = [
@@ -28,7 +29,8 @@
       nixosModules.default = self.nixosModules.disko; # convention
       nixosModules.disko = ./module.nix;
       lib = diskoLib;
-      packages = forAllSystems (system:
+      packages = forAllSystems (
+        system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
         in
@@ -41,27 +43,35 @@
           default = self.packages.${system}.disko;
 
           create-release = pkgs.callPackage ./scripts/create-release.nix { };
-        } // pkgs.lib.optionalAttrs (!pkgs.stdenv.buildPlatform.isRiscV64) {
+        }
+        // pkgs.lib.optionalAttrs (!pkgs.stdenv.buildPlatform.isRiscV64) {
           disko-doc = pkgs.callPackage ./doc.nix { };
-        });
+        }
+      );
       # TODO: disable bios-related tests on aarch64...
       # Run checks: nix flake check -L
-      checks = forAllSystems (system:
+      checks = forAllSystems (
+        system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
           # FIXME: aarch64-linux seems to hang on boot
-          nixosTests = lib.optionalAttrs pkgs.stdenv.hostPlatform.isx86_64 (import ./tests {
-            inherit pkgs;
-            makeTest = import (pkgs.path + "/nixos/tests/make-test-python.nix");
-            eval-config = import (pkgs.path + "/nixos/lib/eval-config.nix");
-          });
+          nixosTests = lib.optionalAttrs pkgs.stdenv.hostPlatform.isx86_64 (
+            import ./tests {
+              inherit pkgs;
+              makeTest = import (pkgs.path + "/nixos/tests/make-test-python.nix");
+              eval-config = import (pkgs.path + "/nixos/lib/eval-config.nix");
+            }
+          );
 
           disko-install = pkgs.callPackage ./tests/disko-install {
             inherit self;
             diskoVersion = version;
           };
 
-          jsonTypes = pkgs.writeTextFile { name = "jsonTypes"; text = (builtins.toJSON diskoLib.jsonTypes); };
+          jsonTypes = pkgs.writeTextFile {
+            name = "jsonTypes";
+            text = (builtins.toJSON diskoLib.jsonTypes);
+          };
 
           treefmt = pkgs.runCommand "treefmt" { } ''
             ${self.formatter.${system}}/bin/treefmt --ci --working-dir ${self}
@@ -69,11 +79,14 @@
           '';
         in
         # FIXME: aarch64-linux seems to hang on boot
-        lib.optionalAttrs pkgs.stdenv.hostPlatform.isx86_64 (nixosTests // { inherit disko-install; }) //
-        pkgs.lib.optionalAttrs (!pkgs.stdenv.buildPlatform.isRiscV64 && !pkgs.stdenv.hostPlatform.isx86_32) {
-          inherit jsonTypes treefmt;
-          inherit (self.packages.${system}) disko-doc;
-        });
+        lib.optionalAttrs pkgs.stdenv.hostPlatform.isx86_64 (nixosTests // { inherit disko-install; })
+        //
+          pkgs.lib.optionalAttrs (!pkgs.stdenv.buildPlatform.isRiscV64 && !pkgs.stdenv.hostPlatform.isx86_32)
+            {
+              inherit jsonTypes treefmt;
+              inherit (self.packages.${system}) disko-doc;
+            }
+      );
 
       nixosConfigurations.testmachine = lib.nixosSystem {
         system = "x86_64-linux";
@@ -83,7 +96,8 @@
           ./module.nix
         ];
       };
-      formatter = forAllSystems (system:
+      formatter = forAllSystems (
+        system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
         in
@@ -104,6 +118,6 @@
             self.formatter.${system}
           ];
         };
-     });
+      });
     };
 }

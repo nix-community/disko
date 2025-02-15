@@ -1,22 +1,30 @@
-{ diskoLib, modulesPath, config, pkgs, lib, ... }:
+{
+  diskoLib,
+  modulesPath,
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 let
   vm_disko = (diskoLib.testLib.prepareDiskoConfig config diskoLib.testLib.devices).disko;
-  cfg_ = (lib.evalModules {
-    modules = lib.singleton {
-      # _file = toString input;
-      imports = lib.singleton { disko.devices = vm_disko.devices; };
-      options = {
-        disko.devices = lib.mkOption {
-          type = diskoLib.toplevel;
-        };
-        disko.testMode = lib.mkOption {
-          type = lib.types.bool;
-          default = true;
+  cfg_ =
+    (lib.evalModules {
+      modules = lib.singleton {
+        # _file = toString input;
+        imports = lib.singleton { disko.devices = vm_disko.devices; };
+        options = {
+          disko.devices = lib.mkOption {
+            type = diskoLib.toplevel;
+          };
+          disko.testMode = lib.mkOption {
+            type = lib.types.bool;
+            default = true;
+          };
         };
       };
-    };
-  }).config;
+    }).config;
   disks = lib.attrValues cfg_.disko.devices.disk;
   rootDisk = {
     name = "root";
@@ -26,13 +34,11 @@ let
     deviceExtraOpts.bootindex = "1";
     deviceExtraOpts.serial = "root";
   };
-  otherDisks = map
-    (disk: {
-      name = disk.name;
-      file = ''"$tmp"/${lib.escapeShellArg disk.name}.qcow2'';
-      driveExtraOpts.werror = "report";
-    })
-    (builtins.tail disks);
+  otherDisks = map (disk: {
+    name = disk.name;
+    file = ''"$tmp"/${lib.escapeShellArg disk.name}.qcow2'';
+    driveExtraOpts.werror = "report";
+  }) (builtins.tail disks);
 
   diskoBasedConfiguration = {
     # generated from disko config
