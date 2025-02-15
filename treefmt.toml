@@ -1,0 +1,11 @@
+[formatter.nix]
+command = "nixfmt"
+includes = ["*.nix"]
+
+[formatter.deadnix]
+command = "deadnix"
+includes = ["*.nix"]
+
+[formatter.shellcheck]
+command = "shellcheck"
+includes = ["*.sh"]
