@@ -61,18 +61,17 @@
             diskoVersion = version;
           };
 
-          shellcheck = pkgs.runCommand "shellcheck" { nativeBuildInputs = [ pkgs.shellcheck ]; } ''
-            cd ${./.}
-            shellcheck disk-deactivate/disk-deactivate disko
+          jsonTypes = pkgs.writeTextFile { name = "jsonTypes"; text = (builtins.toJSON diskoLib.jsonTypes); };
+
+          treefmt = pkgs.runCommand "treefmt" { } ''
+            ${self.formatter.${system}}/bin/treefmt --ci --working-dir ${self}
             touch $out
           '';
-
-          jsonTypes = pkgs.writeTextFile { name = "jsonTypes"; text = (builtins.toJSON diskoLib.jsonTypes); };
         in
         # FIXME: aarch64-linux seems to hang on boot
         lib.optionalAttrs pkgs.stdenv.hostPlatform.isx86_64 (nixosTests // { inherit disko-install; }) //
         pkgs.lib.optionalAttrs (!pkgs.stdenv.buildPlatform.isRiscV64 && !pkgs.stdenv.hostPlatform.isx86_32) {
-          inherit shellcheck jsonTypes;
+          inherit jsonTypes treefmt;
           inherit (self.packages.${system}) disko-doc;
         });
 
@@ -89,67 +88,22 @@
           pkgs = nixpkgs.legacyPackages.${system};
         in
         pkgs.writeShellApplication {
-          name = "format";
-          runtimeInputs = with pkgs; [
-            nixpkgs-fmt
-            deno
-            deadnix
+          name = "treefmt";
+          text = ''treefmt "$@"'';
+          runtimeInputs = [
+            pkgs.deadnix
+            pkgs.nixfmt-rfc-style
+            pkgs.shellcheck
+            pkgs.treefmt
           ];
-          text = ''
-            showUsage() {
-              cat <<EOF
-            Usage: $0 [OPTIONS] FILES...
-              -c, --check  Only check formatting, do not modify files.
-              -h, --help   Show this help message.
-            EOF
-            }
-
-            check=
-            files=()
-
-            parseArgs() {
-              while [[ $# -gt 0 ]]; do
-                case "$1" in
-                -h | --help)
-                  showUsage
-                  exit 0
-                  ;;
-                -c | --check)
-                  check=1
-                  ;;
-                *)
-                  files+=("$1")
-                  ;;
-                esac
-                shift
-              done
-
-              if [[ ''${#files[@]} -eq 0 ]]; then
-                files=(.)
-              fi
-            }
-
-            main() {
-              parseArgs "$@"
-
-              if [[ -z "$check" ]]; then
-                set -o xtrace
-
-                nixpkgs-fmt -- "''${files[@]}"
-                deno fmt -- "''${files[@]}"
-                deadnix --edit -- "''${files[@]}"
-              else
-                set -o xtrace
-
-                nixpkgs-fmt --check -- "''${files[@]}"
-                deno fmt --check -- "''${files[@]}"
-                deadnix -- "''${files[@]}"
-              fi
-            }
-
-            main "$@"
-          '';
         }
       );
+      devShells = forAllSystems (system: {
+        default = nixpkgs.legacyPackages.${system}.mkShell {
+          packages = [
+            self.formatter.${system}
+          ];
+        };
+     });
     };
 }
