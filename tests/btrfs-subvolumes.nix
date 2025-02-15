@@ -1,5 +1,6 @@
-{ pkgs ? import <nixpkgs> { }
-, diskoLib ? pkgs.callPackage ../lib { }
+{
+  pkgs ? import <nixpkgs> { },
+  diskoLib ? pkgs.callPackage ../lib { },
 }:
 diskoLib.testLib.makeDiskoTest {
   inherit pkgs;
@@ -17,4 +18,3 @@ diskoLib.testLib.makeDiskoTest {
     machine.succeed("test -e /partition-root/swapfile1");
   '';
 }
-

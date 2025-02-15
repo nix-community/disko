@@ -1,4 +1,11 @@
-{ config, options, lib, diskoLib, rootMountPoint, ... }:
+{
+  config,
+  options,
+  lib,
+  diskoLib,
+  rootMountPoint,
+  ...
+}:
 let
   # TODO: Consider expanding to handle `file` and `draid` mode options.
   modeOptions = [
@@ -63,134 +70,161 @@ in
           };
         };
       };
-      type = (lib.types.oneOf [
-        (lib.types.enum modeOptions)
-        (lib.types.attrsOf (diskoLib.subType {
-          types = {
-            topology =
-              let
-                vdev = lib.types.submodule ({ ... }: {
-                  options = {
-                    mode = lib.mkOption {
-                      type = lib.types.enum modeOptions;
-                      default = "";
-                      description = "Mode of the zfs vdev";
-                    };
-                    members = lib.mkOption {
-                      type = lib.types.listOf lib.types.str;
-                      description = "Members of the vdev";
-                    };
-                  };
-                });
-              in
-              lib.types.submodule
-                ({ ... }: {
-                  options = {
-                    type = lib.mkOption {
-                      type = lib.types.enum [ "topology" ];
-                      default = "topology";
-                      internal = true;
-                      description = "Type";
-                    };
-                    # zfs device types
-                    vdev = lib.mkOption {
-                      type = lib.types.listOf vdev;
-                      default = [ ];
-                      description = ''
-                        A list of storage vdevs. See
-                        https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#Virtual_Devices_(vdevs)
-                        for details.
-                      '';
-                      example = [
-                        {
-                          mode = "mirror";
-                          members = [ "x" "y" ];
-                        }
-                        {
-                          members = [ "z" ];
-                        }
-                      ];
-                    };
-                    spare = lib.mkOption {
-                      type = lib.types.listOf lib.types.str;
-                      default = [ ];
-                      description = ''
-                        A list of devices to use as hot spares. See
-                        https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#Hot_Spares
-                        for details.
-                      '';
-                      example = [ "x" "y" ];
-                    };
-                    log = lib.mkOption {
-                      type = lib.types.listOf vdev;
-                      default = [ ];
-                      description = ''
-                        A list of vdevs used for the zfs intent log (ZIL). See
-                        https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#Intent_Log
-                        for details.
-                      '';
-                      example = [
-                        {
-                          mode = "mirror";
-                          members = [ "x" "y" ];
-                        }
-                        {
-                          members = [ "z" ];
-                        }
-                      ];
-                    };
-                    dedup = lib.mkOption {
-                      type = lib.types.listOf vdev;
-                      default = [ ];
-                      description = ''
-                        A list of vdevs used for the deduplication table. See
-                        https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#dedup
-                        for details.
-                      '';
-                      example = [
-                        {
-                          mode = "mirror";
-                          members = [ "x" "y" ];
-                        }
-                        {
-                          members = [ "z" ];
-                        }
-                      ];
-                    };
-                    special = lib.mkOption {
-                      type = lib.types.either (lib.types.listOf vdev) (lib.types.nullOr vdev);
-                      default = [ ];
-                      description = ''
-                        A list of vdevs used as special devices. See
-                        https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#special
-                        for details.
-                      '';
-                      example = [
-                        {
-                          mode = "mirror";
-                          members = [ "x" "y" ];
-                        }
-                        {
-                          members = [ "z" ];
-                        }
-                      ];
-                    };
-                    cache = lib.mkOption {
-                      type = lib.types.listOf lib.types.str;
-                      default = [ ];
-                      description = ''
-                        A dedicated zfs cache device (L2ARC). See
-                        https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#Cache_Devices
-                        for details.
-                      '';
-                      example = [ "x" "y" ];
-                    };
-                  };
-                });
-          };
-          extraArgs.parent = config;
-        }))
-      ]);
+      type = (
+        lib.types.oneOf [
+          (lib.types.enum modeOptions)
+          (lib.types.attrsOf (
+            diskoLib.subType {
+              types = {
+                topology =
+                  let
+                    vdev = lib.types.submodule (
+                      { ... }:
+                      {
+                        options = {
+                          mode = lib.mkOption {
+                            type = lib.types.enum modeOptions;
+                            default = "";
+                            description = "Mode of the zfs vdev";
+                          };
+                          members = lib.mkOption {
+                            type = lib.types.listOf lib.types.str;
+                            description = "Members of the vdev";
+                          };
+                        };
+                      }
+                    );
+                  in
+                  lib.types.submodule (
+                    { ... }:
+                    {
+                      options = {
+                        type = lib.mkOption {
+                          type = lib.types.enum [ "topology" ];
+                          default = "topology";
+                          internal = true;
+                          description = "Type";
+                        };
+                        # zfs device types
+                        vdev = lib.mkOption {
+                          type = lib.types.listOf vdev;
+                          default = [ ];
+                          description = ''
+                            A list of storage vdevs. See
+                            https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#Virtual_Devices_(vdevs)
+                            for details.
+                          '';
+                          example = [
+                            {
+                              mode = "mirror";
+                              members = [
+                                "x"
+                                "y"
+                              ];
+                            }
+                            {
+                              members = [ "z" ];
+                            }
+                          ];
+                        };
+                        spare = lib.mkOption {
+                          type = lib.types.listOf lib.types.str;
+                          default = [ ];
+                          description = ''
+                            A list of devices to use as hot spares. See
+                            https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#Hot_Spares
+                            for details.
+                          '';
+                          example = [
+                            "x"
+                            "y"
+                          ];
+                        };
+                        log = lib.mkOption {
+                          type = lib.types.listOf vdev;
+                          default = [ ];
+                          description = ''
+                            A list of vdevs used for the zfs intent log (ZIL). See
+                            https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#Intent_Log
+                            for details.
+                          '';
+                          example = [
+                            {
+                              mode = "mirror";
+                              members = [
+                                "x"
+                                "y"
+                              ];
+                            }
+                            {
+                              members = [ "z" ];
+                            }
+                          ];
+                        };
+                        dedup = lib.mkOption {
+                          type = lib.types.listOf vdev;
+                          default = [ ];
+                          description = ''
+                            A list of vdevs used for the deduplication table. See
+                            https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#dedup
+                            for details.
+                          '';
+                          example = [
+                            {
+                              mode = "mirror";
+                              members = [
+                                "x"
+                                "y"
+                              ];
+                            }
+                            {
+                              members = [ "z" ];
+                            }
+                          ];
+                        };
+                        special = lib.mkOption {
+                          type = lib.types.either (lib.types.listOf vdev) (lib.types.nullOr vdev);
+                          default = [ ];
+                          description = ''
+                            A list of vdevs used as special devices. See
+                            https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#special
+                            for details.
+                          '';
+                          example = [
+                            {
+                              mode = "mirror";
+                              members = [
+                                "x"
+                                "y"
+                              ];
+                            }
+                            {
+                              members = [ "z" ];
+                            }
+                          ];
+                        };
+                        cache = lib.mkOption {
+                          type = lib.types.listOf lib.types.str;
+                          default = [ ];
+                          description = ''
+                            A dedicated zfs cache device (L2ARC). See
+                            https://openzfs.github.io/openzfs-docs/man/master/7/zpoolconcepts.7.html#Cache_Devices
+                            for details.
+                          '';
+                          example = [
+                            "x"
+                            "y"
+                          ];
+                        };
+                      };
+                    }
+                  );
+              };
+              extraArgs.parent = config;
+            }
+          ))
+        ]
+      );
       description = "Mode of the ZFS pool";
     };
     options = lib.mkOption {
@@ -214,18 +248,25 @@ in
       description = "Options to pass to mount";
     };
     datasets = lib.mkOption {
-      type = lib.types.attrsOf (diskoLib.subType {
-        types = { inherit (diskoLib.types) zfs_fs zfs_volume; };
-        extraArgs.parent = config;
-      });
+      type = lib.types.attrsOf (
+        diskoLib.subType {
+          types = { inherit (diskoLib.types) zfs_fs zfs_volume; };
+          extraArgs.parent = config;
+        }
+      );
       description = "List of datasets to define";
     };
     _meta = lib.mkOption {
       internal = true;
       readOnly = true;
       type = diskoLib.jsonType;
-      default =
-        diskoLib.deepMergeMap (dataset: dataset._meta [ "zpool" config.name ]) (lib.attrValues config.datasets);
+      default = diskoLib.deepMergeMap (
+        dataset:
+        dataset._meta [
+          "zpool"
+          config.name
+        ]
+      ) (lib.attrValues config.datasets);
       description = "Metadata";
     };
     _create = diskoLib.mkCreateOption {
@@ -234,14 +275,14 @@ in
         let
           formatOutput = type: mode: members: ''
             entries+=("${type} ${mode}=${
-              lib.concatMapStringsSep " "
-              (d: if lib.strings.hasPrefix "/" d then d else "/dev/disk/by-partlabel/disk-${d}-zfs") members
+              lib.concatMapStringsSep " " (
+                d: if lib.strings.hasPrefix "/" d then d else "/dev/disk/by-partlabel/disk-${d}-zfs"
+              ) members
             }")
           '';
           formatVdev = type: vdev: formatOutput type vdev.mode vdev.members;
-          formatVdevList = type: vdevs: lib.concatMapStrings
-            (formatVdev type)
-            (builtins.sort (a: _: a.mode == "") vdevs);
+          formatVdevList =
+            type: vdevs: lib.concatMapStrings (formatVdev type) (builtins.sort (a: _: a.mode == "") vdevs);
           hasTopology = !(builtins.isString config.mode);
           mode = if hasTopology then "prescribed" else config.mode;
           topology = lib.optionalAttrs hasTopology config.mode.topology;
@@ -281,18 +322,20 @@ in
                 topology="${mode} ''${zfs_devices[*]}"
               else
                 entries=()
-                ${lib.optionalString (hasTopology && topology.vdev != null)
-                    (formatVdevList "" topology.vdev)}
-                ${lib.optionalString (hasTopology && topology.spare != [])
-                    (formatOutput "spare" "" topology.spare)}
-                ${lib.optionalString (hasTopology && topology.log != [])
-                    (formatVdevList "log" topology.log)}
-                ${lib.optionalString (hasTopology && topology.dedup != [])
-                    (formatVdevList "dedup" topology.dedup)}
-                ${lib.optionalString (hasTopology && topology.special != null && topology.special != [])
-                    (formatVdevList "special" (lib.lists.toList topology.special))}
-                ${lib.optionalString (hasTopology && topology.cache != [])
-                    (formatOutput "cache" "" topology.cache)}
+                ${lib.optionalString (hasTopology && topology.vdev != null) (formatVdevList "" topology.vdev)}
+                ${lib.optionalString (hasTopology && topology.spare != [ ]) (
+                  formatOutput "spare" "" topology.spare
+                )}
+                ${lib.optionalString (hasTopology && topology.log != [ ]) (formatVdevList "log" topology.log)}
+                ${lib.optionalString (hasTopology && topology.dedup != [ ]) (
+                  formatVdevList "dedup" topology.dedup
+                )}
+                ${lib.optionalString (hasTopology && topology.special != null && topology.special != [ ]) (
+                  formatVdevList "special" (lib.lists.toList topology.special)
+                )}
+                ${lib.optionalString (hasTopology && topology.cache != [ ]) (
+                  formatOutput "cache" "" topology.cache
+                )}
                 all_devices=()
                 last_type=
                 for line in "''${entries[@]}"; do
@@ -337,7 +380,9 @@ in
       inherit config options;
       default =
         let
-          datasetFilesystemsMounts = diskoLib.deepMergeMap (dataset: dataset._mount.fs or {}) (lib.attrValues config.datasets);
+          datasetFilesystemsMounts = diskoLib.deepMergeMap (dataset: dataset._mount.fs or { }) (
+            lib.attrValues config.datasets
+          );
         in
         {
           dev = ''
@@ -359,7 +404,7 @@ in
             zpool export "${config.name}"
           fi
         '';
-        fs = diskoLib.deepMergeMap (dataset: dataset._unmount.fs or {}) (lib.attrValues config.datasets);
+        fs = diskoLib.deepMergeMap (dataset: dataset._unmount.fs or { }) (lib.attrValues config.datasets);
       };
     };
     _config = lib.mkOption {
@@ -372,7 +417,13 @@ in
       internal = true;
       readOnly = true;
       type = lib.types.functionTo (lib.types.listOf lib.types.package);
-      default = pkgs: [ pkgs.gnugrep pkgs.util-linux ] ++ lib.flatten (map (dataset: dataset._pkgs pkgs) (lib.attrValues config.datasets));
+      default =
+        pkgs:
+        [
+          pkgs.gnugrep
+          pkgs.util-linux
+        ]
+        ++ lib.flatten (map (dataset: dataset._pkgs pkgs) (lib.attrValues config.datasets));
       description = "Packages";
     };
   };

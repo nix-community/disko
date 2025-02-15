@@ -23,7 +23,10 @@
                 type = "filesystem";
                 format = "xfs";
                 mountpoint = "/";
-                mountOptions = [ "defaults" "pquota" ];
+                mountOptions = [
+                  "defaults"
+                  "pquota"
+                ];
               };
             };
           };

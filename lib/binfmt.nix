@@ -1,25 +1,33 @@
-{ lib, diskoLib, pkgs, imagePkgs, ... }:
+{
+  lib,
+  diskoLib,
+  pkgs,
+  imagePkgs,
+  ...
+}:
 
 let
   # from https://github.com/NixOS/nixpkgs/blob/851f7fc119e9597c26cc43e10938ce7272d0af9d/nixos/modules/system/boot/binfmt.nix
   makeBinfmtLine =
-    { name
-    , recognitionType
-    , offset
-    , magicOrExtension
-    , mask
-    , preserveArgvZero
-    , openBinary
-    , matchCredentials
-    , fixBinary
-    , interpreter
-    , ...
+    {
+      name,
+      recognitionType,
+      offset,
+      magicOrExtension,
+      mask,
+      preserveArgvZero,
+      openBinary,
+      matchCredentials,
+      fixBinary,
+      interpreter,
+      ...
     }:
     let
       type = if recognitionType == "magic" then "M" else "E";
       offset' = toString offset;
       mask' = toString mask;
-      flags = with lib;
+      flags =
+        with lib;
         if !(matchCredentials -> openBinary) then
           throw "boot.binfmt.registrations.${name}: you can't specify openBinary = false when matchCredentials = true."
         else
@@ -144,29 +152,30 @@ let
 in
 {
   binfmtRegistration =
-  let
-    system = imagePkgs.stdenv.hostPlatform.system;
-    enabled = system != pkgs.stdenv.hostPlatform.system;
-    elaborated = lib.systems.elaborate { inherit system; };
-    useStaticEmulator = true; # needed for chroot
-    interpreter = elaborated.emulator (if useStaticEmulator then pkgs.pkgsStatic else pkgs);
+    let
+      system = imagePkgs.stdenv.hostPlatform.system;
+      enabled = system != pkgs.stdenv.hostPlatform.system;
+      elaborated = lib.systems.elaborate { inherit system; };
+      useStaticEmulator = true; # needed for chroot
+      interpreter = elaborated.emulator (if useStaticEmulator then pkgs.pkgsStatic else pkgs);
 
-    inherit (elaborated) qemuArch;
-    isQemu = "qemu-${qemuArch}" == baseNameOf interpreter;
-  in makeBinfmtLine (
-    {
-      name = system;
-      inherit interpreter;
-      recognitionType = "magic";
-      offset = null;
-      openBinary = false;
-      matchCredentials = false;
+      inherit (elaborated) qemuArch;
+      isQemu = "qemu-${qemuArch}" == baseNameOf interpreter;
+    in
+    makeBinfmtLine (
+      {
+        name = system;
+        inherit interpreter;
+        recognitionType = "magic";
+        offset = null;
+        openBinary = false;
+        matchCredentials = false;
 
-      preserveArgvZero = isQemu;
+        preserveArgvZero = isQemu;
 
-      fixBinary = useStaticEmulator;
-    }
-    // (magics.${system} or (throw "Cannot create binfmt registration for system ${system}"))
-  );
+        fixBinary = useStaticEmulator;
+      }
+      // (magics.${system} or (throw "Cannot create binfmt registration for system ${system}"))
+    );
   systemsAreDifferent = imagePkgs.stdenv.hostPlatform.system != pkgs.stdenv.hostPlatform.system;
 }

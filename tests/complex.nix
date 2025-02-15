@@ -1,5 +1,6 @@
-{ pkgs ? import <nixpkgs> { }
-, diskoLib ? pkgs.callPackage ../lib { }
+{
+  pkgs ? import <nixpkgs> { },
+  diskoLib ? pkgs.callPackage ../lib { },
 }:
 diskoLib.testLib.makeDiskoTest {
   inherit pkgs;
@@ -24,6 +25,9 @@ diskoLib.testLib.makeDiskoTest {
     machine.succeed("test -e /ext4_on_lvm/file-from-postMountHook");
   '';
   extraInstallerConfig = {
-    boot.kernelModules = [ "dm-raid" "dm-mirror" ];
+    boot.kernelModules = [
+      "dm-raid"
+      "dm-mirror"
+    ];
   };
 }

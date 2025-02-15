@@ -1,3 +1,5 @@
+#! /usr/bin/env bash
+
 # Don't run directly! Instead, use
 # nix run .#create-release
 

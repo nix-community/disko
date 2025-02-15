@@ -1,7 +1,8 @@
-{ lib ? import <nixpkgs/lib>
-, rootMountPoint ? "/mnt"
-, makeTest ? import <nixpkgs/nixos/tests/make-test-python.nix>
-, eval-config ? import <nixpkgs/nixos/lib/eval-config.nix>
+{
+  lib ? import <nixpkgs/lib>,
+  rootMountPoint ? "/mnt",
+  makeTest ? import <nixpkgs/nixos/tests/make-test-python.nix>,
+  eval-config ? import <nixpkgs/nixos/lib/eval-config.nix>,
 }:
 let
   outputs = import ../default.nix { inherit lib diskoLib; };
@@ -9,91 +10,148 @@ let
     testLib = import ./tests.nix { inherit lib makeTest eval-config; };
     # like lib.types.oneOf but instead of a list takes an attrset
     # uses the field "type" to find the correct type in the attrset
-    subType = { types, extraArgs ? { parent = { type = "rootNode"; name = "root"; }; } }: lib.mkOptionType {
-      name = "subType";
-      description = "one of ${lib.concatStringsSep "," (lib.attrNames types)}";
-      check = x: if x ? type then types.${x.type}.check x else throw "No type option set in:\n${lib.generators.toPretty {} x}";
-      merge = loc: lib.foldl'
-        (_res: def: types.${def.value.type}.merge loc [
-          # we add a dummy root parent node to render documentation
-          (lib.recursiveUpdate { value._module.args = extraArgs; } def)
-        ])
-        { };
-      nestedTypes = types;
-    };
+    subType =
+      {
+        types,
+        extraArgs ? {
+          parent = {
+            type = "rootNode";
+            name = "root";
+          };
+        },
+      }:
+      lib.mkOptionType {
+        name = "subType";
+        description = "one of ${lib.concatStringsSep "," (lib.attrNames types)}";
+        check =
+          x:
+          if x ? type then
+            types.${x.type}.check x
+          else
+            throw "No type option set in:\n${lib.generators.toPretty { } x}";
+        merge =
+          loc:
+          lib.foldl' (
+            _res: def:
+            types.${def.value.type}.merge loc [
+              # we add a dummy root parent node to render documentation
+              (lib.recursiveUpdate { value._module.args = extraArgs; } def)
+            ]
+          ) { };
+        nestedTypes = types;
+      };
 
     # option for valid contents of partitions (basically like devices, but without tables)
-    _partitionTypes = { inherit (diskoLib.types) btrfs filesystem zfs mdraid luks lvm_pv swap; };
-    partitionType = extraArgs: lib.mkOption {
-      type = lib.types.nullOr (diskoLib.subType {
-        types = diskoLib._partitionTypes;
-        inherit extraArgs;
-      });
-      default = null;
-      description = "The type of partition";
+    _partitionTypes = {
+      inherit (diskoLib.types)
+        btrfs
+        filesystem
+        zfs
+        mdraid
+        luks
+        lvm_pv
+        swap
+        ;
     };
+    partitionType =
+      extraArgs:
+      lib.mkOption {
+        type = lib.types.nullOr (
+          diskoLib.subType {
+            types = diskoLib._partitionTypes;
+            inherit extraArgs;
+          }
+        );
+        default = null;
+        description = "The type of partition";
+      };
 
     # option for valid contents of devices
-    _deviceTypes = { inherit (diskoLib.types) table gpt btrfs filesystem zfs mdraid luks lvm_pv swap; };
-    deviceType = extraArgs: lib.mkOption {
-      type = lib.types.nullOr (diskoLib.subType {
-        types = diskoLib._deviceTypes;
-        inherit extraArgs;
-      });
-      default = null;
-      description = "The type of device";
+    _deviceTypes = {
+      inherit (diskoLib.types)
+        table
+        gpt
+        btrfs
+        filesystem
+        zfs
+        mdraid
+        luks
+        lvm_pv
+        swap
+        ;
     };
+    deviceType =
+      extraArgs:
+      lib.mkOption {
+        type = lib.types.nullOr (
+          diskoLib.subType {
+            types = diskoLib._deviceTypes;
+            inherit extraArgs;
+          }
+        );
+        default = null;
+        description = "The type of device";
+      };
 
+    /**
+        like lib.recursiveUpdate but supports merging of lists
 
-    /** 
-      like lib.recursiveUpdate but supports merging of lists
+        # Inputs:
 
-      # Inputs:
+         `left`
 
-       `left`
+         : Left  attribute set of the merge
 
-       : Left  attribute set of the merge
+         `right`
 
-       `right`
+        : Right attribute set of the merge
 
-      : Right attribute set of the merge
+        recursiveUpdate :: AttrSet -> AttrSet -> AttrSet
 
-      recursiveUpdate :: AttrSet -> AttrSet -> AttrSet
+        # Examples
+        :::{.example}
+        ```nix
+        recursiveUpdate {
+          boot.loader.grub.enable = true;
+          boot.loader.grub.devices = [ "/dev/hda" ];
+        } {
+          boot.loader.grub.devices = [ "/dev/hdb" ];
+        }
 
-      # Examples
-      :::{.example}
-      ```nix
-      recursiveUpdate {
-        boot.loader.grub.enable = true;
-        boot.loader.grub.devices = [ "/dev/hda" ];
-      } {
-        boot.loader.grub.devices = [ "/dev/hdb" ];
-      }
-
-      returns: {
-        boot.loader.grub.enable = true;
-        boot.loader.grub.devices = [ "/dev/hda" "/dev/hdb" ];
-      }
-      ```
-    **/
-    recursiveUpdate = left: right:
+        returns: {
+          boot.loader.grub.enable = true;
+          boot.loader.grub.devices = [ "/dev/hda" "/dev/hdb" ];
+        }
+        ```
+      *
+    */
+    recursiveUpdate =
+      left: right:
       let
-        inherit (lib) zipAttrsWith length elemAt head isAttrs isList concatLists all reverseList;
+        inherit (lib)
+          zipAttrsWith
+          length
+          elemAt
+          head
+          isAttrs
+          isList
+          concatLists
+          all
+          reverseList
+          ;
 
         recursiveMergeUntil =
-          pred:
-          lhs:
-          rhs:
+          pred: lhs: rhs:
           let
-            f = attrPath:
-              zipAttrsWith (n: values:
-                let here = attrPath ++ [ n ]; in
-                if length values == 1
-                  || pred here (elemAt values 1) (head values) then
-                  (
-                    if all isList values then concatLists (reverseList values)
-                    else head values
-                  )
+            f =
+              attrPath:
+              zipAttrsWith (
+                n: values:
+                let
+                  here = attrPath ++ [ n ];
+                in
+                if length values == 1 || pred here (elemAt values 1) (head values) then
+                  (if all isList values then concatLists (reverseList values) else head values)
                 else
                   f here values
               );
@@ -101,43 +159,45 @@ let
           f [ ] [ rhs lhs ];
 
         recursiveMerge =
-          lhs:
-          rhs:
-          recursiveMergeUntil
-            (_path: lhs: rhs:
-              !(isAttrs lhs && isAttrs rhs))
-            lhs
-            rhs;
-
+          lhs: rhs:
+          recursiveMergeUntil (
+            _path: lhs: rhs:
+            !(isAttrs lhs && isAttrs rhs)
+          ) lhs rhs;
 
       in
       recursiveMerge left right;
 
-    /* deepMergeMap takes a function and a list of attrsets and deep merges them
+    /*
+      deepMergeMap takes a function and a list of attrsets and deep merges them
 
-       deepMergeMap :: (AttrSet -> AttrSet ) -> [ AttrSet ] -> Attrset
+      deepMergeMap :: (AttrSet -> AttrSet ) -> [ AttrSet ] -> Attrset
 
-       Example:
-         deepMergeMap (x: x.t = "test") [ { x = { y = 1; z = 3; }; } { x = { bla = 234; }; } ]
-         => { x = { y = 1; z = 3; bla = 234; t = "test"; }; }
+      Example:
+        deepMergeMap (x: x.t = "test") [ { x = { y = 1; z = 3; }; } { x = { bla = 234; }; } ]
+        => { x = { y = 1; z = 3; bla = 234; t = "test"; }; }
     */
     deepMergeMap = f: lib.foldr (attr: acc: (diskoLib.recursiveUpdate acc (f attr))) { };
 
-    /* get a device and an index to get the matching device name
+    /*
+      get a device and an index to get the matching device name
 
-       deviceNumbering :: str -> int -> str
+      deviceNumbering :: str -> int -> str
 
-       Example:
-       deviceNumbering "/dev/sda" 3
-       => "/dev/sda3"
+      Example:
+      deviceNumbering "/dev/sda" 3
+      => "/dev/sda3"
 
-       deviceNumbering "/dev/disk/by-id/xxx" 2
-       => "/dev/disk/by-id/xxx-part2"
+      deviceNumbering "/dev/disk/by-id/xxx" 2
+      => "/dev/disk/by-id/xxx-part2"
     */
-    deviceNumbering = dev: index:
-      let inherit (lib) match; in
+    deviceNumbering =
+      dev: index:
+      let
+        inherit (lib) match;
+      in
       if match "/dev/([vs]|(xv)d).+" dev != null then
-        dev + toString index  # /dev/{s,v,xv}da style
+        dev + toString index # /dev/{s,v,xv}da style
       else if match "/dev/(disk|zvol)/.+" dev != null then
         "${dev}-part${toString index}" # /dev/disk/by-id/xxx style, also used by zfs's zvolumes
       else if match "/dev/((nvme|mmcblk).+|md/.*[[:digit:]])" dev != null then
@@ -146,14 +206,15 @@ let
         "${dev}${toString index}" # /dev/md/raid1 style
       else if match "/dev/mapper/.+" dev != null then
         "${dev}${toString index}" # /dev/mapper/vg-lv1 style
-      else if match "/dev/loop[[:digit:]]+" dev != null
-      then "${dev}p${toString index}" # /dev/mapper/vg-lv1 style
+      else if match "/dev/loop[[:digit:]]+" dev != null then
+        "${dev}p${toString index}" # /dev/mapper/vg-lv1 style
       else
         abort ''
           ${dev} seems not to be a supported disk format. Please add this to disko in https://github.com/nix-community/disko/blob/master/lib/default.nix
         '';
 
-    /* Escape a string as required to be used in udev symlinks
+    /*
+      Escape a string as required to be used in udev symlinks
 
       The allowed characters are "0-9A-Za-z#+-.:=@_/", valid UTF-8 character sequences, and "\x00" hex encoding.
       Everything else is escaped as "\xXX" where XX is the hex value of the character.
@@ -181,23 +242,27 @@ let
         allowedChars = "[0-9A-Za-z#+-.:=@_/]";
         charToHex = c: lib.toHexString (lib.strings.charToInt c);
       in
-      lib.stringAsChars
-        (c: if lib.match allowedChars c != null || c == "" then c else "\\x" + charToHex c);
+      lib.stringAsChars (
+        c: if lib.match allowedChars c != null || c == "" then c else "\\x" + charToHex c
+      );
 
-    /* get the index an item in a list
+    /*
+      get the index an item in a list
 
-       indexOf :: (a -> bool) -> [a] -> int -> int
+      indexOf :: (a -> bool) -> [a] -> int -> int
 
-       Example:
-       indexOf (x: x == 2) [ 1 2 3 ] 0
-       => 2
+      Example:
+      indexOf (x: x == 2) [ 1 2 3 ] 0
+      => 2
 
-       indexOf (x: x == "x") [ 1 2 3 ] 0
-       => 0
-      */
-    indexOf = f: list: fallback:
+      indexOf (x: x == "x") [ 1 2 3 ] 0
+      => 0
+    */
+    indexOf =
+      f: list: fallback:
       let
-        iter = index: list:
+        iter =
+          index: list:
           if list == [ ] then
             fallback
           else if f (lib.head list) then
@@ -207,44 +272,48 @@ let
       in
       iter 1 list;
 
+    /*
+      indent takes a multiline string and indents it by 2 spaces starting on the second line
 
-    /* indent takes a multiline string and indents it by 2 spaces starting on the second line
+      indent :: str -> str
 
-       indent :: str -> str
-
-       Example:
-       indent "test\nbla"
-       => "test\n  bla"
+      Example:
+      indent "test\nbla"
+      => "test\n  bla"
     */
     indent = lib.replaceStrings [ "\n" ] [ "\n  " ];
 
-    /* A nix option type representing a json datastructure, vendored from nixpkgs to avoid dependency on pkgs */
+    # A nix option type representing a json datastructure, vendored from nixpkgs to avoid dependency on pkgs
     jsonType =
       let
-        valueType = lib.types.nullOr
-          (lib.types.oneOf [
-            lib.types.bool
-            lib.types.int
-            lib.types.float
-            lib.types.str
-            lib.types.path
-            (lib.types.attrsOf valueType)
-            (lib.types.listOf valueType)
-          ]) // {
-          description = "JSON value";
-        };
+        valueType =
+          lib.types.nullOr (
+            lib.types.oneOf [
+              lib.types.bool
+              lib.types.int
+              lib.types.float
+              lib.types.str
+              lib.types.path
+              (lib.types.attrsOf valueType)
+              (lib.types.listOf valueType)
+            ]
+          )
+          // {
+            description = "JSON value";
+          };
       in
       valueType;
 
-    /* Given a attrset of deviceDependencies and a devices attrset
-       returns a sorted list by deviceDependencies. aborts if a loop is found
+    /*
+      Given a attrset of deviceDependencies and a devices attrset
+      returns a sorted list by deviceDependencies. aborts if a loop is found
 
-       sortDevicesByDependencies :: AttrSet -> AttrSet -> [ [ str str ] ]
+      sortDevicesByDependencies :: AttrSet -> AttrSet -> [ [ str str ] ]
     */
-    sortDevicesByDependencies = deviceDependencies: devices:
+    sortDevicesByDependencies =
+      deviceDependencies: devices:
       let
-        dependsOn = a: b:
-          lib.elem a (lib.attrByPath b [ ] deviceDependencies);
+        dependsOn = a: b: lib.elem a (lib.attrByPath b [ ] deviceDependencies);
         maybeSortedDevices = lib.toposort dependsOn (diskoLib.deviceList devices);
       in
       if (lib.hasAttr "cycle" maybeSortedDevices) then
@@ -252,81 +321,116 @@ let
       else
         maybeSortedDevices.result;
 
-    /* Takes a devices attrSet and returns it as a list
+    /*
+      Takes a devices attrSet and returns it as a list
 
-       deviceList :: AttrSet -> [ [ str str ] ]
+      deviceList :: AttrSet -> [ [ str str ] ]
 
-       Example:
-         deviceList { zfs.pool1 = {}; zfs.pool2 = {}; mdadm.raid1 = {}; }
-         => [ [ "zfs" "pool1" ] [ "zfs" "pool2" ] [ "mdadm" "raid1" ] ]
+      Example:
+        deviceList { zfs.pool1 = {}; zfs.pool2 = {}; mdadm.raid1 = {}; }
+        => [ [ "zfs" "pool1" ] [ "zfs" "pool2" ] [ "mdadm" "raid1" ] ]
     */
-    deviceList = devices:
-      lib.concatLists (lib.mapAttrsToList (n: v: (map (x: [ n x ]) (lib.attrNames v))) devices);
+    deviceList =
+      devices:
+      lib.concatLists (
+        lib.mapAttrsToList (
+          n: v:
+          (map (x: [
+            n
+            x
+          ]) (lib.attrNames v))
+        ) devices
+      );
 
-    /* Takes either a string or null and returns the string or an empty string
+    /*
+      Takes either a string or null and returns the string or an empty string
 
-       maybeStr :: Either (str null) -> str
+      maybeStr :: Either (str null) -> str
 
-       Example:
-         maybeStr null
-         => ""
-         maybeSTr "hello world"
-         => "hello world"
+      Example:
+        maybeStr null
+        => ""
+        maybeSTr "hello world"
+        => "hello world"
     */
     maybeStr = x: lib.optionalString (x != null) x;
 
-    /* Takes a Submodules config and options argument and returns a serializable
-       subset of config variables as a shell script snippet.
+    /*
+      Takes a Submodules config and options argument and returns a serializable
+      subset of config variables as a shell script snippet.
     */
-    defineHookVariables = { options }:
+    defineHookVariables =
+      { options }:
       let
         sanitizeName = lib.replaceStrings [ "-" ] [ "_" ];
         isAttrsOfSubmodule = o: o.type.name == "attrsOf" && o.type.nestedTypes.elemType.name == "submodule";
-        isSerializable = n: o: !(
-          lib.hasPrefix "_" n
+        isSerializable =
+          n: o:
+          !(
+            lib.hasPrefix "_" n
             || lib.hasSuffix "Hook" n
             || isAttrsOfSubmodule o
             # TODO don't hardcode diskoLib.subType options.
-            || n == "content" || n == "partitions" || n == "datasets" || n == "swap"
+            || n == "content"
+            || n == "partitions"
+            || n == "datasets"
+            || n == "swap"
             || n == "mode"
-        );
+          );
       in
-      lib.toShellVars
-        (lib.mapAttrs'
-          (n: o: lib.nameValuePair (sanitizeName n) o.value)
-          (lib.filterAttrs isSerializable options));
+      lib.toShellVars (
+        lib.mapAttrs' (n: o: lib.nameValuePair (sanitizeName n) o.value) (
+          lib.filterAttrs isSerializable options
+        )
+      );
 
-    mkHook = description: lib.mkOption {
-      inherit description;
-      type = lib.types.lines;
-      default = "";
-    };
+    mkHook =
+      description:
+      lib.mkOption {
+        inherit description;
+        type = lib.types.lines;
+        default = "";
+      };
 
-    mkSubType = module: lib.types.submodule [
-      module
+    mkSubType =
+      module:
+      lib.types.submodule [
+        module
 
+        {
+          options = {
+            preCreateHook = diskoLib.mkHook "shell commands to run before create";
+            postCreateHook = diskoLib.mkHook "shell commands to run after create";
+            preMountHook = diskoLib.mkHook "shell commands to run before mount";
+            postMountHook = diskoLib.mkHook "shell commands to run after mount";
+            preUnmountHook = diskoLib.mkHook "shell commands to run before unmount";
+            postUnmountHook = diskoLib.mkHook "shell commands to run after unmount";
+          };
+          config._module.args = {
+            inherit diskoLib rootMountPoint;
+          };
+        }
+      ];
+
+    mkCreateOption =
       {
-        options = {
-          preCreateHook = diskoLib.mkHook "shell commands to run before create";
-          postCreateHook = diskoLib.mkHook "shell commands to run after create";
-          preMountHook = diskoLib.mkHook "shell commands to run before mount";
-          postMountHook = diskoLib.mkHook "shell commands to run after mount";
-          preUnmountHook = diskoLib.mkHook "shell commands to run before unmount";
-          postUnmountHook = diskoLib.mkHook "shell commands to run after unmount";
-        };
-        config._module.args = {
-          inherit diskoLib rootMountPoint;
-        };
-      }
-    ];
-
-    mkCreateOption = { config, options, default }@attrs:
+        config,
+        options,
+        default,
+      }@attrs:
       lib.mkOption {
         internal = true;
         readOnly = true;
         type = lib.types.str;
         default = ''
-          ( # ${config.type} ${lib.concatMapStringsSep " " (n: toString (config.${n} or "")) ["name" "device" "format" "mountpoint"]} #
+          ( # ${config.type} ${
+            lib.concatMapStringsSep " " (n: toString (config.${n} or "")) [
+              "name"
+              "device"
+              "format"
+              "mountpoint"
+            ]
+          } #
             ${diskoLib.indent (diskoLib.defineHookVariables { inherit options; })}
             ${diskoLib.indent config.preCreateHook}
             ${diskoLib.indent attrs.default}
@@ -336,98 +440,131 @@ let
         description = "Creation script";
       };
 
-    mkMountOption = { config, options, default }@attrs:
+    mkMountOption =
+      {
+        config,
+        options,
+        default,
+      }@attrs:
       lib.mkOption {
         internal = true;
         readOnly = true;
         type = diskoLib.jsonType;
-        default = lib.mapAttrsRecursive
-          (_name: value:
-            if builtins.isString value then ''
+        default = lib.mapAttrsRecursive (
+          _name: value:
+          if builtins.isString value then
+            ''
               (
                 ${diskoLib.indent (diskoLib.defineHookVariables { inherit options; })}
                 ${diskoLib.indent config.preMountHook}
                 ${diskoLib.indent value}
                 ${diskoLib.indent config.postMountHook}
               )
-            '' else value)
-          attrs.default;
+            ''
+          else
+            value
+        ) attrs.default;
         description = "Mount script";
       };
 
-    mkUnmountOption = { config, options, default }@attrs:
+    mkUnmountOption =
+      {
+        config,
+        options,
+        default,
+      }@attrs:
       lib.mkOption {
         internal = true;
         readOnly = true;
         type = diskoLib.jsonType;
-        default = lib.mapAttrsRecursive
-          (_name: value:
-            if builtins.isString value then ''
+        default = lib.mapAttrsRecursive (
+          _name: value:
+          if builtins.isString value then
+            ''
               (
                 ${diskoLib.indent (diskoLib.defineHookVariables { inherit options; })}
                 ${diskoLib.indent config.preUnmountHook}
                 ${diskoLib.indent value}
                 ${diskoLib.indent config.postUnmountHook}
               )
-            '' else value)
-          attrs.default;
+            ''
+          else
+            value
+        ) attrs.default;
         description = "Unmount script";
       };
 
-    /* Writer for optionally checking bash scripts before writing them to the store
+    /*
+      Writer for optionally checking bash scripts before writing them to the store
 
-       writeCheckedBash :: AttrSet -> str -> str -> derivation
+      writeCheckedBash :: AttrSet -> str -> str -> derivation
     */
-    writeCheckedBash = { pkgs, checked ? false, noDeps ? false }: pkgs.writers.makeScriptWriter {
-      interpreter = if noDeps then "/usr/bin/env bash" else "${pkgs.bash}/bin/bash";
-      check = lib.optionalString (checked && !pkgs.stdenv.hostPlatform.isRiscV64 && !pkgs.stdenv.hostPlatform.isx86_32) (pkgs.writeScript "check" ''
-        set -efu
-        # SC2054: our toShellVars function doesn't quote list elements with commas
-        # SC2034: We don't use all variables exported by hooks.
-        ${pkgs.shellcheck}/bin/shellcheck -e SC2034,SC2054 "$1"
-      '');
-    };
+    writeCheckedBash =
+      {
+        pkgs,
+        checked ? false,
+        noDeps ? false,
+      }:
+      pkgs.writers.makeScriptWriter {
+        interpreter = if noDeps then "/usr/bin/env bash" else "${pkgs.bash}/bin/bash";
+        check =
+          lib.optionalString
+            (checked && !pkgs.stdenv.hostPlatform.isRiscV64 && !pkgs.stdenv.hostPlatform.isx86_32)
+            (
+              pkgs.writeScript "check" ''
+                set -efu
+                # SC2054: our toShellVars function doesn't quote list elements with commas
+                # SC2034: We don't use all variables exported by hooks.
+                ${pkgs.shellcheck}/bin/shellcheck -e SC2034,SC2054 "$1"
+              ''
+            );
+      };
 
+    /*
+      Takes a disko device specification, returns an attrset with metadata
 
-    /* Takes a disko device specification, returns an attrset with metadata
-
-       meta :: lib.types.devices -> AttrSet
+      meta :: lib.types.devices -> AttrSet
     */
     meta = toplevel: toplevel._meta;
 
-    /* Takes a disko device specification and returns a string which formats the disks
+    /*
+      Takes a disko device specification and returns a string which formats the disks
 
-       create :: lib.types.devices -> str
+      create :: lib.types.devices -> str
     */
     create = toplevel: toplevel._create;
-    /* Takes a disko device specification and returns a string which mounts the disks
+    /*
+      Takes a disko device specification and returns a string which mounts the disks
 
-       mount :: lib.types.devices -> str
+      mount :: lib.types.devices -> str
     */
     mount = toplevel: toplevel._mount;
 
-    /* takes a disko device specification and returns a string which unmounts, destroys all disks and then runs create and mount
+    /*
+      takes a disko device specification and returns a string which unmounts, destroys all disks and then runs create and mount
 
-       zapCreateMount :: lib.types.devices -> str
+      zapCreateMount :: lib.types.devices -> str
     */
-    zapCreateMount = toplevel:
-      ''
-        set -efux
-        ${toplevel._disko}
-      '';
-    /* Takes a disko device specification and returns a nixos configuration
+    zapCreateMount = toplevel: ''
+      set -efux
+      ${toplevel._disko}
+    '';
+    /*
+      Takes a disko device specification and returns a nixos configuration
 
-       config :: lib.types.devices -> nixosConfig
+      config :: lib.types.devices -> nixosConfig
     */
     config = toplevel: toplevel._config;
 
-    /* Takes a disko device specification and returns a function to get the needed packages to format/mount the disks
+    /*
+      Takes a disko device specification and returns a function to get the needed packages to format/mount the disks
 
-       packages :: lib.types.devices -> pkgs -> [ derivation ]
+      packages :: lib.types.devices -> pkgs -> [ derivation ]
     */
     packages = toplevel: toplevel._packages;
 
-    /* Checks whether nixpkgs is recent enough for vmTools to support the customQemu argument.
+    /*
+      Checks whether nixpkgs is recent enough for vmTools to support the customQemu argument.
 
       Returns false, which is technically incorrect, for a few commits on 2024-07-08, but we can't be more accurate.
       Make sure to pass lib, not pkgs.lib! See https://github.com/nix-community/disko/issues/904
@@ -453,8 +590,10 @@ let
 
       pathname = lib.mkOptionType {
         name = "pathname";
-        check = x:
-          with lib; let
+        check =
+          x:
+          with lib;
+          let
             # The filter is used to normalize paths, i.e. to remove duplicated and
             # trailing slashes.  It also removes leading slashes, thus we have to
             # check for "/" explicitly below.
@@ -466,11 +605,19 @@ let
       };
     };
 
-    /* topLevel type of the disko config, takes attrsets of disks, mdadms, zpools, nodevs, and lvm vgs.
-    */
-    toplevel = lib.types.submodule (cfg:
+    # topLevel type of the disko config, takes attrsets of disks, mdadms, zpools, nodevs, and lvm vgs.
+    toplevel = lib.types.submodule (
+      cfg:
       let
-        devices = { inherit (cfg.config) disk mdadm zpool lvm_vg nodev; };
+        devices = {
+          inherit (cfg.config)
+            disk
+            mdadm
+            zpool
+            lvm_vg
+            nodev
+            ;
+        };
       in
       {
         options = {
@@ -505,7 +652,9 @@ let
               meta informationen generated by disko
               currently used for building a dependency list so we know in which order to create the devices
             '';
-            default = diskoLib.deepMergeMap (dev: dev._meta) (lib.flatten (map lib.attrValues (lib.attrValues devices)));
+            default = diskoLib.deepMergeMap (dev: dev._meta) (
+              lib.flatten (map lib.attrValues (lib.attrValues devices))
+            );
           };
           _packages = lib.mkOption {
             internal = true;
@@ -513,16 +662,31 @@ let
               packages required by the disko configuration
               coreutils is always included
             '';
-            default = pkgs: with lib; unique ((flatten (map (dev: dev._pkgs pkgs) (flatten (map attrValues (attrValues devices))))) ++ [ pkgs.coreutils-full ]);
+            default =
+              pkgs:
+              with lib;
+              unique (
+                (flatten (map (dev: dev._pkgs pkgs) (flatten (map attrValues (attrValues devices)))))
+                ++ [ pkgs.coreutils-full ]
+              );
           };
           _scripts = lib.mkOption {
             internal = true;
             description = ''
               The scripts generated by disko
             '';
-            default = { pkgs, checked ? false }:
+            default =
+              {
+                pkgs,
+                checked ? false,
+              }:
               let
-                throwIfNoDisksDetected = _: v: if devices.disk == { } then throw "No disks defined, did you forget to import your disko config?" else v;
+                throwIfNoDisksDetected =
+                  _: v:
+                  if devices.disk == { } then
+                    throw "No disks defined, did you forget to import your disko config?"
+                  else
+                    v;
                 destroyDependencies = with pkgs; [
                   util-linux
                   e2fsprogs
@@ -557,31 +721,70 @@ let
                   export PATH=${lib.makeBinPath ((cfg.config._packages pkgs) ++ [ pkgs.bash ])}:$PATH
                   ${cfg.config._formatMount}
                 '';
-                destroyFormatMount = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "/bin/disko-destroy-format-mount" ''
-                  export PATH=${lib.makeBinPath ((cfg.config._packages pkgs) ++ [ pkgs.bash ] ++ destroyDependencies)}:$PATH
-                  ${cfg.config._destroyFormatMount}
-                '';
+                destroyFormatMount =
+                  (diskoLib.writeCheckedBash { inherit pkgs checked; }) "/bin/disko-destroy-format-mount"
+                    ''
+                      export PATH=${
+                        lib.makeBinPath ((cfg.config._packages pkgs) ++ [ pkgs.bash ] ++ destroyDependencies)
+                      }:$PATH
+                      ${cfg.config._destroyFormatMount}
+                    '';
 
                 # These are useful to skip copying executables uploading a script to an in-memory installer
-                destroyNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "/bin/disko-destroy" ''
-                  ${cfg.config._destroy}
-                '';
-                formatNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "/bin/disko-format" ''
-                  ${cfg.config._create}
-                '';
-                mountNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "/bin/disko-mount" ''
-                  ${cfg.config._mount}
-                '';
-                unmountNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "/bin/disko-unmount" ''
-                  ${cfg.config._unmount}
-                '';
-                formatMountNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "/bin/disko-format-mount" ''
-                  ${cfg.config._formatMount}
-                '';
-                destroyFormatMountNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "/bin/disko-destroy-format-mount" ''
-                  ${cfg.config._destroyFormatMount}
-                '';
-
+                destroyNoDeps =
+                  (diskoLib.writeCheckedBash {
+                    inherit pkgs checked;
+                    noDeps = true;
+                  })
+                    "/bin/disko-destroy"
+                    ''
+                      ${cfg.config._destroy}
+                    '';
+                formatNoDeps =
+                  (diskoLib.writeCheckedBash {
+                    inherit pkgs checked;
+                    noDeps = true;
+                  })
+                    "/bin/disko-format"
+                    ''
+                      ${cfg.config._create}
+                    '';
+                mountNoDeps =
+                  (diskoLib.writeCheckedBash {
+                    inherit pkgs checked;
+                    noDeps = true;
+                  })
+                    "/bin/disko-mount"
+                    ''
+                      ${cfg.config._mount}
+                    '';
+                unmountNoDeps =
+                  (diskoLib.writeCheckedBash {
+                    inherit pkgs checked;
+                    noDeps = true;
+                  })
+                    "/bin/disko-unmount"
+                    ''
+                      ${cfg.config._unmount}
+                    '';
+                formatMountNoDeps =
+                  (diskoLib.writeCheckedBash {
+                    inherit pkgs checked;
+                    noDeps = true;
+                  })
+                    "/bin/disko-format-mount"
+                    ''
+                      ${cfg.config._formatMount}
+                    '';
+                destroyFormatMountNoDeps =
+                  (diskoLib.writeCheckedBash {
+                    inherit pkgs checked;
+                    noDeps = true;
+                  })
+                    "/bin/disko-destroy-format-mount"
+                    ''
+                      ${cfg.config._destroyFormatMount}
+                    '';
 
                 # Legacy scripts, to be removed in version 2.0.0
                 # They are generally less useful, because the scripts are directly written to their $out path instead of
@@ -604,26 +807,52 @@ let
                 '';
 
                 diskoScript = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko" ''
-                  export PATH=${lib.makeBinPath ((cfg.config._packages pkgs) ++ [ pkgs.bash ] ++ destroyDependencies)}:$PATH
+                  export PATH=${
+                    lib.makeBinPath ((cfg.config._packages pkgs) ++ [ pkgs.bash ] ++ destroyDependencies)
+                  }:$PATH
                   ${cfg.config._disko}
                 '';
 
                 # These are useful to skip copying executables uploading a script to an in-memory installer
-                destroyScriptNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko-destroy" ''
-                  ${cfg.config._legacyDestroy}
-                '';
+                destroyScriptNoDeps =
+                  (diskoLib.writeCheckedBash {
+                    inherit pkgs checked;
+                    noDeps = true;
+                  })
+                    "disko-destroy"
+                    ''
+                      ${cfg.config._legacyDestroy}
+                    '';
 
-                formatScriptNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko-format" ''
-                  ${cfg.config._create}
-                '';
+                formatScriptNoDeps =
+                  (diskoLib.writeCheckedBash {
+                    inherit pkgs checked;
+                    noDeps = true;
+                  })
+                    "disko-format"
+                    ''
+                      ${cfg.config._create}
+                    '';
 
-                mountScriptNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko-mount" ''
-                  ${cfg.config._mount}
-                '';
+                mountScriptNoDeps =
+                  (diskoLib.writeCheckedBash {
+                    inherit pkgs checked;
+                    noDeps = true;
+                  })
+                    "disko-mount"
+                    ''
+                      ${cfg.config._mount}
+                    '';
 
-                diskoScriptNoDeps = (diskoLib.writeCheckedBash { inherit pkgs checked; noDeps = true; }) "disko" ''
-                  ${cfg.config._disko}
-                '';
+                diskoScriptNoDeps =
+                  (diskoLib.writeCheckedBash {
+                    inherit pkgs checked;
+                    noDeps = true;
+                  })
+                    "disko"
+                    ''
+                      ${cfg.config._disko}
+                    '';
               };
           };
           _legacyDestroy = lib.mkOption {
@@ -687,8 +916,10 @@ let
               The script to create all devices defined by disko.devices
             '';
             default =
-              with lib; let
-                sortedDeviceList = diskoLib.sortDevicesByDependencies (cfg.config._meta.deviceDependencies or { }) devices;
+              with lib;
+              let
+                sortedDeviceList = diskoLib.sortDevicesByDependencies (cfg.config._meta.deviceDependencies or { }
+                ) devices;
               in
               ''
                 set -efux
@@ -697,7 +928,7 @@ let
                 trap 'rm -rf "$disko_devices_dir"' EXIT
                 mkdir -p "$disko_devices_dir"
 
-                ${concatMapStrings (dev: (attrByPath (dev ++ [ "_create" ]) {} devices)) sortedDeviceList}
+                ${concatMapStrings (dev: (attrByPath (dev ++ [ "_create" ]) { } devices)) sortedDeviceList}
               '';
           };
           _mount = lib.mkOption {
@@ -707,14 +938,18 @@ let
               The script to mount all devices defined by disko.devices
             '';
             default =
-              with lib; let
-                fsMounts = diskoLib.deepMergeMap (dev: dev._mount.fs or { }) (flatten (map attrValues (attrValues devices)));
-                sortedDeviceList = diskoLib.sortDevicesByDependencies (cfg.config._meta.deviceDependencies or { }) devices;
+              with lib;
+              let
+                fsMounts = diskoLib.deepMergeMap (dev: dev._mount.fs or { }) (
+                  flatten (map attrValues (attrValues devices))
+                );
+                sortedDeviceList = diskoLib.sortDevicesByDependencies (cfg.config._meta.deviceDependencies or { }
+                ) devices;
               in
               ''
                 set -efux
                 # first create the necessary devices
-                ${concatMapStrings (dev: (attrByPath (dev ++ [ "_mount" ]) {} devices).dev or "") sortedDeviceList}
+                ${concatMapStrings (dev: (attrByPath (dev ++ [ "_mount" ]) { } devices).dev or "") sortedDeviceList}
 
                 # and then mount the filesystems in alphabetical order
                 ${concatStrings (attrValues fsMounts)}
@@ -727,9 +962,13 @@ let
               The script to unmount all devices defined by disko.devices
             '';
             default =
-              with lib; let
-                fsMounts = diskoLib.deepMergeMap (dev: dev._unmount.fs or { }) (flatten (map attrValues (attrValues devices)));
-                sortedDeviceList = diskoLib.sortDevicesByDependencies (cfg.config._meta.deviceDependencies or { }) devices;
+              with lib;
+              let
+                fsMounts = diskoLib.deepMergeMap (dev: dev._unmount.fs or { }) (
+                  flatten (map attrValues (attrValues devices))
+                );
+                sortedDeviceList = diskoLib.sortDevicesByDependencies (cfg.config._meta.deviceDependencies or { }
+                ) devices;
               in
               ''
                 set -efux
@@ -737,7 +976,9 @@ let
                 ${concatStrings (lib.reverseList (attrValues fsMounts))}
 
                 # Than close the devices
-                ${concatMapStrings (dev: (attrByPath (dev ++ [ "_unmount" ]) {} devices).dev or "") (lib.reverseList sortedDeviceList)}
+                ${concatMapStrings (dev: (attrByPath (dev ++ [ "_unmount" ]) { } devices).dev or "") (
+                  lib.reverseList sortedDeviceList
+                )}
               '';
           };
           _disko = lib.mkOption {
@@ -782,39 +1023,33 @@ let
               The NixOS config generated by disko
             '';
             default =
-              with lib; let
-                configKeys = flatten (map attrNames (flatten (map (dev: dev._config) (flatten (map attrValues (attrValues devices))))));
+              with lib;
+              let
+                configKeys = flatten (
+                  map attrNames (flatten (map (dev: dev._config) (flatten (map attrValues (attrValues devices)))))
+                );
                 collectedConfigs = flatten (map (dev: dev._config) (flatten (map attrValues (attrValues devices))));
               in
               genAttrs configKeys (key: mkMerge (catAttrs key collectedConfigs));
           };
         };
-      });
+      }
+    );
 
     # import all the types from the types directory
     types = lib.listToAttrs (
-      map
-        (file: lib.nameValuePair
-          (lib.removeSuffix ".nix" file)
-          (diskoLib.mkSubType (./types + "/${file}"))
-        )
-        (lib.attrNames (builtins.readDir ./types))
+      map (
+        file: lib.nameValuePair (lib.removeSuffix ".nix" file) (diskoLib.mkSubType (./types + "/${file}"))
+      ) (lib.attrNames (builtins.readDir ./types))
     );
 
-
     # render types into an json serializable format
-    serializeType = type:
+    serializeType =
+      type:
       let
         options = lib.filter (x: !lib.hasPrefix "_" x) (lib.attrNames type.options);
       in
-      lib.listToAttrs (
-        map
-          (option: lib.nameValuePair
-            option
-            type.options.${option}
-          )
-          options
-      );
+      lib.listToAttrs (map (option: lib.nameValuePair option type.options.${option}) options);
 
     typesSerializerLib = {
       rootMountPoint = "";
@@ -855,7 +1090,10 @@ let
           };
           either = t1: t2: {
             type = "oneOf";
-            types = [ t1 t2 ];
+            types = [
+              t1
+              t2
+            ];
           };
           enum = choices: {
             type = "enum";
@@ -867,10 +1105,12 @@ let
           str = "str";
           bool = "bool";
           int = "int";
-          submodule = x: x {
-            inherit (diskoLib.typesSerializerLib) lib config options;
-            name = "<self.name>";
-          };
+          submodule =
+            x:
+            x {
+              inherit (diskoLib.typesSerializerLib) lib config options;
+              name = "<self.name>";
+            };
         };
       };
       diskoLib = {
@@ -878,32 +1118,35 @@ let
         # Spoof these types to avoid infinite recursion
         deviceType = _: "<deviceType>";
         partitionType = _: "<partitionType>";
-        subType = { types, ... }: {
-          type = "oneOf";
-          types = lib.attrNames types;
-        };
+        subType =
+          { types, ... }:
+          {
+            type = "oneOf";
+            types = lib.attrNames types;
+          };
         mkCreateOption = option: "_create";
       };
     };
 
-    jsonTypes = lib.listToAttrs
-      (
-        map
-          (file: lib.nameValuePair
-            (lib.removeSuffix ".nix" file)
-            (diskoLib.serializeType (import (./types + "/${file}") diskoLib.typesSerializerLib))
+    jsonTypes =
+      lib.listToAttrs (
+        map (
+          file:
+          lib.nameValuePair (lib.removeSuffix ".nix" file) (
+            diskoLib.serializeType (import (./types + "/${file}") diskoLib.typesSerializerLib)
           )
-          (lib.filter (name: lib.hasSuffix ".nix" name) (lib.attrNames (builtins.readDir ./types)))
-      ) // {
-      partitionType = {
-        type = "oneOf";
-        types = lib.attrNames diskoLib._partitionTypes;
+        ) (lib.filter (name: lib.hasSuffix ".nix" name) (lib.attrNames (builtins.readDir ./types)))
+      )
+      // {
+        partitionType = {
+          type = "oneOf";
+          types = lib.attrNames diskoLib._partitionTypes;
+        };
+        deviceType = {
+          type = "oneOf";
+          types = lib.attrNames diskoLib._deviceTypes;
+        };
       };
-      deviceType = {
-        type = "oneOf";
-        types = lib.attrNames diskoLib._deviceTypes;
-      };
-    };
 
     binfmt = import ./binfmt.nix;
   } // outputs;

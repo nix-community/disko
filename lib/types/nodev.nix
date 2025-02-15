@@ -1,4 +1,11 @@
-{ lib, config, options, diskoLib, rootMountPoint, ... }:
+{
+  lib,
+  config,
+  options,
+  diskoLib,
+  rootMountPoint,
+  ...
+}:
 {
   options = {
     type = lib.mkOption {

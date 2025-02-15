@@ -1,4 +1,12 @@
-{ diskoLib, config, options, lib, parent, device, ... }:
+{
+  diskoLib,
+  config,
+  options,
+  lib,
+  parent,
+  device,
+  ...
+}:
 {
   options = {
     type = lib.mkOption {
@@ -14,7 +22,13 @@
     discardPolicy = lib.mkOption {
       default = null;
       example = "once";
-      type = lib.types.nullOr (lib.types.enum [ "once" "pages" "both" ]);
+      type = lib.types.nullOr (
+        lib.types.enum [
+          "once"
+          "pages"
+          "both"
+        ]
+      );
       description = ''
         Specify the discard policy for the swap device. If "once", then the
         whole swap space is discarded at swapon invocation. If "pages",
@@ -83,12 +97,8 @@
           if test "''${DISKO_SKIP_SWAP:-}" != 1 && ! swapon --show | grep -q "^$(readlink -f "${config.device}") "; then
             swapon ${
               lib.optionalString (config.discardPolicy != null)
-                "--discard${lib.optionalString (config.discardPolicy != "both")
-                "=${config.discardPolicy}"
-              }"} ${
-              lib.optionalString (config.priority != null)
-                "--priority=${toString config.priority}"
-              } \
+                "--discard${lib.optionalString (config.discardPolicy != "both") "=${config.discardPolicy}"}"
+            } ${lib.optionalString (config.priority != null) "--priority=${toString config.priority}"} \
               --options=${lib.concatStringsSep "," config.mountOptions} \
               "${config.device}"
           fi
@@ -108,26 +118,33 @@
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
-      default = [{
-        swapDevices = [{
-          device = config.device;
-          inherit (config) discardPolicy priority;
-          randomEncryption = {
-            enable = config.randomEncryption;
-            # forward discard/TRIM attempts through dm-crypt
-            allowDiscards = config.discardPolicy != null;
-          };
-          options = config.mountOptions;
-        }];
-        boot.resumeDevice = lib.mkIf config.resumeDevice config.device;
-      }];
+      default = [
+        {
+          swapDevices = [
+            {
+              device = config.device;
+              inherit (config) discardPolicy priority;
+              randomEncryption = {
+                enable = config.randomEncryption;
+                # forward discard/TRIM attempts through dm-crypt
+                allowDiscards = config.discardPolicy != null;
+              };
+              options = config.mountOptions;
+            }
+          ];
+          boot.resumeDevice = lib.mkIf config.resumeDevice config.device;
+        }
+      ];
       description = "NixOS configuration";
     };
     _pkgs = lib.mkOption {
       internal = true;
       readOnly = true;
       type = lib.types.functionTo (lib.types.listOf lib.types.package);
-      default = pkgs: [ pkgs.gnugrep pkgs.util-linux ];
+      default = pkgs: [
+        pkgs.gnugrep
+        pkgs.util-linux
+      ];
       description = "Packages";
     };
   };

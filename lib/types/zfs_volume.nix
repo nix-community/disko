@@ -1,4 +1,11 @@
-{ config, options, lib, diskoLib, parent, ... }:
+{
+  config,
+  options,
+  lib,
+  diskoLib,
+  parent,
+  ...
+}:
 {
   options = {
     name = lib.mkOption {
@@ -35,7 +42,10 @@
       description = "Size of the dataset";
     };
 
-    content = diskoLib.partitionType { parent = config; device = "/dev/zvol/${config._parent.name}/${config.name}"; };
+    content = diskoLib.partitionType {
+      parent = config;
+      device = "/dev/zvol/${config._parent.name}/${config.name}";
+    };
 
     _parent = lib.mkOption {
       internal = true;
@@ -45,8 +55,7 @@
       internal = true;
       readOnly = true;
       type = lib.types.functionTo diskoLib.jsonType;
-      default = dev:
-        lib.optionalAttrs (config.content != null) (config.content._meta dev);
+      default = dev: lib.optionalAttrs (config.content != null) (config.content._meta dev);
       description = "Metadata";
     };
     _create = diskoLib.mkCreateOption {
@@ -83,31 +92,34 @@
       inherit config options;
       default = {
         dev = ''
-          ${lib.optionalString (config.options.keylocation or "none" != "none") "zfs unload-key ${config.name}"}
+          ${lib.optionalString (
+            config.options.keylocation or "none" != "none"
+          ) "zfs unload-key ${config.name}"}
 
           ${config.content._unmount.dev or ""}
         '';
 
-        fs = config.content._unmount.fs or {};
+        fs = config.content._unmount.fs or { };
       };
     };
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
-      default =
-        lib.optional (config.content != null) config.content._config;
+      default = lib.optional (config.content != null) config.content._config;
       description = "NixOS configuration";
     };
     _pkgs = lib.mkOption {
       internal = true;
       readOnly = true;
       type = lib.types.functionTo (lib.types.listOf lib.types.package);
-      default = pkgs: [
-        pkgs.util-linux
-        pkgs.parted # for partprobe
-      ] ++ lib.optionals (config.content != null) (config.content._pkgs pkgs);
+      default =
+        pkgs:
+        [
+          pkgs.util-linux
+          pkgs.parted # for partprobe
+        ]
+        ++ lib.optionals (config.content != null) (config.content._pkgs pkgs);
       description = "Packages";
     };
   };
 }
-

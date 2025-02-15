@@ -1,60 +1,71 @@
-{ config, options, diskoLib, lib, rootMountPoint, parent, device, ... }:
+{
+  config,
+  options,
+  diskoLib,
+  lib,
+  rootMountPoint,
+  parent,
+  device,
+  ...
+}:
 let
   swapType = lib.mkOption {
-    type = lib.types.attrsOf (lib.types.submodule ({ name, ... }: {
-      options = {
-        size = lib.mkOption {
-          type = lib.types.strMatching "^([0-9]+[KMGTP])?$";
-          description = "Size of the swap file (e.g. 2G)";
-        };
+    type = lib.types.attrsOf (
+      lib.types.submodule (
+        { name, ... }:
+        {
+          options = {
+            size = lib.mkOption {
+              type = lib.types.strMatching "^([0-9]+[KMGTP])?$";
+              description = "Size of the swap file (e.g. 2G)";
+            };
 
-        path = lib.mkOption {
-          type = lib.types.str;
-          default = name;
-          description = "Path to the swap file (relative to the mountpoint)";
-        };
+            path = lib.mkOption {
+              type = lib.types.str;
+              default = name;
+              description = "Path to the swap file (relative to the mountpoint)";
+            };
 
-        priority = lib.mkOption {
-          type = lib.types.nullOr lib.types.int;
-          default = null;
-          description = ''
-            Specify the priority of the swap file. Priority is a value between 0 and 32767.
-            Higher numbers indicate higher priority.
-            null lets the kernel choose a priority, which will show up as a negative value.
-          '';
-        };
+            priority = lib.mkOption {
+              type = lib.types.nullOr lib.types.int;
+              default = null;
+              description = ''
+                Specify the priority of the swap file. Priority is a value between 0 and 32767.
+                Higher numbers indicate higher priority.
+                null lets the kernel choose a priority, which will show up as a negative value.
+              '';
+            };
 
-        options = lib.mkOption {
-          type = lib.types.listOf lib.types.nonEmptyStr;
-          default = [ "defaults" ];
-          example = [ "nofail" ];
-          description = "Options used to mount the swap.";
-        };
-      };
-    }));
+            options = lib.mkOption {
+              type = lib.types.listOf lib.types.nonEmptyStr;
+              default = [ "defaults" ];
+              example = [ "nofail" ];
+              description = "Options used to mount the swap.";
+            };
+          };
+        }
+      )
+    );
     default = { };
     description = "Swap files";
   };
 
-  swapConfig = { mountpoint, swap }:
+  swapConfig =
+    { mountpoint, swap }:
     {
-      swapDevices = builtins.map
-        (file: {
-          device = "${mountpoint}/${file.path}";
-          inherit (file) priority options;
-        })
-        (lib.attrValues swap);
+      swapDevices = builtins.map (file: {
+        device = "${mountpoint}/${file.path}";
+        inherit (file) priority options;
+      }) (lib.attrValues swap);
     };
 
-  swapCreate = mountpoint: swap:
-    lib.concatMapStringsSep
-      "\n"
-      (file: ''
-        if ! test -e "${mountpoint}/${file.path}"; then
-          btrfs filesystem mkswapfile --size ${file.size} "${mountpoint}/${file.path}"
-        fi
-      '')
-      (lib.attrValues swap);
+  swapCreate =
+    mountpoint: swap:
+    lib.concatMapStringsSep "\n" (file: ''
+      if ! test -e "${mountpoint}/${file.path}"; then
+        btrfs filesystem mkswapfile --size ${file.size} "${mountpoint}/${file.path}"
+      fi
+    '') (lib.attrValues swap);
 
 in
 {
@@ -80,37 +91,42 @@ in
       description = "A list of options to pass to mount.";
     };
     subvolumes = lib.mkOption {
-      type = lib.types.attrsOf (lib.types.submodule ({ config, ... }: {
-        options = {
-          name = lib.mkOption {
-            type = lib.types.str;
-            default = config._module.args.name;
-            description = "Name of the BTRFS subvolume.";
-          };
-          type = lib.mkOption {
-            type = lib.types.enum [ "btrfs_subvol" ];
-            default = "btrfs_subvol";
-            internal = true;
-            description = "Type";
-          };
-          extraArgs = lib.mkOption {
-            type = lib.types.listOf lib.types.str;
-            default = [ ];
-            description = "Extra arguments";
-          };
-          mountOptions = lib.mkOption {
-            type = lib.types.listOf lib.types.str;
-            default = [ "defaults" ];
-            description = "Options to pass to mount";
-          };
-          mountpoint = lib.mkOption {
-            type = lib.types.nullOr diskoLib.optionTypes.absolute-pathname;
-            default = null;
-            description = "Location to mount the subvolume to.";
-          };
-          swap = swapType;
-        };
-      }));
+      type = lib.types.attrsOf (
+        lib.types.submodule (
+          { config, ... }:
+          {
+            options = {
+              name = lib.mkOption {
+                type = lib.types.str;
+                default = config._module.args.name;
+                description = "Name of the BTRFS subvolume.";
+              };
+              type = lib.mkOption {
+                type = lib.types.enum [ "btrfs_subvol" ];
+                default = "btrfs_subvol";
+                internal = true;
+                description = "Type";
+              };
+              extraArgs = lib.mkOption {
+                type = lib.types.listOf lib.types.str;
+                default = [ ];
+                description = "Extra arguments";
+              };
+              mountOptions = lib.mkOption {
+                type = lib.types.listOf lib.types.str;
+                default = [ "defaults" ];
+                description = "Options to pass to mount";
+              };
+              mountpoint = lib.mkOption {
+                type = lib.types.nullOr diskoLib.optionTypes.absolute-pathname;
+                default = null;
+                description = "Location to mount the subvolume to.";
+              };
+              swap = swapType;
+            };
+          }
+        )
+      );
       default = { };
       description = "Subvolumes to define for BTRFS.";
     };
@@ -138,9 +154,9 @@ in
         if ! (blkid "${config.device}" -o export | grep -q '^TYPE='); then
           mkfs.btrfs "${config.device}" ${toString config.extraArgs}
         fi
-        ${lib.optionalString (config.swap != {} || config.subvolumes != {}) ''
+        ${lib.optionalString (config.swap != { } || config.subvolumes != { }) ''
           if (blkid "${config.device}" -o export | grep -q '^TYPE=btrfs$'); then
-            ${lib.optionalString (config.swap != {}) ''
+            ${lib.optionalString (config.swap != { }) ''
               (
                 MNTPOINT=$(mktemp -d)
                 mount ${device} "$MNTPOINT" -o subvol=/
@@ -169,79 +185,84 @@ in
       inherit config options;
       default =
         let
-          subvolMounts = lib.concatMapAttrs
-            (_: subvol:
-              lib.warnIf (subvol.mountOptions != (options.subvolumes.type.getSubOptions [ ]).mountOptions.default && subvol.mountpoint == null)
-                "Subvolume ${subvol.name} has mountOptions but no mountpoint. See upgrade guide (2023-07-09 121df48)."
-                lib.optionalAttrs
-                (subvol.mountpoint != null)
-                {
-                  ${subvol.mountpoint} = ''
-                    if ! findmnt "${config.device}" "${rootMountPoint}${subvol.mountpoint}" > /dev/null 2>&1; then
-                      mount "${config.device}" "${rootMountPoint}${subvol.mountpoint}" \
-                      ${lib.concatMapStringsSep " " (opt: "-o ${opt}") (subvol.mountOptions ++ [ "subvol=${subvol.name}" ])} \
-                      -o X-mount.mkdir
-                    fi
-                  '';
-                }
-            )
-            config.subvolumes;
+          subvolMounts = lib.concatMapAttrs (
+            _: subvol:
+            lib.warnIf
+              (
+                subvol.mountOptions != (options.subvolumes.type.getSubOptions [ ]).mountOptions.default
+                && subvol.mountpoint == null
+              )
+              "Subvolume ${subvol.name} has mountOptions but no mountpoint. See upgrade guide (2023-07-09 121df48)."
+              lib.optionalAttrs
+              (subvol.mountpoint != null)
+              {
+                ${subvol.mountpoint} = ''
+                  if ! findmnt "${config.device}" "${rootMountPoint}${subvol.mountpoint}" > /dev/null 2>&1; then
+                    mount "${config.device}" "${rootMountPoint}${subvol.mountpoint}" \
+                    ${
+                      lib.concatMapStringsSep " " (opt: "-o ${opt}") (subvol.mountOptions ++ [ "subvol=${subvol.name}" ])
+                    } \
+                    -o X-mount.mkdir
+                  fi
+                '';
+              }
+          ) config.subvolumes;
         in
         {
-          fs = subvolMounts // lib.optionalAttrs (config.mountpoint != null) {
-            ${config.mountpoint} = ''
-              if ! findmnt "${config.device}" "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
-                mount "${config.device}" "${rootMountPoint}${config.mountpoint}" \
-                ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
-                -o X-mount.mkdir
-              fi
-            '';
-          };
+          fs =
+            subvolMounts
+            // lib.optionalAttrs (config.mountpoint != null) {
+              ${config.mountpoint} = ''
+                if ! findmnt "${config.device}" "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
+                  mount "${config.device}" "${rootMountPoint}${config.mountpoint}" \
+                  ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
+                  -o X-mount.mkdir
+                fi
+              '';
+            };
         };
     };
     _unmount = diskoLib.mkUnmountOption {
       inherit config options;
       default =
         let
-          subvolMounts = lib.concatMapAttrs
-            (_: subvol:
-              lib.optionalAttrs
-              (subvol.mountpoint != null)
-              {
-                ${subvol.mountpoint} = ''
-                  if findmnt "${config.device}" "${rootMountPoint}${subvol.mountpoint}" > /dev/null 2>&1; then
-                    umount "${rootMountPoint}${subvol.mountpoint}"
-                  fi
-                '';
-              }
-            )
-            config.subvolumes;
+          subvolMounts = lib.concatMapAttrs (
+            _: subvol:
+            lib.optionalAttrs (subvol.mountpoint != null) {
+              ${subvol.mountpoint} = ''
+                if findmnt "${config.device}" "${rootMountPoint}${subvol.mountpoint}" > /dev/null 2>&1; then
+                  umount "${rootMountPoint}${subvol.mountpoint}"
+                fi
+              '';
+            }
+          ) config.subvolumes;
         in
         {
-          fs = subvolMounts // lib.optionalAttrs (config.mountpoint != null) {
-            ${config.mountpoint} = ''
-              if findmnt "${config.device}" "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
-                umount "${rootMountPoint}${config.mountpoint}"
-              fi
-            '';
-          };
+          fs =
+            subvolMounts
+            // lib.optionalAttrs (config.mountpoint != null) {
+              ${config.mountpoint} = ''
+                if findmnt "${config.device}" "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
+                  umount "${rootMountPoint}${config.mountpoint}"
+                fi
+              '';
+            };
         };
     };
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
       default = [
-        (map
-          (subvol:
-            lib.optional (subvol.mountpoint != null) {
-              fileSystems.${subvol.mountpoint} = {
-                device = config.device;
-                fsType = "btrfs";
-                options = subvol.mountOptions ++ [ "subvol=${subvol.name}" ];
-              };
-            }
-          )
-          (lib.attrValues config.subvolumes))
+        (map (
+          subvol:
+          lib.optional (subvol.mountpoint != null) {
+            fileSystems.${subvol.mountpoint} = {
+              device = config.device;
+              fsType = "btrfs";
+              options = subvol.mountOptions ++ [ "subvol=${subvol.name}" ];
+            };
+          }
+        ) (lib.attrValues config.subvolumes))
         (lib.optional (config.mountpoint != null) {
           fileSystems.${config.mountpoint} = {
             device = config.device;
@@ -249,11 +270,12 @@ in
             options = config.mountOptions;
           };
         })
-        (map
-          (subvol: swapConfig {
+        (map (
+          subvol:
+          swapConfig {
             inherit (subvol) mountpoint swap;
-          })
-          (lib.attrValues config.subvolumes))
+          }
+        ) (lib.attrValues config.subvolumes))
         (swapConfig {
           inherit (config) mountpoint swap;
         })
@@ -264,8 +286,10 @@ in
       internal = true;
       readOnly = true;
       type = lib.types.functionTo (lib.types.listOf lib.types.package);
-      default = pkgs:
-        [ pkgs.btrfs-progs pkgs.gnugrep ];
+      default = pkgs: [
+        pkgs.btrfs-progs
+        pkgs.gnugrep
+      ];
       description = "Packages";
     };
   };

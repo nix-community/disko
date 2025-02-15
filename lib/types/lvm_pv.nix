@@ -1,4 +1,12 @@
-{ config, options, lib, diskoLib, parent, device, ... }:
+{
+  config,
+  options,
+  lib,
+  diskoLib,
+  parent,
+  device,
+  ...
+}:
 {
   options = {
     type = lib.mkOption {
@@ -55,7 +63,10 @@
       internal = true;
       readOnly = true;
       type = lib.types.functionTo (lib.types.listOf lib.types.package);
-      default = pkgs: [ pkgs.gnugrep pkgs.lvm2 ];
+      default = pkgs: [
+        pkgs.gnugrep
+        pkgs.lvm2
+      ];
       description = "Packages";
     };
   };

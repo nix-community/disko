@@ -1,5 +1,6 @@
-{ pkgs ? import <nixpkgs> { }
-, diskoLib ? pkgs.callPackage ../lib { }
+{
+  pkgs ? import <nixpkgs> { },
+  diskoLib ? pkgs.callPackage ../lib { },
 }:
 diskoLib.testLib.makeDiskoTest {
   inherit pkgs;
@@ -26,7 +27,10 @@ diskoLib.testLib.makeDiskoTest {
     ];
   };
   extraInstallerConfig = {
-    boot.kernelModules = [ "dm-raid" "dm-mirror" ];
+    boot.kernelModules = [
+      "dm-raid"
+      "dm-mirror"
+    ];
     imports = [
       ../module.nix
     ];

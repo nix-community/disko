@@ -1,4 +1,12 @@
-{ config, options, lib, diskoLib, rootMountPoint, parent, ... }:
+{
+  config,
+  options,
+  lib,
+  diskoLib,
+  rootMountPoint,
+  parent,
+  ...
+}:
 {
   options = {
     name = lib.mkOption {
@@ -58,45 +66,53 @@
       default = true;
     };
 
-    _create = diskoLib.mkCreateOption
-      {
-        inherit config options;
-        # -u prevents mounting newly created datasets, which is
-        # important to prevent accidental shadowing of mount points
-        # since (create order != mount order)
-        # -p creates parents automatically
-        default =
-          let
-            createOptions = (lib.optionalAttrs (config.mountpoint != null) { mountpoint = config.mountpoint; }) // config.options;
-            # All options defined as PROP_ONETIME or PROP_ONETIME_DEFAULT in https://github.com/openzfs/zfs/blob/master/module/zcommon/zfs_prop.c
-            onetimeProperties = [
-              "encryption"
-              "casesensitivity"
-              "utf8only"
-              "normalization"
-              "volblocksize"
-              "pbkdf2iters"
-              "pbkdf2salt"
-              "keyformat"
-            ];
-            updateOptions = builtins.removeAttrs createOptions onetimeProperties;
-          in
-          ''
-            if ! zfs get type ${config._name} >/dev/null 2>&1; then
-              ${if config._createFilesystem then ''
-                zfs create -up ${config._name} \
-                  ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") (createOptions))}
-              '' else ''
-                # don't create anything for root dataset of zpools
-                true
-              ''}
-            ${lib.optionalString (updateOptions != {}) ''
+    _create = diskoLib.mkCreateOption {
+      inherit config options;
+      # -u prevents mounting newly created datasets, which is
+      # important to prevent accidental shadowing of mount points
+      # since (create order != mount order)
+      # -p creates parents automatically
+      default =
+        let
+          createOptions =
+            (lib.optionalAttrs (config.mountpoint != null) { mountpoint = config.mountpoint; })
+            // config.options;
+          # All options defined as PROP_ONETIME or PROP_ONETIME_DEFAULT in https://github.com/openzfs/zfs/blob/master/module/zcommon/zfs_prop.c
+          onetimeProperties = [
+            "encryption"
+            "casesensitivity"
+            "utf8only"
+            "normalization"
+            "volblocksize"
+            "pbkdf2iters"
+            "pbkdf2salt"
+            "keyformat"
+          ];
+          updateOptions = builtins.removeAttrs createOptions onetimeProperties;
+        in
+        ''
+          if ! zfs get type ${config._name} >/dev/null 2>&1; then
+            ${
+              if config._createFilesystem then
+                ''
+                  zfs create -up ${config._name} \
+                    ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") (createOptions))}
+                ''
+              else
+                ''
+                  # don't create anything for root dataset of zpools
+                  true
+                ''
+            }
+          ${lib.optionalString (updateOptions != { }) ''
             else
-              zfs set -u ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "${n}=${v}") updateOptions)} ${config._name}
-            ''}
-            fi
-          '';
-      };
+              zfs set -u ${
+                lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "${n}=${v}") updateOptions)
+              } ${config._name}
+          ''}
+          fi
+        '';
+    };
 
     _mount = diskoLib.mkMountOption {
       inherit config options;
@@ -107,17 +123,20 @@
               zfs load-key ${config._name}
             fi
           '';
-        }) // lib.optionalAttrs (config.options.mountpoint or "" != "none" && config.options.canmount or "" != "off") {
-          fs.${config.mountpoint} = ''
-            if ! findmnt ${config._name} "${rootMountPoint}${config.mountpoint}" >/dev/null 2>&1; then
-              mount ${config._name} "${rootMountPoint}${config.mountpoint}" \
-                -o X-mount.mkdir \
-                ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
-                ${lib.optionalString ((config.options.mountpoint or "") != "legacy") "-o zfsutil"} \
-                -t zfs
-            fi
-          '';
-        };
+        })
+        // lib.optionalAttrs
+          (config.options.mountpoint or "" != "none" && config.options.canmount or "" != "off")
+          {
+            fs.${config.mountpoint} = ''
+              if ! findmnt ${config._name} "${rootMountPoint}${config.mountpoint}" >/dev/null 2>&1; then
+                mount ${config._name} "${rootMountPoint}${config.mountpoint}" \
+                  -o X-mount.mkdir \
+                  ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
+                  ${lib.optionalString ((config.options.mountpoint or "") != "legacy") "-o zfsutil"} \
+                  -t zfs
+              fi
+            '';
+          };
     };
 
     _unmount = diskoLib.mkUnmountOption {
@@ -125,26 +144,32 @@
       default =
         (lib.optionalAttrs (config.options.keylocation or "none" != "none") {
           dev = "zfs unload-key ${config.name}";
-        }) // lib.optionalAttrs (config.options.mountpoint or "" != "none" && config.options.canmount or "" != "off") {
-          fs.${config.mountpoint} = ''
-            if findmnt ${config._name} "${rootMountPoint}${config.mountpoint}" >/dev/null 2>&1; then
-              umount "${rootMountPoint}${config.mountpoint}"
-            fi
-          '';
-        };
+        })
+        // lib.optionalAttrs
+          (config.options.mountpoint or "" != "none" && config.options.canmount or "" != "off")
+          {
+            fs.${config.mountpoint} = ''
+              if findmnt ${config._name} "${rootMountPoint}${config.mountpoint}" >/dev/null 2>&1; then
+                umount "${rootMountPoint}${config.mountpoint}"
+              fi
+            '';
+          };
     };
 
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
       default =
-        lib.optional (config.options.mountpoint or "" != "none" && config.options.canmount or "" != "off") {
-          fileSystems.${config.mountpoint} = {
-            device = "${config._name}";
-            fsType = "zfs";
-            options = config.mountOptions ++ lib.optional ((config.options.mountpoint or "") != "legacy") "zfsutil";
+        lib.optional (config.options.mountpoint or "" != "none" && config.options.canmount or "" != "off")
+          {
+            fileSystems.${config.mountpoint} = {
+              device = "${config._name}";
+              fsType = "zfs";
+              options =
+                config.mountOptions
+                ++ lib.optional ((config.options.mountpoint or "") != "legacy") "zfsutil";
+            };
           };
-        };
       description = "NixOS configuration";
     };
 
@@ -157,4 +182,3 @@
     };
   };
 }
-

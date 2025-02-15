@@ -1,4 +1,8 @@
-{ pkgs ? import <nixpkgs> { }, self, diskoVersion }:
+{
+  pkgs ? import <nixpkgs> { },
+  self,
+  diskoVersion,
+}:
 let
   disko = pkgs.callPackage ../../package.nix { inherit diskoVersion; };
 
