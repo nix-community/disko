@@ -30,4 +30,11 @@
     ++ (lib.optional (pkgs.stdenv.hostPlatform.isAarch) "ttyAMA0,115200")
     ++ (lib.optional (pkgs.stdenv.hostPlatform.isRiscV64) "ttySIF0,115200")
     ++ [ "console=ttyS0,115200" ];
+
+  # reduce closure size
+  nixpkgs.flake.setFlakeRegistry = false;
+  nixpkgs.flake.setNixPath = false;
+  nix.registry.nixpkgs.to = { };
+  documentation.doc.enable = false;
+  documentation.man.enable = false;
 }
