@@ -865,7 +865,7 @@ let
             default = ''
               umount -Rv "${rootMountPoint}" || :
 
-              # shellcheck disable=SC2043
+              # shellcheck disable=SC2043,2041
               for dev in ${toString (lib.catAttrs "device" (lib.attrValues devices.disk))}; do
                 $BASH ${../disk-deactivate}/disk-deactivate "$dev"
               done
@@ -903,7 +903,7 @@ let
 
                 umount -Rv "${rootMountPoint}" || :
 
-                # shellcheck disable=SC2043
+                # shellcheck disable=SC2043,2041
                 for dev in ${selectedDisks}; do
                   $BASH ${../disk-deactivate}/disk-deactivate "$dev"
                 done
