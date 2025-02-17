@@ -62,7 +62,7 @@ nix build .#checks.x86_64-linux.simple-efi.driverInteractive
 result/bin/nixos-test-driver --keep-vm-state
 ```
 
-This will open an IPython prompt in which you can use th same objects and
+This will open an IPython prompt in which you can use the same objects and
 functions as in `extraTestScript`. In there, you can run
 
 ```
