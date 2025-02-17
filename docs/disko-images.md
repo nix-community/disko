@@ -104,6 +104,27 @@ In the this example we create a flake containing a nixos configuration for
   disko.devices.disk.<drive>.imageSize = "32G"; # Set your preferred size
   ```
 
+- To build an image for another target platform, enable binfmt emulation support.
+
+    ```console
+  disko.imageBuilder.enableBinfmt = true;
+  ```
+
+  This requires a working binfmt setup for your target platform on your build machine. Setup instructions are available for [NixOS](https://wiki.nixos.org/wiki/NixOS_on_ARM/Building_Images#Compiling_through_binfmt_QEMU) and other distros ([Arch Linux](https://wiki.archlinux.org/title/QEMU#Chrooting_into_arm/arm64_environment_from_x86_64), [Debian](https://wiki.debian.org/QemuUserEmulation)).
+
+  The relevant configuration for building `aarch64-linux` images on a `x86_64-linux` host looks like this:
+
+  ```console
+  disko = {
+    imageBuilder = {
+      enableBinfmt = true;
+      pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux;
+      kernelPackages = inputs.nixpkgs.legacyPackages.x86_64-linux.linuxPackages_latest;
+  };
+
+  nixpkgs.hostPlatform = "aarch64-linux";
+  ```
+
 ## Understanding the Image Generation Process
 
 1. Files specified in `--pre-format-files` and `--post-format-files` are
