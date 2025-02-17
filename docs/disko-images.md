@@ -92,7 +92,7 @@ In the this example we create a flake containing a nixos configuration for
 
 - For custom image name output, define the image name in your Disko configuration:
 
-  ```console
+  ```nix
   disko.devices.disk.<drive>.imageName = "nixos-x86_64-linux-generic-btrfs"; # Set your preferred name
   ```
 
@@ -100,13 +100,13 @@ In the this example we create a flake containing a nixos configuration for
 
 - For virtual drive use, define the image size in your Disko configuration:
 
-  ```console
+  ```nix
   disko.devices.disk.<drive>.imageSize = "32G"; # Set your preferred size
   ```
 
 - To build an image for another target platform, enable binfmt emulation support.
 
-    ```console
+  ```nix
   disko.imageBuilder.enableBinfmt = true;
   ```
 
@@ -114,7 +114,7 @@ In the this example we create a flake containing a nixos configuration for
 
   The relevant configuration for building `aarch64-linux` images on a `x86_64-linux` host looks like this:
 
-  ```console
+  ```nix
   disko = {
     imageBuilder = {
       enableBinfmt = true;
