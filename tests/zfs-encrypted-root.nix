@@ -13,5 +13,6 @@ diskoLib.testLib.makeDiskoTest {
   extraTestScript = ''
     machine.succeed("mountpoint /");
     machine.succeed("mountpoint /nix");
+    machine.succeed("swapon --show=NAME | grep /dev/zd"); # i.e. /dev/zd0
   '';
 }
