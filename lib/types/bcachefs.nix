@@ -130,8 +130,7 @@
             mkdir -p "${config.mountpoint}"
     
             # Capture both the exit code and output of the mount command
-            output=$(bcachefs mount ${lib.optionalString (config.mountOptions != []) "-o ${lib.concatStringsSep "," config.mountOptions}"} UUID="${config.uuid}" "${config.mountpoint}" 2>&1)
-            exit_code=$?
+            output=$(bcachefs mount ${lib.optionalString (config.mountOptions != []) "-o ${lib.concatStringsSep "," config.mountOptions}"} UUID="${config.uuid}" "${config.mountpoint}" 2>&1 || true)
     
             # Check if the error contains "No such device"
             if echo "$output" | grep -iq "no such device"; then
@@ -141,7 +140,7 @@
             else
                 # Propagate the output and exit code if it's not the expected error
                 echo "$output"
-                exit $exit_code
+                exit 1
             fi
         fi
         '';
