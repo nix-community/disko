@@ -43,6 +43,10 @@ def deactivate:
       "cryptsetup luksClose \(.path)",
       "wipefs --all -f \(.path)"
     ]
+  elif .type == "swap" then
+    [
+      "swapoff \(.path)",
+    ]
   elif .type == "lvm" then
     (.name | split("-")[0]) as $vgname |
     (.name | split("-")[1]) as $lvname |
