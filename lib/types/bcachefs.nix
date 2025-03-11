@@ -134,7 +134,7 @@
             exit_code=$?
     
             # Check if the error contains "No such device"
-            if echo "$output" | grep -q "No such device"; then
+            if echo "$output" | grep -iq "no such device"; then
                 echo "Notice: bcachefs mount failed with 'No such device'. This is expected on kernels < 6.13."
                 echo "Current kernel version: $(uname -r)"
                 echo "The mount will succeed when you boot into your final system with a newer kernel."
