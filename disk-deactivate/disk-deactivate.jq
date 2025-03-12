@@ -45,7 +45,7 @@ def deactivate:
     ]
   elif .type == "swap" then
     [
-      "swapoff \(.path)",
+      "swapoff \(.path)"
     ]
   elif .type == "lvm" then
     (.name | split("-")[0]) as $vgname |
