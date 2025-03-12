@@ -68,6 +68,11 @@
             diskoVersion = version;
           };
 
+          checkJqSyntax = pkgs.runCommand "check-jq-syntax" { nativeBuildInputs = [ pkgs.jq ]; } ''
+            echo '{ "blockdevices" : [] }' | jq -r -f ${./disk-deactivate/disk-deactivate.jq} --arg disk_to_clear foo
+            touch $out
+          '';
+
           jsonTypes = pkgs.writeTextFile {
             name = "jsonTypes";
             text = (builtins.toJSON diskoLib.jsonTypes);
@@ -83,7 +88,7 @@
         //
           pkgs.lib.optionalAttrs (!pkgs.stdenv.buildPlatform.isRiscV64 && !pkgs.stdenv.hostPlatform.isx86_32)
             {
-              inherit jsonTypes treefmt;
+              inherit jsonTypes treefmt checkJqSyntax;
               inherit (self.packages.${system}) disko-doc;
             }
       );
