@@ -2,14 +2,14 @@
   disko.devices = {
     disk = {
       main = {
-        device = "/dev/disk/by-path/pci-0000:02:00.0-nvme-1";
+        device = "/dev/disk/by-id/some-disk-id";
         type = "disk";
         content = {
           type = "gpt";
           partitions = {
             ESP = {
-              end = "500M";
               type = "EF00";
+              size = "100M";
               content = {
                 type = "filesystem";
                 format = "vfat";
@@ -18,10 +18,10 @@
               };
             };
             root = {
-              name = "root";
-              end = "-0";
+              size = "1G";
               content = {
                 type = "bcachefs";
+                passwordFile = "/tmp/secret.key";
                 mountpoint = "/";
               };
             };

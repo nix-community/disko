@@ -1,4 +1,13 @@
-{ config, options, diskoLib, lib, rootMountPoint, parent, device, ... }:
+{
+  config,
+  diskoLib,
+  device,
+  lib,
+  options,
+  rootMountPoint,
+  parent,
+  ...
+}:
 {
   options = {
     type = lib.mkOption {
@@ -40,19 +49,18 @@
       internal = true;
       readOnly = true;
       type = lib.types.functionTo diskoLib.jsonType;
-      default = dev: { };
+      default = _dev: { };
       description = "Metadata";
     };
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = ''
-        # Currently the keyutils package is required due to an upstream bug
-        # https://github.com/NixOS/nixpkgs/issues/32279
-        keyctl link @u @s
-        bcachefs format ${config.device} \
-          ${toString config.extraArgs} \
-          ${lib.optionalString (config.passwordFile != null) "--encrypted <<<\"$(cat ${config.passwordFile})\""}
-        ${lib.optionalString (config.passwordFile != null) "bcachefs unlock ${config.device} <<<\"$(cat ${config.passwordFile})\""}
+        # create the filesystem only if the device seems empty
+        if ! (blkid "${config.device}" -o export | grep -q '^TYPE='); then
+          bcachefs format ${toString config.extraArgs} ${config.device} \
+            ${lib.optionalString (config.passwordFile != null) "--encrypted <<<\"$(cat ${config.passwordFile})\""}
+        fi
+        ${lib.optionalString (config.passwordFile != null) "bcachefs unlock -k session ${config.device} <<<\"$(cat ${config.passwordFile})\""}
       '';
     };
     _mount = diskoLib.mkMountOption {
@@ -61,7 +69,7 @@
         fs = lib.optionalAttrs (config.mountpoint != null) {
           ${config.mountpoint} = ''
             if ! findmnt ${config.device} "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
-              ${lib.optionalString (config.passwordFile != null) "bcachefs unlock ${config.device} <<<\"$(cat ${config.passwordFile})\""}
+              ${lib.optionalString (config.passwordFile != null) "bcachefs unlock -k session ${config.device} <<<\"$(cat ${config.passwordFile})\""}
               mount -t bcachefs ${config.device} "${rootMountPoint}${config.mountpoint}" \
               ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
               -o X-mount.mkdir
@@ -69,6 +77,10 @@
           '';
         };
       };
+    };
+    _unmount = diskoLib.mkUnmountOption {
+      inherit config options;
+      default = { };
     };
     _config = lib.mkOption {
       internal = true;
@@ -88,10 +100,7 @@
       internal = true;
       readOnly = true;
       type = lib.types.functionTo (lib.types.listOf lib.types.package);
-      default = pkgs:
-        # Currently the keyutils package is required due to an upstream bug
-        # https://github.com/NixOS/nixpkgs/issues/32279
-        with pkgs; [ bcachefs-tools coreutils keyutils ];
+      default = pkgs: [ pkgs.bcachefs-tools ];
       description = "Packages";
     };
   };
