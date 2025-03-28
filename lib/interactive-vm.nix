@@ -28,7 +28,7 @@ let
   disks = lib.attrValues cfg_.disko.devices.disk;
   rootDisk = {
     name = "root";
-    file = ''"$tmp"/${lib.escapeShellArg (builtins.head disks).name}.qcow2'';
+    file = ''"$tmp"/${lib.escapeShellArg (builtins.head disks).imageName}.qcow2'';
     driveExtraOpts.cache = "writeback";
     driveExtraOpts.werror = "report";
     deviceExtraOpts.bootindex = "1";
@@ -36,7 +36,7 @@ let
   };
   otherDisks = map (disk: {
     name = disk.name;
-    file = ''"$tmp"/${lib.escapeShellArg disk.name}.qcow2'';
+    file = ''"$tmp"/${lib.escapeShellArg disk.imageName}.qcow2'';
     driveExtraOpts.werror = "report";
   }) (builtins.tail disks);
 
@@ -78,8 +78,8 @@ in
     trap 'rm -rf "$tmp"' EXIT
     ${lib.concatMapStringsSep "\n" (disk: ''
       ${hostPkgs.qemu}/bin/qemu-img create -f qcow2 \
-      -b ${config.system.build.diskoImages}/${lib.escapeShellArg disk.name}.qcow2 \
-      -F qcow2 "$tmp"/${lib.escapeShellArg disk.name}.qcow2
+      -b ${config.system.build.diskoImages}/${lib.escapeShellArg disk.imageName}.qcow2 \
+      -F qcow2 "$tmp"/${lib.escapeShellArg disk.imageName}.qcow2
     '') disks}
     set +f
     ${config.system.build.vm}/bin/run-*-vm
