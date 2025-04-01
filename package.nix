@@ -8,6 +8,7 @@
   nixos-install-tools,
   binlore,
   diskoVersion,
+  stdenv,
 }:
 
 let
@@ -21,11 +22,19 @@ let
       mkdir -p $out/bin $out/share/disko
       cp -r install-cli.nix cli.nix default.nix disk-deactivate lib $out/share/disko
 
-      for i in disko disko-install; do
-        sed -e "s|libexec_dir=\".*\"|libexec_dir=\"$out/share/disko\"|" "$i" > "$out/bin/$i"
-        chmod 755 "$out/bin/$i"
-        wrapProgram "$out/bin/$i" \
+      wrapProgram "$out/bin/disko" \
+        --set DISKO_VERSION "${diskoVersion}" \
+        --prefix NIX_PATH : "nixpkgs=${path}"
+        --prefix PATH : ${
+          lib.makeBinPath [
+            nix
+            coreutils
+          ]
+        }
+      ${lib.optionalString (!stdenv.isDarwin) ''
+        wrapProgram "$out/bin/disko" \
           --set DISKO_VERSION "${diskoVersion}" \
+          --prefix NIX_PATH : "nixpkgs=${path}" \
           --prefix PATH : ${
             lib.makeBinPath [
               nix
@@ -33,7 +42,11 @@ let
               nixos-install-tools
             ]
           } \
-          --prefix NIX_PATH : "nixpkgs=${path}"
+      ''}
+
+      for i in $out/bin/; do
+        sed -e "s|libexec_dir=\".*\"|libexec_dir=\"$out/share/disko\"|" "$i" > "$out/bin/$i"
+        chmod 755 "$out/bin/$i"
       done
     '';
     # Otherwise resholve thinks that disko and disko-install might be able to execute their arguments
@@ -46,7 +59,7 @@ let
       homepage = "https://github.com/nix-community/disko";
       license = licenses.mit;
       maintainers = with maintainers; [ lassulus ];
-      platforms = platforms.linux;
+      platforms = platforms.unix;
       mainProgram = finalAttrs.name;
     };
   });
