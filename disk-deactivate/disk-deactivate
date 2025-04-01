@@ -4,5 +4,7 @@ set -efux -o pipefail
 disk=$(realpath "$1")
 
 lsblk -a -f >&2
+# since we currently cannot recursively deactivate swaps on zfs volumes, we need to deactivate all of them.
+lsblk --output-all --json | jq -r -f "$(dirname "$0")/zfs-swap-deactivate.jq" | bash -x
 lsblk --output-all --json | jq -r --arg disk_to_clear "$disk" -f "$(dirname "$0")/disk-deactivate.jq" | bash -x
 lsblk -a -f >&2

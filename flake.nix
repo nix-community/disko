@@ -15,6 +15,7 @@
         "i686-linux"
         "aarch64-linux"
         "riscv64-linux"
+        "aarch64-darwin"
       ];
       forAllSystems = lib.genAttrs supportedSystems;
 
@@ -70,6 +71,7 @@
 
           checkJqSyntax = pkgs.runCommand "check-jq-syntax" { nativeBuildInputs = [ pkgs.jq ]; } ''
             echo '{ "blockdevices" : [] }' | jq -r -f ${./disk-deactivate/disk-deactivate.jq} --arg disk_to_clear foo
+            echo '{ "blockdevices" : [] }' | jq -r -f ${./disk-deactivate/zfs-swap-deactivate.jq}
             touch $out
           '';
 
