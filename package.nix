@@ -21,32 +21,28 @@ let
     installPhase = ''
       mkdir -p $out/bin $out/share/disko
       cp -r install-cli.nix cli.nix default.nix disk-deactivate lib $out/share/disko
+      set -x
 
-      wrapProgram "$out/bin/disko" \
-        --set DISKO_VERSION "${diskoVersion}" \
-        --prefix NIX_PATH : "nixpkgs=${path}"
-        --prefix PATH : ${
-          lib.makeBinPath [
-            nix
-            coreutils
-          ]
-        }
+      scripts=(disko)
       ${lib.optionalString (!stdenv.isDarwin) ''
-        wrapProgram "$out/bin/disko" \
+        scripts+=(disko-install)
+      ''}
+
+      for i in "''${scripts[@]}"; do
+        sed -e "s|libexec_dir=\".*\"|libexec_dir=\"$out/share/disko\"|" "$i" > "$out/bin/$i"
+        chmod 755 "$out/bin/$i"
+        wrapProgram "$out/bin/$i" \
           --set DISKO_VERSION "${diskoVersion}" \
           --prefix NIX_PATH : "nixpkgs=${path}" \
           --prefix PATH : ${
-            lib.makeBinPath [
-              nix
-              coreutils
-              nixos-install-tools
-            ]
-          } \
-      ''}
-
-      for i in $out/bin/; do
-        sed -e "s|libexec_dir=\".*\"|libexec_dir=\"$out/share/disko\"|" "$i" > "$out/bin/$i"
-        chmod 755 "$out/bin/$i"
+            lib.makeBinPath (
+              [
+                nix
+                coreutils
+              ]
+              ++ lib.optional (!stdenv.isDarwin) nixos-install-tools
+            )
+          }
       done
     '';
     # Otherwise resholve thinks that disko and disko-install might be able to execute their arguments
