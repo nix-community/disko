@@ -121,6 +121,15 @@ in
         description = "QEMU image format to use for the disk images";
         default = "raw";
       };
+
+      useVirtualDevices = lib.mkOption {
+        type = lib.types.bool;
+        description = ''
+          Replace device names with ones usable in VMs. Ex: `/dev/vda`.
+          Disable this if the disk image is for use on real hardware.
+        '';
+        default = true;
+      };
     };
 
     memSize = lib.mkOption {
