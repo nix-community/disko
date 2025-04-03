@@ -101,6 +101,7 @@
           ./tests/disko-install/configuration.nix
           ./example/hybrid.nix
           ./module.nix
+          # ./example/bcachefs-multi-disk.nix
         ];
       };
       formatter = forAllSystems (
