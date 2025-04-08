@@ -66,7 +66,7 @@
             "''${disk_devices[@]}"
           partprobe "/dev/md/${config.name}"
           udevadm trigger --subsystem-match=block
-          udevadm settle
+          udevadm settle --timeout=120
           # for some reason mdadm devices spawn with an existing partition table, so we need to wipe it
           sgdisk --zap-all "/dev/md/${config.name}"
         fi
