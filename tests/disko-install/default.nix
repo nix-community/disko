@@ -55,6 +55,8 @@ pkgs.nixosTest {
     permission = machine.succeed("stat -c %a /tmp/age.key").strip()
     assert permission == "600", f"expected permission 600 on /tmp/age.key, got {permission}"
 
+    # Some distros like to automount disks with spaces
+    machine.succeed('mkdir -p "/mnt/with spaces" && mkfs.ext4 /dev/vdb && mount /dev/vdb "/mnt/with spaces"')
     machine.succeed("${disko}/bin/disko-install --disk main /dev/vdb --extra-files /tmp/age.key /var/lib/secrets/age.key --flake ${../..}#testmachine")
     # test idempotency
     machine.succeed("${disko}/bin/disko-install --mode mount --disk main /dev/vdb --flake ${../..}#testmachine")
