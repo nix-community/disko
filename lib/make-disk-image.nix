@@ -126,7 +126,7 @@ let
     ${pkgs.systemdMinimal}/lib/systemd/systemd-udevd --daemon
     partprobe
     udevadm trigger --action=add
-    udevadm settle
+    udevadm settle --timeout=120
 
     ${lib.optionalString diskoCfg.testMode ''
       export IN_DISKO_TEST=1

@@ -68,7 +68,7 @@
           zvol_wait
           partprobe "/dev/zvol/${config._parent.name}/${config.name}"
           udevadm trigger --subsystem-match=block
-          udevadm settle
+          udevadm settle --timeout=120
         fi
         ${lib.optionalString (config.content != null) config.content._create}
       '';

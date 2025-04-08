@@ -204,7 +204,7 @@ in
                             ${lib.optionalString (hp.config.mbrPartitionType != null) ''
                               sfdisk --label-nested dos --part-type "${parent.device}" ${(toString partition.config._index)} ${hp.config.mbrPartitionType}
                               udevadm trigger --subsystem-match=block
-                              udevadm settle
+                              udevadm settle --timeout 120
                             ''}
                             ${lib.optionalString hp.config.mbrBootableFlag ''
                               sfdisk --label-nested dos --activate "${parent.device}" ${(toString partition.config._index)}
@@ -288,7 +288,7 @@ in
             # ensure /dev/disk/by-path/..-partN exists before continuing
             partprobe "${config.device}" || : # sometimes partprobe fails, but the partitions are still up2date
             udevadm trigger --subsystem-match=block
-            udevadm settle
+            udevadm settle --timeout 120
           ''
         ) sortedPartitions}
 
