@@ -160,7 +160,7 @@ in
               (
                 MNTPOINT=$(mktemp -d)
                 mount ${device} "$MNTPOINT" -o subvol=/
-                trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
+                trap 'umount "$MNTPOINT"; rm -rf "$MNTPOINT"' EXIT
                 ${swapCreate "$MNTPOINT" config.swap}
               )
             ''}
@@ -168,7 +168,7 @@ in
               (
                 MNTPOINT=$(mktemp -d)
                 mount "${config.device}" "$MNTPOINT" -o subvol=/
-                trap 'umount $MNTPOINT; rm -rf $MNTPOINT' EXIT
+                trap 'umount "$MNTPOINT"; rm -rf "$MNTPOINT"' EXIT
                 SUBVOL_ABS_PATH="$MNTPOINT/${subvol.name}"
                 mkdir -p "$(dirname "$SUBVOL_ABS_PATH")"
                 if ! btrfs subvolume show "$SUBVOL_ABS_PATH" > /dev/null 2>&1; then

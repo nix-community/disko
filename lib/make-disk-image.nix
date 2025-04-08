@@ -145,7 +145,7 @@ let
     time xargs cp --recursive --target ${systemToInstall.config.disko.rootMountPoint}/nix/store < ${closureInfo}/store-paths
 
     ${systemToInstall.config.system.build.nixos-install}/bin/nixos-install --root ${systemToInstall.config.disko.rootMountPoint} --system ${systemToInstall.config.system.build.toplevel} --keep-going --no-channel-copy -v --no-root-password --option binary-caches ""
-    umount -Rv ${systemToInstall.config.disko.rootMountPoint}
+    umount -Rv ${lib.escapeShellArg systemToInstall.config.disko.rootMountPoint}
   '';
 
   QEMU_OPTS = lib.concatStringsSep " " (
