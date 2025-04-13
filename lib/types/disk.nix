@@ -22,6 +22,11 @@
       type = diskoLib.optionTypes.absolute-pathname; # TODO check if subpath of /dev ? - No! eg: /.swapfile
       description = "Device path";
     };
+    destroy = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = "If false, disko will not wipe or destroy this disk's contents during the destroy stage";
+    };
     imageName = lib.mkOption {
       type = lib.types.str;
       default = config.name;
