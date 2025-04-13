@@ -130,7 +130,7 @@ in
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = ''
-        if ! blkid "${config.device}" >/dev/null || ! (blkid "${config.device}" -o export | grep -q '^TYPE='); then
+        if ! blkid "${config.device}" >/dev/null || ! (cryptsetup isLuks "${config.device}"); then
           ${lib.optionalString config.askPassword ''
             promptSecret() {
               prompt=$1
@@ -158,13 +158,15 @@ in
             done
           ''}
           cryptsetup -q luksFormat "${config.device}" ${toString config.extraFormatArgs} ${keyFileArgs}
-          ${cryptsetupOpen} --persistent
-          ${toString (
-            lib.forEach config.additionalKeyFiles (keyFile: ''
-              cryptsetup luksAddKey "${config.device}" ${keyFile} ${keyFileArgs}
-            '')
-          )}
         fi
+
+        ${cryptsetupOpen} --persistent
+        ${toString (
+          lib.forEach config.additionalKeyFiles (keyFile: ''
+            cryptsetup luksAddKey "${config.device}" ${keyFile} ${keyFileArgs}
+          '')
+        )}
+
         ${lib.optionalString (config.content != null) config.content._create}
       '';
     };
