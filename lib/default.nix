@@ -877,9 +877,7 @@ let
               # shellcheck disable=SC2043,2041
               for dev in ${
                 toString (
-                  lib.catAttrs "device" (
-                    lib.attrValues (lib.filterAttrs (name: disk: (disk.destroy or true)) devices.disk)
-                  )
+                  lib.catAttrs "device" (lib.attrValues (lib.filterAttrs (name: disk: disk.destroy) devices.disk))
                 )
               };
               do
@@ -896,9 +894,8 @@ let
             '';
             default =
               let
-                selectedDisks = lib.escapeShellArgs (
-                  lib.catAttrs "device" (lib.filterAttrs (name: disk: (disk.destroy or true)) devices.disk)
-                );
+                disksToWipe = lib.attrValues (lib.filterAttrs (name: disk: disk.destroy) devices.disk);
+                selectedDisks = lib.escapeShellArgs (lib.catAttrs "device" disksToWipe);
               in
               ''
                 if [ "$1" != "--yes-wipe-all-disks" ]; then
@@ -923,11 +920,7 @@ let
                 umount -Rv "${rootMountPoint}" || :
 
                 # shellcheck disable=SC2043,2041
-                for dev in ${
-                  toString (
-                    lib.catAttrs "device" (lib.filterAttrs (name: disk: (disk.destroy or true)) devices.disk)
-                  )
-                }; do
+                for dev in ${toString (lib.catAttrs "device" disksToWipe)}; do
                   $BASH ${../disk-deactivate}/disk-deactivate "$dev"
                 done
               '';
