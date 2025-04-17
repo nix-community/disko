@@ -132,13 +132,20 @@ in
       default = ''
         if ! blkid "${config.device}" >/dev/null || ! (blkid "${config.device}" -o export | grep -q '^TYPE='); then
           ${lib.optionalString config.askPassword ''
+            promptSecret() {
+              prompt=$1
+              var=$2
+
+              echo -n "$prompt"
+              IFS= read -r -s "$var"
+              echo
+            }
+
             askPassword() {
               if [ -z ''${IN_DISKO_TEST+x} ]; then
                 set +x
-                echo "Enter password for ${config.device}: "
-                IFS= read -r -s password
-                echo "Enter password for ${config.device} again to be safe: "
-                IFS= read -r -s password_check
+                promptSecret "Enter password for ${config.device}: " password
+                promptSecret "Enter password for ${config.device} again to be safe: " password_check
                 export password
                 [ "$password" = "$password_check" ]
                 set -x
