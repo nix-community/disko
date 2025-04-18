@@ -160,7 +160,9 @@ in
           cryptsetup -q luksFormat "${config.device}" ${toString config.extraFormatArgs} ${keyFileArgs}
         fi
 
-        ${cryptsetupOpen} --persistent
+        if ! cryptsetup status "${config.name}" >/dev/null; then
+          ${cryptsetupOpen} --persistent
+        fi
         ${toString (
           lib.forEach config.additionalKeyFiles (keyFile: ''
             cryptsetup luksAddKey "${config.device}" ${keyFile} ${keyFileArgs}
