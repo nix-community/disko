@@ -44,6 +44,7 @@ let
     # option for valid contents of partitions (basically like devices, but without tables)
     _partitionTypes = {
       inherit (diskoLib.types)
+        bcachefs
         btrfs
         filesystem
         zfs
@@ -69,6 +70,7 @@ let
     # option for valid contents of devices
     _deviceTypes = {
       inherit (diskoLib.types)
+        bcachefs
         table
         gpt
         btrfs
@@ -611,6 +613,7 @@ let
       let
         devices = {
           inherit (cfg.config)
+            bcachefs_filesystems
             disk
             mdadm
             zpool
@@ -621,6 +624,11 @@ let
       in
       {
         options = {
+          bcachefs_filesystems = lib.mkOption {
+            type = lib.types.attrsOf diskoLib.types.bcachefs_filesystem;
+            default = { };
+            description = "bcachefs filesystem";
+          };
           disk = lib.mkOption {
             type = lib.types.attrsOf diskoLib.types.disk;
             default = { };
@@ -687,6 +695,7 @@ let
                     throw "No disks defined, did you forget to import your disko config?"
                   else
                     v;
+                # @todo Do we need to add bcachefs-tools or not?
                 destroyDependencies = with pkgs; [
                   util-linux
                   e2fsprogs
