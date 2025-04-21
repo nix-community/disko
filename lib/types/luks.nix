@@ -130,7 +130,7 @@ in
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = ''
-        if ! blkid "${config.device}" >/dev/null || ! (cryptsetup isLuks "${config.device}"); then
+        if ! blkid "${config.device}" >/dev/null || ! cryptsetup isLuks "${config.device}"; then
           ${lib.optionalString config.askPassword ''
             promptSecret() {
               prompt=$1
