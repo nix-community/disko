@@ -55,15 +55,30 @@ Instead, you can build and then run the VM for a test in interactive mode. This
 will create the VM and all virtual disks as required by the test's config, but
 allow you to interact with the machine on a terminal afterwards.
 
-First, build the interactive test driver and run it:
+First, build the interactive test driver:
 
 ```
 nix build .#checks.x86_64-linux.simple-efi.driverInteractive
+```
+
+The build outputs will be linked in the "result" directory. Of interest will be
+the generated Python "test-script" it contains, which will contain the commands
+that the test driver will run.
+
+You can run the test driver with:
+```
 result/bin/nixos-test-driver --keep-vm-state
 ```
 
 This will open an IPython prompt in which you can use the same objects and
-functions as in `extraTestScript`. In there, you can run
+functions as in `extraTestScript`.
+
+In there, you can debug the test-script, by copy-pasting and running (parts of)
+its contents into the prompt. This will, for example, allow you to inspect the
+VM state after running each of the generated "disko-format", "disko-mount",
+"disko-destroy-format-mount", etc. scripts.
+
+From the prompt, you can also run:
 
 ```
 machine.shell_interact()
