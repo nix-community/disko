@@ -113,10 +113,7 @@
               mountpoint = lib.mkOption {
                 type = lib.types.nullOr diskoLib.optionTypes.absolute-pathname;
                 default = null;
-                description = ''
-                  Path to mount the subvolume to.
-                  DO NOT USE. Currently not working.
-                '';
+                description = "Path to mount the subvolume to.";
                 example = "/";
               };
             };
@@ -126,7 +123,19 @@
       default = { };
       description = "List of subvolumes to define.";
       example = {
-        "subvolumes/home" = { };
+        "subvolumes/root" = {
+          mountpoint = "/";
+          extraFormatArgs = [
+            "--compression=lz4"
+            "--background_compression=lz4"
+          ];
+          mountOptions = [
+            "verbose"
+          ];
+        };
+        "subvolumes/home" = {
+          mountpoint = "/home";
+        };
       };
     };
     _parent = lib.mkOption {
@@ -291,7 +300,6 @@
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
-      # @todo Check that this implementation is correct:
       default =
         (lib.optional (config.mountpoint != null) {
           fileSystems.${config.mountpoint} = {

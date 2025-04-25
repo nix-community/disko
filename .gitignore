@@ -4,3 +4,6 @@ result-*
 
 # Created by the NixOS interactive test driver
 .nixos-test-history
+
+# Created by `:bl` in `nix repl`
+repl-result-out
