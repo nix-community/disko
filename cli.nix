@@ -108,7 +108,7 @@ let
     else if hasDiskoModuleFlake then
       (builtins.getFlake flake).nixosConfigurations.${flakeAttr}.config.system.build.${diskoAttr}
         or (pkgs.writeShellScriptBin "disko-compat-error" ''
-          echo 'Error: Attribute `nixosConfigurations.${flakeAttr}.config.system.build.${diskoAttr}` >&2
+          echo 'Error: Attribute `nixosConfigurations.${flakeAttr}.config.system.build.${diskoAttr}`' >&2
           echo '       not found in flake `${flake}`!' >&2
           echo '       This is probably caused by the locked version of disko in the flake' >&2
           echo '       being different from the version of disko you executed.' >&2
