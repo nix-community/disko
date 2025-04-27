@@ -64,6 +64,7 @@ let
         disko.testMode = true;
         disko.devices = lib.mkForce cleanedConfig.disko.devices;
         boot.loader.grub.devices = lib.mkForce cleanedConfig.boot.loader.grub.devices;
+        boot.loader.grub.mirroredBoots = lib.mkForce cleanedConfig.boot.loader.grub.mirroredBoots;
       }
     ];
   };
@@ -76,6 +77,7 @@ let
             disko.testMode = true;
             disko.devices = lib.mkForce cleanedConfig.disko.devices;
             boot.loader.grub.devices = lib.mkForce cleanedConfig.boot.loader.grub.devices;
+            boot.loader.grub.mirroredBoots = lib.mkForce cleanedConfig.boot.loader.grub.mirroredBoots;
             boot.kernelPackages = cfg.kernelPackages;
             nixpkgs.hostPlatform = lib.mkForce pkgs.stdenv.hostPlatform;
             nixpkgs.buildPlatform = lib.mkForce pkgs.stdenv.hostPlatform;

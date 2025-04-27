@@ -185,7 +185,7 @@ let
                   boot.swraid.mdadmConf = "PROGRAM ${pkgs.coreutils}/bin/true";
 
                   # grub will install to these devices, we need to force those or we are offset by 1
-                  # we use mkOveride 70, so that users can override this with mkForce in case they are testing grub mirrored boots
+                  # we use mkOverride 70, so that users can override this with mkForce in case they are testing grub mirrored boots
                   boot.loader.grub.devices = lib.mkOverride 70 testConfigInstall.boot.loader.grub.devices;
 
                   assertions = [
