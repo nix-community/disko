@@ -129,8 +129,9 @@
         };
       };
 
-      # Example showing a bcachefs filesystem without subvolumes
-      # and which relies on a subvolume in another filesystem being mounted.
+      # Example showing a bcachefs filesystem without subvolumes,
+      # which relies on a subvolume in another filesystem being mounted
+      # and uses a hard-coded UUID.
       relies_on_external_subvolume = {
         type = "bcachefs_filesystem";
         mountpoint = "/home/Documents";
@@ -141,6 +142,7 @@
         mountOptions = [
           "verbose"
         ];
+        uuid = "64e50034-ebe2-eaf8-1f93-cf56266a8d86";
       };
     };
   };
