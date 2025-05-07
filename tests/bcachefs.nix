@@ -109,7 +109,7 @@ diskoLib.testLib.makeDiskoTest {
             | .. \
             | select(.target? == "/home/Documents") \
             | .source \
-            | contains("/dev/vdd1") \
+            | contains("/dev/disk/by-uuid/64e50034-ebe2-eaf8-1f93-cf56266a8d86") \
         '
     """);
 
