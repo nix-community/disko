@@ -303,7 +303,7 @@
       default =
         (lib.optional (config.mountpoint != null) {
           fileSystems.${config.mountpoint} = {
-            device = "UUID=${config.uuid}";
+            device = "/dev/disk/by-uuid/${config.uuid}";
             fsType = "bcachefs";
             options = lib.unique ([ "X-mount.mkdir" ] ++ config.mountOptions);
             neededForBoot = true;
@@ -311,7 +311,7 @@
         })
         ++ (map (subvolume: {
           fileSystems.${subvolume.mountpoint} = {
-            device = "UUID=${config.uuid}";
+            device = "/dev/disk/by-uuid/${config.uuid}";
             fsType = "bcachefs";
             options = lib.unique (
               [
