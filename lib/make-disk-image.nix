@@ -136,6 +136,7 @@ let
 
   installer = lib.optionalString cfg.copyNixStore ''
     ${binfmtSetup}
+    unset NIX_REMOTE
     # populate nix db, so nixos-install doesn't complain
     export NIX_STATE_DIR=${systemToInstall.config.disko.rootMountPoint}/nix/var/nix
     nix-store --load-db < "${closureInfo}/registration"
