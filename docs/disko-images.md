@@ -22,7 +22,7 @@ In the this example we create a flake containing a nixos configuration for
     disko.inputs.nixpkgs.follows = "nixpkgs";
   };
 
-  outputs = { self, disko, nixpkgs }: {
+  outputs = { self, disko, nixpkgs, ... }: {
     nixosConfigurations.myhost = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
       modules = [
@@ -44,7 +44,7 @@ In the this example we create a flake containing a nixos configuration for
           boot.loader.grub.efiInstallAsRemovable = lib.mkDefault true;
 
           # shut up state version warning
-          system.stateVersion = config.system.nixos.version;
+          system.stateVersion = config.system.nixos.release;
           # Adjust this to your liking.
           # WARNING: if you set a too low value the image might be not big enough to contain the nixos installation
           disko.devices.disk.main.imageSize = "10G";
