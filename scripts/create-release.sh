@@ -45,7 +45,12 @@ fi
 nix-fast-build --no-link -j 2 --eval-workers 2 --flake .#checks
 
 # Update the version file
-echo "{ version = \"$version\"; released = true; }" > version.nix
+cat > version.nix <<EOF
+{
+  version = "$version";
+  released = false;
+}
+EOF
 
 # Commit and tag the release
 git commit -am "release: v$version"
