@@ -244,7 +244,7 @@
             type = "topology";
             vdev = [
               {
-                # This syntax expects a disk called 'data3' with a gpt partition called 'zfs'.
+                # This syntax expects a disk called 'data1' with a gpt partition called 'zfs'.
                 members = [ "data1" ];
                 # It's also possible to use the full path of the device or partition
                 # members = [ "/dev/disk/by-id/wwn-0x5000c500af8b2a14" ];
