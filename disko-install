@@ -164,7 +164,7 @@ cleanupMountPoint() {
 }
 
 nixBuild() {
-  if command -v nom-build > /dev/null; then
+  if command -v nom-build > /dev/null && [ -t 1 ]; then
     nom-build "$@"
   else
     nix-build "$@"
