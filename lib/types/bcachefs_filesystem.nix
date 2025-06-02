@@ -194,9 +194,10 @@
                 ${lib.optionalString (
                   config.passwordFile != null
                 ) ''bcachefs unlock -k session "/dev/disk/by-uuid/${config.uuid}" < "${config.passwordFile}";''}
-                bcachefs mount \
+                mount \
+                  -t bcachefs \
                   -o "${lib.concatStringsSep "," (lib.unique ([ "X-mount.mkdir" ] ++ config.mountOptions))}" \
-                  UUID="${config.uuid}" \
+                  "/dev/disk/by-uuid/${config.uuid}" \
                   "$MNTPOINT";
                 trap 'umount "$MNTPOINT"; rm -rf "$MNTPOINT"; rm -rf "$TEMPDIR";' EXIT;
                 SUBVOL_ABS_PATH="$MNTPOINT/${subvolume.name}";
@@ -230,7 +231,8 @@
                   ${lib.optionalString (
                     config.passwordFile != null
                   ) ''bcachefs unlock -k session "/dev/disk/by-uuid/${config.uuid}" < "${config.passwordFile}";''}
-                  bcachefs mount \
+                  mount \
+                    -t bcachefs \
                     -o "${
                       lib.concatStringsSep "," (
                         lib.unique (
@@ -242,7 +244,7 @@
                         )
                       )
                     }" \
-                    UUID="${config.uuid}" \
+                    "/dev/disk/by-uuid/${config.uuid}" \
                     "${rootMountPoint}${subvolume.mountpoint}";
                 fi;
               '';
@@ -261,9 +263,10 @@
                   ${lib.optionalString (
                     config.passwordFile != null
                   ) ''bcachefs unlock -k session "/dev/disk/by-uuid/${config.uuid}" < "${config.passwordFile}";''}
-                  bcachefs mount \
+                  mount \
+                    -t bcachefs \
                     -o "${lib.concatStringsSep "," (lib.unique ([ "X-mount.mkdir" ] ++ config.mountOptions))}" \
-                    UUID="${config.uuid}" \
+                    "/dev/disk/by-uuid/${config.uuid}" \
                     "${rootMountPoint}${config.mountpoint}";
                 fi;
               '';
