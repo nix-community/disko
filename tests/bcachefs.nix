@@ -48,10 +48,10 @@ diskoLib.testLib.makeDiskoTest {
     # Verify device membership and labels.
     machine.succeed("bcachefs show-super /dev/vda2 | grep 'Devices:' | grep -q '3'");
     machine.succeed("bcachefs show-super /dev/vdd1 | grep 'Devices:' | grep -q '1'");
-    machine.succeed("bcachefs show-super /dev/vda2 | grep 'Label:' | grep -q 'vdb2'");
-    machine.succeed("bcachefs show-super /dev/vda2 | grep 'Label:' | grep -q 'vdc1'");
-    machine.succeed("bcachefs show-super /dev/vda2 | grep 'Label:' | grep -q 'vdd1'");
-    machine.succeed("bcachefs show-super /dev/vdd1 | grep 'Label:' | grep -q 'vde1'");
+    machine.succeed("bcachefs show-super /dev/vda2 | grep -qE '^[[:space:]]+Label:[[:space:]]+vdb2[[:space:]]\([[:digit:]]+\)'");
+    machine.succeed("bcachefs show-super /dev/vda2 | grep -qE '^[[:space:]]+Label:[[:space:]]+vdc1[[:space:]]\([[:digit:]]+\)'");
+    machine.succeed("bcachefs show-super /dev/vda2 | grep -qE '^[[:space:]]+Label:[[:space:]]+vdd1[[:space:]]\([[:digit:]]+\)'");
+    machine.succeed("bcachefs show-super /dev/vdd1 | grep -qE '^[[:space:]]+Label:[[:space:]]+vde1[[:space:]]\([[:digit:]]+\)'");
     machine.fail("bcachefs show-super /dev/vda2 | grep 'Label:' | grep -q 'non-existent'");
 
     # @todo Verify format arguments.

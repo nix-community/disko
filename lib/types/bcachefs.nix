@@ -66,7 +66,7 @@
       default = ''
         # Write device arguments to temporary directory for bcachefs_filesystem.
         {
-          printf '%s\n' '--label="${config.label}"';
+          printf '%s\n' '--label=${config.label}';
           ${lib.concatMapStrings (args: ''printf '%s\n' '${args}';'') config.extraFormatArgs}
           printf '%s\n' '${config.device}';
         } >> "$disko_devices_dir/bcachefs-${lib.escapeShellArg config.filesystem}";
