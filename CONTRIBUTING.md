@@ -12,6 +12,43 @@ way to help us fix issues quickly. Check out
 For more information on how to run and debug tests, check out
 [Running and debugging tests](./docs/testing.md).
 
+## Finding and Running Tests
+
+### Listing All Available Tests
+
+To see all available tests in the project:
+
+```bash
+# List all test files
+ls tests/*.nix | grep -v default.nix
+
+# List all tests using nix eval
+nix eval --apply builtins.attrNames .#checks.x86_64-linux --json | jq -r '.[]' | sort
+```
+
+### Running Tests
+
+```bash
+# Run all tests and checks
+nix-fast-build
+
+# Run a specific test by name
+nix build .#checks.x86_64-linux.simple-efi -L
+
+# Run tests matching a pattern
+nix eval --apply 'checks: builtins.filter (name: builtins.match ".*luks.*" name != null) (builtins.attrNames checks)' .#checks.x86_64-linux --json | jq -r '.[]' | xargs -I {} echo nix build .#checks.x86_64-linux.{} -L
+```
+
+### Understanding Test Structure
+
+Each test file in `tests/` corresponds to an example configuration in `example/`:
+- `tests/simple-efi.nix` tests `example/simple-efi.nix`
+- `tests/luks-lvm.nix` tests `example/luks-lvm.nix`
+- etc.
+
+Tests use NixOS's `make-test-python.nix` framework to create VMs that actually partition disks and verify the configurations work correctly.
+
+
 ## How to find issues to work on
 
 If you're looking for a low-hanging fruit, check out
