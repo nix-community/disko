@@ -14,14 +14,24 @@
 let
   self = stdenvNoCC.mkDerivation (finalAttrs: {
     name = "disko";
-    src = ./.;
+    src = lib.fileset.toSource {
+      root = ./.;
+      fileset = lib.fileset.unions [
+        ./disko
+        ./disko-install
+        ./install-cli.nix
+        ./cli.nix
+        ./default.nix
+        ./disk-deactivate
+        ./lib
+      ];
+    };
     nativeBuildInputs = [
       makeWrapper
     ];
     installPhase = ''
       mkdir -p $out/bin $out/share/disko
       cp -r install-cli.nix cli.nix default.nix disk-deactivate lib $out/share/disko
-      set -x
 
       scripts=(disko)
       ${lib.optionalString (!stdenv.isDarwin) ''
