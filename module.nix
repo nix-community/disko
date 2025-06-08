@@ -121,6 +121,15 @@ in
         description = "QEMU image format to use for the disk images";
         default = "raw";
       };
+
+      useUdevRules = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = ''
+          Copy the udev rules in the VM while building. It can be disabled when unnecessary to speed-up the build,
+          and e.g. when cross-building incompatible packages.
+        '';
+      };
     };
 
     memSize = lib.mkOption {
