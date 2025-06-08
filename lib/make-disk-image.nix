@@ -73,6 +73,7 @@ let
             disko.testMode = true;
             disko.devices = lib.mkForce cleanedConfig.disko.devices;
             boot.loader.grub.devices = lib.mkForce cleanedConfig.boot.loader.grub.devices;
+            boot.kernelPackages = cfg.kernelPackages;
             nixpkgs.hostPlatform = lib.mkForce pkgs.stdenv.hostPlatform;
             nixpkgs.buildPlatform = lib.mkForce pkgs.stdenv.hostPlatform;
           }
