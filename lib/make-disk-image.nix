@@ -121,7 +121,9 @@ let
     ln -sfn /proc/self/fd/2 /dev/stderr
     mkdir -p /etc/udev
     mount -t efivarfs none /sys/firmware/efi/efivars
-    ln -sfn ${systemToInstallNative.config.system.build.etc}/etc/udev/rules.d /etc/udev/rules.d
+    ${lib.optionalString cfg.useUdevRules ''
+      ln -sfn ${systemToInstallNative.config.system.build.etc}/etc/udev/rules.d /etc/udev/rules.d
+    ''}
     mkdir -p /dev/.mdadm
     ${pkgs.systemdMinimal}/lib/systemd/systemd-udevd --daemon
     partprobe
