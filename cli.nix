@@ -17,11 +17,14 @@ let
 
   hasDiskoFile = diskoFile != null;
 
+  hasDiskoConfigFlake =
+    hasDiskoFile || lib.hasAttrByPath [ "diskoConfigurations" flakeAttr ] (builtins.getFlake flake);
+
   diskoAttr =
     (
       if noDeps then
         (
-          if hasDiskoFile then
+          if hasDiskoFile || hasDiskoConfigFlake then
             {
               destroy = "_cliDestroyNoDeps";
               format = "_cliFormatNoDeps";
@@ -50,7 +53,7 @@ let
         }
       else
         (
-          if hasDiskoFile then
+          if hasDiskoFile || hasDiskoConfigFlake then
             {
               destroy = "_cliDestroy";
               format = "_cliFormat";
@@ -78,9 +81,6 @@ let
           zap_create_mount = "diskoScript";
         }
     ).${mode};
-
-  hasDiskoConfigFlake =
-    hasDiskoFile || lib.hasAttrByPath [ "diskoConfigurations" flakeAttr ] (builtins.getFlake flake);
 
   hasDiskoModuleFlake = lib.hasAttrByPath [
     "nixosConfigurations"
