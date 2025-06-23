@@ -267,7 +267,7 @@ in
     # shellcheck disable=SC2016
     QEMU_OPTS=${lib.escapeShellArg QEMU_OPTS}
     # replace quoted $out with the actual path
-    QEUM_OPTS=''${QEMU_OPTS//\$out/$out}
+    QEMU_OPTS=''${QEMU_OPTS//\$out/$out}
     QEMU_OPTS+=" -m $build_memory -object memory-backend-memfd,id=mem,size=''${build_memory}M,share=on -machine memory-backend=mem"
     export QEMU_OPTS
 
