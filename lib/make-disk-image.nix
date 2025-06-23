@@ -207,13 +207,13 @@ in
       --pre-format-files)
         src=$2
         dst=$3
-        cp --reflink=auto -r "$src" copy_before_disko/"$(echo "$dst" | base64)"
+        cp --reflink=auto -rv "$src" copy_before_disko/"$(echo "$dst" | base64)"
         shift 2
         ;;
       --post-format-files)
         src=$2
         dst=$3
-        cp --reflink=auto -r "$src" copy_after_disko/"$(echo "$dst" | base64)"
+        cp --reflink=auto -rv "$src" copy_after_disko/"$(echo "$dst" | base64)"
         shift 2
         ;;
       --build-memory)
@@ -243,8 +243,8 @@ in
           for src in /tmp/xchg/copy_before_disko/*; do
             [ -e "$src" ] || continue
             dst=$(basename "$src" | base64 -d)
-            mkdir -p "$(dirname "$dst")"
-            cp -r "$src" "$dst"
+            mkdir -p "$dst"
+            cp -rv "$src"/. "$dst"
           done
           set -f
           ${partitioner}
@@ -252,8 +252,8 @@ in
           for src in /tmp/xchg/copy_after_disko/*; do
             [ -e "$src" ] || continue
             dst=/mnt/$(basename "$src" | base64 -d)
-            mkdir -p "$(dirname "$dst")"
-            cp -r "$src" "$dst"
+            mkdir -p "$dst"
+            cp -rv "$src"/. "$dst"
           done
           ${installer}
         ''}
