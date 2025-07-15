@@ -7,7 +7,7 @@
   ...
 }:
 let
-  # TODO: Consider expanding to handle `file` and `draid` mode options.
+  # TODO: Consider expanding to handle `file` mode option.
   modeOptions = [
     ""
     "mirror"
@@ -16,6 +16,12 @@ let
     "raidz2"
     "raidz3"
   ];
+  zpoolModeType = lib.types.mkOptionType {
+    name = "zpoolMode";
+    description = "valid modes for a zpool";
+    descriptionClass = "noun";
+    check = (x: lib.isString x && (builtins.elem x modeOptions || lib.strings.hasPrefix "draid" x));
+  };
 in
 {
   options = {
@@ -72,7 +78,7 @@ in
       };
       type = (
         lib.types.oneOf [
-          (lib.types.enum modeOptions)
+          (zpoolModeType)
           (lib.types.attrsOf (
             diskoLib.subType {
               types = {
@@ -83,7 +89,7 @@ in
                       {
                         options = {
                           mode = lib.mkOption {
-                            type = lib.types.enum modeOptions;
+                            type = zpoolModeType;
                             default = "";
                             description = "Mode of the zfs vdev";
                           };
