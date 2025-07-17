@@ -860,6 +860,7 @@ let
                   })
                     "disko"
                     ''
+                      export PATH=${lib.makeBinPath [ pkgs.jq ]}:$PATH
                       ${cfg.config._disko}
                     '';
               };
