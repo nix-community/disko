@@ -23,21 +23,40 @@ let
       lib.mkOptionType {
         name = "subType";
         description = "one of ${lib.concatStringsSep "," (lib.attrNames types)}";
-        check =
-          x:
-          if x ? type then
-            types.${x.type}.check x
-          else
-            throw "No type option set in:\n${lib.generators.toPretty { } x}";
+        check = x: lib.isAttrs x;
         merge =
-          loc:
-          lib.foldl' (
-            _res: def:
-            types.${def.value.type}.merge loc [
+          loc: defs:
+          let
+            evaled = lib.evalModules {
+              modules =
+                [
+                  {
+                    freeformType = lib.types.lazyAttrsOf lib.types.raw;
+                    options.type = lib.mkOption {
+                      type = lib.types.str;
+                    };
+                  }
+                ]
+                ++ map (
+                  { value, file }:
+                  {
+                    _file = file;
+                    config = value;
+                  }
+                ) defs;
+            };
+            inherit (evaled.config) type;
+          in
+          types.${type}.merge loc (
+            [
               # we add a dummy root parent node to render documentation
-              (lib.recursiveUpdate { value._module.args = extraArgs; } def)
+              {
+                file = "";
+                value._module.args = extraArgs;
+              }
             ]
-          ) { };
+            ++ defs
+          );
         nestedTypes = types;
       };
 
