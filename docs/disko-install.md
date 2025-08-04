@@ -197,8 +197,19 @@ Add this to your flake.nix output:
 ```nix
 # `self` here is referring to the flake `self`, you may need to pass it using `specialArgs` or define your NixOS installer configuration
 # in the flake.nix itself to get direct access to the `self` flake variable.
-{ pkgs, self, ... }:
+{ lib, pkgs, self, ... }:
 let
+  flakeOutPaths =
+    let
+      collector =
+        parent:
+        map (
+          child:
+          [ child.outPath ] ++ (if child ? inputs && child.inputs != { } then (collector child) else [ ])
+        ) (lib.attrValues parent.inputs);
+    in
+    lib.unique (lib.flatten (collector self));
+
   dependencies = [
     self.nixosConfigurations.your-machine.config.system.build.toplevel
     self.nixosConfigurations.your-machine.config.system.build.diskoScript
@@ -210,7 +221,7 @@ let
     self.nixosConfigurations.your-machine.pkgs.perlPackages.FileSlurp
 
     (self.nixosConfigurations.your-machine.pkgs.closureInfo { rootPaths = [ ]; }).drvPath
-  ] ++ builtins.map (i: i.outPath) (builtins.attrValues self.inputs);
+  ] ++ flakeOutPaths;
 
   closureInfo = pkgs.closureInfo { rootPaths = dependencies; };
 in
