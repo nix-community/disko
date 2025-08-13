@@ -143,19 +143,21 @@ in
 
             askPassword() {
               if [ -z ''${IN_DISKO_TEST+x} ]; then
-                set +x
                 promptSecret "Enter password for ${config.device}: " password
                 promptSecret "Enter password for ${config.device} again to be safe: " password_check
                 export password
                 [ "$password" = "$password_check" ]
-                set -x
               else
+                set -x
                 export password=disko
+                set +x
               fi
             }
+            set +x
             until askPassword; do
               echo "Passwords did not match, please try again."
             done
+            set -x
           ''}
           cryptsetup -q luksFormat "${config.device}" ${toString config.extraFormatArgs} ${keyFileArgs}
         fi
