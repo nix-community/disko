@@ -147,7 +147,9 @@ in
                 promptSecret "Enter password for ${config.device}: " password
                 promptSecret "Enter password for ${config.device} again to be safe: " password_check
                 export password
-                [ "$password" = "$password_check" ]
+                if [ "$password" != "$password_check" ]; then
+                  exit 1
+                fi
                 set -x
               else
                 export password=disko
