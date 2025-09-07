@@ -29,6 +29,9 @@
     {
       nixosModules.default = self.nixosModules.disko; # convention
       nixosModules.disko = ./module.nix;
+      flakeModule = self.flakeModules.default;
+      flakeModules.default = self.flakeModules.disko;
+      flakeModules.disko = ./flake-module.nix;
       lib = diskoLib;
       packages = forAllSystems (
         system:
