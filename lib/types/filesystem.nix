@@ -106,7 +106,6 @@
           pkgs.gnugrep
         ]
         ++ (
-          # TODO add many more
           if (config.format == "xfs") then
             [ pkgs.xfsprogs ]
           else if (config.format == "btrfs") then
@@ -123,6 +122,8 @@
             [ pkgs.bcachefs-tools ]
           else if (config.format == "f2fs") then
             [ pkgs.f2fs-tools ]
+          else if (config.format == "exfat") then
+            [ pkgs.exfatprogs ]
           else
             [ ]
         );
