@@ -248,7 +248,10 @@ let
               (
                 if lib.versionAtLeast (lib.versions.majorMinor lib.version) "23.11" then
                   {
+                    # From https://github.com/NixOS/nixpkgs/blob/7a8665e3a624a01b10d10d10b819cb1a8f34ee6e/nixos/modules/profiles/installation-device.nix#L116-L118
                     boot.swraid.enable = true;
+                    # remove warning about unset mail
+                    boot.swraid.mdadmConf = "PROGRAM ${pkgs.coreutils}/bin/true";
                   }
                 else
                   {
