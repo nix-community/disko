@@ -8,16 +8,16 @@
   ...
 }:
 let
+  passwordFd =
+    if config.askPassword then
+      ''<(set +x; echo -n "$password"; set -x)''
+    else if config.passwordFile != null then
+      ''<(set +x; echo -n "$(cat ${config.passwordFile})"; set -x)''
+    else
+      null;
   keyFile =
     if config.settings ? "keyFile" then
       config.settings.keyFile
-    else if config.askPassword then
-      ''<(set +x; echo -n "$password"; set -x)''
-    else if
-      config.passwordFile != null
-    # do not print the password to the console
-    then
-      ''<(set +x; echo -n "$(cat ${config.passwordFile})"; set -x)''
     else if config.keyFile != null then
       lib.warn (
         "The option `keyFile` is deprecated."
@@ -25,8 +25,9 @@ let
       ) config.keyFile
     else
       null;
+  addPasswordAsFallback = keyFile != null && passwordFd != null;
   keyFileArgs = ''
-    ${lib.optionalString (keyFile != null) "--key-file ${keyFile}"} \
+    --key-file ${if (keyFile != null) then keyFile else passwordFd} \
     ${lib.optionalString (lib.hasAttr "keyFileSize" config.settings) "--keyfile-size ${builtins.toString config.settings.keyFileSize}"} \
     ${lib.optionalString (lib.hasAttr "keyFileOffset" config.settings) "--keyfile-offset ${builtins.toString config.settings.keyFileOffset}"} \
   '';
@@ -165,6 +166,10 @@ in
         if ! cryptsetup status "${config.name}" >/dev/null; then
           ${cryptsetupOpen} --persistent
         fi
+
+        ${lib.optionalString addPasswordAsFallback ''
+          cryptsetup luksAddKey "${config.device}" ${passwordFd} ${keyFileArgs}
+        ''}
         ${toString (
           lib.forEach config.additionalKeyFiles (keyFile: ''
             cryptsetup luksAddKey "${config.device}" ${keyFile} ${keyFileArgs}
