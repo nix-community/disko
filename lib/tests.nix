@@ -355,6 +355,9 @@ let
               machine.succeed("${lib.getExe nodes.machine.system.build.format}")
               machine.succeed("${lib.getExe nodes.machine.system.build.mount}")
               machine.succeed("${lib.getExe nodes.machine.system.build.mount}") # verify that mount is idempotent
+              machine.succeed("${lib.getExe nodes.machine.system.build.unmount}")
+              machine.succeed("${lib.getExe nodes.machine.system.build.unmount}") # verify that unmount is idempotent
+              machine.succeed("${lib.getExe nodes.machine.system.build.mount}") # verify that mount is idempotent
               machine.succeed("${lib.getExe nodes.machine.system.build.destroyFormatMount} --yes-wipe-all-disks") # verify that we can destroy and recreate again
               machine.succeed("mkdir -p /mnt/home")
               machine.succeed("touch /mnt/home/testfile")
