@@ -84,8 +84,8 @@
       default = {
         dev = ''
           ${lib.optionalString (config.options.keylocation or "none" != "none") ''
-            if [ "$(zfs get keystatus ${config.name} -H -o value)" == "unavailable" ]; then
-              zfs load-key ${config.name}
+            if [ "$(zfs get keystatus ${config._name} -H -o value)" == "unavailable" ]; then
+              zfs load-key ${config._name}
             fi
           ''}
 
@@ -98,9 +98,11 @@
       inherit config options;
       default = {
         dev = ''
-          ${lib.optionalString (
-            config.options.keylocation or "none" != "none"
-          ) "zfs unload-key ${config.name}"}
+          ${lib.optionalString (config.options.keylocation or "none" != "none") ''
+            if [ "$(zfs get keystatus ${config._name} -H -o value)" == "available" ]; then
+              zfs unload-key ${config._name}
+            fi
+          ''}
 
           ${config.content._unmount.dev or ""}
         '';
