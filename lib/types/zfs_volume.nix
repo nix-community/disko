@@ -13,6 +13,12 @@
       default = config._module.args.name;
       description = "Name of the dataset";
     };
+    _name = lib.mkOption {
+      type = lib.types.str;
+      default = "${config._parent.name}/${config.name}";
+      internal = true;
+      description = "Fully quantified name for dataset";
+    };
     type = lib.mkOption {
       type = lib.types.enum [ "zfs_volume" ];
       default = "zfs_volume";
@@ -61,8 +67,8 @@
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = ''
-        if ! zfs get type "${config._parent.name}/${config.name}" >/dev/null 2>&1; then
-          zfs create "${config._parent.name}/${config.name}" \
+        if ! zfs get type "${config._name}" >/dev/null 2>&1; then
+          zfs create "${config._name}" \
             ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") config.options)} \
             -V ${config.size} ${toString (builtins.map lib.escapeShellArg config.extraArgs)}
           zvol_wait
