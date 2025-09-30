@@ -143,7 +143,11 @@
       inherit config options;
       default =
         (lib.optionalAttrs (config.options.keylocation or "none" != "none") {
-          dev = "zfs unload-key ${config.name}";
+          dev = ''
+            if [ "$(zfs get keystatus ${config._name} -H -o value)" == "available" ]; then
+              zfs unload-key ${config._name}
+            fi
+          '';
         })
         // lib.optionalAttrs
           (config.options.mountpoint or "" != "none" && config.options.canmount or "" != "off")
