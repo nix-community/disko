@@ -82,6 +82,6 @@ in
       -F qcow2 "$tmp"/${lib.escapeShellArg disk.imageName}.qcow2
     '') disks}
     set +f
-    ${config.system.build.vm}/bin/run-*-vm
+    ${config.system.build.vm}/bin/run-*-vm "$@"
   '';
 }
