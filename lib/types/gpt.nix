@@ -229,6 +229,8 @@ in
                             ''}
                             ${lib.optionalString hp.config.mbrBootableFlag ''
                               sfdisk --label-nested dos --activate "${parent.device}" ${(toString partition.config._index)}
+                              udevadm trigger --subsystem-match=block
+                              udevadm settle --timeout 120
                             ''}
                           '';
                         };
