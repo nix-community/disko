@@ -75,8 +75,19 @@
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
-      default = lib.optionalAttrs (config.content != null) config.content._mount;
-      # TODO we probably need to assemble the mdadm somehow
+      default =
+        let
+          content = lib.optionalAttrs (config.content != null) config.content._mount;
+        in
+        {
+          fs = content.fs or { };
+          dev = ''
+            if ! test -e "/dev/md/${config.name}"; then
+              mdadm --assemble --scan
+            fi
+            ${content.dev or ""}
+          '';
+        };
     };
     _unmount = diskoLib.mkUnmountOption {
       inherit config options;
