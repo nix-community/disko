@@ -85,7 +85,7 @@
           content = lib.optionalAttrs (config.content != null) config.content._unmount;
         in
         {
-          fs = content.fs;
+          fs = content.fs or { };
           dev = ''
             ${content.dev or ""}
             if [ -e "/dev/md/${config.name}" ]; then
