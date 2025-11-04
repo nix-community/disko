@@ -198,9 +198,23 @@ main() {
     flakeAttr="${BASH_REMATCH[2]}"
   fi
 
-  if [[ -e "$flake" ]]; then
-    flake=$(realpath "$flake")
+  # Resolve flake to nix store path to respect git tracking
+  if ! flake_metadata=$(nix flake metadata --json "${nix_args[@]}" "$flake" 2>&1); then
+    echo "Failed to resolve flake metadata for: $flake" >&2
+    echo "$flake_metadata" >&2
+    exit 1
   fi
+
+  # Extract the "path" field from JSON using sed
+  flake_path=$(echo "$flake_metadata" | sed -nE 's/.*"path": ?"([^"]+)".*/\1/p')
+
+  if [[ -z "$flake_path" ]]; then
+    echo "Failed to get store path from flake metadata" >&2
+    echo "$flake_metadata" >&2
+    exit 1
+  fi
+
+  flake="$flake_path"
 
   if [[ -z ${flakeAttr-} ]]; then
     echo "Please specify the name of the NixOS configuration to be installed, as a URI fragment in the flake-uri." >&2
@@ -215,7 +229,7 @@ main() {
      trap cleanupMountPoint EXIT
   fi
 
-  outputs=$(nixBuild "${libexec_dir}"/install-cli.nix \
+  if ! outputs=$(nixBuild "${libexec_dir}"/install-cli.nix \
     "${nix_args[@]}" \
     --no-out-link \
     --impure \
@@ -227,9 +241,20 @@ main() {
     --argstr extraSystemConfig "$extraSystemConfig" \
     -A installToplevel \
     -A closureInfo \
-    -A "$diskoAttr")
+    -A "$diskoAttr"); then
+    echo "Failed to build NixOS configuration" >&2
+    exit 1
+  fi
 
   IFS=$'\n' mapfile -t artifacts <<<"$outputs"
+
+  if [[ ${#artifacts[@]} -ne 3 ]]; then
+    echo "Expected 3 build outputs, got ${#artifacts[@]}" >&2
+    echo "Outputs received:" >&2
+    printf '%s\n' "${artifacts[@]}" >&2
+    exit 1
+  fi
+
   nixos_system=${artifacts[0]}
   closure_info=${artifacts[1]}
   disko_script=${artifacts[2]}
