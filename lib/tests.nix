@@ -89,7 +89,7 @@ let
           args:
           makeTest args {
             inherit pkgs;
-            inherit (pkgs) system;
+            system = pkgs.stdenv.hostPlatform.system;
           };
         # for installation we skip /dev/vda because it is the test runner disk
 
@@ -140,7 +140,7 @@ let
 
         installed-system-eval = eval-config {
           modules = [ installed-system ];
-          inherit (pkgs) system;
+          system = pkgs.stdenv.hostPlatform.system;
         };
 
         installedTopLevel =
