@@ -20,7 +20,7 @@
     };
     device = lib.mkOption {
       type = lib.types.str;
-      default = "none";
+      default = config.fsType or "none";
       description = "Device to use";
     };
     mountpoint = lib.mkOption {
