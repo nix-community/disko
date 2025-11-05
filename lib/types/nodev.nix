@@ -6,6 +6,17 @@
   rootMountPoint,
   ...
 }:
+let
+  # REF; nixos/modules/tasks/filesystems.nix
+  specialFSTypes = [
+    "proc"
+    "sysfs"
+    "tmpfs"
+    "ramfs"
+    "devtmpfs"
+    "devpts"
+  ];
+in
 {
   options = {
     type = lib.mkOption {
@@ -85,5 +96,8 @@
       default = _pkgs: [ ];
       description = "Packages";
     };
+  };
+  config = {
+    device = lib.mkIf (lib.elem config.fsType specialFSTypes) (lib.mkDefault config.fsType);
   };
 }
