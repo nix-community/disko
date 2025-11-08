@@ -158,7 +158,7 @@ let
                           (modulesPath + "/testing/test-instrumentation.nix") # we need these 2 modules always to be able to run the tests
                           (modulesPath + "/profiles/qemu-guest.nix")
                         ];
-                        disko.devices = lib.mkForce testConfigBooted.disko.devices;
+                        disko.devices = lib.mkForce testConfigInstall.disko.devices;
                       }
                     )
                   ];
