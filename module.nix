@@ -72,6 +72,18 @@ in
         example = [ "bcachefs" ];
       };
 
+      extraRootModulePackages = lib.mkOption {
+        type = lib.types.listOf lib.types.package;
+        description = ''
+          extra kernel module packages to include in the disk image builder VM.
+          Useful when you need kernel modules that are not part of the main kernel package.
+        '';
+        default = [ ];
+        example = lib.literalExpression ''
+          [ config.boot.kernelPackages.bcachefs ]
+        '';
+      };
+
       extraPostVM = lib.mkOption {
         type = lib.types.lines;
         description = ''
