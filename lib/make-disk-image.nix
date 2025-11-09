@@ -14,6 +14,7 @@ let
   checked = diskoCfg.checkScripts;
 
   configSupportsZfs = config.boot.supportedFilesystems.zfs or false;
+  configSupportsBcachefs = config.boot.supportedFilesystems.bcachefs or false;
   binfmt = diskoLib.binfmt {
     inherit
       diskoLib
@@ -40,6 +41,7 @@ let
         "virtio_rng"
       ]
       ++ (lib.optional configSupportsZfs "zfs")
+      ++ (lib.optional configSupportsBcachefs "bcachefs")
       ++ cfg.extraRootModules;
       kernel = pkgs.aggregateModules (
         [
@@ -49,6 +51,10 @@ let
         ++ lib.optional (
           lib.elem "zfs" cfg.extraRootModules || configSupportsZfs
         ) cfg.kernelPackages.${config.boot.zfs.package.kernelModuleAttribute}
+        ++ lib.optional (
+          (lib.elem "bcachefs" cfg.extraRootModules || configSupportsBcachefs)
+          && options.boot.bcachefs ? modulePackage
+        ) (cfg.kernelPackages.callPackage pkgs.bcachefs-tools.kernelModule { })
       );
     }
     // lib.optionalAttrs (diskoLib.vmToolsSupportsCustomQemu lib) {
