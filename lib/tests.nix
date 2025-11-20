@@ -246,6 +246,7 @@ let
                     "reiserfs"
                     "vfat"
                     "xfs"
+                    "bcachefs"
                   ]
                   ++ lib.optional (
                     config.networking.hostId != null
