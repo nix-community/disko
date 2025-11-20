@@ -28,8 +28,8 @@
   boot.kernelParams = [
     "console=tty0"
   ]
-  ++ (lib.optional (pkgs.stdenv.hostPlatform.isAarch) "ttyAMA0,115200")
-  ++ (lib.optional (pkgs.stdenv.hostPlatform.isRiscV64) "ttySIF0,115200")
+  ++ (lib.optional (pkgs.stdenv.hostPlatform.isAarch) "console=ttyAMA0,115200")
+  ++ (lib.optional (pkgs.stdenv.hostPlatform.isRiscV64) "console=ttySIF0,115200")
   ++ [ "console=ttyS0,115200" ];
 
   # reduce closure size
