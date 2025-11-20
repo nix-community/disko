@@ -21,7 +21,7 @@ let
 
   closureInfo = pkgs.closureInfo { rootPaths = dependencies; };
 in
-pkgs.nixosTest {
+pkgs.testers.nixosTest {
   name = "disko-test";
   nodes.machine = {
     virtualisation.emptyDiskImages = [ 4096 ];
