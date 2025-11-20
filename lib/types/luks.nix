@@ -227,7 +227,8 @@ in
           {
             boot.initrd.luks.devices.${config.name} = {
               inherit (config) device;
-            } // config.settings;
+            }
+            // config.settings;
           }
         ])
         ++ (lib.optional (config.content != null) config.content._config);
