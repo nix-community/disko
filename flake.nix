@@ -64,6 +64,7 @@
               inherit pkgs;
               makeTest = import (pkgs.path + "/nixos/tests/make-test-python.nix");
               eval-config = import (pkgs.path + "/nixos/lib/eval-config.nix");
+              qemu-common = import (pkgs.path + "/nixos/lib/qemu-common.nix");
             }
           );
 

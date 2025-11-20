@@ -2,6 +2,7 @@
   lib,
   makeTest,
   eval-config,
+  qemu-common-lib,
   ...
 }:
 
@@ -91,6 +92,12 @@ let
             inherit pkgs;
             system = pkgs.stdenv.hostPlatform.system;
           };
+
+        # Get qemu-common library functions for this pkgs
+        qemu-common = qemu-common-lib pkgs;
+        # qemuBinary returns a string like: "/nix/store/.../qemu-system-x86_64 -machine accel=kvm:tcg -cpu max"
+        qemuBinaryString = qemu-common.qemuBinary pkgs.qemu_test;
+
         # for installation we skip /dev/vda because it is the test runner disk
 
         importedDiskoConfig = if builtins.isPath disko-config then import disko-config else disko-config;
@@ -291,6 +298,8 @@ let
         testScript =
           { nodes, ... }:
           ''
+            import shlex
+
             def disks(oldmachine, num_disks):
                 disk_flags = []
                 for i in range(num_disks):
@@ -305,10 +314,9 @@ let
             def create_test_machine(
                 oldmachine=None, **kwargs
             ):  # taken from <nixpkgs/nixos/tests/installer.nix>
-                start_command = [
-                    "${pkgs.qemu_test}/bin/qemu-kvm",
-                    "-cpu",
-                    "max",
+                # Use qemu-common from nixpkgs to get the proper QEMU binary with correct machine type and flags
+                # shlex.split properly handles the command string with options like "-machine virt,gic-version=max"
+                start_command = shlex.split("${qemuBinaryString}") + [
                     "-m",
                     "1024",
                     "-virtfs",
