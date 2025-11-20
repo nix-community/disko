@@ -99,6 +99,8 @@
       # Example showing mounted subvolumes in a multi-disk configuration.
       mounted_subvolumes_in_multi = {
         type = "bcachefs_filesystem";
+        # Mount the full filesystem to allow browsing subvolume structure
+        mountpoint = "/subvolumes";
         passwordFile = "/tmp/secret.key";
         extraFormatArgs = [
           "--compression=lz4"
