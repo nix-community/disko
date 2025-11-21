@@ -16,21 +16,23 @@ let
       machine.wait_for_text("enter passphrase for /nix");
       machine.send_chars("secretsecret\n");
     '';
-    extraInstallerConfig = { config, ... }: {
-      boot = {
-        kernelPackages = pkgs.linuxPackages_testing;
-        extraModulePackages = [
-          (config.boot.kernelPackages.callPackage pkgs.bcachefs-tools.kernelModule {})
+    extraInstallerConfig =
+      { config, ... }:
+      {
+        boot = {
+          kernelPackages = pkgs.linuxPackages_testing;
+          extraModulePackages = [
+            (config.boot.kernelPackages.callPackage pkgs.bcachefs-tools.kernelModule { })
+          ];
+          # Can also use the following instead of the above,
+          # which doesn't necessitate passing in `config`,
+          # so `{ config, ... }: ` can be removed:
+          # supportedFilesystems = [ "bcachefs" ];
+        };
+        environment.systemPackages = [
+          pkgs.bcachefs-tools
         ];
-        # Can also use the following instead of the above,
-        # which doesn't necessitate passing in `config`,
-        # so `{ config, ... }: ` can be removed:
-        # supportedFilesystems = [ "bcachefs" ];
       };
-      environment.systemPackages = [
-        pkgs.bcachefs-tools
-      ];
-    };
     extraSystemConfig = {
       environment.systemPackages = [
         pkgs.jq
