@@ -29,19 +29,18 @@ let
 
   vmTools = pkgs.vmTools.override (
     {
-      rootModules =
-        [
-          "9p"
-          "9pnet_virtio" # we can drop those in future if we stop supporting 24.11
+      rootModules = [
+        "9p"
+        "9pnet_virtio" # we can drop those in future if we stop supporting 24.11
 
-          "virtiofs"
-          "virtio_pci"
-          "virtio_blk"
-          "virtio_balloon"
-          "virtio_rng"
-        ]
-        ++ (lib.optional configSupportsZfs "zfs")
-        ++ cfg.extraRootModules;
+        "virtiofs"
+        "virtio_pci"
+        "virtio_blk"
+        "virtio_balloon"
+        "virtio_rng"
+      ]
+      ++ (lib.optional configSupportsZfs "zfs")
+      ++ cfg.extraRootModules;
       kernel = pkgs.aggregateModules (
         [
           cfg.kernelPackages.kernel
