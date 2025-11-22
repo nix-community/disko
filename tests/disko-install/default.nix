@@ -15,6 +15,7 @@ let
     self.nixosConfigurations.testmachine.pkgs.perlPackages.FileSlurp
 
     self.nixosConfigurations.testmachine.config.system.build.toplevel
+    self.nixosConfigurations.testmachine.config.system.build.toplevel.drvPath
     self.nixosConfigurations.testmachine.config.system.build.diskoScript
   ]
   ++ builtins.map (i: i.outPath) (builtins.attrValues self.inputs);
