@@ -72,10 +72,9 @@ Then add the following to your configuration.nix in the `imports` list:
 ```nix
 let
   sources = import ./npins;
-  disko = import sources.disko {};
 in
 {
-  imports = [ "${disko}/module.nix" ];
+  imports = [ (sources.disko + "/module.nix") ];
   …
 }
 ```
