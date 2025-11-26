@@ -7,16 +7,15 @@
 }:
 let
   # Load kernel modules to ensure device mapper types are available
-  kernelModules =
-    [
-      # Prevent unbootable systems if LVM snapshots are present at boot time.
-      "dm-snapshot"
-    ]
-    ++ lib.filter (x: x != "") (
-      map (lv: lib.optionalString (lv.lvm_type != null && lv.lvm_type != "thinlv") "dm-${lv.lvm_type}") (
-        lib.attrValues config.lvs
-      )
-    );
+  kernelModules = [
+    # Prevent unbootable systems if LVM snapshots are present at boot time.
+    "dm-snapshot"
+  ]
+  ++ lib.filter (x: x != "") (
+    map (lv: lib.optionalString (lv.lvm_type != null && lv.lvm_type != "thinlv") "dm-${lv.lvm_type}") (
+      lib.attrValues config.lvs
+    )
+  );
 in
 {
   options = {
@@ -182,24 +181,24 @@ in
     _config = lib.mkOption {
       internal = true;
       readOnly = true;
-      default =
-        [ { boot.initrd.kernelModules = kernelModules; } ]
-        ++ map (lv: [
-          (lib.optional (lv.content != null) lv.content._config)
-          (lib.optional (lv.lvm_type != null) {
-            boot.initrd.kernelModules =
-              [
-                (if lv.lvm_type == "mirror" then "dm-mirror" else "dm-raid")
-              ]
-              ++ lib.optional (lv.lvm_type == "raid0") "raid0"
-              ++ lib.optional (lv.lvm_type == "raid1") "raid1"
-              # ++ lib.optional (lv.lvm_type == "raid10") "raid10"
-              ++ lib.optional (
-                lv.lvm_type == "raid4" || lv.lvm_type == "raid5" || lv.lvm_type == "raid6"
-              ) "raid456";
+      default = [
+        { boot.initrd.kernelModules = kernelModules; }
+      ]
+      ++ map (lv: [
+        (lib.optional (lv.content != null) lv.content._config)
+        (lib.optional (lv.lvm_type != null) {
+          boot.initrd.kernelModules = [
+            (if lv.lvm_type == "mirror" then "dm-mirror" else "dm-raid")
+          ]
+          ++ lib.optional (lv.lvm_type == "raid0") "raid0"
+          ++ lib.optional (lv.lvm_type == "raid1") "raid1"
+          # ++ lib.optional (lv.lvm_type == "raid10") "raid10"
+          ++ lib.optional (
+            lv.lvm_type == "raid4" || lv.lvm_type == "raid5" || lv.lvm_type == "raid6"
+          ) "raid456";
 
-          })
-        ]) (lib.attrValues config.lvs);
+        })
+      ]) (lib.attrValues config.lvs);
       description = "NixOS configuration";
     };
     _pkgs = lib.mkOption {
