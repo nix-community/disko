@@ -24,6 +24,9 @@
 
       diskoLib = import ./lib {
         inherit (nixpkgs) lib;
+        makeTest = import (nixpkgs + "/nixos/tests/make-test-python.nix");
+        eval-config = import (nixpkgs + "/nixos/lib/eval-config.nix");
+        qemu-common = import (nixpkgs + "/nixos/lib/qemu-common.nix");
       };
     in
     {
