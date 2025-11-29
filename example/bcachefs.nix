@@ -135,13 +135,6 @@
       relies_on_external_subvolume = {
         type = "bcachefs_filesystem";
         mountpoint = "/home/Documents";
-        extraFormatArgs = [
-          "--compression=lz4"
-          "--background_compression=lz4"
-        ];
-        mountOptions = [
-          "verbose"
-        ];
         uuid = "64e50034-ebe2-eaf8-1f93-cf56266a8d86";
       };
     };
