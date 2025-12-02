@@ -15,12 +15,14 @@ let
     self.nixosConfigurations.testmachine.pkgs.perlPackages.FileSlurp
 
     self.nixosConfigurations.testmachine.config.system.build.toplevel
+    self.nixosConfigurations.testmachine.config.system.build.toplevel.drvPath
     self.nixosConfigurations.testmachine.config.system.build.diskoScript
-  ] ++ builtins.map (i: i.outPath) (builtins.attrValues self.inputs);
+  ]
+  ++ builtins.map (i: i.outPath) (builtins.attrValues self.inputs);
 
   closureInfo = pkgs.closureInfo { rootPaths = dependencies; };
 in
-pkgs.nixosTest {
+pkgs.testers.nixosTest {
   name = "disko-test";
   nodes.machine = {
     virtualisation.emptyDiskImages = [ 4096 ];
