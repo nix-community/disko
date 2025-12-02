@@ -96,7 +96,6 @@ let
       util-linux
       findutils
       kmod
-      xcp
     ]
     ++ cfg.extraDependencies;
   preVM = ''
@@ -146,9 +145,16 @@ let
     export NIX_STATE_DIR=${systemToInstall.config.disko.rootMountPoint}/nix/var/nix
     nix-store --load-db < "${closureInfo}/registration"
 
-    # We copy files with cp because `nix copy` seems to have a large memory leak
+    # We copy files with cp because `nix copy` has a large memory leak.
+    # We use parallel cp instead of xcp because xcp opens many file descriptors
+    # concurrently, which we suspect can exhaust virtiofsd's fd limits.
+    # Benchmarks on AMD Ryzen AI 7 350 (16 cores) and AMD EPYC 9654 (384 cores)
+    # showed -P 8 is optimal: higher values (-P 16) hurt performance on some
+    # systems, while -P 4 is ~30% slower. Cap at 8 but use fewer workers if the
+    # system has fewer cores.
     mkdir -p ${systemToInstall.config.disko.rootMountPoint}/nix/store
-    xargs xcp --recursive --target-directory ${systemToInstall.config.disko.rootMountPoint}/nix/store < ${closureInfo}/store-paths
+    P=$(nproc); [ "$P" -gt 8 ] && P=8
+    xargs -P "$P" -I {} cp --recursive {} ${systemToInstall.config.disko.rootMountPoint}/nix/store < ${closureInfo}/store-paths
 
     ${systemToInstall.config.system.build.nixos-install}/bin/nixos-install --root ${systemToInstall.config.disko.rootMountPoint} --system ${systemToInstall.config.system.build.toplevel} --keep-going --no-channel-copy -v --no-root-password --option binary-caches ""
     umount -Rv ${lib.escapeShellArg systemToInstall.config.disko.rootMountPoint}
