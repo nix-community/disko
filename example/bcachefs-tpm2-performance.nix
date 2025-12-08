@@ -43,7 +43,7 @@
           "--compression=lz4"
           "--background_compression=lz4"
         ];
-        
+
         # Performance test configuration with multiple keys
         unlock = {
           enable = true;
@@ -54,7 +54,7 @@
           ];
           extraPackages = [ ];
         };
-        
+
         subvolumes = {
           "subvolumes/root" = {
             mountpoint = "/";

@@ -26,7 +26,7 @@
                 label = "edge-empty.vdb2";
               };
             };
-            
+
             vdb3 = {
               size = "25%";
               content = {
@@ -35,7 +35,7 @@
                 label = "edge-corrupted.vdb3";
               };
             };
-            
+
             vdb4 = {
               size = "25%";
               content = {
@@ -44,7 +44,7 @@
                 label = "edge-missing.vdb4";
               };
             };
-            
+
             vdb5 = {
               size = "25%";
               content = {
@@ -56,7 +56,7 @@
           };
         };
       };
-      
+
       vdc = {
         device = "/dev/vdc";
         type = "disk";
@@ -74,7 +74,7 @@
           };
         };
       };
-      
+
       vdd = {
         device = "/dev/vdd";
         type = "disk";
@@ -101,10 +101,10 @@
         passwordFile = "/tmp/secret.key";
         unlock = {
           enable = true;
-          secretFiles = [];
+          secretFiles = [ ];
         };
       };
-      
+
       # Test 2: Corrupted JWE file
       corrupted_test = {
         type = "bcachefs_filesystem";
@@ -114,7 +114,7 @@
           secretFiles = [ ./secrets/corrupted.jwe ];
         };
       };
-      
+
       # Test 3: Missing secret files directory (unlock disabled)
       missing_test = {
         type = "bcachefs_filesystem";
@@ -123,7 +123,7 @@
           enable = false;
         };
       };
-      
+
       # Test 4: Multiple valid keys
       multi_test = {
         type = "bcachefs_filesystem";
@@ -138,7 +138,7 @@
           extraPackages = [ ];
         };
       };
-      
+
       # Test 5: Malformed JWE files
       malformed_test = {
         type = "bcachefs_filesystem";
@@ -148,7 +148,7 @@
           secretFiles = [ ./secrets/invalid.jwe ];
         };
       };
-      
+
       # Test 6: Single device configuration
       single_device_test = {
         type = "bcachefs_filesystem";

@@ -89,6 +89,31 @@
       default = { };
       description = "NixOS configuration.";
     };
+    unlock = lib.mkOption {
+      type = lib.types.submodule (
+        { ... }:
+        {
+          options = {
+            enable = lib.mkOption {
+              type = lib.types.bool;
+              default = false;
+              description = "Enable Clevis-based unlocking for encrypted bcachefs filesystems.";
+            };
+            secretFiles = lib.mkOption {
+              type = lib.types.listOf diskoLib.optionTypes.absolute-pathname;
+              default = [ ];
+              description = "List of JWE token files for automatic unlock (TPM2, FIDO2, Tang).";
+              example = [
+                "/path/to/secrets/tpm.jwe"
+                "/path/to/secrets/yubi.jwe"
+              ];
+            };
+          };
+        }
+      );
+      default = { };
+      description = "Clevis-based unlocking configuration for encrypted bcachefs.";
+    };
     _pkgs = lib.mkOption {
       internal = true;
       readOnly = true;

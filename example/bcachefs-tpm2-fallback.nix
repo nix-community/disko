@@ -63,7 +63,7 @@
           "--compression=lz4"
           "--background_compression=lz4"
         ];
-        
+
         # TPM2 unlocking configuration (will fail due to missing TPM2 device)
         unlock = {
           enable = true;
@@ -73,7 +73,7 @@
           ];
           extraPackages = [ ];
         };
-        
+
         subvolumes = {
           "subvolumes/root" = {
             mountpoint = "/";

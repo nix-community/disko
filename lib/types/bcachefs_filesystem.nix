@@ -5,7 +5,7 @@
   options,
   parent,
   rootMountPoint,
-  pkgs,
+  pkgs ? null,
   ...
 }:
 {
@@ -80,23 +80,28 @@
       example = "/tmp/disk.key";
     };
     unlock = lib.mkOption {
-      type = lib.types.submodule {
-        options = {
-          enable = lib.mkEnableOption "Clevis-based unlocking";
-          secretFiles = lib.mkOption {
-            type = lib.types.listOf lib.types.path;
-            default = [];
-            description = "List of Clevis JWE tokens to inject into initrd.";
-            example = [ ./secrets/tpm.jwe ./secrets/yubi.jwe ];
+      type = lib.types.submodule (
+        { ... }:
+        {
+          options = {
+            enable = lib.mkOption {
+              type = lib.types.bool;
+              default = false;
+              description = "Enable Clevis-based unlocking for encrypted bcachefs filesystems.";
+            };
+            secretFiles = lib.mkOption {
+              type = lib.types.listOf diskoLib.optionTypes.absolute-pathname;
+              default = [ ];
+              description = "List of Clevis JWE tokens to inject into initrd.";
+              example = [
+                "/path/to/secrets/tpm.jwe"
+                "/path/to/secrets/yubi.jwe"
+              ];
+            };
           };
-          extraPackages = lib.mkOption {
-            type = lib.types.listOf lib.types.package;
-            default = [];
-            description = "Extra tools needed for specific Clevis pins (e.g. libfido2)";
-          };
-        };
-      };
-      default = {};
+        }
+      );
+      default = { };
       description = "Clevis-based unlocking configuration for encrypted bcachefs filesystems.";
     };
     subvolumes = lib.mkOption {
@@ -322,105 +327,130 @@
       internal = true;
       readOnly = true;
       default =
-        (lib.optional (config.mountpoint != null) {
-          fileSystems.${config.mountpoint} = {
-            device = "/dev/disk/by-uuid/${config.uuid}";
-            fsType = "bcachefs";
-            options = lib.unique ([ "X-mount.mkdir" ] ++ config.mountOptions);
-            neededForBoot = true;
-          };
-        })
-        ++ (map (subvolume: {
-          fileSystems.${subvolume.mountpoint} = {
-            device = "/dev/disk/by-uuid/${config.uuid}";
-            fsType = "bcachefs";
-            options = lib.unique (
-              [
-                "X-mount.mkdir"
-                "X-mount.subdir=${lib.removePrefix "/" subvolume.name}"
-              ]
-              ++ subvolume.mountOptions
-            );
-            neededForBoot = true;
-          };
-        }) (lib.filter (subvolume: subvolume.mountpoint != null) (lib.attrValues config.subvolumes)))
-        ++ (lib.optional (config.unlock.enable) {
-          # Dependencies for Clevis unlocking
-          boot.initrd.extraPackages = with pkgs; [ 
-            clevis jose tpm2-tools bash 
-          ] ++ config.unlock.extraPackages;
-
-          # Kernel Modules for X1 Yoga (TPM + USB)
-          boot.initrd.availableKernelModules = [ 
-            "tpm_tis" "tpm_crb" "usbhid" "hid_generic" "xhci_pci" 
-          ];
-
-          # Secret Injection Logic
-          # Maps [ ./tpm.jwe ] -> { "/etc/bcachefs-keys/${config.name}/tpm.jwe" = ./tpm.jwe; }
-          boot.initrd.secrets = lib.listToAttrs (map (src: {
-            name = "/etc/bcachefs-keys/${config.name}/${baseNameOf src}";
-            value = src;
-          }) config.unlock.secretFiles);
-
-          # Systemd service for unlocking
-          boot.initrd.systemd.services."bcachefs-unlock-${config.name}" = {
-            description = "Unlock Bcachefs ${config.name}";
-            wantedBy = [ "initrd.target" ];
-            before = [ "sysroot.mount" ];
-            after = [ "systemd-udev-settle.service" ]; # Wait for FIDO2 device
-
-            serviceConfig = {
-              Type = "oneshot";
-              RemainAfterExit = true;
-              ExecStart = pkgs.writeShellScript "clevis-unlock-ring" ''
-                set -euo pipefail
-                  
-                KEY_DIR="/etc/bcachefs-keys/${config.name}"
-                  
-                # Early exit if no keys directory
-                if [ ! -d "$KEY_DIR" ]; then 
-                  echo "No keys directory found at $KEY_DIR"
-                  exit 0
-                fi
-
-                # Fail-open ring iteration over JWE files
-                for KEY in "$KEY_DIR"/*.jwe; do
-                  # Handle glob mismatch when no JWE files exist
-                  [ -f "$KEY" ] || continue
-                  
-                  echo "Attempting unlock with $(basename $KEY)..."
-                    
-                  # FIDO2-specific user guidance
-                  if [[ "$KEY" == *"fido"* ]]; then
-                     echo "Touch FIDO2 device if prompted..."
-                  fi
-
-                  # Generic Clevis decrypt attempt
-                  if ${pkgs.clevis}/bin/clevis decrypt < "$KEY" 2>/dev/null | \\
-                     ${pkgs.bcachefs-tools}/bin/bcachefs unlock -o label="${config.name}"; then
-                     echo "Success!"
-                     exit 0
-                  fi
-                done
-                  
-                echo "All automatic keys failed. Manual prompt will appear."
-                exit 0
-              '';
+        if pkgs == null then
+          [ ]
+        else
+          (lib.optional (config.mountpoint != null) {
+            fileSystems.${config.mountpoint} = {
+              device = "/dev/disk/by-uuid/${config.uuid}";
+              fsType = "bcachefs";
+              options = lib.unique ([ "X-mount.mkdir" ] ++ config.mountOptions);
+              neededForBoot = true;
             };
-          };
-        });
+          })
+          ++ (map (subvolume: {
+            fileSystems.${subvolume.mountpoint} = {
+              device = "/dev/disk/by-uuid/${config.uuid}";
+              fsType = "bcachefs";
+              options = lib.unique (
+                [
+                  "X-mount.mkdir"
+                  "X-mount.subdir=${lib.removePrefix "/" subvolume.name}"
+                ]
+                ++ subvolume.mountOptions
+              );
+              neededForBoot = true;
+            };
+          }) (lib.filter (subvolume: subvolume.mountpoint != null) (lib.attrValues config.subvolumes)))
+          ++ (lib.optional (config.unlock.enable) {
+            # Dependencies for Clevis unlocking
+            boot.initrd.extraPackages =
+              with pkgs;
+              [
+                clevis
+                jose
+                tpm2-tools
+                bash
+              ]
+              ++ config.unlock.extraPackages;
+
+            # Kernel Modules for X1 Yoga (TPM + USB)
+            boot.initrd.availableKernelModules = [
+              "tpm_tis"
+              "tpm_crb"
+              "usbhid"
+              "hid_generic"
+              "xhci_pci"
+            ];
+
+            # Secret Injection Logic
+            # Maps [ ./tpm.jwe ] -> { "/etc/bcachefs-keys/${config.name}/tpm.jwe" = ./tpm.jwe; }
+            boot.initrd.secrets = lib.listToAttrs (
+              map (src: {
+                name = "/etc/bcachefs-keys/${config.name}/${baseNameOf src}";
+                value = src;
+              }) config.unlock.secretFiles
+            );
+
+            # Systemd service for unlocking
+            boot.initrd.systemd.services."bcachefs-unlock-${config.name}" = {
+              description = "Unlock Bcachefs ${config.name}";
+              wantedBy = [ "initrd.target" ];
+              before = [ "sysroot.mount" ];
+              after = [ "systemd-udev-settle.service" ]; # Wait for FIDO2 device
+
+              serviceConfig = {
+                Type = "oneshot";
+                RemainAfterExit = true;
+                ExecStart = pkgs.writeShellScript "clevis-unlock-ring" ''
+                  set -euo pipefail
+                    
+                  KEY_DIR="/etc/bcachefs-keys/${config.name}"
+                    
+                  # Early exit if no keys directory
+                  if [ ! -d "$KEY_DIR" ]; then 
+                    echo "No keys directory found at $KEY_DIR"
+                    exit 0
+                  fi
+
+                  # Fail-open ring iteration over JWE files
+                  for KEY in "$KEY_DIR"/*.jwe; do
+                    # Handle glob mismatch when no JWE files exist
+                    [ -f "$KEY" ] || continue
+                    
+                    echo "Attempting unlock with $(basename $KEY)..."
+                      
+                    # FIDO2-specific user guidance
+                    if [[ "$KEY" == *"fido"* ]]; then
+                       echo "Touch FIDO2 device if prompted..."
+                    fi
+
+                    # Generic Clevis decrypt attempt
+                    if ${pkgs.clevis}/bin/clevis decrypt < "$KEY" 2>/dev/null | \\
+                       ${pkgs.bcachefs-tools}/bin/bcachefs unlock -o label="${config.name}"; then
+                       echo "Success!"
+                       exit 0
+                    fi
+                  done
+                    
+                  echo "All automatic keys failed. Manual prompt will appear."
+                  exit 0
+                '';
+              };
+            };
+          });
       description = "NixOS configuration.";
     };
     _pkgs = lib.mkOption {
       internal = true;
       readOnly = true;
       type = lib.types.functionTo (lib.types.listOf lib.types.package);
-      default = pkgs: [
-        pkgs.bcachefs-tools
-        pkgs.util-linux
-      ] ++ lib.optionals (config.unlock.enable) (with pkgs; [
-        clevis jose tpm2-tools bash
-      ] ++ config.unlock.extraPackages);
+      default =
+        pkgs:
+        [
+          pkgs.bcachefs-tools
+          pkgs.util-linux
+        ]
+        ++ lib.optionals (config.unlock.enable) (
+          with pkgs;
+          [
+            clevis
+            jose
+            tpm2-tools
+            bash
+          ]
+          ++ config.unlock.extraPackages
+        );
       description = "Packages.";
     };
   };

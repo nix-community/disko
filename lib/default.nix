@@ -1117,6 +1117,8 @@ let
           description = option.description or null;
           default = option.defaultText or option.default or null;
         };
+        literalExpression = str: str;
+        literalMD = str: str;
         types = {
           attrsOf = subType: {
             type = "attrsOf";
@@ -1146,6 +1148,8 @@ let
             inherit choices;
           };
           anything = "anything";
+          package = "package";
+          path = "path";
           nonEmptyStr = "str";
           strMatching = _: "str";
           str = "str";
