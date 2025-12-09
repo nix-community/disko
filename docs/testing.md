@@ -153,7 +153,7 @@ to run all tests at once. However, we instead recommend using
 [nix-fast-build](https://github.com/Mic92/nix-fast-build). The reason for this
 is that each individual test takes a while to run, but only uses <=4GiB of RAM
 and a limited amount of CPU resources. This means they can easily be evaluated
-and run in parallel to save time, but `nix` doesn't to that, so a full test run
+and run in parallel to save time, but `nix` doesn't do that, so a full test run
 takes >40 minutes on a mid-range system. With `nix-fast-build` you can scale up
 the number of workers depending on your system's capabilities. It also utilizes
 [`nix-output-monitor`](https://github.com/maralorn/nix-output-monitor) to give
