@@ -40,6 +40,12 @@
       parent = config;
       device = "/dev/md/${config.name}";
     };
+    extraArgs = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      example = [ "--assume-clean" ];
+      description = "Extra arguments passed to `mdadm --create`";
+    };
     _meta = lib.mkOption {
       internal = true;
       readOnly = true;
@@ -63,6 +69,7 @@
             --metadata=${config.metadata} \
             --force \
             --homehost=any \
+            ${toString (lib.map lib.escapeShellArg config.extraArgs)} \
             "''${disk_devices[@]}"
           partprobe "/dev/md/${config.name}"
           udevadm trigger --subsystem-match=block
