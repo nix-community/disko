@@ -106,6 +106,18 @@ in
         default = true;
       };
 
+      copyNixStoreThreads = lib.mkOption {
+        type = lib.types.either lib.types.ints.positive (lib.types.enum [ "auto" ]);
+        description = ''
+          Number of parallel threads to use when copying the nix store.
+          Set to "auto" (the default) to automatically determine based on CPU cores,
+          capped at 8. Higher values may hurt performance on some systems due to
+          virtiofsd file descriptor limits.
+        '';
+        default = "auto";
+        example = 4;
+      };
+
       extraConfig = lib.mkOption {
         description = ''
           Extra NixOS config for your test. Can be used to specify a different luks key for tests.
