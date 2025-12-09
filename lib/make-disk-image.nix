@@ -153,7 +153,16 @@ let
     # systems, while -P 4 is ~30% slower. Cap at 8 but use fewer workers if the
     # system has fewer cores.
     mkdir -p ${systemToInstall.config.disko.rootMountPoint}/nix/store
-    P=$(nproc); [ "$P" -gt 8 ] && P=8
+    ${
+      if cfg.copyNixStoreThreads == "auto" then
+        ''
+          P=$(nproc); [ "$P" -gt 8 ] && P=8
+        ''
+      else
+        ''
+          P=${toString cfg.copyNixStoreThreads}
+        ''
+    }
     xargs -P "$P" -I {} cp --recursive {} ${systemToInstall.config.disko.rootMountPoint}/nix/store < ${closureInfo}/store-paths
 
     ${systemToInstall.config.system.build.nixos-install}/bin/nixos-install --root ${systemToInstall.config.disko.rootMountPoint} --system ${systemToInstall.config.system.build.toplevel} --keep-going --no-channel-copy -v --no-root-password --option binary-caches ""
