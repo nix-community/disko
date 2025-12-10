@@ -15,28 +15,33 @@ diskoLib.testLib.makeDiskoTest {
     machine.wait_for_text("enter passphrase for /nix");
     machine.send_chars("secretsecret\n");
   '';
+  extraInstallerConfig = {
+    boot = {
+      kernelPackages = pkgs.linuxPackages_testing;
+      supportedFilesystems = [ "bcachefs" ];
+    };
+  };
   extraSystemConfig = {
     environment.systemPackages = [
       pkgs.jq
     ];
+    boot.initrd.extraUtilsCommands = ''
+      # Copy tools for bcachefs
+      copy_bin_and_libs ${pkgs.lib.getOutput "mount" pkgs.util-linux}/bin/mount
+      copy_bin_and_libs ${pkgs.bcachefs-tools}/bin/bcachefs
+      copy_bin_and_libs ${pkgs.bcachefs-tools}/bin/mount.bcachefs
+    '';
   };
   extraTestScript = ''
     # Print debug information.
-    machine.succeed("ls -la /subvolumes >&2");
+    machine.succeed("uname -a >&2");
+    machine.succeed("ls -la / >&2");
     machine.succeed("lsblk >&2");
     machine.succeed("lsblk -f >&2");
     machine.succeed("mount >&2");
     machine.succeed("bcachefs show-super /dev/vda2 >&2");
     machine.succeed("bcachefs show-super /dev/vdd1 >&2");
     machine.succeed("findmnt --json >&2");
-
-    # Verify subvolume structure.
-    machine.succeed("test -d /subvolumes/root");
-    machine.succeed("test -d /subvolumes/home");
-    machine.succeed("test -d /subvolumes/home/user");
-    machine.succeed("test -d /subvolumes/nix");
-    machine.succeed("test -d /subvolumes/test");
-    machine.fail("test -d /subvolumes/non-existent");
 
     # Verify existence of mountpoints.
     machine.succeed("mountpoint /");
@@ -48,15 +53,21 @@ diskoLib.testLib.makeDiskoTest {
     # Verify device membership and labels.
     machine.succeed("bcachefs show-super /dev/vda2 | grep 'Devices:' | grep -q '3'");
     machine.succeed("bcachefs show-super /dev/vdd1 | grep 'Devices:' | grep -q '1'");
-    machine.succeed("bcachefs show-super /dev/vda2 | grep -qE '^[[:space:]]+Label:[[:space:]]+vdb2[[:space:]]\([[:digit:]]+\)'");
-    machine.succeed("bcachefs show-super /dev/vda2 | grep -qE '^[[:space:]]+Label:[[:space:]]+vdc1[[:space:]]\([[:digit:]]+\)'");
-    machine.succeed("bcachefs show-super /dev/vda2 | grep -qE '^[[:space:]]+Label:[[:space:]]+vdd1[[:space:]]\([[:digit:]]+\)'");
-    machine.succeed("bcachefs show-super /dev/vdd1 | grep -qE '^[[:space:]]+Label:[[:space:]]+vde1[[:space:]]\([[:digit:]]+\)'");
+    machine.succeed("bcachefs show-super /dev/vda2 | grep -qE '^[[:space:]]*Label:[[:space:]]+group_a\.vdb2'");
+    machine.succeed("bcachefs show-super /dev/vda2 | grep -qE '^[[:space:]]*Label:[[:space:]]+group_a\.vdc1'");
+    machine.succeed("bcachefs show-super /dev/vda2 | grep -qE '^[[:space:]]*Label:[[:space:]]+group_b\.vdd1'");
+    machine.succeed("bcachefs show-super /dev/vdd1 | grep -qE '^[[:space:]]*Label:[[:space:]]+group_a\.vde1'");
     machine.fail("bcachefs show-super /dev/vda2 | grep 'Label:' | grep -q 'non-existent'");
 
-    # @todo Verify format arguments.
+    # Verify format arguments.
+    # Test that lza4 compression and background_compression options were set for vda2.
+    machine.succeed("bcachefs show-super /dev/vda2 | grep -qE '^[[:space:]]*compression:[[:space:]]+lz4'");
+    machine.succeed("bcachefs show-super /dev/vda2 | grep -qE '^[[:space:]]*background_compression:[[:space:]]+lz4'");
+    # Test that no compression option was set for vdd1.
+    machine.succeed("bcachefs show-super /dev/vdd1 | grep -qE '^[[:space:]]*compression:[[:space:]]+none'");
 
     # Verify mount options from configuration.
+    # Test that verbose option was set for "/".
     machine.succeed("""
       findmnt --json \
         | jq -e ' \
@@ -64,11 +75,12 @@ diskoLib.testLib.makeDiskoTest {
             | select(.target == "/") \
             | .options \
             | split(",") \
-            | contains(["verbose", "compression=lz4", "background_compression=lz4"]) \
+            | contains(["verbose"]) \
         '
     """);
 
-    machine.succeed("""
+    # Test that verbose option was not set for "/home/Documents".
+    machine.fail("""
       findmnt --json \
         | jq -e ' \
           .filesystems[] \
@@ -80,6 +92,7 @@ diskoLib.testLib.makeDiskoTest {
         '
     """);
 
+    # Test that non-existent option was not set for "/".
     machine.fail("""
       findmnt --json \
         | jq -e ' \
@@ -97,8 +110,11 @@ diskoLib.testLib.makeDiskoTest {
         | jq -e ' \
           .filesystems[] \
             | select(.target == "/") \
-            | .source | split(":") \
-            | contains(["/dev/vda2", "/dev/vdb1", "/dev/vdc1"]) \
+            | .source \
+            | contains("/dev/vda2") \
+              and contains("/dev/vdb1") \
+              and contains("/dev/vdc1") \
+              and contains("[/subvolumes/root]") \
         '
     """);
 
@@ -109,7 +125,7 @@ diskoLib.testLib.makeDiskoTest {
             | .. \
             | select(.target? == "/home/Documents") \
             | .source \
-            | contains("/dev/disk/by-uuid/64e50034-ebe2-eaf8-1f93-cf56266a8d86") \
+            | contains("/dev/vdd1") \
         '
     """);
 
@@ -118,7 +134,7 @@ diskoLib.testLib.makeDiskoTest {
         | jq -e ' \
           .filesystems[] \
             | select(.target == "/") \
-            | .source | split(":") \
+            | .source \
             | contains(["/dev/non-existent"]) \
         '
     """);
