@@ -237,21 +237,21 @@ let
               (
                 { config, ... }:
                 {
-                  boot.supportedFilesystems =
-                    [
-                      "btrfs"
-                      "cifs"
-                      "f2fs"
-                      "jfs"
-                      "ntfs"
-                      "reiserfs"
-                      "vfat"
-                      "xfs"
-                    ]
-                    ++ lib.optional (
-                      config.networking.hostId != null
-                      && lib.meta.availableOn pkgs.stdenv.hostPlatform config.boot.zfs.package
-                    ) "zfs";
+                  boot.supportedFilesystems = [
+                    "btrfs"
+                    "cifs"
+                    "f2fs"
+                    "jfs"
+                    "ntfs"
+                    "reiserfs"
+                    "vfat"
+                    "xfs"
+                    "bcachefs"
+                  ]
+                  ++ lib.optional (
+                    config.networking.hostId != null
+                    && lib.meta.availableOn pkgs.stdenv.hostPlatform config.boot.zfs.package
+                  ) "zfs";
                 }
               )
 

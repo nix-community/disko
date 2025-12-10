@@ -14,6 +14,7 @@ let
   checked = diskoCfg.checkScripts;
 
   configSupportsZfs = config.boot.supportedFilesystems.zfs or false;
+  configSupportsBcachefs = config.boot.supportedFilesystems.bcachefs or false;
   binfmt = diskoLib.binfmt {
     inherit
       diskoLib
@@ -29,19 +30,19 @@ let
 
   vmTools = pkgs.vmTools.override (
     {
-      rootModules =
-        [
-          "9p"
-          "9pnet_virtio" # we can drop those in future if we stop supporting 24.11
+      rootModules = [
+        "9p"
+        "9pnet_virtio" # we can drop those in future if we stop supporting 24.11
 
-          "virtiofs"
-          "virtio_pci"
-          "virtio_blk"
-          "virtio_balloon"
-          "virtio_rng"
-        ]
-        ++ (lib.optional configSupportsZfs "zfs")
-        ++ cfg.extraRootModules;
+        "virtiofs"
+        "virtio_pci"
+        "virtio_blk"
+        "virtio_balloon"
+        "virtio_rng"
+      ]
+      ++ (lib.optional configSupportsZfs "zfs")
+      ++ (lib.optional configSupportsBcachefs "bcachefs")
+      ++ cfg.extraRootModules;
       kernel = pkgs.aggregateModules (
         [
           cfg.kernelPackages.kernel
@@ -50,6 +51,10 @@ let
         ++ lib.optional (
           lib.elem "zfs" cfg.extraRootModules || configSupportsZfs
         ) cfg.kernelPackages.${config.boot.zfs.package.kernelModuleAttribute}
+        ++ lib.optional (
+          (lib.elem "bcachefs" cfg.extraRootModules || configSupportsBcachefs)
+          && options.boot.bcachefs ? modulePackage
+        ) (cfg.kernelPackages.callPackage pkgs.bcachefs-tools.kernelModule { })
       );
     }
     // lib.optionalAttrs (diskoLib.vmToolsSupportsCustomQemu lib) {
