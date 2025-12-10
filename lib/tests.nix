@@ -80,6 +80,7 @@ let
         extraInstallerConfig ? { },
         extraSystemConfig ? { },
         efi ? !pkgs.stdenv.hostPlatform.isRiscV64,
+        enableCanokey ? false,
         postDisko ? "",
         testMode ? "module", # can be one of direct module cli
         testBoot ? true, # if we actually want to test booting or just create/mount
@@ -289,7 +290,13 @@ let
               (testConfigInstall ? networking.hostId) && (testConfigInstall.networking.hostId != null)
             ) testConfigInstall.networking.hostId;
 
-            virtualisation.emptyDiskImages = builtins.genList (_: 4096) num-disks;
+            virtualisation = {
+              emptyDiskImages = builtins.genList (_: 4096) num-disks;
+              qemu.options = lib.mkIf enableCanokey [
+                "-device pci-ohci,id=usb-bus"
+                "-device canokey,bus=usb-bus.0,file=/tmp/canokey-file"
+              ];
+            };
 
             # useful for debugging via repl
             system.build.systemToInstall = installed-system-eval;
@@ -328,6 +335,11 @@ let
                     "if=pflash,format=raw,unit=0,readonly=on,file=${pkgs.OVMF.firmware}",
                     "-drive",
                     "if=pflash,format=raw,unit=1,readonly=on,file=${pkgs.OVMF.variables}"
+                  ]
+                ''}
+                ${lib.optionalString enableCanokey ''
+                  start_command += ["-device", "pci-ohci,id=usb-bus",
+                    "-device", "canokey,bus=usb-bus.0,file=/tmp/canokey-file"
                   ]
                 ''}
                 machine = create_machine(start_command=" ".join(start_command), **kwargs)
