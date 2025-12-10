@@ -52,7 +52,7 @@ diskoLib.testLib.makeDiskoTest {
     machine.succeed("mount >&2");
     machine.succeed("bcachefs show-super /dev/vda2 >&2");
     machine.succeed("bcachefs show-super /dev/vdd1 >&2");
-    machine.succeed("findmnt -J >&2");
+    machine.succeed("findmnt --json >&2");
 
     # Verify existence of mountpoints.
     machine.succeed("mountpoint /");
@@ -80,7 +80,7 @@ diskoLib.testLib.makeDiskoTest {
     # Verify mount options from configuration.
     # Test that verbose option was set for "/".
     machine.succeed("""
-      findmnt -J \
+      findmnt --json \
         | jq -e ' \
           .filesystems[] \
             | select(.target == "/") \
@@ -92,7 +92,7 @@ diskoLib.testLib.makeDiskoTest {
 
     # Test that verbose option was not set for "/home/Documents".
     machine.fail("""
-      findmnt -J \
+      findmnt --json \
         | jq -e ' \
           .filesystems[] \
             | .. \
@@ -105,7 +105,7 @@ diskoLib.testLib.makeDiskoTest {
 
     # Test that non-existent option was not set for "/".
     machine.fail("""
-      findmnt -J \
+      findmnt --json \
         | jq -e ' \
           .filesystems[] \
             | select(.target == "/") \
@@ -117,7 +117,7 @@ diskoLib.testLib.makeDiskoTest {
 
     # Verify device composition of filesystems.
     machine.succeed("""
-      findmnt -J \
+      findmnt --json \
         | jq -e ' \
           .filesystems[] \
             | select(.target == "/") \
@@ -130,7 +130,7 @@ diskoLib.testLib.makeDiskoTest {
     """);
 
     machine.succeed("""
-      findmnt -J \
+      findmnt --json \
         | jq -e ' \
           .filesystems[] \
             | .. \
@@ -141,7 +141,7 @@ diskoLib.testLib.makeDiskoTest {
     """);
 
     machine.fail("""
-      findmnt -J \
+      findmnt --json \
         | jq -e ' \
           .filesystems[] \
             | select(.target == "/") \
