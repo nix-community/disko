@@ -25,11 +25,12 @@
     ];
   };
   services.openssh.enable = true;
-  boot.kernelParams =
-    [ "console=tty0" ]
-    ++ (lib.optional (pkgs.stdenv.hostPlatform.isAarch) "ttyAMA0,115200")
-    ++ (lib.optional (pkgs.stdenv.hostPlatform.isRiscV64) "ttySIF0,115200")
-    ++ [ "console=ttyS0,115200" ];
+  boot.kernelParams = [
+    "console=tty0"
+  ]
+  ++ (lib.optional (pkgs.stdenv.hostPlatform.isAarch) "ttyAMA0,115200")
+  ++ (lib.optional (pkgs.stdenv.hostPlatform.isRiscV64) "ttySIF0,115200")
+  ++ [ "console=ttyS0,115200" ];
 
   # reduce closure size
   nixpkgs.flake.setFlakeRegistry = false;
