@@ -115,7 +115,8 @@
               boot.initrd.services.swraid.enable = true;
             }
         )
-      ] ++ lib.optional (config.content != null) config.content._config;
+      ]
+      ++ lib.optional (config.content != null) config.content._config;
       description = "NixOS configuration";
     };
     _pkgs = lib.mkOption {

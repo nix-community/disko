@@ -16,7 +16,8 @@ let
 
     self.nixosConfigurations.testmachine.config.system.build.toplevel
     self.nixosConfigurations.testmachine.config.system.build.diskoScript
-  ] ++ builtins.map (i: i.outPath) (builtins.attrValues self.inputs);
+  ]
+  ++ builtins.map (i: i.outPath) (builtins.attrValues self.inputs);
 
   closureInfo = pkgs.closureInfo { rootPaths = dependencies; };
 in

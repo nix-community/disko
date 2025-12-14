@@ -39,22 +39,21 @@ let
           loc: defs:
           let
             evaled = lib.evalModules {
-              modules =
-                [
-                  {
-                    freeformType = lib.types.lazyAttrsOf lib.types.raw;
-                    options.type = lib.mkOption {
-                      type = lib.types.str;
-                    };
-                  }
-                ]
-                ++ map (
-                  { value, file }:
-                  {
-                    _file = file;
-                    config = value;
-                  }
-                ) defs;
+              modules = [
+                {
+                  freeformType = lib.types.lazyAttrsOf lib.types.raw;
+                  options.type = lib.mkOption {
+                    type = lib.types.str;
+                  };
+                }
+              ]
+              ++ map (
+                { value, file }:
+                {
+                  _file = file;
+                  config = value;
+                }
+              ) defs;
             };
             inherit (evaled.config) type;
           in
@@ -1195,6 +1194,7 @@ let
       };
 
     binfmt = import ./binfmt.nix;
-  } // outputs;
+  }
+  // outputs;
 in
 diskoLib
