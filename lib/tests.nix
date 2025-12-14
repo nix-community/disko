@@ -165,7 +165,7 @@ let
                           (modulesPath + "/testing/test-instrumentation.nix") # we need these 2 modules always to be able to run the tests
                           (modulesPath + "/profiles/qemu-guest.nix")
                         ];
-                        disko.devices = lib.mkForce testConfigBooted.disko.devices;
+                        disko.devices = lib.mkForce testConfigInstall.disko.devices;
                       }
                     )
                   ];
@@ -192,7 +192,7 @@ let
                   boot.swraid.mdadmConf = "PROGRAM ${pkgs.coreutils}/bin/true";
 
                   # grub will install to these devices, we need to force those or we are offset by 1
-                  # we use mkOveride 70, so that users can override this with mkForce in case they are testing grub mirrored boots
+                  # we use mkOverride 70, so that users can override this with mkForce in case they are testing grub mirrored boots
                   boot.loader.grub.devices = lib.mkOverride 70 testConfigInstall.boot.loader.grub.devices;
 
                   assertions = [

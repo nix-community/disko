@@ -1069,13 +1069,38 @@ let
             '';
             default =
               with lib;
-              let
-                configKeys = flatten (
-                  map attrNames (flatten (map (dev: dev._config) (flatten (map attrValues (attrValues devices)))))
-                );
-                collectedConfigs = flatten (map (dev: dev._config) (flatten (map attrValues (attrValues devices))));
-              in
-              genAttrs configKeys (key: mkMerge (catAttrs key collectedConfigs));
+              (
+                let
+                  configKeys = flatten (
+                    map attrNames (flatten (map (dev: dev._config) (flatten (map attrValues (attrValues devices)))))
+                  );
+                  collectedConfigs = flatten (map (dev: dev._config) (flatten (map attrValues (attrValues devices))));
+                in
+                genAttrs configKeys (key: mkMerge (catAttrs key collectedConfigs))
+              )
+              // (
+                let
+                  efi_partitions = builtins.filter (part: part.type == "EF00" && builtins.hasAttr "mountpoint" part) (
+                    flatten (
+                      map (
+                        disk:
+                        map (part: part // { device = disk.device; }) (attrValues ((disk.content or { }).partitions or { }))
+                      ) (flatten (map attrValues (attrValues devices)))
+                    )
+                  );
+                in
+                (optionalAttrs (builtins.length efi_partitions >= 2) {
+                  # Mirrored boot partitions are not supported on systemd-boot.
+                  boot.loader.grub.enable = mkForce true;
+                  boot.loader.grub.devices = mkForce [ ];
+                  boot.loader.grub.mirroredBoots = mkForce (
+                    map (part: {
+                      devices = [ part.device ];
+                      path = part.content.mountpoint;
+                    }) efi_partitions
+                  );
+                })
+              );
           };
         };
       }
