@@ -57,8 +57,14 @@ diskoLib.testLib.makeDiskoTest {
     machine.succeed("bcachefs show-super /dev/vda2 | grep -qE '^[[:space:]]*Label:[[:space:]]+group_a\.vdb2'");
     machine.succeed("bcachefs show-super /dev/vda2 | grep -qE '^[[:space:]]*Label:[[:space:]]+group_a\.vdc1'");
     machine.succeed("bcachefs show-super /dev/vda2 | grep -qE '^[[:space:]]*Label:[[:space:]]+group_b\.vdd1'");
+
+    ## !Warning! device /dev/vde1 in the example config shows up as /dev/vdd1 here
     machine.succeed("bcachefs show-super /dev/vdd1 | grep -qE '^[[:space:]]*Label:[[:space:]]+group_a\.vde1'");
+    ## !Warning! device /dev/vdf is the example config shows up as /dev/vde here
+    machine.succeed("bcachefs show-super /dev/vde | grep -qE '^Label:[[:space:]]+\(none\)'");
+
     machine.fail("bcachefs show-super /dev/vda2 | grep 'Label:' | grep -q 'non-existent'");
+
 
     # Verify format arguments.
     # Test that lza4 compression and background_compression options were set for vda2.

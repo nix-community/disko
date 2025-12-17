@@ -82,7 +82,7 @@
         content = {
           type = "gpt";
           partitions = {
-            vdd1 = {
+            vde1 = {
               size = "100%";
               content = {
                 type = "bcachefs";
@@ -147,7 +147,7 @@
         uuid = "64e50034-ebe2-eaf8-1f93-cf56266a8d86";
       };
 
-      # Verifies bcachefs filesystems can be created with an empty label
+      # Example bcachefs filesystem without a label
       empty_default_label = {
         type = "bcachefs_filesystem";
         mountpoint = "/empty_default_label";
