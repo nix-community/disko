@@ -99,7 +99,8 @@
         type = "disk";
         content = {
           type = "bcachefs";
-          filesystem = "empty_default_label";
+          label = "";
+          filesystem = "empty_label";
         };
       };
     };
@@ -148,9 +149,9 @@
       };
 
       # Example bcachefs filesystem without a label
-      empty_default_label = {
+      empty_label = {
         type = "bcachefs_filesystem";
-        mountpoint = "/empty_default_label";
+        mountpoint = "/empty_label";
       };
     };
   };
