@@ -93,6 +93,15 @@
           };
         };
       };
+
+      vdf = {
+        device = "/dev/vdf";
+        type = "disk";
+        content = {
+          type = "bcachefs";
+          filesystem = "empty_default_label";
+        };
+      };
     };
 
     bcachefs_filesystems = {
@@ -136,6 +145,12 @@
         type = "bcachefs_filesystem";
         mountpoint = "/home/Documents";
         uuid = "64e50034-ebe2-eaf8-1f93-cf56266a8d86";
+      };
+
+      # Verifies bcachefs filesystems can be created with an empty label
+      empty_default_label = {
+        type = "bcachefs_filesystem";
+        mountpoint = "/empty_default_label";
       };
     };
   };

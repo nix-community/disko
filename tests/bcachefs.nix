@@ -48,6 +48,7 @@ diskoLib.testLib.makeDiskoTest {
     machine.succeed("mountpoint /home");
     machine.succeed("mountpoint /nix");
     machine.succeed("mountpoint /home/Documents");
+    machine.succeed("mountpoint /empty_default_label")
     machine.fail("mountpoint /non-existent");
 
     # Verify device membership and labels.
