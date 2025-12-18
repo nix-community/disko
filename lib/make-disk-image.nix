@@ -140,8 +140,11 @@ let
   installer = lib.optionalString cfg.copyNixStore ''
     ${binfmtSetup}
     unset NIX_REMOTE
+    # Resolve symlinks in rootMountPoint to satisfy nix-store requirements
+    # (nix refuses symlinks in store path hierarchy)
+    rootMountPoint=$(realpath ${lib.escapeShellArg systemToInstall.config.disko.rootMountPoint})
     # populate nix db, so nixos-install doesn't complain
-    export NIX_STATE_DIR=${systemToInstall.config.disko.rootMountPoint}/nix/var/nix
+    export NIX_STATE_DIR=$rootMountPoint/nix/var/nix
     nix-store --load-db < "${closureInfo}/registration"
 
     # We copy files with cp because `nix copy` has a large memory leak.
@@ -151,7 +154,7 @@ let
     # showed -P 8 is optimal: higher values (-P 16) hurt performance on some
     # systems, while -P 4 is ~30% slower. Cap at 8 but use fewer workers if the
     # system has fewer cores.
-    mkdir -p ${systemToInstall.config.disko.rootMountPoint}/nix/store
+    mkdir -p "$rootMountPoint"/nix/store
     ${
       if cfg.copyNixStoreThreads == "auto" then
         ''
@@ -162,10 +165,10 @@ let
           P=${toString cfg.copyNixStoreThreads}
         ''
     }
-    xargs -P "$P" -I {} cp --recursive {} ${systemToInstall.config.disko.rootMountPoint}/nix/store < ${closureInfo}/store-paths
+    xargs -P "$P" -I {} cp --recursive {} "$rootMountPoint"/nix/store < ${closureInfo}/store-paths
 
-    ${systemToInstall.config.system.build.nixos-install}/bin/nixos-install --root ${systemToInstall.config.disko.rootMountPoint} --system ${systemToInstall.config.system.build.toplevel} --keep-going --no-channel-copy -v --no-root-password --option binary-caches ""
-    umount -Rv ${lib.escapeShellArg systemToInstall.config.disko.rootMountPoint}
+    ${systemToInstall.config.system.build.nixos-install}/bin/nixos-install --root "$rootMountPoint" --system ${systemToInstall.config.system.build.toplevel} --keep-going --no-channel-copy -v --no-root-password --option binary-caches ""
+    umount -Rv "$rootMountPoint"
   '';
 
   QEMU_OPTS = lib.concatStringsSep " " (

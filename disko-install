@@ -224,6 +224,9 @@ main() {
 
   maybeRun mkdir -p "${mountPoint}"
   maybeRun chmod 755 "${mountPoint}" # bcachefs wants 755
+  # Resolve symlinks in mountPoint path to satisfy nix-store requirements
+  # (nix refuses symlinks in store path hierarchy)
+  mountPoint=$(realpath "${mountPoint}")
   # shellcheck disable=SC2064
   if [[ -z ${dry_run-} ]]; then
      trap cleanupMountPoint EXIT
