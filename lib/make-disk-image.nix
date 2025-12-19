@@ -144,7 +144,7 @@ let
     # (nix refuses symlinks in store path hierarchy)
     rootMountPoint=$(realpath ${lib.escapeShellArg systemToInstall.config.disko.rootMountPoint})
     # populate nix db, so nixos-install doesn't complain
-    export NIX_STATE_DIR=$rootMountPoint/nix/var/nix
+    export NIX_STATE_DIR="$rootMountPoint"/nix/var/nix
     nix-store --load-db < "${closureInfo}/registration"
 
     # We copy files with cp because `nix copy` has a large memory leak.
