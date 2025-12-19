@@ -82,7 +82,7 @@
         content = {
           type = "gpt";
           partitions = {
-            vdd1 = {
+            vde1 = {
               size = "100%";
               content = {
                 type = "bcachefs";
@@ -91,6 +91,16 @@
               };
             };
           };
+        };
+      };
+
+      vdf = {
+        device = "/dev/vdf";
+        type = "disk";
+        content = {
+          type = "bcachefs";
+          label = "";
+          filesystem = "empty_label";
         };
       };
     };
@@ -136,6 +146,12 @@
         type = "bcachefs_filesystem";
         mountpoint = "/home/Documents";
         uuid = "64e50034-ebe2-eaf8-1f93-cf56266a8d86";
+      };
+
+      # Example bcachefs filesystem without a label
+      empty_label = {
+        type = "bcachefs_filesystem";
+        mountpoint = "/empty_label";
       };
     };
   };
