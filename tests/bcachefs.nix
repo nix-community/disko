@@ -39,6 +39,9 @@ diskoLib.testLib.makeDiskoTest {
     machine.succeed("lsblk >&2");
     machine.succeed("lsblk -f >&2");
     machine.succeed("mount >&2");
+    # We need to manually unlock /dev/vda2 for some reason
+    # even though it should already get unlocked by bootCommands
+    machine.succeed(r'printf "secretsecret" | bcachefs unlock -k session /dev/vda2 >&2');
     machine.succeed("bcachefs show-super /dev/vda2 >&2");
     machine.succeed("bcachefs show-super /dev/vdd1 >&2");
     machine.succeed("findmnt --json >&2");
