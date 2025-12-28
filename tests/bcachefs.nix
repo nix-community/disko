@@ -39,6 +39,8 @@ diskoLib.testLib.makeDiskoTest {
     machine.succeed("lsblk >&2");
     machine.succeed("lsblk -f >&2");
     machine.succeed("mount >&2");
+    # Unlock the encrypted partitions for the session.
+    machine.succeed(r'printf "secretsecret" | bcachefs unlock -k session /dev/vda2 >&2');
     machine.succeed("bcachefs show-super /dev/vda2 >&2");
     machine.succeed("bcachefs show-super /dev/vdd1 >&2");
     machine.succeed("findmnt --json >&2");
