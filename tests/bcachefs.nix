@@ -17,7 +17,7 @@ diskoLib.testLib.makeDiskoTest {
   '';
   extraInstallerConfig = {
     boot = {
-      kernelPackages = pkgs.linuxPackages_testing;
+      kernelPackages = pkgs.linuxPackages_latest;
       supportedFilesystems = [ "bcachefs" ];
     };
   };
