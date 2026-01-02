@@ -165,7 +165,11 @@ let
                           (modulesPath + "/testing/test-instrumentation.nix") # we need these 2 modules always to be able to run the tests
                           (modulesPath + "/profiles/qemu-guest.nix")
                         ];
-                        disko.devices = lib.mkForce testConfigBooted.disko.devices;
+                        # Merge extraSystemConfig's disko.devices settings into testConfigBooted
+                        # This allows tests.extraConfig to override disko settings like settings.keyFile
+                        disko.devices = lib.mkForce (
+                          lib.recursiveUpdate testConfigBooted.disko.devices (extraSystemConfig.disko.devices or { })
+                        );
                       }
                     )
                   ];
