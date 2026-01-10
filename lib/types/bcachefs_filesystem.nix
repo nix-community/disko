@@ -10,7 +10,7 @@
 let
   # colon separated list of devices, as UUID expansion is unreliable
   colonSeparatedDevices = ''
-    $(cat "${disko_devices_dir}/bcachefs-${config.name}" | paste -sd ":" -)
+    $(cat "$disko_devices_dir/bcachefs-${config.name}" | paste -sd ":" -)
   '';
 in
 {
