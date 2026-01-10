@@ -9,9 +9,7 @@
 }:
 let
   # colon separated list of devices, as UUID expansion is unreliable
-  colonSeparatedDevices = ''
-    $(awk '{print $NF}' "$disko_devices_dir/bcachefs-${config.name}" | paste -sd ":" -)
-  '';
+  colonSeparatedDevices = ''$(paste -sd ":" "$disko_devices_dir/bcachefs-${config.name}-devices")'';
 in
 {
   options = {
