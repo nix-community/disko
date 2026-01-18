@@ -1,3 +1,8 @@
+# This example with the legacy table should not be used. We recommend using the
+# gpt type instead. More information about this warning may be found in the
+# documentation.
+#
+# https://github.com/nix-community/disko/blob/master/docs/table-to-gpt.md
 {
   pkgs,
   lib,
