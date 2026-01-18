@@ -9,7 +9,6 @@
   binlore,
   diskoVersion,
   stdenv,
-  xcp,
 }:
 
 let
@@ -50,7 +49,6 @@ let
               [
                 nix
                 coreutils
-                xcp
               ]
               ++ lib.optional (!stdenv.isDarwin) nixos-install-tools
             )
