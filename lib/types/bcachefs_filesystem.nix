@@ -35,6 +35,9 @@
       description = ''
         Options to pass to mount.
         The "X-mount.mkdir" option is always automatically added.
+
+        These options will also be applied to subvolumes of this filesystem,
+        if the filesystem itself isn't mounted directly.
       '';
       example = [
         "noatime"
@@ -322,6 +325,7 @@
                 "X-mount.subdir=${lib.removePrefix "/" subvolume.name}"
               ]
               ++ subvolume.mountOptions
+              ++ lib.optionals (config.mountpoint == null) config.mountOptions
             );
             neededForBoot = true;
           };
