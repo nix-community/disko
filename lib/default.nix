@@ -715,6 +715,7 @@ let
             default =
               {
                 pkgs,
+                hostPkgs ? pkgs, # for cross-compilation: host tools for format/destroy scripts
                 checked ? false,
               }:
               let
@@ -725,7 +726,7 @@ let
                   else
                     v;
                 # @todo Do we need to add bcachefs-tools or not?
-                destroyDependencies = with pkgs; [
+                destroyDependencies = with hostPkgs; [
                   util-linux
                   e2fsprogs
                   mdadm
@@ -739,14 +740,26 @@ let
                 ];
               in
               lib.mapAttrs throwIfNoDisksDetected {
-                destroy = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "/bin/disko-destroy" ''
-                  export PATH=${lib.makeBinPath destroyDependencies}:$PATH
-                  ${cfg.config._destroy}
-                '';
-                format = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "/bin/disko-format" ''
-                  export PATH=${lib.makeBinPath (cfg.config._packages pkgs)}:$PATH
-                  ${cfg.config._create}
-                '';
+                destroy =
+                  (diskoLib.writeCheckedBash {
+                    pkgs = hostPkgs;
+                    inherit checked;
+                  })
+                    "/bin/disko-destroy"
+                    ''
+                      export PATH=${lib.makeBinPath destroyDependencies}:$PATH
+                      ${cfg.config._destroy}
+                    '';
+                format =
+                  (diskoLib.writeCheckedBash {
+                    pkgs = hostPkgs;
+                    inherit checked;
+                  })
+                    "/bin/disko-format"
+                    ''
+                      export PATH=${lib.makeBinPath (cfg.config._packages hostPkgs)}:$PATH
+                      ${cfg.config._create}
+                    '';
                 mount = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "/bin/disko-mount" ''
                   export PATH=${lib.makeBinPath (cfg.config._packages pkgs)}:$PATH
                   ${cfg.config._mount}
@@ -755,15 +768,25 @@ let
                   export PATH=${lib.makeBinPath (cfg.config._packages pkgs)}:$PATH
                   ${cfg.config._unmount}
                 '';
-                formatMount = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "/bin/disko-format-mount" ''
-                  export PATH=${lib.makeBinPath ((cfg.config._packages pkgs) ++ [ pkgs.bash ])}:$PATH
-                  ${cfg.config._formatMount}
-                '';
+                formatMount =
+                  (diskoLib.writeCheckedBash {
+                    pkgs = hostPkgs;
+                    inherit checked;
+                  })
+                    "/bin/disko-format-mount"
+                    ''
+                      export PATH=${lib.makeBinPath ((cfg.config._packages hostPkgs) ++ [ hostPkgs.bash ])}:$PATH
+                      ${cfg.config._formatMount}
+                    '';
                 destroyFormatMount =
-                  (diskoLib.writeCheckedBash { inherit pkgs checked; }) "/bin/disko-destroy-format-mount"
+                  (diskoLib.writeCheckedBash {
+                    pkgs = hostPkgs;
+                    inherit checked;
+                  })
+                    "/bin/disko-destroy-format-mount"
                     ''
                       export PATH=${
-                        lib.makeBinPath ((cfg.config._packages pkgs) ++ [ pkgs.bash ] ++ destroyDependencies)
+                        lib.makeBinPath ((cfg.config._packages hostPkgs) ++ [ hostPkgs.bash ] ++ destroyDependencies)
                       }:$PATH
                       ${cfg.config._destroyFormatMount}
                     '';
