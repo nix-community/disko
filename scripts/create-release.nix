@@ -48,7 +48,7 @@ writeShellApplication {
       echo -e "There are uncommited changes, exiting:\n''${uncommited_changes}" >&2
       exit 1
     fi
-    git pull git@github.com:nix-community/disko master
+    git pull https://github.com/nix-community/disko master
     unpushed_commits=$(git log --format=oneline origin/master..master)
     if [[ "$unpushed_commits" != "" ]]; then
       echo -e "\nThere are unpushed changes, exiting:\n$unpushed_commits" >&2
