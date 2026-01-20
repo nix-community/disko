@@ -53,10 +53,10 @@ diskoLib.testLib.makeDiskoTest {
     # Verify device membership and labels.
     machine.succeed("bcachefs show-super /dev/vda2 | grep 'Devices:' | grep -q '3'");
     machine.succeed("bcachefs show-super /dev/vdd1 | grep 'Devices:' | grep -q '1'");
-    machine.succeed("bcachefs show-super /dev/vda2 | grep -qE '^[[:space:]]*Label:[[:space:]]+group_a\.vdb2'");
-    machine.succeed("bcachefs show-super /dev/vda2 | grep -qE '^[[:space:]]*Label:[[:space:]]+group_a\.vdc1'");
-    machine.succeed("bcachefs show-super /dev/vda2 | grep -qE '^[[:space:]]*Label:[[:space:]]+group_b\.vdd1'");
-    machine.succeed("bcachefs show-super /dev/vdd1 | grep -qE '^[[:space:]]*Label:[[:space:]]+group_a\.vde1'");
+    machine.succeed(r"bcachefs show-super /dev/vda2 | grep -qE '^[[:space:]]*Label:[[:space:]]+group_a\.vdb2'");
+    machine.succeed(r"bcachefs show-super /dev/vda2 | grep -qE '^[[:space:]]*Label:[[:space:]]+group_a\.vdc1'");
+    machine.succeed(r"bcachefs show-super /dev/vda2 | grep -qE '^[[:space:]]*Label:[[:space:]]+group_b\.vdd1'");
+    machine.succeed(r"bcachefs show-super /dev/vdd1 | grep -qE '^[[:space:]]*Label:[[:space:]]+group_a\.vde1'");
     machine.fail("bcachefs show-super /dev/vda2 | grep 'Label:' | grep -q 'non-existent'");
 
     # Verify format arguments.
