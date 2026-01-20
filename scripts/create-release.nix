@@ -59,7 +59,7 @@ writeShellApplication {
     cat > version.nix <<EOF
     {
       version = "$version";
-      released = false;
+      released = true;
     }
     EOF
 
@@ -70,7 +70,12 @@ writeShellApplication {
     git tag -a "latest" -m "release: v$version"
 
     # a revsion suffix when run from the tagged release commit
-    echo "{ version = \"$version\"; released = false; }" > version.nix
+    cat > version.nix <<EOF
+    {
+      version = "$version";
+      released = false;
+    }
+    EOF
     git commit -am "release: reset released flag"
 
     echo "Release was prepared successfully!"
