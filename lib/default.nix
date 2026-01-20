@@ -6,8 +6,13 @@
   qemu-common ? import <nixpkgs/nixos/lib/qemu-common.nix>,
 }:
 let
-  # qemu-common is a function that takes { lib, pkgs } and returns QEMU utilities
-  qemu-common-lib = pkgs: qemu-common { inherit lib pkgs; };
+  # qemu-common is a function that takes { lib, stdenv } and returns QEMU utilities
+  qemu-common-lib =
+    pkgs:
+    qemu-common {
+      inherit lib;
+      inherit (pkgs) stdenv;
+    };
 
   outputs = import ../default.nix { inherit lib diskoLib; };
   diskoLib = {
