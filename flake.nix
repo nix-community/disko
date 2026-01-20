@@ -120,7 +120,7 @@
           text = ''treefmt "$@"'';
           runtimeInputs = [
             pkgs.deadnix
-            pkgs.nixfmt-rfc-style
+            pkgs.nixfmt
             pkgs.shellcheck
             pkgs.treefmt
           ];
