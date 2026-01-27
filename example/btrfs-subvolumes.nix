@@ -30,6 +30,9 @@
                 subvolumes = {
                   # Subvolume name is different from mountpoint
                   "/rootfs" = {
+                    # Btrfs mount options like compression are set by the first subvolume mounted.
+                    # https://btrfs.readthedocs.io/en/latest/ch-mount-options.html
+                    mountOptions = [ "compress=zstd" ];
                     mountpoint = "/";
                   };
                   # Subvolume name is the same as the mountpoint
