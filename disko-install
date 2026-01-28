@@ -22,6 +22,9 @@ Usage: $0 [OPTIONS]
   --system-config JSON        Merges the specified JSON object into the NixOS configuration.
   --mount-point PATH          Specify the mount point for the NixOS installation.
                               Default: /mnt/disko-install-root
+  --host-system SYSTEM        Override the host system used for format scripts (e.g., x86_64-linux).
+                              Detected automatically. Use this for cross-architecture installs where
+                              format tools must be native to the running kernel.
 EOF
 }
 
@@ -49,6 +52,7 @@ extraSystemConfig="{}"
 diskoAttr=diskoScript
 writeEfiBootEntries=false
 mountPoint=/mnt/disko-install-root
+hostSystem=""
 declare -A diskMappings
 declare -A extraFiles
 
@@ -146,6 +150,14 @@ parseArgs() {
       mountPoint=$2
       shift
       ;;
+    --host-system)
+      if [[ $# -lt 2 ]]; then
+        echo "Option $1 requires an argument (e.g., x86_64-linux)" >&2
+        exit 1
+      fi
+      hostSystem=$2
+      shift
+      ;;
     *)
       echo "Unknown option: $1" >&2
       showUsage
@@ -232,16 +244,26 @@ main() {
      trap cleanupMountPoint EXIT
   fi
 
+  # Build arguments for install-cli.nix
+  buildArgs=(
+    "${nix_args[@]}"
+    --no-out-link
+    --impure
+    --argstr flake "$flake"
+    --argstr flakeAttr "$flakeAttr"
+    --argstr rootMountPoint "$mountPoint"
+    --arg writeEfiBootEntries "$writeEfiBootEntries"
+    --arg diskMappings "$(serialiaseArrayToNix diskMappings)"
+    --argstr extraSystemConfig "$extraSystemConfig"
+  )
+
+  # Add hostSystem if specified for cross-compilation
+  if [[ -n "$hostSystem" ]]; then
+    buildArgs+=(--argstr hostSystem "$hostSystem")
+  fi
+
   if ! outputs=$(nixBuild "${libexec_dir}"/install-cli.nix \
-    "${nix_args[@]}" \
-    --no-out-link \
-    --impure \
-    --argstr flake "$flake" \
-    --argstr flakeAttr "$flakeAttr" \
-    --argstr rootMountPoint "$mountPoint" \
-    --arg writeEfiBootEntries "$writeEfiBootEntries" \
-    --arg diskMappings "$(serialiaseArrayToNix diskMappings)" \
-    --argstr extraSystemConfig "$extraSystemConfig" \
+    "${buildArgs[@]}" \
     -A installToplevel \
     -A closureInfo \
     -A "$diskoAttr"); then
@@ -278,15 +300,20 @@ main() {
     cp -ar "$source" "$mountPoint/$destination"
   done
 
-  # nix copy uses up a lot of memory and we work around issues with incorrect checksums in our store
-  # that can be caused by using closureInfo in combination with multiple builders and non-deterministic builds.
-  # Therefore if we have a blank store, we copy the store paths and registration from the closureInfo.
+  # Switch from `xcp` to `nix copy` because there was files missing on the new system
+  # which mean that the activation script would fail.
+  # Not sure there the problem lies with `xcp`, but seem to only be triggered by cross-build.
+  #
+  # `xcp` was introduced becuase of memory and speed performance, the test for cross-building
+  # I found the following
+  #
+  # | Tool     | Peak Memory | Time  |
+  # |----------|-------------|-------|
+  # | xcp      | 3.3 MB      | 1.14s |
+  # | nix copy | 43.9 MB     | 1.24s |
   if [[ ! -f "${mountPoint}/nix/var/nix/db/db.sqlite" ]]; then
-    echo "Copying store paths" >&2
-    mkdir -p "${mountPoint}/nix/store"
-    xargs xcp --recursive --target-directory "${mountPoint}/nix/store"  < "${closure_info}/store-paths"
-    echo "Loading nix database" >&2
-    NIX_STATE_DIR=${mountPoint}/nix/var/nix nix-store --load-db < "${closure_info}/registration"
+    echo "Copying store paths to target" >&2
+    xargs nix copy --to "${mountPoint}" --no-check-sigs < "${closure_info}/store-paths"
   fi
 
   nixos-install --no-channel-copy --no-root-password --system "$nixos_system" --root "$mountPoint"
