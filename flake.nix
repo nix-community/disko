@@ -61,6 +61,15 @@
         system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
+
+          # Import diskoLib for this system
+          diskoLibForSystem = import ./lib {
+            lib = pkgs.lib;
+            makeTest = import (nixpkgs + "/nixos/tests/make-test-python.nix");
+            eval-config = import (nixpkgs + "/nixos/lib/eval-config.nix");
+            qemu-common = import (nixpkgs + "/nixos/lib/qemu-common.nix");
+          };
+
           # FIXME: aarch64-linux seems to hang on boot
           nixosTests = lib.optionalAttrs pkgs.stdenv.hostPlatform.isx86_64 (
             import ./tests {
@@ -84,7 +93,7 @@
 
           jsonTypes = pkgs.writeTextFile {
             name = "jsonTypes";
-            text = (builtins.toJSON diskoLib.jsonTypes);
+            text = (builtins.toJSON diskoLibForSystem.jsonTypes);
           };
 
           treefmt = pkgs.runCommand "treefmt" { } ''
