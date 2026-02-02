@@ -72,16 +72,24 @@ in
   boot.zfs.forceImportAll = true;
   boot.zfs.forceImportRoot = lib.mkForce true;
 
-  system.build.vmWithDisko = hostPkgs.writers.writeDashBin "disko-vm" ''
+  system.build.vmWithDisko = let
+    imageName = assert lib.assertMsg ((builtins.length disks) == 1)
+      "vmWithDisko only supports a single disk.";
+      (builtins.elemAt disks 0).imageName;
+    backingImage = 
+      "${config.system.build.diskoImages}/${lib.escapeShellArg imageName}.qcow2";
+    qemuImage = "$tmp/${lib.escapeShellArg imageName}.qcow2";
+    in
+  hostPkgs.writers.writeDashBin "disko-vm" ''
     set -efux
     export tmp=$(${hostPkgs.coreutils}/bin/mktemp -d)
-    trap 'rm -rf "$tmp"' EXIT
-    ${lib.concatMapStringsSep "\n" (disk: ''
-      ${hostPkgs.qemu}/bin/qemu-img create -f qcow2 \
-      -b ${config.system.build.diskoImages}/${lib.escapeShellArg disk.imageName}.qcow2 \
-      -F qcow2 "$tmp"/${lib.escapeShellArg disk.imageName}.qcow2
-    '') disks}
+    trap 'rm -rf "$tmp"' EXIT 
+    ${hostPkgs.qemu}/bin/qemu-img create -f qcow2 \
+    -b ${backingImage} \
+    -F qcow2 ${qemuImage}
+
     set +f
+    export NIX_DISK_IMAGE=${qemuImage}
     ${config.system.build.vm}/bin/run-*-vm "$@"
   '';
 }
