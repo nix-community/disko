@@ -50,23 +50,11 @@ let
       };
 
     # list of devices generated inside qemu
-    devices = [
-      "/dev/vda"
-      "/dev/vdb"
-      "/dev/vdc"
-      "/dev/vdd"
-      "/dev/vde"
-      "/dev/vdf"
-      "/dev/vdg"
-      "/dev/vdh"
-      "/dev/vdi"
-      "/dev/vdj"
-      "/dev/vdk"
-      "/dev/vdl"
-      "/dev/vdm"
-      "/dev/vdn"
-      "/dev/vdo"
-    ];
+    devices =
+      let
+        chars = lib.stringToCharacters "abcdefghijklmnopqrstuvwxyz";
+      in
+      (map (c: "/dev/vd${c}") chars) ++ (lib.concatMap (c1: map (c2: "/dev/vd${c1}${c2}") chars) chars);
 
     # This is the test generator for a disko test
     makeDiskoTest =
@@ -288,7 +276,22 @@ let
               (testConfigInstall ? networking.hostId) && (testConfigInstall.networking.hostId != null)
             ) testConfigInstall.networking.hostId;
 
-            virtualisation.emptyDiskImages = builtins.genList (_: 4096) num-disks;
+            virtualisation.emptyDiskImages = builtins.genList (i: {
+              size = 4096;
+              driveConfig.deviceExtraOpts.bus = "bridge${toString (i / 31 + 1)}";
+            }) num-disks;
+
+            # Using `networkingOptions` instead of `options` here because it's added _before_ the drive options, where `options` is added at the end :-P
+            virtualisation.qemu.networkingOptions = lib.mkAfter (
+              let
+                # A PCI bridge takes one slot and adds 32, so we'll want one for every 31 drives
+                count = (num-disks + 30) / 31;
+                parentBridge = i: lib.optionalString (i > 0) "bus=bridge${toString i},";
+              in
+              (builtins.genList (
+                i: "-device pci-bridge,id=bridge${toString (i + 1)},${parentBridge i}chassis_nr=${toString (i + 1)}"
+              ) count)
+            );
 
             # useful for debugging via repl
             system.build.systemToInstall = installed-system-eval;
@@ -301,12 +304,17 @@ let
 
             def disks(oldmachine, num_disks):
                 disk_flags = []
+                for i in range((num_disks + 30) // 31):
+                    disk_flags += [
+                      '-device',
+                      f"pci-bridge,id=bridge{i + 1},{f'bus=bridge{i},' if i > 0 else '''}chassis_nr={i + 1}"
+                    ]
                 for i in range(num_disks):
                     disk_flags += [
                       '-drive',
                       f"file={oldmachine.state_dir}/empty{i}.qcow2,id=drive{i + 1},if=none,index={i + 1},werror=report",
                       '-device',
-                      f"virtio-blk-pci,drive=drive{i + 1}"
+                      f"virtio-blk-pci,bus=bridge{i // 31 + 1},drive=drive{i + 1}"
                     ]
                 return disk_flags
 

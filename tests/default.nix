@@ -22,6 +22,7 @@ let
   );
   incompatibleTests = lib.optionals pkgs.stdenv.buildPlatform.isRiscV64 [
     "zfs"
+    "zfs-multi-raidz3"
     "zfs-over-legacy"
     "cli"
     "module"
