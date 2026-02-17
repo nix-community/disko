@@ -1,11 +1,6 @@
 name: Auto Merge Dependency Updates
 on:
-  pull_request_target:
-    types:
-      - opened
-      - synchronize
-      - reopened
-      - labeled
+  - pull_request_target
 jobs:
   auto-merge-dependency-updates:
     runs-on: ubuntu-latest
@@ -17,5 +12,3 @@ jobs:
       cancel-in-progress: true
     steps:
       - uses: Mic92/auto-merge@main
-        with:
-          required-labels: merge-queue,dependencies
