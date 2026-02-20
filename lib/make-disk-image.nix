@@ -49,6 +49,7 @@ let
         ++ lib.optional (
           lib.elem "zfs" cfg.extraRootModules || configSupportsZfs
         ) cfg.kernelPackages.${config.boot.zfs.package.kernelModuleAttribute}
+        ++ cfg.extraRootModulePackages
       );
     }
     // lib.optionalAttrs (diskoLib.vmToolsSupportsCustomQemu lib) {
