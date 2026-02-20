@@ -71,15 +71,15 @@ In the this example we create a flake containing a nixos configuration for
 
    Options:
    * --pre-format-files <src> <dst>
-     copies the src to the dst on the VM, before disko is run
+     copies the content of path <src> to path <dst> on the VM, before disko is run
      This is useful to provide secrets like LUKS keys, or other files you need for formatting
    * --post-format-files <src> <dst>
-     copies the src to the dst on the finished image
+     copies the content of path <src> to path <dst> on the finished image
      These end up in the images later and is useful if you want to add some extra stateful files
      They will have the same permissions but will be owned by root:root
    * --build-memory <amt>
      specify the amount of memory in MiB that gets allocated to the build VM
-     This can be useful if you want to build images with a more involed NixOS config
+     This can be useful if you want to build images with a more involved NixOS config
      The default is 1024 MiB
    ```
 
