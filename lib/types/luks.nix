@@ -160,6 +160,16 @@ in
             done
           ''}
           cryptsetup -q luksFormat "${config.device}" ${toString config.extraFormatArgs} ${keyFileArgs}
+        else
+          if [ -z ''${IN_DISKO_TEST+x} ]; then
+            set +x
+            echo "Enter password for ${config.device}"
+            IFS= read -r -s password
+            export password
+            set -x
+          else
+            export password=disko
+          fi
         fi
 
         if ! cryptsetup status "${config.name}" >/dev/null; then
