@@ -22,7 +22,7 @@ jobs:
       - name: Update flakes
         run: nix flake update
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           title: "flake: update inputs"
           token: ${{ steps.app-token.outputs.token }}
