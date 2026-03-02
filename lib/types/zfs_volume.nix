@@ -63,7 +63,11 @@
       default = ''
         if ! zfs get type "${config._parent.name}/${config.name}" >/dev/null 2>&1; then
           zfs create "${config._parent.name}/${config.name}" \
-            ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") config.options)} \
+            ${
+              lib.concatStringsSep " " (
+                lib.mapAttrsToList (n: v: "-o ${n}=${lib.escapeShellArg v}") config.options
+              )
+            } \
             -V ${config.size} ${toString (builtins.map lib.escapeShellArg config.extraArgs)}
           zvol_wait
           partprobe "/dev/zvol/${config._parent.name}/${config.name}"
