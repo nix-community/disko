@@ -193,7 +193,7 @@ in {
               (subvol.mountpoint != null)
               (
                 let
-                  mergedOptions = lib.unique (config.mountOptions ++ subvol.mountOptions ++ ["subvol=${subvol.name}"]);
+                  mergedOptions = lib.unique (config.mountOptions ++ subvol.mountOptions ++ [ "subvol=${subvol.name}" ]);
                 in {
                   ${subvol.mountpoint} = ''
                     if ! findmnt "${config.device}" "${rootMountPoint}${subvol.mountpoint}" > /dev/null 2>&1; then
@@ -265,7 +265,7 @@ in {
           subvol:
             lib.optional (subvol.mountpoint != null) (
               let
-                mergedOptions = lib.unique (config.mountOptions ++ subvol.mountOptions ++ ["subvol=${subvol.name}"]);
+                mergedOptions = lib.unique (config.mountOptions ++ subvol.mountOptions ++ [ "subvol=${subvol.name}" ]);
               in {
                 fileSystems.${subvol.mountpoint} = {
                   device = config.device;
