@@ -203,6 +203,11 @@ in
                       lib.concatMapStringsSep " " (opt: "-o ${opt}") (subvol.mountOptions ++ [ "subvol=${subvol.name}" ])
                     } \
                     -o X-mount.mkdir
+                    mount "${config.device}" "${rootMountPoint}${subvol.mountpoint}" \
+                    ${
+                      lib.concatMapStringsSep " " (opt: "-o ${opt}") (subvol.mountOptions ++ [ "subvol=${subvol.name}" ])
+                    } \
+                    -o remount
                   fi
                 '';
               }
@@ -217,6 +222,9 @@ in
                   mount "${config.device}" "${rootMountPoint}${config.mountpoint}" \
                   ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
                   -o X-mount.mkdir
+                  mount "${config.device}" "${rootMountPoint}${config.mountpoint}" \
+                  ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
+                  -o remount
                 fi
               '';
             };

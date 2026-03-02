@@ -30,6 +30,7 @@
                 subvolumes = {
                   # Subvolume name is different from mountpoint
                   "/rootfs" = {
+                    mountOptions = [ "compress=zstd" ];
                     mountpoint = "/";
                   };
                   # Subvolume name is the same as the mountpoint
