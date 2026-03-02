@@ -263,7 +263,7 @@ in {
       default = [
         (map (
           subvol:
-            lib.optional (subvol.mountpoint != null) (
+            lib.optionalAttrs (subvol.mountpoint != null) (
               let
                 mergedOptions = lib.unique (config.mountOptions ++ subvol.mountOptions ++ [ "subvol=${subvol.name}" ]);
               in {
