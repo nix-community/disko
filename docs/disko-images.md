@@ -8,7 +8,7 @@ Follow the steps below to generate disk images:
 1. **Create a NixOS configuration that includes the disko and the disk
    configuration of your choice**
 
-In the this example we create a flake containing a nixos configuration for
+In this example we create a flake containing a nixos configuration for
 `myhost`.
 
 ```nix
@@ -79,7 +79,7 @@ In the this example we create a flake containing a nixos configuration for
      They will have the same permissions but will be owned by root:root
    * --build-memory <amt>
      specify the amount of memory in MiB that gets allocated to the build VM
-     This can be useful if you want to build images with a more involed NixOS config
+     This can be useful if you want to build images with a more involved NixOS config
      The default is 1024 MiB
    ```
 
@@ -107,7 +107,7 @@ In the this example we create a flake containing a nixos configuration for
   disko.devices.disk.<drive>.imageName = "nixos-x86_64-linux-generic-btrfs"; # Set your preferred name
   ```
 
-  The image scirpt will produce `nixos-x86_64-linux-generic-btrfs.raw` instead of `<drive>.raw`.
+  The image script will produce `nixos-x86_64-linux-generic-btrfs.raw` instead of `<drive>.raw`.
 
 - For virtual drive use, define the image size in your Disko configuration:
 
