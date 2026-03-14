@@ -91,12 +91,14 @@
           updateOptions = builtins.removeAttrs createOptions onetimeProperties;
         in
         ''
-          if ! zfs get type ${config._name} >/dev/null 2>&1; then
+          if ! zfs get type "${config._name}" >/dev/null 2>&1; then
             ${
               if config._createFilesystem then
                 ''
-                  zfs create -up ${config._name} \
-                    ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") (createOptions))}
+                  zfs create -up "${config._name}" \
+                    ${lib.concatStringsSep " " (
+                      lib.mapAttrsToList (n: v: "-o ${n}=${lib.escapeShellArg v}") (createOptions)
+                    )}
                 ''
               else
                 ''
@@ -107,8 +109,8 @@
           ${lib.optionalString (updateOptions != { }) ''
             else
               zfs set -u ${
-                lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "${n}=${v}") updateOptions)
-              } ${config._name}
+                lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "${n}=${lib.escapeShellArg v}") updateOptions)
+              } "${config._name}"
           ''}
           fi
         '';
