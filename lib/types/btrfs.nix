@@ -9,6 +9,49 @@
   ...
 }:
 let
+  btrfsPerMountOptionKeys = [
+    "ro"
+    "rw"
+    "nosuid"
+    "suid"
+    "dev"
+    "nodev"
+    "exec"
+    "noexec"
+    "atime"
+    "lazytime"
+    "noatime"
+    "nolazytime"
+    "norelatime"
+    "nostrictatime"
+    "relatime"
+    "strictatime"
+  ];
+
+  getMountOptionKey = option: builtins.head (lib.splitString "=" option);
+
+  isIgnoredMountOption =
+    option:
+    (
+      let
+        optionKey = lib.toLower (getMountOptionKey option);
+      in
+      optionKey == "defaults" || optionKey == "subvol" || optionKey == "x-mount.mkdir"
+    );
+
+  isWhitelistedPerMountOption =
+    option: lib.elem (lib.toLower (getMountOptionKey option)) btrfsPerMountOptionKeys;
+
+  fsWideMountOptionSet =
+    mountOptions:
+    lib.sort lib.lessThan (
+      lib.unique (
+        lib.filter (
+          option: !(isIgnoredMountOption option || isWhitelistedPerMountOption option)
+        ) mountOptions
+      )
+    );
+
   swapType = lib.mkOption {
     type = lib.types.attrsOf (
       lib.types.submodule (
@@ -88,7 +131,27 @@ in
     mountOptions = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ "defaults" ];
-      description = "A list of options to pass to mount.";
+      description = ''
+        A list of options to pass to mount.
+        Btrfs mount options are largely filesystem-wide; by default disko enforces
+        consistency for mounted subvolumes on non-whitelisted options.
+      '';
+    };
+    warnOnInconsistentMountOptions = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Warn when mounted subvolumes use inconsistent non-whitelisted Btrfs mount options.
+        Set to false to silence these warnings.
+      '';
+    };
+    enforceConsistentMountOptions = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Throw an evaluation error when mounted subvolumes use inconsistent non-whitelisted
+        Btrfs mount options.
+      '';
     };
     subvolumes = lib.mkOption {
       type = lib.types.attrsOf (
@@ -185,13 +248,83 @@ in
       inherit config options;
       default =
         let
+          subvolDefaults = (options.subvolumes.type.getSubOptions [ ]).mountOptions.default;
+
+          mountedSubvolumes = map (name: config.subvolumes.${name}) (
+            lib.filter (name: config.subvolumes.${name}.mountpoint != null) (
+              builtins.attrNames config.subvolumes
+            )
+          );
+
+          baseFsOpts = fsWideMountOptionSet config.mountOptions;
+          baseFsOptsByKey = builtins.listToAttrs (
+            map (opt: {
+              name = lib.toLower (getMountOptionKey opt);
+              value = opt;
+            }) baseFsOpts
+          );
+
+          # Subvolumes using the default mountOptions inherit the top-level Btrfs
+          # mountOptions for the consistency check.
+          subvolFsOverrides =
+            subvol:
+            if subvol.mountOptions == subvolDefaults then [ ] else fsWideMountOptionSet subvol.mountOptions;
+
+          optsByKey =
+            opts:
+            builtins.listToAttrs (
+              map (opt: {
+                name = lib.toLower (getMountOptionKey opt);
+                value = opt;
+              }) opts
+            );
+
+          # Effective filesystem-wide options are computed by overlaying subvolume
+          # overrides on top of the canonical top-level filesystem options by key.
+          mergedFsOpts =
+            subvol:
+            lib.sort lib.lessThan (
+              builtins.attrValues (baseFsOptsByKey // optsByKey (subvolFsOverrides subvol))
+            );
+
+          mountedSubvols = map (subvol: {
+            cfg = subvol;
+            requested = subvolFsOverrides subvol;
+            eff = mergedFsOpts subvol;
+          }) mountedSubvolumes;
+
+          isConsistentOverrides =
+            requestedOpts:
+            lib.all (
+              opt:
+              let
+                optKey = lib.toLower (getMountOptionKey opt);
+              in
+              builtins.hasAttr optKey baseFsOptsByKey && baseFsOptsByKey.${optKey} == opt
+            ) requestedOpts;
+
+          inconsistentSubvols = lib.filter (subvol: !(isConsistentOverrides subvol.requested)) mountedSubvols;
+
+          fmtFsOpts = opts: if opts == [ ] then "(none)" else lib.concatStringsSep ", " opts;
+
+          inconsistentMsg =
+            "Inconsistent Btrfs mountOptions across mounted subvolumes: "
+            + "${lib.concatStringsSep ", " (map (subvol: subvol.cfg.name) inconsistentSubvols)}. "
+            + "Offending effective filesystem-wide option sets: "
+            + "${
+              lib.concatStringsSep "; " (
+                map (subvol: "${subvol.cfg.name}=[${fmtFsOpts subvol.eff}]") inconsistentSubvols
+              )
+            }. "
+            + "Canonical top-level filesystem-wide option set: "
+            + "[${fmtFsOpts baseFsOpts}]. "
+            + "Btrfs mount options are largely filesystem-wide, so differing filesystem-wide options "
+            + "across subvolume mounts are not deterministic. Only per-mount flags are safely allowed "
+            + "(ro/rw, nosuid/suid, nodev/dev, noexec/exec, and atime variants).";
+
           subvolMounts = lib.concatMapAttrs (
             _: subvol:
-            lib.warnIf
-              (
-                subvol.mountOptions != (options.subvolumes.type.getSubOptions [ ]).mountOptions.default
-                && subvol.mountpoint == null
-              )
+            lib.warnIf (subvol.mountOptions != subvolDefaults && subvol.mountpoint == null)
               "Subvolume ${subvol.name} has mountOptions but no mountpoint. See upgrade guide (2023-07-09 121df48)."
               lib.optionalAttrs
               (subvol.mountpoint != null)
@@ -207,10 +340,20 @@ in
                 '';
               }
           ) config.subvolumes;
+
+          guardedSubvolMounts =
+            if inconsistentSubvols == [ ] then
+              subvolMounts
+            else if config.enforceConsistentMountOptions then
+              throw inconsistentMsg
+            else if config.warnOnInconsistentMountOptions then
+              lib.warn inconsistentMsg subvolMounts
+            else
+              subvolMounts;
         in
         {
           fs =
-            subvolMounts
+            guardedSubvolMounts
             // lib.optionalAttrs (config.mountpoint != null) {
               ${config.mountpoint} = ''
                 if ! findmnt "${config.device}" "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
