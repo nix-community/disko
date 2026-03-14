@@ -209,7 +209,7 @@ in
       They will have the same permissions but will be owned by root:root
     * --build-memory <amt>
       specify the amount of memory in MiB that gets allocated to the build VM
-      This can be useful if you want to build images with a more involed NixOS config
+      This can be useful if you want to build images with a more involved NixOS config
       The default is disko.memSize which defaults to ${builtins.toString options.disko.memSize.default} MiB
     USAGE
     }

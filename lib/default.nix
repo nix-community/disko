@@ -940,7 +940,7 @@ let
             type = lib.types.str;
             description = ''
               The script to unmount (& destroy) all devices defined by disko.devices
-              Does not ask for confirmation! Depracated in favor of _destroy
+              Does not ask for confirmation! Deprecated in favor of _destroy
             '';
             default = ''
               umount -Rv "${rootMountPoint}" || :
