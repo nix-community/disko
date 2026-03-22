@@ -203,12 +203,9 @@
                 SUBVOL_ABS_PATH="$MNTPOINT/${subvolume.name}";
                 # Check if it's already a subvolume (using snapshot).
                 if ! bcachefs subvolume snapshot "$SUBVOL_ABS_PATH" "$TEMPDIR/" >&2 2>&1; then
-                  # It's not a subvolume, now check if it's a directory.
-                  if ! test -d "$SUBVOL_ABS_PATH"; then
-                    # It's not a subvolume AND not a directory, so create it.
-                    mkdir -p -- "$(dirname -- "$SUBVOL_ABS_PATH")";
-                    bcachefs subvolume create "$SUBVOL_ABS_PATH";
-                  fi
+                  # Attempt to create the subvolume otherwise.
+                  mkdir -p -- "$(dirname -- "$SUBVOL_ABS_PATH")";
+                  bcachefs subvolume create "$SUBVOL_ABS_PATH";
                 fi;
               )
             '') (lib.attrValues config.subvolumes)}
