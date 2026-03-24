@@ -10,6 +10,13 @@ let
   originalSystem = (builtins.getFlake "${flake}").nixosConfigurations."${flakeAttr}";
   lib = originalSystem.pkgs.lib;
 
+  # Apply extraSystemConfig first, before accessing any config values
+  baseSystem = originalSystem.extendModules {
+    modules = [
+      ({ _file = "disko-install --system-config"; } // (builtins.fromJSON extraSystemConfig))
+    ];
+  };
+
   deviceName =
     name:
     if diskMappings ? ${name} then
@@ -29,12 +36,12 @@ let
         device = dev;
       };
     }
-  ) originalSystem.config.disko.devices.disk;
+  ) baseSystem.config.disko.devices.disk;
 
   # filter all nixos module internal attributes
   cleanedDisks = lib.filterAttrsRecursive (n: _: !lib.hasPrefix "_" n) modifiedDisks;
 
-  diskoSystem = originalSystem.extendModules {
+  diskoSystem = baseSystem.extendModules {
     modules = [
       {
         disko.rootMountPoint = rootMountPoint;
@@ -43,18 +50,12 @@ let
     ];
   };
 
-  installSystem = originalSystem.extendModules {
+  installSystem = baseSystem.extendModules {
     modules = [
-      (
-        { lib, ... }:
-        {
-          boot.loader.efi.canTouchEfiVariables = lib.mkVMOverride writeEfiBootEntries;
-          boot.loader.grub.devices = lib.mkVMOverride (lib.attrValues diskMappings);
-          imports = [
-            ({ _file = "disko-install --system-config"; } // (builtins.fromJSON extraSystemConfig))
-          ];
-        }
-      )
+      {
+        boot.loader.efi.canTouchEfiVariables = lib.mkVMOverride writeEfiBootEntries;
+        boot.loader.grub.devices = lib.mkVMOverride (lib.attrValues diskMappings);
+      }
     ];
   };
 in
