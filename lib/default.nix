@@ -79,6 +79,8 @@ let
     _partitionTypes = {
       inherit (diskoLib.types)
         bcachefs
+        bcache_cache
+        bcache_backing
         btrfs
         filesystem
         zfs
@@ -105,6 +107,8 @@ let
     _deviceTypes = {
       inherit (diskoLib.types)
         bcachefs
+        bcache_cache
+        bcache_backing
         table
         gpt
         btrfs
@@ -684,6 +688,7 @@ let
       let
         devices = {
           inherit (cfg.config)
+            bcache
             bcachefs_filesystems
             disk
             mdadm
@@ -695,6 +700,11 @@ let
       in
       {
         options = {
+          bcache = lib.mkOption {
+            type = lib.types.attrsOf diskoLib.types.bcache;
+            default = { };
+            description = "bcache device (cache + backing)";
+          };
           bcachefs_filesystems = lib.mkOption {
             type = lib.types.attrsOf diskoLib.types.bcachefs_filesystem;
             default = { };
@@ -769,6 +779,7 @@ let
                 # @todo Do we need to add bcachefs-tools or not?
                 destroyDependencies = with pkgs; [
                   util-linux
+                  bcache-tools
                   e2fsprogs
                   mdadm
                   zfs
