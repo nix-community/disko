@@ -355,7 +355,7 @@ in
           pkgs.systemd
           # We make cryptsetup aware of token libraries from systemd.
           # We do not have a lot of nice ways to do this...
-          (pkgs.runCommandNoCC pkgs.cryptsetup.name
+          (pkgs.runCommand pkgs.cryptsetup.name
             {
               nativeBuildInputs = [ pkgs.makeWrapper ];
             }
