@@ -17,7 +17,10 @@
     device = lib.mkOption {
       type = lib.types.str;
       default = device;
-      description = "Device to use as bcache backing device.";
+      description = ''
+        Device to use as bcache backing device. This must be an absolute
+        `/dev/...` member device path, not a `/dev/bcacheN` output device.
+      '';
     };
     set = lib.mkOption {
       type = lib.types.str;
@@ -34,6 +37,11 @@
       type = lib.types.functionTo diskoLib.jsonType;
       default = dev: {
         deviceDependencies.bcache.${config.set} = [ dev ];
+        bcache.backing = [
+          {
+            inherit (config) set device;
+          }
+        ];
       };
       description = "Metadata";
     };
@@ -45,7 +53,11 @@
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
-      default = { };
+      default = {
+        dev = ''
+          echo "${config.device}" >> "$disko_devices_dir/bcache_backing_${lib.escapeShellArg config.set}"
+        '';
+      };
     };
     _unmount = diskoLib.mkUnmountOption {
       inherit config options;
