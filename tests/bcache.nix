@@ -102,6 +102,27 @@ diskoLib.testLib.makeDiskoTest {
     machine.succeed(f'test "$(cat /sys/block/bcache0/bcache/backing_dev_name)" = "{expected_backing}"')
     machine.succeed("mountpoint /mnt")
 
+    # Regression: a stale filesystem signature on the backing partition must
+    # not surface through /dev/bcache0 and trick content `_create` into
+    # skipping format. Tear the set down, wipe bcache metadata, pre-poison the
+    # backing partition with a btrfs filesystem, then re-run format. The
+    # bcache device must come back as the configured ext4, not the stale
+    # btrfs.
+    machine.succeed("umount /mnt/boot")
+    machine.succeed(disko_unmount)
+    machine.succeed("test ! -b /dev/bcache0")
+    machine.succeed("find /sys/fs/bcache -maxdepth 1 -mindepth 1 -type d -exec sh -c 'for cset; do [ ! -e \"$cset/unregister\" ] || echo 1 > \"$cset/unregister\"; done' _ {} + 2>/dev/null || true")
+    machine.succeed("udevadm settle --timeout=10 || true")
+    machine.succeed("wipefs --all --force /dev/disk/by-partlabel/disk-backing-disk-backing")
+    machine.succeed("wipefs --all --force /dev/disk/by-partlabel/disk-cache-disk-cache")
+    machine.succeed("mkfs.btrfs -f /dev/disk/by-partlabel/disk-backing-disk-backing")
+    machine.succeed("blkid -o export /dev/disk/by-partlabel/disk-backing-disk-backing | grep -q '^TYPE=btrfs$'")
+    machine.succeed(disko_format)
+    machine.succeed(disko_mount)
+    machine.succeed("test -b /dev/bcache0")
+    machine.succeed("blkid -o export /dev/bcache0 | grep -q '^TYPE=ext4$'")
+    machine.succeed("findmnt -n -o FSTYPE /mnt | grep -q ext4")
+
     # A mount-only config expecting a different backing device must not reuse an
     # unrelated active /dev/bcache0.
     machine.succeed("umount /mnt/boot")

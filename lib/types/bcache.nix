@@ -158,6 +158,17 @@
               [ -b "${config.device}" ] && break
               sleep 1
             done
+
+            # A freshly assembled bcache device shifts backing data by
+            # `data_offset` sectors but does not zero the resulting mapping.
+            # Stale filesystem signatures from prior content on the backing
+            # member can therefore surface on the new bcache device, causing
+            # downstream content `_create` checks (e.g. btrfs' "skip mkfs if
+            # blkid reports any TYPE=") to skip formatting and then fail at
+            # mount time. Wipe the new device so it is unambiguously empty.
+            if [ -b "${config.device}" ]; then
+              wipefs --all --force "${config.device}" >&2 || true
+            fi
           fi
 
           if [ ! -b "${config.device}" ]; then
