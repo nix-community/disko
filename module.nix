@@ -310,16 +310,7 @@ in
             builtins.trace "the .diskoNoDeps output is deprecated, please use .diskoScriptNoDeps instead"
               (cfg.devices._scripts { inherit pkgs; }).diskoScriptNoDeps;
 
-          installTest = diskoLib.testLib.makeDiskoTest {
-            inherit extendModules pkgs;
-            name = "${config.networking.hostName}-disko";
-            disko-config = builtins.removeAttrs config [ "_module" ];
-            testMode = "direct";
-            bootCommands = cfg.test.bootCommands;
-            efi = cfg.test.efi;
-            enableOCR = cfg.test.enableOCR;
-            extraTestScript = cfg.test.extraChecks;
-          };
+          installTest = lib.mkDefault config.disko.test.test;
 
           diskoTest = lib.mkDefault config.disko.test.test;
 
