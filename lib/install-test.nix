@@ -134,9 +134,10 @@
             }
           ];
 
-          networking.hostId = lib.mkIf (
-            (testConfigInstall ? networking.hostId) && (testConfigInstall.networking.hostId != null)
-          ) testConfigInstall.networking.hostId;
+          # `networking.hostId` is propagated to every node via
+          # `defaults.networking.hostId` in module.nix's evalTest call
+          # (sourced from the host eval's config). No per-node setter
+          # needed here.
           virtualisation = {
             emptyDiskImages = builtins.genList (_: 4096) num-disks;
             qemu.options = lib.mkIf config.enableCanokey [

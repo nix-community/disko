@@ -63,7 +63,7 @@ in
   };
   disko.imageBuilder.imageFormat = "qcow2";
 
-  virtualisation.useEFIBoot = config.disko.tests.efi;
+  virtualisation.useEFIBoot = config.disko.test.efi;
   virtualisation.memorySize = lib.mkDefault config.disko.memSize;
   virtualisation.useDefaultFilesystems = false;
   virtualisation.diskImage = null;

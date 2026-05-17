@@ -11,14 +11,61 @@ let
   cfg = config.disko;
 
   vmVariantWithDisko = extendModules {
-    modules = [
-      ./lib/interactive-vm.nix
-      config.disko.tests.extraConfig
+    modules = [ ./lib/interactive-vm.nix ];
+  };
+
+  # `evalTest` (not `runTest`) because we need the evalModules result's
+  # `.type` to declare `options.disko.test` as a submodule. `runTest`'s
+  # `.type` is the string "derivation", unusable as an option type.
+  nixos-lib = import (pkgs.path + "/nixos/lib") { inherit lib; };
+  installTestEval = nixos-lib.evalTest {
+    imports = [
+      ./lib/install-test.nix
+      {
+        hostPkgs = pkgs;
+        node.pkgs = pkgs;
+        _module.args = {
+          inherit diskoLib;
+          diskoDevices = config.disko.devices;
+        };
+      }
+      {
+        defaults.networking.hostId = lib.mkIf (config.networking.hostId != null) config.networking.hostId;
+      }
     ];
   };
 in
 {
-  imports = [ ./lib/make-disk-image.nix ];
+  imports = [
+    ./lib/make-disk-image.nix
+
+    (lib.mkRemovedOptionModule [ "disko" "tests" "extraConfig" ] ''
+      `disko.tests.extraConfig` has been removed. The shared-overlay role
+      split into the two consumers that previously imported it:
+
+        - For the install-test, set on `disko.test.defaults` (applies to
+          every node — the test framework's native "imported into all
+          nodes" hook):
+
+            disko.test.defaults = { ... };
+
+        - For `system.build.vmWithDisko`, set on the variant directly:
+
+            virtualisation.vmVariantWithDisko = { imports = [ ... ]; };
+    '')
+
+    # 8 × `mkRenamedOptionModule` redirecting flat knobs into the
+    # `disko.test` submodule. Existing user configs keep working with one
+    # deprecation warning per renamed setter.
+    (lib.mkRenamedOptionModule [ "disko" "tests" "bootCommands" ] [ "disko" "test" "bootCommands" ])
+    (lib.mkRenamedOptionModule [ "disko" "tests" "efi" ] [ "disko" "test" "efi" ])
+    (lib.mkRenamedOptionModule [ "disko" "tests" "extraChecks" ] [ "disko" "test" "extraChecks" ])
+    (lib.mkRenamedOptionModule [ "disko" "tests" "boot" ] [ "disko" "test" "boot" ])
+    (lib.mkRenamedOptionModule [ "disko" "tests" "enableCanokey" ] [ "disko" "test" "enableCanokey" ])
+    (lib.mkRenamedOptionModule [ "disko" "tests" "postDisko" ] [ "disko" "test" "postDisko" ])
+    (lib.mkRenamedOptionModule [ "disko" "tests" "name" ] [ "disko" "test" "name" ])
+    (lib.mkRenamedOptionModule [ "disko" "tests" "enableOCR" ] [ "disko" "test" "enableOCR" ])
+  ];
 
   options.disko = {
     imageBuilder = {
@@ -184,53 +231,30 @@ in
       default = false;
     };
 
-    tests = {
-      bootCommands = lib.mkOption {
-        description = ''
-          NixOS test script commands to run after the machine has started. Can
-          be used to enter an interactive password.
-        '';
-        type = lib.types.lines;
-        default = "";
-      };
+  };
 
-      efi = lib.mkOption {
-        description = ''
-          Whether efi is enabled for the `system.build.installTest`.
-          We try to automatically detect efi based on the configured bootloader.
-        '';
-        type = lib.types.bool;
-        defaultText = "config.boot.loader.systemd-boot.enable || config.boot.loader.grub.efiSupport";
-        default = config.boot.loader.systemd-boot.enable || config.boot.loader.grub.efiSupport;
-      };
+  options.disko.test = lib.mkOption {
+    description = ''
+      The full NixOS test evaluation backing `system.build.diskoTest`
+      (and its back-compat alias `system.build.installTest`).
 
-      enableOCR = lib.mkOption {
-        description = ''
-          Sets the enableOCR option in the NixOS VM test driver.
-        '';
-        type = lib.types.bool;
-        default = false;
-      };
+      Override `nodes.formatter` to tweak the formatter VM (the one that
+      runs disko); override `nodes.machine` to tweak the booted system.
+      Override `testScript`, `enableOCR`, `defaults`, `globalTimeout`,
+      etc. to reach the test framework directly. The disko-specific
+      convenience knobs (`extraChecks`, `bootCommands`, `boot`, `efi`,
+      `postDisko`, `enableCanokey`, `mode`) are declared on the test
+      eval inside `./lib/install-test.nix` itself.
 
-      extraChecks = lib.mkOption {
-        description = ''
-          extra checks to run in the `system.build.installTest`.
-        '';
-        type = lib.types.lines;
-        default = "";
-        example = ''
-          machine.succeed("test -e /var/secrets/my.secret")
-        '';
-      };
-
-      extraConfig = lib.mkOption {
-        description = ''
-          Extra NixOS config for your test. Can be used to specify a different luks key for tests.
-          A dummy key is in /tmp/secret.key
-        '';
-        default = { };
-      };
-    };
+      Singular: there's one install-test today. The path is the *role*
+      ("a test"); the framework's `name` option discriminates the
+      *identity* (e.g. `disko.test.name = "luks-on-mdadm";`). Future
+      tests, if any materialize, sit at parallel singular paths
+      (`disko.formatTest`, `disko.upgradeTest`).
+    '';
+    inherit (installTestEval) type;
+    default = { };
+    visible = "shallow";
   };
 
   options.virtualisation.vmVariantWithDisko = lib.mkOption {
@@ -291,12 +315,13 @@ in
             name = "${config.networking.hostName}-disko";
             disko-config = builtins.removeAttrs config [ "_module" ];
             testMode = "direct";
-            bootCommands = cfg.tests.bootCommands;
-            efi = cfg.tests.efi;
-            enableOCR = cfg.tests.enableOCR;
-            extraSystemConfig = cfg.tests.extraConfig;
-            extraTestScript = cfg.tests.extraChecks;
+            bootCommands = cfg.test.bootCommands;
+            efi = cfg.test.efi;
+            enableOCR = cfg.test.enableOCR;
+            extraTestScript = cfg.test.extraChecks;
           };
+
+          diskoTest = lib.mkDefault config.disko.test.test;
 
           vmWithDisko = lib.mkDefault config.virtualisation.vmVariantWithDisko.system.build.vmWithDisko;
         }
