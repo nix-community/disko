@@ -1,10 +1,4 @@
-{
-  lib,
-  makeTest,
-  eval-config,
-  qemu-common-lib,
-  ...
-}:
+{ lib, ... }:
 
 let
   testLib = {

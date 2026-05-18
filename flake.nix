@@ -24,9 +24,6 @@
 
       diskoLib = import ./lib {
         inherit (nixpkgs) lib;
-        makeTest = import (nixpkgs + "/nixos/tests/make-test-python.nix");
-        eval-config = import (nixpkgs + "/nixos/lib/eval-config.nix");
-        qemu-common = import (nixpkgs + "/nixos/lib/qemu-common.nix");
       };
     in
     {
@@ -62,14 +59,7 @@
         let
           pkgs = nixpkgs.legacyPackages.${system};
           # FIXME: aarch64-linux seems to hang on boot
-          nixosTests = lib.optionalAttrs pkgs.stdenv.hostPlatform.isx86_64 (
-            import ./tests {
-              inherit pkgs;
-              makeTest = import (nixpkgs + "/nixos/tests/make-test-python.nix");
-              eval-config = import (nixpkgs + "/nixos/lib/eval-config.nix");
-              qemu-common = import (nixpkgs + "/nixos/lib/qemu-common.nix");
-            }
-          );
+          nixosTests = lib.optionalAttrs pkgs.stdenv.hostPlatform.isx86_64 (import ./tests { inherit pkgs; });
 
           disko-install = pkgs.callPackage ./tests/disko-install {
             inherit self;

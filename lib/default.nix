@@ -1,29 +1,11 @@
 {
   lib ? import <nixpkgs/lib>,
   rootMountPoint ? "/mnt",
-  makeTest ? import <nixpkgs/nixos/tests/make-test-python.nix>,
-  eval-config ? import <nixpkgs/nixos/lib/eval-config.nix>,
-  qemu-common ? import <nixpkgs/nixos/lib/qemu-common.nix>,
 }:
 let
-  # qemu-common is a function that takes { lib, stdenv } and returns QEMU utilities
-  qemu-common-lib =
-    pkgs:
-    qemu-common {
-      inherit lib;
-      inherit (pkgs) stdenv;
-    };
-
   outputs = import ../default.nix { inherit lib diskoLib; };
   diskoLib = {
-    testLib = import ./tests.nix {
-      inherit
-        lib
-        makeTest
-        eval-config
-        qemu-common-lib
-        ;
-    };
+    testLib = import ./tests.nix { inherit lib; };
     # like lib.types.oneOf but instead of a list takes an attrset
     # uses the field "type" to find the correct type in the attrset
     subType =
