@@ -66,4 +66,10 @@
       };
     };
   };
+  disko.test = {
+    name = "lvm-thin";
+    extraChecks = ''
+      machine.succeed("mountpoint /home");
+    '';
+  };
 }

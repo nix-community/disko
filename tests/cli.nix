@@ -11,14 +11,5 @@
       machine.succeed("mountpoint /ext4onzfs");
       machine.succeed("mountpoint /ext4_on_lvm");
     '';
-    nodes.machine.fileSystems = {
-      "/zfs_legacy_fs".options = [ "nofail" ];
-      "/zfs_fs".options = [ "nofail" ];
-    };
-    nodes.formatter.boot.kernelModules = [
-      "dm-raid"
-      "dm-mirror"
-    ];
   };
-  networking.hostId = "8425e349";
 }

@@ -37,4 +37,12 @@
       };
     };
   };
+  disko.test = {
+    name = "multi-device-no-deps";
+    boot = false;
+    extraChecks = ''
+      machine.succeed("mountpoint /mnt/a");
+      machine.succeed("mountpoint /mnt/b");
+    '';
+  };
 }

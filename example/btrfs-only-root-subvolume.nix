@@ -37,4 +37,10 @@
       };
     };
   };
+  disko.test = {
+    name = "btrfs-only-root-subvolume";
+    extraChecks = ''
+      machine.succeed("btrfs subvolume list /");
+    '';
+  };
 }

@@ -61,4 +61,10 @@
       };
     };
   };
+  disko.test = {
+    name = "lvm-sizes-sort";
+    extraChecks = ''
+      machine.succeed("mountpoint /home");
+    '';
+  };
 }

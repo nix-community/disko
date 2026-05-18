@@ -34,4 +34,10 @@
       };
     };
   };
+  disko.test = {
+    name = "gpt-unformatted";
+    extraChecks = ''
+      machine.succeed("mountpoint /");
+    '';
+  };
 }

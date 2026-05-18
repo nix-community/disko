@@ -20,4 +20,11 @@
       };
     };
   };
+  disko.test = {
+    name = "negative-size";
+    boot = false;
+    extraChecks = ''
+      machine.succeed("mountpoint /mnt");
+    '';
+  };
 }

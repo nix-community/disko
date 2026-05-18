@@ -42,4 +42,10 @@
       };
     };
   };
+  disko.test = {
+    name = "legacy-table";
+    extraChecks = ''
+      machine.succeed("mountpoint /");
+    '';
+  };
 }

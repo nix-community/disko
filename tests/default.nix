@@ -37,12 +37,16 @@ let
       ];
     };
 
+  exampleDirModule = lib.genAttrs (listNix ../example) (
+    name: evalModule (../example + "/${name}.nix")
+  );
+
   testsDirModule = lib.genAttrs (lib.subtractLists bespoke (listNix ./.)) (
     name: evalModule (./. + "/${name}.nix")
   );
 
   moduleTests = lib.mapAttrs (_: eval: eval.config.system.build.diskoTest) (
-    lib.removeAttrs testsDirModule incompatible
+    lib.removeAttrs (exampleDirModule // testsDirModule) incompatible
   );
 
   bespokeTests = lib.genAttrs bespoke (name: import (./. + "/${name}.nix") { inherit pkgs; });
