@@ -1,12 +1,9 @@
 {
-  pkgs ? import <nixpkgs> { },
-  diskoLib ? pkgs.callPackage ../lib { },
-}:
-diskoLib.testLib.makeDiskoTest {
-  inherit pkgs;
-  name = "btrfs-only-root-subvolume";
-  disko-config = ../example/btrfs-only-root-subvolume.nix;
-  extraTestScript = ''
-    machine.succeed("btrfs subvolume list /");
-  '';
+  imports = [ ../example/btrfs-only-root-subvolume.nix ];
+  disko.test = {
+    name = "btrfs-only-root-subvolume";
+    extraChecks = ''
+      machine.succeed("btrfs subvolume list /");
+    '';
+  };
 }

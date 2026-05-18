@@ -1,12 +1,9 @@
 {
-  pkgs ? import <nixpkgs> { },
-  diskoLib ? pkgs.callPackage ../lib { },
-}:
-diskoLib.testLib.makeDiskoTest {
-  inherit pkgs;
-  name = "simple-efi";
-  disko-config = ../example/simple-efi.nix;
-  extraTestScript = ''
-    machine.succeed("mountpoint /");
-  '';
+  imports = [ ../example/simple-efi.nix ];
+  disko.test = {
+    name = "simple-efi";
+    extraChecks = ''
+      machine.succeed("mountpoint /");
+    '';
+  };
 }

@@ -1,36 +1,50 @@
 {
-  makeTest ? import <nixpkgs/nixos/tests/make-test-python.nix>,
-  eval-config ? import <nixpkgs/nixos/lib/eval-config.nix>,
-  qemu-common ? import <nixpkgs/nixos/lib/qemu-common.nix>,
   pkgs ? import <nixpkgs> { },
+  ...
 }:
 let
-  lib = pkgs.lib;
-  diskoLib = import ../lib {
-    inherit
-      lib
-      makeTest
-      eval-config
-      qemu-common
-      ;
-  };
+  inherit (pkgs) lib;
 
-  allTestFilenames = builtins.map (lib.removeSuffix ".nix") (
-    builtins.filter (x: lib.hasSuffix ".nix" x && x != "default.nix") (
-      lib.attrNames (builtins.readDir ./.)
-    )
-  );
-  incompatibleTests = lib.optionals pkgs.stdenv.buildPlatform.isRiscV64 [
+  bespoke = [
+    "make-disk-image"
+    "make-disk-image-impure"
+    "mdadm-btrfs-wipe"
+    "standalone"
+  ];
+  incompatible = lib.optionals pkgs.stdenv.buildPlatform.isRiscV64 [
     "zfs"
     "zfs-over-legacy"
     "cli"
     "module"
     "complex"
   ];
-  allCompatibleFilenames = lib.subtractLists incompatibleTests allTestFilenames;
 
-  allTests = lib.genAttrs allCompatibleFilenames (
-    test: import (./. + "/${test}.nix") { inherit diskoLib pkgs; }
+  listNix =
+    dir:
+    map (lib.removeSuffix ".nix") (
+      lib.attrNames (
+        lib.filterAttrs (n: _: lib.hasSuffix ".nix" n && n != "default.nix") (builtins.readDir dir)
+      )
+    );
+
+  evalModule =
+    file:
+    import (pkgs.path + "/nixos/lib/eval-config.nix") {
+      system = pkgs.stdenv.hostPlatform.system;
+      modules = [
+        ../module.nix
+        file
+      ];
+    };
+
+  testsDirModule = lib.genAttrs (lib.subtractLists bespoke (listNix ./.)) (
+    name: evalModule (./. + "/${name}.nix")
   );
+
+  moduleTests = lib.mapAttrs (_: eval: eval.config.system.build.diskoTest) (
+    lib.removeAttrs testsDirModule incompatible
+  );
+
+  bespokeTests = lib.genAttrs bespoke (name: import (./. + "/${name}.nix") { inherit pkgs; });
 in
-allTests
+moduleTests // bespokeTests

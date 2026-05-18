@@ -1,13 +1,10 @@
 {
-  pkgs ? import <nixpkgs> { },
-  diskoLib ? pkgs.callPackage ../lib { },
-}:
-diskoLib.testLib.makeDiskoTest {
-  inherit pkgs;
-  name = "tmpfs";
-  disko-config = ../example/tmpfs.nix;
-  extraTestScript = ''
-    machine.succeed("mountpoint /");
-    machine.succeed("mountpoint /tmp");
-  '';
+  imports = [ ../example/tmpfs.nix ];
+  disko.test = {
+    name = "tmpfs";
+    extraChecks = ''
+      machine.succeed("mountpoint /");
+      machine.succeed("mountpoint /tmp");
+    '';
+  };
 }

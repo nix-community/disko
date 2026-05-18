@@ -1,12 +1,9 @@
 {
-  pkgs ? import <nixpkgs> { },
-  diskoLib ? pkgs.callPackage ../lib { },
-}:
-diskoLib.testLib.makeDiskoTest {
-  inherit pkgs;
-  name = "gpt-unformatted";
-  disko-config = ../example/gpt-unformatted.nix;
-  extraTestScript = ''
-    machine.succeed("mountpoint /");
-  '';
+  imports = [ ../example/gpt-unformatted.nix ];
+  disko.test = {
+    name = "gpt-unformatted";
+    extraChecks = ''
+      machine.succeed("mountpoint /");
+    '';
+  };
 }
