@@ -13,6 +13,7 @@ let
   viewLogsCommand = "journalctl --boot --unit=unattendedInstall.service --unit=unattendedInstallAtBoot.service";
 in
 {
+  imports = [ ./unattended-install-iso.nix ];
   options.disko.unattendedInstall = {
     enable = lib.mkOption {
       type = lib.types.bool;
