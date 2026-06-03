@@ -77,6 +77,7 @@
           };
 
           unattended-install-module = pkgs.callPackage ./tests/unattended-install-module { };
+          unattended-install-iso = pkgs.callPackage ./tests/unattended-install-iso { };
 
           checkJqSyntax = pkgs.runCommand "check-jq-syntax" { nativeBuildInputs = [ pkgs.jq ]; } ''
             echo '{ "blockdevices" : [] }' | jq -r -f ${./disk-deactivate/disk-deactivate.jq} --arg disk_to_clear foo
@@ -101,6 +102,16 @@
         // lib.optionalAttrs (!pkgs.stdenv.hostPlatform.isx86_32) {
           inherit unattended-install-module;
         }
+        # FIXME: aarch64-linux fails to find /dev/disk/by-label/nixos-26.11-aarch64
+        //
+          lib.optionalAttrs
+            (
+              !pkgs.stdenv.hostPlatform.isx86_32
+              && !(pkgs.stdenv.hostPlatform.isAarch64 && pkgs.stdenv.hostPlatform.isLinux)
+            )
+            {
+              inherit unattended-install-iso;
+            }
         //
           pkgs.lib.optionalAttrs (!pkgs.stdenv.buildPlatform.isRiscV64 && !pkgs.stdenv.hostPlatform.isx86_32)
             {
