@@ -174,12 +174,12 @@
           # Format the filesystem with all devices and arguments.
           if ! blkid -o export "$(blkid -lU ${config.uuid})" | grep -q 'TYPE=bcachefs' >&2 2>&1; then
             bcachefs format \
-              "$@" \
               --uuid="${config.uuid}" \
               ${lib.concatStringsSep " \\\n" config.extraFormatArgs} \
               ${
                 lib.optionalString (config.passwordFile != null) ''--encrypted < "${config.passwordFile}"''
-              };
+              } \
+              "$@";
           fi;
         );
 
