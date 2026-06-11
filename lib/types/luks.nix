@@ -218,7 +218,7 @@ in
                 export password
                 # shellcheck disable=SC2154
                 if [ "$password" != "$password_check" ]; then
-                  exit 1
+                  return 1
                 fi
                 set -x
               else
