@@ -126,7 +126,7 @@
           type = lib.types.functionTo diskoLib.jsonType;
           default =
             dev:
-            lib.foldr lib.recursiveUpdate { } (
+            lib.foldr diskoLib.recursiveUpdate { } (
               lib.imap (
                 _index: partition: lib.optionalAttrs (partition.content != null) (partition.content._meta dev)
               ) config.partitions
@@ -174,30 +174,32 @@
           inherit config options;
           default =
             let
-              partMounts = lib.foldr lib.recursiveUpdate { } (
+              partitionMounts = (
                 map (
                   partition: lib.optionalAttrs (partition.content != null) partition.content._mount
                 ) config.partitions
               );
+              partMountFs = lib.foldr lib.recursiveUpdate { } (map (mount: mount.fs or { }) partitionMounts);
             in
             {
-              dev = partMounts.dev or "";
-              fs = partMounts.fs or { };
+              dev = lib.concatMapStrings (mount: mount.dev or "") partitionMounts;
+              fs = partMountFs;
             };
         };
         _unmount = diskoLib.mkUnmountOption {
           inherit config options;
           default =
             let
-              partMounts = lib.foldr lib.recursiveUpdate { } (
+              partitionMounts = (
                 map (
                   partition: lib.optionalAttrs (partition.content != null) partition.content._unmount
                 ) config.partitions
               );
+              partMountFs = lib.foldr lib.recursiveUpdate { } (map (mount: mount.fs or { }) partitionMounts);
             in
             {
-              dev = partMounts.dev or "";
-              fs = partMounts.fs or { };
+              dev = lib.concatMapStrings (mount: mount.dev or "") partitionMounts;
+              fs = partMountFs;
             };
         };
         _config = lib.mkOption {
