@@ -41,7 +41,7 @@ let
       ]
       ++ (lib.optional configSupportsZfs "zfs")
       ++ cfg.extraRootModules;
-      kernel = pkgs.aggregateModules (
+      kernelModules = pkgs.aggregateModules (
         [
           cfg.kernelPackages.kernel
         ]
