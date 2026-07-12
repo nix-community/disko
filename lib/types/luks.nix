@@ -147,6 +147,7 @@ in
     enrollTPM2 = lib.mkOption {
       type = lib.types.bool;
       default = config.enrollFinalTPM2PostInstall;
+      defaultText = lib.literalExpression "config.enrollFinalTPM2PostInstall";
       description = "Whether to enroll a TPM2 token. This enrollment is intended for bootstrapping, thus it omits PCR bindings. For stronger security with PCR-based policies, use `enrollFinalTPM2PostInstall`.";
     };
     enrollFinalTPM2PostInstall = lib.mkOption {
