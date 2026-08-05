@@ -244,7 +244,7 @@ in
 
   config = {
     assertions = lib.mkMerge [
-      cfg.devices._config.assertions
+      cfg.devices._config.assertions or []
       [
         {
           assertion = config.disko.imageBuilder.qemu != null -> diskoLib.vmToolsSupportsCustomQemu lib;
