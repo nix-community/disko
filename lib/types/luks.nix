@@ -396,10 +396,6 @@ in
             }
             // config.settings;
 
-            # If FIDO2 is used, systemd stage 1 is absolutely necessary.
-            # Should we turn this into an assertion?
-            boot.initrd.systemd.enable = lib.mkIf (config.enrollFido2 || config.enrollTPM2) true;
-
             # Should we turn this into an assertion?
             security.tpm2.enable = lib.mkIf config.enrollTPM2 true;
           }
