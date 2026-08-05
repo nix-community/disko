@@ -301,6 +301,7 @@ let
             ) testConfigInstall.networking.hostId;
 
             virtualisation = {
+              tpm.enable = true;
               emptyDiskImages = builtins.genList (_: 4096) num-disks;
               qemu.options = lib.mkIf enableCanokey [
                 "-device pci-ohci,id=usb-bus"
