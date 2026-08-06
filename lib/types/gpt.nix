@@ -183,7 +183,10 @@ in
                 description = "Alignment of the partition, if sectors are used as start or end it can be aligned to 1";
               };
               start = lib.mkOption {
-                type = lib.types.addCheck lib.types.str (
+                # addCheck isn't in disko's jsonTypes doc-generation stub lib,
+                # so fall back to a no-op there instead of crashing; real
+                # evaluation always has the genuine addCheck.
+                type = (lib.types.addCheck or (elemType: _check: elemType)) lib.types.str (
                   start: builtins.match "[+-]?0+[KMGTP]" start == null
                 );
                 default = "0";
