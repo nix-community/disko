@@ -7,6 +7,13 @@
   device,
   ...
 }:
+let
+  randomEncryptionEnabled =
+    if builtins.isBool config.randomEncryption then
+      config.randomEncryption
+    else
+      config.randomEncryption.enable or true;
+in
 {
   options = {
     type = lib.mkOption {
@@ -58,9 +65,17 @@
       '';
     };
     randomEncryption = lib.mkOption {
-      type = lib.types.bool;
+      type = lib.types.either lib.types.bool (lib.types.attrsOf lib.types.anything);
       default = false;
-      description = "Whether to randomly encrypt the swap";
+      description = ''
+        Whether to randomly encrypt the swap.
+
+        Can be a plain boolean to just enable/disable it, or an attribute set
+        to pass through additional options to NixOS's
+        `swapDevices.*.randomEncryption` (e.g. `cipher`, `sectorSize`). When
+        given as an attribute set, encryption is enabled unless `enable` is
+        explicitly set to `false`.
+      '';
     };
     resumeDevice = lib.mkOption {
       type = lib.types.bool;
@@ -81,7 +96,7 @@
     _create = diskoLib.mkCreateOption {
       inherit config options;
       # TODO: we don't support encrypted swap yet
-      default = lib.optionalString (!config.randomEncryption) ''
+      default = lib.optionalString (!randomEncryptionEnabled) ''
         if ! blkid "${config.device}" -o export | grep -q '^TYPE='; then
           mkswap \
             ${toString config.extraArgs} \
@@ -92,7 +107,7 @@
     _mount = diskoLib.mkMountOption {
       inherit config options;
       # TODO: we don't support encrypted swap yet
-      default = lib.optionalAttrs (!config.randomEncryption) {
+      default = lib.optionalAttrs (!randomEncryptionEnabled) {
         fs.${config.device} = ''
           if test "''${DISKO_SKIP_SWAP:-}" != 1 && ! swapon --show | grep -q "^$(readlink -f "${config.device}") "; then
             swapon ${
@@ -107,7 +122,7 @@
     };
     _unmount = diskoLib.mkUnmountOption {
       inherit config options;
-      default = lib.optionalAttrs (!config.randomEncryption) {
+      default = lib.optionalAttrs (!randomEncryptionEnabled) {
         fs.${config.device} = ''
           if swapon --show | grep -q "^$(readlink -f "${config.device}") "; then
             swapoff "${config.device}"
@@ -124,11 +139,13 @@
             {
               device = config.device;
               inherit (config) discardPolicy priority;
-              randomEncryption = {
-                enable = config.randomEncryption;
-                # forward discard/TRIM attempts through dm-crypt
-                allowDiscards = config.discardPolicy != null;
-              };
+              randomEncryption =
+                {
+                  enable = randomEncryptionEnabled;
+                  # forward discard/TRIM attempts through dm-crypt
+                  allowDiscards = config.discardPolicy != null;
+                }
+                // lib.optionalAttrs (!builtins.isBool config.randomEncryption) config.randomEncryption;
               options = config.mountOptions;
             }
           ];
