@@ -6,10 +6,7 @@ TODO: Still to be documented
 
 ## Upgrading From Older disko versions
 
-TODO: Include documentation here.
-
-For now, see the
-[upgrade guide](https://github.com/JillThornhill/disko/blob/master/docs/upgrade-guide.md)
+See the [upgrade guide](./upgrade-guide.md).
 
 ## Installing NixOS module
 
