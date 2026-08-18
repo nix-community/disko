@@ -139,13 +139,12 @@ in
             {
               device = config.device;
               inherit (config) discardPolicy priority;
-              randomEncryption =
-                {
-                  enable = randomEncryptionEnabled;
-                  # forward discard/TRIM attempts through dm-crypt
-                  allowDiscards = config.discardPolicy != null;
-                }
-                // lib.optionalAttrs (!builtins.isBool config.randomEncryption) config.randomEncryption;
+              randomEncryption = {
+                enable = randomEncryptionEnabled;
+                # forward discard/TRIM attempts through dm-crypt
+                allowDiscards = config.discardPolicy != null;
+              }
+              // lib.optionalAttrs (!builtins.isBool config.randomEncryption) config.randomEncryption;
               options = config.mountOptions;
             }
           ];
