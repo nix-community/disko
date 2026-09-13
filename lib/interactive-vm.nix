@@ -70,7 +70,7 @@ in
   virtualisation.diskImage = null;
   virtualisation.qemu.drives = [ rootDisk ] ++ otherDisks;
 
-  # Using `networkingOptions` instead of `options` here because it's added _before_ the drive options, where `options` is added at the end :-P
+  # Using `networkingOptions` instead of `options` here because it's added before the drive options, where `options` is added at the end
   virtualisation.qemu.networkingOptions = lib.mkAfter (
     let
       # A PCI bridge takes one slot and adds 32, so we'll want one for every 31 drives
