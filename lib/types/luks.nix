@@ -218,14 +218,20 @@ in
                 export password
                 # shellcheck disable=SC2154
                 if [ "$password" != "$password_check" ]; then
-                  exit 1
+                  return 1
                 fi
                 set -x
               else
                 export password=disko
               fi
             }
+            attempts=0
             until askPassword; do
+              attempts=$((attempts + 1))
+              if [ "$attempts" -ge 3 ]; then
+                echo "Too many mismatched password attempts for ${config.device}, aborting." >&2
+                exit 1
+              fi
               echo "Passwords did not match, please try again."
             done
           ''}
