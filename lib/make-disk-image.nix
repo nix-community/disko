@@ -172,14 +172,30 @@ let
   '';
 
   QEMU_OPTS = lib.concatStringsSep " " (
+    let
+      disks = lib.attrValues diskoCfg.devices.disk;
+      diskCount = builtins.length disks;
+      bridgeCount = ((diskCount + 30) / 31);
+      parentBridge = i: lib.optionalString (i > 0) "bus=bridge${toString i},";
+      bridgeOpt =
+        i:
+        "-device pci-bridge,id=bridge${toString (i + 1)},${parentBridge i}chassis_nr=${toString (i + 1)}";
+      bridgeOpts = builtins.genList bridgeOpt bridgeCount;
+      diskDeviceOpt =
+        i: "-device virtio-blk-pci,bus=bridge${toString (i / 31 + 1)},drive=drive${toString (i + 1)}";
+      diskDeviceOpts = builtins.genList diskDeviceOpt diskCount;
+      diskDriveOpt =
+        i: disk:
+        "-drive file=\"$out\"/${disk.imageName}.${imageFormat},id=drive${toString (i + 1)},if=none,cache=unsafe,werror=report,format=${imageFormat}";
+      diskDriveOpts = lib.imap0 diskDriveOpt disks;
+    in
     [
       "-drive if=pflash,format=raw,unit=0,readonly=on,file=${pkgs.OVMF.firmware}"
       "-drive if=pflash,format=raw,unit=1,file=efivars.fd"
     ]
-    ++ builtins.map (
-      disk:
-      "-drive file=\"$out\"/${disk.imageName}.${imageFormat},if=virtio,cache=unsafe,werror=report,format=${imageFormat}"
-    ) (lib.attrValues diskoCfg.devices.disk)
+    ++ bridgeOpts
+    ++ diskDeviceOpts
+    ++ diskDriveOpts
   );
 in
 {
