@@ -230,11 +230,6 @@
                   # @todo Figure out why the "X-mount.mkdir" option here doesn't seem to work,
                   # necessitating running `mkdir` here.
                   mkdir -p "${rootMountPoint}${subvolume.mountpoint}";
-                  ${lib.optionalString (config.passwordFile != null) ''
-                    if ! bcachefs unlock -k session "/dev/disk/by-uuid/${config.uuid}" < "${config.passwordFile}"; then
-                      test -d "/sys/fs/bcachefs/${config.uuid}";
-                    fi;
-                  ''}
                   mount \
                     -t bcachefs \
                     -o "${
@@ -256,6 +251,17 @@
           ) (lib.attrValues config.subvolumes);
         in
         {
+          dev = lib.optionalString (config.passwordFile != null) ''
+            # Unlock once per filesystem, before any of its mountpoints are
+            # processed. Doing this inside each per-mountpoint fragment causes
+            # EBUSY on the second mount because the first mount holds the
+            # device exclusively.
+            if ! findmnt "UUID=${config.uuid}" >/dev/null 2>&1; then
+              if ! bcachefs unlock -k session "/dev/disk/by-uuid/${config.uuid}" < "${config.passwordFile}"; then
+                test -d "/sys/fs/bcachefs/${config.uuid}";
+              fi;
+            fi;
+          '';
           fs =
             subvolumeMounts
             // lib.optionalAttrs (config.mountpoint != null) {
@@ -264,11 +270,6 @@
                   # @todo Figure out why the "X-mount.mkdir" option here doesn't seem to work,
                   # necessitating running `mkdir` here.
                   mkdir -p "${rootMountPoint}${config.mountpoint}";
-                  ${lib.optionalString (config.passwordFile != null) ''
-                    if ! bcachefs unlock -k session "/dev/disk/by-uuid/${config.uuid}" < "${config.passwordFile}"; then
-                      test -d "/sys/fs/bcachefs/${config.uuid}";
-                    fi;
-                  ''}
                   mount \
                     -t bcachefs \
                     -o "${lib.concatStringsSep "," (lib.unique ([ "X-mount.mkdir" ] ++ config.mountOptions))}" \
