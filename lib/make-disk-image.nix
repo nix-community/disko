@@ -155,6 +155,13 @@ let
     # systems, while -P 4 is ~30% slower. Cap at 8 but use fewer workers if the
     # system has fewer cores.
     mkdir -p "$rootMountPoint"/nix/store
+    # Limit dirty page accumulation to prevent OOM in the VM.
+    # The kernel evicts clean page cache under memory pressure, but dirty
+    # pages must be written back first. Low thresholds force early writeback
+    # so dirty pages never pile up enough to trigger the OOM killer,
+    # even when copying files larger than available RAM.
+    echo 10000000 > /proc/sys/vm/dirty_bytes
+    echo 5000000 > /proc/sys/vm/dirty_background_bytes
     ${
       if cfg.copyNixStoreThreads == "auto" then
         ''
