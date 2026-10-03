@@ -107,13 +107,13 @@
             lvm_type = "mirror";
             content = {
               type = "filesystem";
-              format = "ext4";
-              mountpoint = "/ext4_on_lvm";
+              format = "exfat";
+              mountpoint = "/exfat_on_lvm";
               mountOptions = [
                 "defaults"
               ];
               postMountHook = ''
-                touch /mnt/ext4_on_lvm/file-from-postMountHook
+                touch /mnt/exfat_on_lvm/file-from-postMountHook
               '';
             };
           };
