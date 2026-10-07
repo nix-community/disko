@@ -377,8 +377,16 @@ in
                   else
                     ""
                 } \
-                ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-o ${n}=${v}") config.options)} \
-                ${lib.concatStringsSep " " (lib.mapAttrsToList (n: v: "-O ${n}=${v}") config.rootFsOptions)} \
+                ${
+                  lib.concatStringsSep " " (
+                    lib.mapAttrsToList (n: v: "-o ${n}=${lib.escapeShellArg v}") config.options
+                  )
+                } \
+                ${
+                  lib.concatStringsSep " " (
+                    lib.mapAttrsToList (n: v: "-O ${n}=${lib.escapeShellArg v}") config.rootFsOptions
+                  )
+                } \
                 ''${topology:+ $topology}
               if [[ $(zfs get -H mounted "${config.name}" | cut -f3) == "yes" ]]; then
                 zfs unmount "${config.name}"

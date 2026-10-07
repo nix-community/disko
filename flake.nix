@@ -120,7 +120,7 @@
           text = ''treefmt "$@"'';
           runtimeInputs = [
             pkgs.deadnix
-            pkgs.nixfmt-rfc-style
+            pkgs.nixfmt
             pkgs.shellcheck
             pkgs.treefmt
           ];
@@ -130,6 +130,7 @@
         default = nixpkgs.legacyPackages.${system}.mkShell {
           packages = [
             self.formatter.${system}
+            self.packages.${system}.default
           ];
         };
       });

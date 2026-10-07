@@ -6,8 +6,13 @@
   qemu-common ? import <nixpkgs/nixos/lib/qemu-common.nix>,
 }:
 let
-  # qemu-common is a function that takes { lib, pkgs } and returns QEMU utilities
-  qemu-common-lib = pkgs: qemu-common { inherit lib pkgs; };
+  # qemu-common is a function that takes { lib, stdenv } and returns QEMU utilities
+  qemu-common-lib =
+    pkgs:
+    qemu-common {
+      inherit lib;
+      inherit (pkgs) stdenv;
+    };
 
   outputs = import ../default.nix { inherit lib diskoLib; };
   diskoLib = {
@@ -195,7 +200,6 @@ let
             _path: lhs: rhs:
             !(isAttrs lhs && isAttrs rhs)
           ) lhs rhs;
-
       in
       recursiveMerge left right;
 
@@ -385,6 +389,44 @@ let
         => "hello world"
     */
     maybeStr = x: lib.optionalString (x != null) x;
+
+    /*
+      Check whenever `b` depends on `a` as a fileSystem
+
+      Note: copied from nixpkgs/nixos/utils.nix @ 47718fe8858fa4642cd6a4f0b5a1173bad9ce8df
+      because the file that exports it is not meant to be used standalone.
+    */
+    fsBefore =
+      a: b:
+      with lib;
+      let
+        # normalisePath adds a slash at the end of the path if it didn't already
+        # have one.
+        #
+        # The reason slashes are added at the end of each path is to prevent `b`
+        # from accidentally depending on `a` in cases like
+        #    a = { mountPoint = "/aaa"; ... }
+        #    b = { device     = "/aaaa"; ... }
+        # Here a.mountPoint *is* a prefix of b.device even though a.mountPoint is
+        # *not* a parent of b.device. If we add a slash at the end of each string,
+        # though, this is not a problem: "/aaa/" is not a prefix of "/aaaa/".
+        normalisePath = path: "${path}${optionalString (!(hasSuffix "/" path)) "/"}";
+        normalise =
+          mount:
+          mount
+          // {
+            device = normalisePath (toString mount.device);
+            mountPoint = normalisePath mount.mountPoint;
+            depends = map normalisePath mount.depends;
+          };
+
+        a' = normalise a;
+        b' = normalise b;
+
+      in
+      hasPrefix a'.mountPoint b'.device
+      || hasPrefix a'.mountPoint b'.mountPoint
+      || any (hasPrefix a'.mountPoint) b'.depends;
 
     /*
       Takes a Submodules config and options argument and returns a serializable
@@ -898,7 +940,7 @@ let
             type = lib.types.str;
             description = ''
               The script to unmount (& destroy) all devices defined by disko.devices
-              Does not ask for confirmation! Depracated in favor of _destroy
+              Does not ask for confirmation! Deprecated in favor of _destroy
             '';
             default = ''
               umount -Rv "${rootMountPoint}" || :
@@ -985,9 +1027,25 @@ let
             default =
               with lib;
               let
+                mountOrder = pipe cfg.config._config.fileSystems.contents [
+                  (foldl' recursiveUpdate { })
+                  (mapAttrsToList (
+                    mountPoint: value:
+                    value
+                    // {
+                      mountPoint = value.mountPoint or mountPoint;
+                      depends = [ ];
+                    }
+                  ))
+                  (toposort diskoLib.fsBefore)
+                  (getAttr "result")
+                  (map (getAttr "mountPoint"))
+                ];
+
                 fsMounts = diskoLib.deepMergeMap (dev: dev._mount.fs or { }) (
                   flatten (map attrValues (attrValues devices))
                 );
+
                 sortedDeviceList = diskoLib.sortDevicesByDependencies (cfg.config._meta.deviceDependencies or { }
                 ) devices;
               in
@@ -996,8 +1054,8 @@ let
                 # first create the necessary devices
                 ${concatMapStrings (dev: (attrByPath (dev ++ [ "_mount" ]) { } devices).dev or "") sortedDeviceList}
 
-                # and then mount the filesystems in alphabetical order
-                ${concatStrings (attrValues fsMounts)}
+                # and then mount the filesystems in dependency order
+                ${concatStrings (attrVals mountOrder fsMounts)}
               '';
           };
           _unmount = lib.mkOption {
@@ -1017,7 +1075,7 @@ let
               in
               ''
                 set -efux
-                # first unmount the filesystems in reverse alphabetical order
+                # first unmount the filesystems in reverse dependency order
                 ${concatStrings (lib.reverseList (attrValues fsMounts))}
 
                 # Than close the devices

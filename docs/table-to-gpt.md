@@ -59,7 +59,7 @@ for example like this:
 
 ## Remediation
 
-The new GPT layout (`type = "gpt"`) uses partlabels to realize the partiton
+The new GPT layout (`type = "gpt"`) uses partlabels to realize the partition
 numbering. For this reason you have to manually set up partition labels, if you
 want to resolve this issue.
 

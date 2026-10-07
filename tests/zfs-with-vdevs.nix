@@ -9,22 +9,21 @@ diskoLib.testLib.makeDiskoTest {
   extraInstallerConfig.networking.hostId = "8425e349";
   extraSystemConfig = {
     networking.hostId = "8425e349";
-    # It looks like the 60s of NixOS is sometimes not enough for our virtio-based zpool.
-    # This fixes the flakeiness of the test.
-    boot.initrd.postResumeCommands = ''
-      for i in $(seq 1 120); do
-        if zpool list | grep -q zroot || zpool import -N zroot; then
-          break
-        fi
-      done
-    '';
   };
   extraTestScript = ''
+    import json
+
     def assert_property(ds, property, expected_value):
         out = machine.succeed(f"zfs get -H {property} {ds} -o value").rstrip()
         assert (
             out == expected_value
         ), f"Expected {property}={expected_value} on {ds}, got: {out}"
+
+    def canonical_path(path):
+        return machine.succeed(f"readlink -f {shlex.quote(path)}").strip()
+
+    def by_partlabel(label):
+        return canonical_path(f"/dev/disk/by-partlabel/{label}")
 
     # These fields are 0 if l2arc is disabled
     assert (
@@ -40,39 +39,49 @@ diskoLib.testLib.makeDiskoTest {
     assert_property("zroot/zfs_fs", "compression", "zstd")
     machine.succeed("mountpoint /zfs_fs");
 
-    # Take the status output and flatten it so that each device is on a single line prefixed with with the group (either
-    # the pool name or a designation like log/cache/spare/dedup/special) and first portion of the vdev name (empty for a
-    # disk from a single vdev, mirror for devices in a mirror. This makes it easy to verify that the layout is as
-    # expected.
-    group = ""
-    vdev = ""
-    actual = []
-    for line in machine.succeed("zpool status -P zroot").split("\n"):
-        first_word = line.strip().split(" ", 1)[0]
-        if line.startswith("\t  ") and first_word.startswith("/"):
-            actual.append(f"{group}{vdev}{first_word}")
-        elif line.startswith("\t  "):
-            vdev = f"{first_word.split('-', 1)[0]} "
-        elif line.startswith("\t"):
-            group = f"{first_word} "
-            vdev = ""
-    actual.sort()
-    expected=sorted([
-      'zroot /dev/disk/by-partlabel/disk-data1-zfs',
-      'zroot mirror /dev/disk/by-partlabel/disk-data2-zfs',
-      'zroot mirror /dev/disk/by-partlabel/disk-data3-zfs',
-      'dedup /dev/disk/by-partlabel/disk-dedup3-zfs',
-      'dedup mirror /dev/disk/by-partlabel/disk-dedup1-zfs',
-      'dedup mirror /dev/disk/by-partlabel/disk-dedup2-zfs',
-      'special /dev/disk/by-partlabel/disk-special3-zfs',
-      'special mirror /dev/disk/by-partlabel/disk-special1-zfs',
-      'special mirror /dev/disk/by-partlabel/disk-special2-zfs',
-      'logs /dev/disk/by-partlabel/disk-log3-zfs',
-      'logs mirror /dev/disk/by-partlabel/disk-log1-zfs',
-      'logs mirror /dev/disk/by-partlabel/disk-log2-zfs',
-      'cache /dev/disk/by-partlabel/disk-cache-zfs',
-      'spares /dev/disk/by-partlabel/disk-spare-zfs',
+    # `zpool status -j` groups vdevs by class at the pool level: `vdevs` (normal data, wrapped under
+    # the `zroot` root vdev) plus `dedup`, `special`, `logs`, `l2cache`, `spares`. Each entry in a
+    # group is either a leaf (just a device path) or a mirror vdev with nested `vdevs`. Bucket each
+    # leaf into (class, in_mirror, canonical path) and diff against the expected layout.
+    def collect_leaves(class_name, entries):
+        out = []
+        for name, entry in entries.items():
+            if entry.get("vdev_type") == "mirror":
+                out.extend((class_name, "mirror", canonical_path(child)) for child in entry["vdevs"])
+            else:
+                out.append((class_name, "single", canonical_path(name)))
+        return out
+
+    data = json.loads(machine.succeed("zpool status -P -L -j zroot"))
+    pool = next(iter(data["pools"].values()))
+    actual_leaves = sorted(
+        collect_leaves("normal",  pool["vdevs"]["zroot"]["vdevs"])
+        + collect_leaves("dedup",   pool.get("dedup", {}))
+        + collect_leaves("special", pool.get("special", {}))
+        + collect_leaves("log",     pool.get("logs", {}))
+        + collect_leaves("l2cache", pool.get("l2cache", {}))
+        + collect_leaves("spare",   pool.get("spares", {}))
+    )
+    expected_leaves = sorted([
+        ("normal",  "single", by_partlabel("disk-data1-zfs")),
+        ("normal",  "mirror", by_partlabel("disk-data2-zfs")),
+        ("normal",  "mirror", by_partlabel("disk-data3-zfs")),
+        ("dedup",   "single", by_partlabel("disk-dedup3-zfs")),
+        ("dedup",   "mirror", by_partlabel("disk-dedup1-zfs")),
+        ("dedup",   "mirror", by_partlabel("disk-dedup2-zfs")),
+        ("special", "single", by_partlabel("disk-special3-zfs")),
+        ("special", "mirror", by_partlabel("disk-special1-zfs")),
+        ("special", "mirror", by_partlabel("disk-special2-zfs")),
+        ("log",     "single", by_partlabel("disk-log3-zfs")),
+        ("log",     "mirror", by_partlabel("disk-log1-zfs")),
+        ("log",     "mirror", by_partlabel("disk-log2-zfs")),
+        ("l2cache", "single", by_partlabel("disk-cache-zfs")),
+        ("spare",   "single", by_partlabel("disk-spare-zfs")),
     ])
-    assert actual == expected, f"Incorrect pool layout. Expected:\n\t{'\n\t'.join(expected)}\nActual:\n\t{'\n\t'.join(actual)}"
+    assert actual_leaves == expected_leaves, (
+        "Incorrect pool layout."
+        f"\nExpected: {json.dumps(expected_leaves, indent=2)}"
+        f"\nActual:   {json.dumps(actual_leaves, indent=2)}"
+    )
   '';
 }

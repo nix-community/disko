@@ -129,7 +129,7 @@ let
     ln -sfn /proc/self/fd/2 /dev/stderr
     mkdir -p /etc/udev
     mount -t efivarfs none /sys/firmware/efi/efivars
-    ln -sfn ${systemToInstallNative.config.system.build.etc}/etc/udev/rules.d /etc/udev/rules.d
+    ln -sfn ${systemToInstallNative.config.environment.etc."udev/rules.d".source} /etc/udev/rules.d
     mkdir -p /dev/.mdadm
     ${pkgs.systemdMinimal}/lib/systemd/systemd-udevd --daemon
     partprobe
@@ -214,7 +214,7 @@ in
       They will have the same permissions but will be owned by root:root
     * --build-memory <amt>
       specify the amount of memory in MiB that gets allocated to the build VM
-      This can be useful if you want to build images with a more involed NixOS config
+      This can be useful if you want to build images with a more involved NixOS config
       The default is disko.memSize which defaults to ${builtins.toString options.disko.memSize.default} MiB
     USAGE
     }

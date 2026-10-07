@@ -32,7 +32,7 @@ pkgs.testers.nixosTest {
 
   testScript = ''
     def create_test_machine(
-        oldmachine=None, **kwargs
+        oldmachine, **kwargs
     ):  # taken from <nixpkgs/nixos/tests/installer.nix>
         start_command = [
             "${pkgs.qemu_test}/bin/qemu-kvm",
@@ -48,7 +48,7 @@ pkgs.testers.nixosTest {
             "virtio-blk-pci,drive=drive1",
         ]
         machine = create_machine(start_command=" ".join(start_command), **kwargs)
-        driver.machines.append(machine)
+        driver.machines_qemu.append(machine)
         return machine
     machine.succeed("lsblk >&2")
 
