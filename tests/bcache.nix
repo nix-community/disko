@@ -105,9 +105,10 @@ diskoLib.testLib.makeDiskoTest {
     # Regression: a stale filesystem signature on the backing partition must
     # not surface through /dev/bcache0 and trick content `_create` into
     # skipping format. Tear the set down, wipe bcache metadata, pre-poison the
-    # backing partition with a btrfs filesystem, then re-run format. The
-    # bcache device must come back as the configured ext4, not the stale
-    # btrfs.
+    # backing partition with a btrfs filesystem, then re-run format. Creation
+    # must remove the raw signature before make-bcache, which rejects non-bcache
+    # superblocks even with --force. The bcache device must come back as the
+    # configured ext4, not the stale btrfs.
     machine.succeed("umount /mnt/boot")
     machine.succeed(disko_unmount)
     machine.succeed("test ! -b /dev/bcache0")

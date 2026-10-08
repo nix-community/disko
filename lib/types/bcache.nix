@@ -140,7 +140,12 @@
               sleep 1
             done
 
-            # Create bcache set — --force handles pre-existing superblocks
+            # --force replaces bcache metadata, but make-bcache still rejects
+            # other filesystem signatures. Clear the unassembled members before
+            # creating a fresh set; the idempotent branch above preserves them.
+            wipefs --all --force "$cache_resolved" "$backing_resolved"
+
+            # Create bcache set — --force handles pre-existing bcache superblocks
             echo "Creating bcache set \"${config.name}\" with cache $cache_dev ($cache_resolved) and backing $backing_dev ($backing_resolved)" >&2
             make-bcache \
               -C "$cache_dev" \
