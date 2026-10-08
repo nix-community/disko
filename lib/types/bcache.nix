@@ -158,6 +158,22 @@
             verify_bcache_superblock cache "$cache_dev"
             verify_bcache_superblock backing "$backing_dev"
 
+            # Explicitly register new members: writing a superblock does not
+            # guarantee that udev will assemble it before the formatter waits.
+            udevadm settle --timeout=10
+            for member in "$cache_resolved" "$backing_resolved"; do
+              member_basename="$(basename "$member")"
+              if [ ! -e "/sys/class/block/$member_basename/bcache" ]; then
+                if ! printf '%s\n' "$member" > /sys/fs/bcache/register; then
+                  # A concurrent udev registration may have won the race.
+                  if [ ! -e "/sys/class/block/$member_basename/bcache" ]; then
+                    printf "\033[31mERROR:\033[0m failed to register new bcache member %s\n" "$member" >&2
+                    exit 1
+                  fi
+                fi
+              fi
+            done
+
             # Wait for the bcache block device to appear
             for i in $(seq 1 60); do
               [ -b "${config.device}" ] && break
