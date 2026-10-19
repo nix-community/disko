@@ -27,6 +27,15 @@ let
     ${pkgs.systemdMinimal}/lib/systemd/systemd-binfmt <(echo ${lib.strings.escapeShellArg binfmt.binfmtRegistration})
   '';
 
+  modulesTree = pkgs.aggregateModules (
+    [
+      cfg.kernelPackages.kernel
+    ]
+    ++ lib.optional (cfg.kernelPackages.kernel ? modules) cfg.kernelPackages.kernel.modules
+    ++ lib.optional (
+      lib.elem "zfs" cfg.extraRootModules || configSupportsZfs
+    ) cfg.kernelPackages.${config.boot.zfs.package.kernelModuleAttribute}
+  );
   vmTools = pkgs.vmTools.override (
     {
       rootModules = [
@@ -41,16 +50,18 @@ let
       ]
       ++ (lib.optional configSupportsZfs "zfs")
       ++ cfg.extraRootModules;
-      kernel = pkgs.aggregateModules (
-        [
-          cfg.kernelPackages.kernel
-        ]
-        ++ lib.optional (cfg.kernelPackages.kernel ? modules) cfg.kernelPackages.kernel.modules
-        ++ lib.optional (
-          lib.elem "zfs" cfg.extraRootModules || configSupportsZfs
-        ) cfg.kernelPackages.${config.boot.zfs.package.kernelModuleAttribute}
-      );
     }
+    // (
+      if diskoLib.vmToolsSupportsKernelModules pkgs then
+        {
+          kernel = cfg.kernelPackages.kernel;
+          kernelModules = modulesTree;
+        }
+      else
+        {
+          kernel = modulesTree;
+        }
+    )
     // lib.optionalAttrs (diskoLib.vmToolsSupportsCustomQemu lib) {
       customQemu = cfg.qemu;
     }
