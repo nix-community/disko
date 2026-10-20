@@ -33,6 +33,13 @@ in
     cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).destroyNoDeps;
 
   _cliFormat = cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).format;
+  # for cross-compilation: hostPkgs for format, targetPkgs for mount scripts
+  _cliFormatCross =
+    cfg: hostPkgs: targetPkgs:
+    ((eval cfg).config.disko.devices._scripts {
+      pkgs = targetPkgs;
+      inherit hostPkgs checked;
+    }).format;
   _cliFormatNoDeps =
     cfg: pkgs: ((eval cfg).config.disko.devices._scripts { inherit pkgs checked; }).formatNoDeps;
 
