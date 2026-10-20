@@ -82,6 +82,8 @@ let
         efi ? !pkgs.stdenv.hostPlatform.isRiscV64,
         enableCanokey ? false,
         postDisko ? "",
+        postUnmountPreMount ? "",
+        postMount ? "",
         testMode ? "module", # can be one of direct module cli
         testBoot ? true, # if we actually want to test booting or just create/mount
         enableOCR ? false,
@@ -369,7 +371,9 @@ let
               machine.succeed("${lib.getExe tsp-mount}") # verify that mount is idempotent
               machine.succeed("${lib.getExe tsp-unmount}")
               machine.succeed("${lib.getExe tsp-unmount}") # verify that umount is idempotent
+              ${postUnmountPreMount}
               machine.succeed("${lib.getExe tsp-mount}") # verify that mount is idempotent
+              ${postMount}
               machine.succeed("${lib.getExe tsp-disko} --yes-wipe-all-disks") # verify that we can destroy and recreate
               machine.succeed("mkdir -p /mnt/home")
               machine.succeed("touch /mnt/home/testfile")
@@ -383,7 +387,9 @@ let
               machine.succeed("${lib.getExe nodes.machine.system.build.mount}") # verify that mount is idempotent
               machine.succeed("${lib.getExe nodes.machine.system.build.unmount}")
               machine.succeed("${lib.getExe nodes.machine.system.build.unmount}") # verify that unmount is idempotent
+              ${postUnmountPreMount}
               machine.succeed("${lib.getExe nodes.machine.system.build.mount}") # verify that mount is idempotent
+              ${postMount}
               machine.succeed("${lib.getExe nodes.machine.system.build.destroyFormatMount} --yes-wipe-all-disks") # verify that we can destroy and recreate again
               machine.succeed("mkdir -p /mnt/home")
               machine.succeed("touch /mnt/home/testfile")
