@@ -159,7 +159,7 @@ in
             ${lib.optionalString (config.swap != { }) ''
               (
                 MNTPOINT=$(mktemp -d)
-                mount ${device} "$MNTPOINT" -o subvol=/
+                mount -t btrfs "${config.device}" "$MNTPOINT" -o subvol=/
                 trap 'umount "$MNTPOINT"; rm -rf "$MNTPOINT"' EXIT
                 ${swapCreate "$MNTPOINT" config.swap}
               )
@@ -167,7 +167,7 @@ in
             ${lib.concatMapStrings (subvol: ''
               (
                 MNTPOINT=$(mktemp -d)
-                mount "${config.device}" "$MNTPOINT" -o subvol=/
+                mount -t btrfs "${config.device}" "$MNTPOINT" -o subvol=/
                 trap 'umount "$MNTPOINT"; rm -rf "$MNTPOINT"' EXIT
                 SUBVOL_ABS_PATH="$MNTPOINT/${subvol.name}"
                 mkdir -p "$(dirname "$SUBVOL_ABS_PATH")"
@@ -198,7 +198,7 @@ in
               {
                 ${subvol.mountpoint} = ''
                   if ! findmnt "${config.device}" "${rootMountPoint}${subvol.mountpoint}" > /dev/null 2>&1; then
-                    mount "${config.device}" "${rootMountPoint}${subvol.mountpoint}" \
+                    mount -t btrfs "${config.device}" "${rootMountPoint}${subvol.mountpoint}" \
                     ${
                       lib.concatMapStringsSep " " (opt: "-o ${opt}") (subvol.mountOptions ++ [ "subvol=${subvol.name}" ])
                     } \
@@ -214,7 +214,7 @@ in
             // lib.optionalAttrs (config.mountpoint != null) {
               ${config.mountpoint} = ''
                 if ! findmnt "${config.device}" "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
-                  mount "${config.device}" "${rootMountPoint}${config.mountpoint}" \
+                  mount -t btrfs "${config.device}" "${rootMountPoint}${config.mountpoint}" \
                   ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
                   -o X-mount.mkdir
                 fi
