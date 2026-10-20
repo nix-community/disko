@@ -320,6 +320,11 @@ let
           ''
             import shlex
 
+            disko_format = ${builtins.toJSON (lib.getExe tsp-format)}
+            disko_mount = ${builtins.toJSON (lib.getExe tsp-mount)}
+            disko_unmount = ${builtins.toJSON (lib.getExe tsp-unmount)}
+            disko_destroy_format_mount = ${builtins.toJSON (lib.getExe tsp-disko)}
+
             def disks(oldmachine, num_disks):
                 disk_flags = []
                 for i in range(num_disks):
