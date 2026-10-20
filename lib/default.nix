@@ -646,6 +646,19 @@ let
     */
     vmToolsSupportsCustomQemu = final_lib: lib.versionAtLeast final_lib.version "24.11.20240709";
 
+    /*
+      Checks whether vmTools supports the kernelModules argument.
+      Older nixpkgs versions only supported overriding `kernel` with an aggregated modules tree.
+
+      vmToolsSupportsKernelModules :: pkgs -> bool
+    */
+    vmToolsSupportsKernelModules =
+      pkgs:
+      (pkgs.vmTools.override.__functionArgs or (
+        if lib.isFunction pkgs.vmTools.override then builtins.functionArgs pkgs.vmTools.override else { }
+      )
+      ) ? kernelModules;
+
     optionTypes = rec {
       filename = lib.mkOptionType {
         name = "filename";
