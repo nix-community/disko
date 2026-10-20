@@ -35,7 +35,7 @@ let
       cp -r install-cli.nix cli.nix default.nix disk-deactivate lib $out/share/disko
 
       scripts=(disko)
-      ${lib.optionalString (!stdenv.isDarwin) ''
+      ${lib.optionalString (!stdenv.hostPlatform.isDarwin) ''
         scripts+=(disko-install)
       ''}
 
@@ -52,7 +52,7 @@ let
                 coreutils
                 xcp
               ]
-              ++ lib.optional (!stdenv.isDarwin) nixos-install-tools
+              ++ lib.optional (!stdenv.hostPlatform.isDarwin) nixos-install-tools
             )
           }
       done
