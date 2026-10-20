@@ -243,15 +243,18 @@ in
   };
 
   config = {
-    assertions = [
-      {
-        assertion = config.disko.imageBuilder.qemu != null -> diskoLib.vmToolsSupportsCustomQemu lib;
-        message = ''
-          You have set config.disko.imageBuild.qemu, but vmTools in your nixpkgs version "${lib.version}"
-          does not support overriding the qemu package with the customQemu option yet.
-          Please upgrade nixpkgs so that `lib.version` is at least "24.11.20240709".
-        '';
-      }
+    assertions = lib.mkMerge [
+      cfg.devices._config.assertions or []
+      [
+        {
+          assertion = config.disko.imageBuilder.qemu != null -> diskoLib.vmToolsSupportsCustomQemu lib;
+          message = ''
+            You have set config.disko.imageBuild.qemu, but vmTools in your nixpkgs version "${lib.version}"
+            does not support overriding the qemu package with the customQemu option yet.
+            Please upgrade nixpkgs so that `lib.version` is at least "24.11.20240709".
+          '';
+        }
+      ]
     ];
 
     _module.args.imagePkgs = pkgs;
@@ -307,5 +310,7 @@ in
     fileSystems = lib.mkIf cfg.enableConfig cfg.devices._config.fileSystems or { };
     boot = lib.mkIf cfg.enableConfig cfg.devices._config.boot or { };
     swapDevices = lib.mkIf cfg.enableConfig cfg.devices._config.swapDevices or [ ];
+    systemd = lib.mkIf cfg.enableConfig cfg.devices._config.systemd or { };
+    security = lib.mkIf cfg.enableConfig cfg.devices._config.security or { };
   };
 }
