@@ -19,10 +19,10 @@ diskoLib.testLib.makeDiskoTest {
     machine.succeed("mountpoint /zfs_fs");
     machine.succeed("mountpoint /zfs_legacy_fs");
     machine.succeed("mountpoint /ext4onzfs");
-    machine.succeed("mountpoint /ext4_on_lvm");
+    machine.succeed("mountpoint /exfat_on_lvm");
 
 
-    machine.succeed("test -e /ext4_on_lvm/file-from-postMountHook");
+    machine.succeed("test -e /exfat_on_lvm/file-from-postMountHook");
   '';
   extraInstallerConfig = {
     boot.kernelModules = [
