@@ -54,8 +54,12 @@
                 content = {
                   type = "btrfs";
                   extraArgs = [
-                    "-d raid1"
+                    "--data raid1"
                     "/dev/mapper/p1" # Use decrypted mapped device, same name as defined in disk1
+                    # on LUKS, the default crc32c becomes always probabilistic, so choose the
+                    # algorithm with smaller collision chance and almost identical performance
+                    "--checksum"
+                    "xxhash"
                   ];
                   subvolumes = {
                     "/root" = {
