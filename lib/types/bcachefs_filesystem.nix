@@ -7,6 +7,10 @@
   rootMountPoint,
   ...
 }:
+let
+  # colon separated list of devices, as UUID expansion is unreliable
+  colonSeparatedDevices = ''$(paste -sd ":" "$disko_devices_dir/bcachefs-${config.name}-devices")'';
+in
 {
   options = {
     name = lib.mkOption {
@@ -199,7 +203,7 @@
                 mount \
                   -t bcachefs \
                   -o "${lib.concatStringsSep "," (lib.unique ([ "X-mount.mkdir" ] ++ config.mountOptions))}" \
-                  "/dev/disk/by-uuid/${config.uuid}" \
+                  "${colonSeparatedDevices}" \
                   "$MNTPOINT";
                 trap 'umount "$MNTPOINT"; rm -rf "$MNTPOINT"; rm -rf "$TEMPDIR";' EXIT;
                 SUBVOL_ABS_PATH="$MNTPOINT/${subvolume.name}";
@@ -248,7 +252,7 @@
                         )
                       )
                     }" \
-                    "/dev/disk/by-uuid/${config.uuid}" \
+                    "${colonSeparatedDevices}" \
                     "${rootMountPoint}${subvolume.mountpoint}";
                 fi;
               '';
@@ -272,7 +276,7 @@
                   mount \
                     -t bcachefs \
                     -o "${lib.concatStringsSep "," (lib.unique ([ "X-mount.mkdir" ] ++ config.mountOptions))}" \
-                    "/dev/disk/by-uuid/${config.uuid}" \
+                    "${colonSeparatedDevices}" \
                     "${rootMountPoint}${config.mountpoint}";
                 fi;
               '';

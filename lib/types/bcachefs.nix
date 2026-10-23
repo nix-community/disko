@@ -64,6 +64,8 @@
       # The current file should not run the `bcachefs format` command. Instead, the`bcachefs format` command will be ran
       # in the `_create` attribute in bcachefs_filesystem.nix, once it has collected and generated the arguments specifying the devices that should be part of the filesystem.
       default = ''
+        # Write devices to temporary directory for bcachefs_filesystem.
+        printf '%s\n' '${config.device}' >> "$disko_devices_dir/bcachefs-${lib.escapeShellArg config.filesystem}-devices";
         # Write device arguments to temporary directory for bcachefs_filesystem.
         {
           printf '%s\n' '--label=${config.label}';
