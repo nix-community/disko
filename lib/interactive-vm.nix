@@ -2,6 +2,7 @@
   diskoLib,
   modulesPath,
   config,
+  options,
   pkgs,
   lib,
   ...
@@ -43,7 +44,7 @@ let
   diskoBasedConfiguration = {
     # generated from disko config
     virtualisation.fileSystems = cfg_.disko.devices._config.fileSystems;
-    boot = cfg_.disko.devices._config.boot or { };
+    boot = diskoLib.filterBoot options (cfg_.disko.devices._config.boot or { });
     swapDevices = cfg_.disko.devices._config.swapDevices or [ ];
   };
 
