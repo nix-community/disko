@@ -359,10 +359,6 @@ in
               crypttabExtraOpts = lib.mkIf config.enrollFido2 [ "fido2-device=auto" ];
             }
             // config.settings;
-
-            # If FIDO2 is used, systemd stage 1 is absolutely necessary.
-            # Should we turn this into an assertion?
-            boot.initrd.systemd.enable = lib.mkIf config.enrollFido2 true;
           }
         ])
         ++ (lib.optional (config.content != null) config.content._config);
