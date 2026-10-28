@@ -64,11 +64,12 @@ let
     }
 
     wait_for_assembly() {
+      local expected_backing="$1"
       local i
 
       for i in $(seq 1 60); do
         if [ -b "${config.device}" ] && \
-           [ "$(cat "${sysfs}/backing_dev_name" 2>/dev/null)" = "$backing_basename" ] && \
+           [ "$(cat "${sysfs}/backing_dev_name" 2>/dev/null)" = "$expected_backing" ] && \
            [ -e "${sysfs}/cache" ]; then
           return 0
         fi
@@ -216,7 +217,7 @@ in
           udevadm settle --timeout=10 || true
           register_bcache_member "$cache_resolved"
           register_bcache_member "$backing_resolved"
-          wait_for_assembly || true
+          wait_for_assembly "$backing_basename" || true
         fi
 
         ${verifyAssembled}
@@ -264,7 +265,7 @@ in
             ${resolveMembers}
             register_bcache_member "$cache_resolved"
             register_bcache_member "$backing_resolved"
-            wait_for_assembly || true
+            wait_for_assembly "$backing_basename" || true
 
             ${verifyAssembled}
             ${content.dev or ""}

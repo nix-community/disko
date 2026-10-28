@@ -537,7 +537,7 @@ let
   validMountScript = generator._cliMount validCase pkgs;
   validFormatScript = generator._cliFormat validCase pkgs;
   validUnmountScript = generator._cliUnmount validCase pkgs;
-  validDestroyScript = generator._cliDestroy validCase pkgs;
+  validDestroyScript = generator._cliDestroyFormatMount validCase pkgs;
 in
 pkgs.runCommand "bcache-validation" { } ''
   grep=${pkgs.gnugrep}/bin/grep
