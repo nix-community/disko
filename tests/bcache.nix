@@ -68,7 +68,7 @@ diskoLib.testLib.makeDiskoTest {
     machine.succeed("truncate -s 256M /tmp/foreign-cache.img /tmp/foreign-backing.img")
     foreign_cache = machine.succeed("losetup -f --show /tmp/foreign-cache.img").strip()
     foreign_backing = machine.succeed("losetup -f --show /tmp/foreign-backing.img").strip()
-    machine.succeed(f"${pkgs.bcache-tools}/bin/make-bcache -C {foreign_cache} -B {foreign_backing} --force")
+    machine.succeed(f"${pkgs.bcache-tools}/bin/make-bcache --bucket 64k -C {foreign_cache} -B {foreign_backing} --force")
     for member in (foreign_cache, foreign_backing):
         name = member.removeprefix("/dev/")
         machine.succeed(f"udevadm settle; test -e /sys/class/block/{name}/bcache || echo {member} > /sys/fs/bcache/register")
