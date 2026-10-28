@@ -29,9 +29,9 @@
           };
         };
       };
-      backing-disk = {
+      storage = {
         type = "disk";
-        device = "/dev/my-backing-disk";
+        device = "/dev/my-storage";
         content = {
           type = "gpt";
           partitions = {

@@ -56,6 +56,8 @@ diskoLib.testLib.makeDiskoTest {
   extraInstallerConfig = {
     boot.kernelModules = [ "bcache" ];
   };
+  # The harness assigns VM disks in attribute-name order and boots the first
+  # one, so the example keeps its boot disk (cache-disk) sorted before storage.
   # Runs after the harness's unmount -> mount cycle.
   postMount = ''
     # Regression: unmount must not detach the cache from the backing device.
@@ -86,7 +88,7 @@ diskoLib.testLib.makeDiskoTest {
 
     # Verify make-bcache wrote metadata to both member devices.
     machine.succeed("bcache-super-show /dev/disk/by-partlabel/disk-cache-disk-cache >&2")
-    machine.succeed("bcache-super-show /dev/disk/by-partlabel/disk-backing-disk-backing >&2")
+    machine.succeed("bcache-super-show /dev/disk/by-partlabel/disk-storage-backing >&2")
 
     machine.succeed("mountpoint /mnt")
     machine.succeed("findmnt -n -o FSTYPE /mnt | grep -q ext4")
@@ -97,7 +99,7 @@ diskoLib.testLib.makeDiskoTest {
     # Cold-style mount-only reassembly: unmount must stop the set and release
     # our cache set, and the mount script must bring /dev/bcache0 back.
     cache_name = machine.succeed("basename $(readlink -f /dev/disk/by-partlabel/disk-cache-disk-cache)").strip()
-    expected_backing = machine.succeed("basename $(readlink -f /dev/disk/by-partlabel/disk-backing-disk-backing)").strip()
+    expected_backing = machine.succeed("basename $(readlink -f /dev/disk/by-partlabel/disk-storage-backing)").strip()
     machine.succeed("umount /mnt/boot")
     machine.succeed(disko_unmount)
     machine.succeed("test ! -b /dev/bcache0")
@@ -114,10 +116,10 @@ diskoLib.testLib.makeDiskoTest {
     # make-bcache, which rejects non-bcache superblocks even with --force.
     machine.succeed("umount /mnt/boot")
     machine.succeed(disko_unmount)
-    machine.succeed("wipefs --all --force /dev/disk/by-partlabel/disk-backing-disk-backing")
+    machine.succeed("wipefs --all --force /dev/disk/by-partlabel/disk-storage-backing")
     machine.succeed("wipefs --all --force /dev/disk/by-partlabel/disk-cache-disk-cache")
-    machine.succeed("mkfs.btrfs -f /dev/disk/by-partlabel/disk-backing-disk-backing")
-    machine.succeed("blkid -o export /dev/disk/by-partlabel/disk-backing-disk-backing | grep -q '^TYPE=btrfs$'")
+    machine.succeed("mkfs.btrfs -f /dev/disk/by-partlabel/disk-storage-backing")
+    machine.succeed("blkid -o export /dev/disk/by-partlabel/disk-storage-backing | grep -q '^TYPE=btrfs$'")
     machine.succeed(disko_format)
     machine.succeed(disko_mount)
     machine.succeed("blkid -o export /dev/bcache0 | grep -q '^TYPE=ext4$'")
