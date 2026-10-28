@@ -48,14 +48,14 @@
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = ''
-        echo "${config.device}" >> "$disko_devices_dir/bcache_backing_${lib.escapeShellArg config.set}"
+        echo "${config.device}" >> "$disko_devices_dir"/bcache_backing_${lib.escapeShellArg config.set}
       '';
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
       default = {
         dev = ''
-          echo "${config.device}" >> "$disko_devices_dir/bcache_backing_${lib.escapeShellArg config.set}"
+          echo "${config.device}" >> "$disko_devices_dir"/bcache_backing_${lib.escapeShellArg config.set}
         '';
       };
     };

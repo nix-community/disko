@@ -133,6 +133,42 @@ let
         description = "The type of device";
       };
 
+    /*
+      Shell function `bcache_release_members DEV...`: stops the bcache device
+      a backing member feeds and unregisters the cache set a cache member
+      belongs to, then waits until the members are free. Only the given
+      members are touched; unrelated bcache sets keep running.
+    */
+    bcacheReleaseMembers = ''
+      bcache_release_members() {
+        local member name i
+        for member in "$@"; do
+          [ -e "$member" ] || continue
+          name="$(basename "$(readlink -f "$member")")"
+          if [ -e "/sys/class/block/$name/bcache/stop" ]; then
+            echo 1 > "/sys/class/block/$name/bcache/stop" || true
+          fi
+          if [ -e "/sys/class/block/$name/bcache/set/unregister" ]; then
+            echo 1 > "/sys/class/block/$name/bcache/set/unregister" || true
+          fi
+        done
+        udevadm settle --timeout=10 || true
+        for member in "$@"; do
+          [ -e "$member" ] || continue
+          name="$(basename "$(readlink -f "$member")")"
+          for i in $(seq 1 30); do
+            [ -e "/sys/class/block/$name/bcache" ] || break
+            udevadm settle --timeout=1 || true
+            sleep 1
+          done
+          if [ -e "/sys/class/block/$name/bcache" ]; then
+            printf "\033[31mERROR:\033[0m bcache member %s is still registered\n" "$member" >&2
+            return 1
+          fi
+        done
+      }
+    '';
+
     /**
         like lib.recursiveUpdate but supports merging of lists
 
@@ -710,46 +746,19 @@ let
             nodev
             ;
         };
-        stopBcacheDevices = lib.optionalString (devices.bcache != { }) ''
-          modprobe bcache || true
+        # Destructive paths wipe configured disks next; release bcache members
+        # on those disks only, so unrelated bcache sets keep running.
+        releaseBcacheOnWipedDisks = lib.optionalString (devices.bcache != { }) ''
+          ${diskoLib.bcacheReleaseMembers}
           # shellcheck disable=SC2043
-          for dev in ${
+          for disk in ${
             lib.escapeShellArgs (
-              map (bcache: builtins.baseNameOf bcache.device) (lib.attrValues devices.bcache)
+              lib.catAttrs "device" (lib.attrValues (lib.filterAttrs (_: disk: disk.destroy) devices.disk))
             )
           }; do
-            if [ -e "/sys/block/$dev/bcache/detach" ]; then
-              echo 1 > "/sys/block/$dev/bcache/detach" 2>/dev/null || true
-            fi
-            if [ -e "/sys/block/$dev/bcache/stop" ]; then
-              echo 1 > "/sys/block/$dev/bcache/stop" 2>/dev/null || true
-            fi
-          done
-          # Destructive paths wipe configured disks next, so unregister all
-          # active bcache cache sets to release any member devices still held.
-          find /sys/fs/bcache -maxdepth 1 -mindepth 1 -type d -exec sh -c '
-            for cset; do
-              if [ -e "$cset/unregister" ]; then
-                echo 1 > "$cset/unregister" 2>/dev/null || true
-              fi
-            done
-          ' _ {} + 2>/dev/null || true
-          udevadm settle --timeout=10 || true
-          # shellcheck disable=SC2043
-          for dev in ${
-            lib.escapeShellArgs (
-              map (bcache: builtins.baseNameOf bcache.device) (lib.attrValues devices.bcache)
-            )
-          }; do
-            for i in $(seq 1 30); do
-              [ ! -e "/sys/block/$dev" ] && break
-              udevadm settle --timeout=1 || true
-              sleep 1
-            done
-            if [ -e "/sys/block/$dev" ]; then
-              printf "\033[31mERROR:\033[0m bcache device /dev/%s did not stop\n" "$dev" >&2
-              exit 1
-            fi
+            [ -b "$disk" ] || continue
+            mapfile -t members < <(lsblk -nrpo NAME "$disk")
+            bcache_release_members "''${members[@]}"
           done
         '';
         bcacheMeta = cfg.config._meta.bcache or { };
@@ -924,162 +933,160 @@ let
                   coreutils-full
                 ];
               in
-              lib.mapAttrs throwIfNoDisksDetected (
-                builtins.seq validateBcacheMembers {
-                  destroy = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "/bin/disko-destroy" ''
-                    export PATH=${lib.makeBinPath destroyDependencies}:$PATH
-                    ${cfg.config._destroy}
-                  '';
-                  format = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "/bin/disko-format" ''
-                    export PATH=${lib.makeBinPath (cfg.config._packages pkgs)}:$PATH
-                    ${cfg.config._create}
-                  '';
-                  mount = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "/bin/disko-mount" ''
-                    export PATH=${lib.makeBinPath (cfg.config._packages pkgs)}:$PATH
-                    ${cfg.config._mount}
-                  '';
-                  unmount = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "/bin/disko-unmount" ''
-                    export PATH=${lib.makeBinPath (cfg.config._packages pkgs)}:$PATH
-                    ${cfg.config._unmount}
-                  '';
-                  formatMount = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "/bin/disko-format-mount" ''
-                    export PATH=${lib.makeBinPath ((cfg.config._packages pkgs) ++ [ pkgs.bash ])}:$PATH
-                    ${cfg.config._formatMount}
-                  '';
-                  destroyFormatMount =
-                    (diskoLib.writeCheckedBash { inherit pkgs checked; }) "/bin/disko-destroy-format-mount"
-                      ''
-                        export PATH=${
-                          lib.makeBinPath ((cfg.config._packages pkgs) ++ [ pkgs.bash ] ++ destroyDependencies)
-                        }:$PATH
-                        ${cfg.config._destroyFormatMount}
-                      '';
+              lib.mapAttrs throwIfNoDisksDetected {
+                destroy = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "/bin/disko-destroy" ''
+                  export PATH=${lib.makeBinPath destroyDependencies}:$PATH
+                  ${cfg.config._destroy}
+                '';
+                format = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "/bin/disko-format" ''
+                  export PATH=${lib.makeBinPath (cfg.config._packages pkgs)}:$PATH
+                  ${cfg.config._create}
+                '';
+                mount = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "/bin/disko-mount" ''
+                  export PATH=${lib.makeBinPath (cfg.config._packages pkgs)}:$PATH
+                  ${cfg.config._mount}
+                '';
+                unmount = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "/bin/disko-unmount" ''
+                  export PATH=${lib.makeBinPath (cfg.config._packages pkgs)}:$PATH
+                  ${cfg.config._unmount}
+                '';
+                formatMount = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "/bin/disko-format-mount" ''
+                  export PATH=${lib.makeBinPath ((cfg.config._packages pkgs) ++ [ pkgs.bash ])}:$PATH
+                  ${cfg.config._formatMount}
+                '';
+                destroyFormatMount =
+                  (diskoLib.writeCheckedBash { inherit pkgs checked; }) "/bin/disko-destroy-format-mount"
+                    ''
+                      export PATH=${
+                        lib.makeBinPath ((cfg.config._packages pkgs) ++ [ pkgs.bash ] ++ destroyDependencies)
+                      }:$PATH
+                      ${cfg.config._destroyFormatMount}
+                    '';
 
-                  # These are useful to skip copying executables uploading a script to an in-memory installer
-                  destroyNoDeps =
-                    (diskoLib.writeCheckedBash {
-                      inherit pkgs checked;
-                      noDeps = true;
-                    })
-                      "/bin/disko-destroy"
-                      ''
-                        ${cfg.config._destroy}
-                      '';
-                  formatNoDeps =
-                    (diskoLib.writeCheckedBash {
-                      inherit pkgs checked;
-                      noDeps = true;
-                    })
-                      "/bin/disko-format"
-                      ''
-                        ${cfg.config._create}
-                      '';
-                  mountNoDeps =
-                    (diskoLib.writeCheckedBash {
-                      inherit pkgs checked;
-                      noDeps = true;
-                    })
-                      "/bin/disko-mount"
-                      ''
-                        ${cfg.config._mount}
-                      '';
-                  unmountNoDeps =
-                    (diskoLib.writeCheckedBash {
-                      inherit pkgs checked;
-                      noDeps = true;
-                    })
-                      "/bin/disko-unmount"
-                      ''
-                        ${cfg.config._unmount}
-                      '';
-                  formatMountNoDeps =
-                    (diskoLib.writeCheckedBash {
-                      inherit pkgs checked;
-                      noDeps = true;
-                    })
-                      "/bin/disko-format-mount"
-                      ''
-                        ${cfg.config._formatMount}
-                      '';
-                  destroyFormatMountNoDeps =
-                    (diskoLib.writeCheckedBash {
-                      inherit pkgs checked;
-                      noDeps = true;
-                    })
-                      "/bin/disko-destroy-format-mount"
-                      ''
-                        ${cfg.config._destroyFormatMount}
-                      '';
+                # These are useful to skip copying executables uploading a script to an in-memory installer
+                destroyNoDeps =
+                  (diskoLib.writeCheckedBash {
+                    inherit pkgs checked;
+                    noDeps = true;
+                  })
+                    "/bin/disko-destroy"
+                    ''
+                      ${cfg.config._destroy}
+                    '';
+                formatNoDeps =
+                  (diskoLib.writeCheckedBash {
+                    inherit pkgs checked;
+                    noDeps = true;
+                  })
+                    "/bin/disko-format"
+                    ''
+                      ${cfg.config._create}
+                    '';
+                mountNoDeps =
+                  (diskoLib.writeCheckedBash {
+                    inherit pkgs checked;
+                    noDeps = true;
+                  })
+                    "/bin/disko-mount"
+                    ''
+                      ${cfg.config._mount}
+                    '';
+                unmountNoDeps =
+                  (diskoLib.writeCheckedBash {
+                    inherit pkgs checked;
+                    noDeps = true;
+                  })
+                    "/bin/disko-unmount"
+                    ''
+                      ${cfg.config._unmount}
+                    '';
+                formatMountNoDeps =
+                  (diskoLib.writeCheckedBash {
+                    inherit pkgs checked;
+                    noDeps = true;
+                  })
+                    "/bin/disko-format-mount"
+                    ''
+                      ${cfg.config._formatMount}
+                    '';
+                destroyFormatMountNoDeps =
+                  (diskoLib.writeCheckedBash {
+                    inherit pkgs checked;
+                    noDeps = true;
+                  })
+                    "/bin/disko-destroy-format-mount"
+                    ''
+                      ${cfg.config._destroyFormatMount}
+                    '';
 
-                  # Legacy scripts, to be removed in version 2.0.0
-                  # They are generally less useful, because the scripts are directly written to their $out path instead of
-                  # into the $out/bin directory, which makes them incompatible with `nix run`
-                  # (see https://github.com/nix-community/disko/pull/78), `lib.buildEnv` and thus `environment.systemPackages`,
-                  # `user.users.<name>.packages` and `home.packages`, see https://github.com/nix-community/disko/issues/454
-                  destroyScript = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-destroy" ''
-                    export PATH=${lib.makeBinPath destroyDependencies}:$PATH
-                    ${cfg.config._legacyDestroy}
-                  '';
+                # Legacy scripts, to be removed in version 2.0.0
+                # They are generally less useful, because the scripts are directly written to their $out path instead of
+                # into the $out/bin directory, which makes them incompatible with `nix run`
+                # (see https://github.com/nix-community/disko/pull/78), `lib.buildEnv` and thus `environment.systemPackages`,
+                # `user.users.<name>.packages` and `home.packages`, see https://github.com/nix-community/disko/issues/454
+                destroyScript = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-destroy" ''
+                  export PATH=${lib.makeBinPath destroyDependencies}:$PATH
+                  ${cfg.config._legacyDestroy}
+                '';
 
-                  formatScript = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-format" ''
-                    export PATH=${lib.makeBinPath (cfg.config._packages pkgs)}:$PATH
-                    ${cfg.config._create}
-                  '';
+                formatScript = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-format" ''
+                  export PATH=${lib.makeBinPath (cfg.config._packages pkgs)}:$PATH
+                  ${cfg.config._create}
+                '';
 
-                  mountScript = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-mount" ''
-                    export PATH=${lib.makeBinPath (cfg.config._packages pkgs)}:$PATH
-                    ${cfg.config._mount}
-                  '';
+                mountScript = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko-mount" ''
+                  export PATH=${lib.makeBinPath (cfg.config._packages pkgs)}:$PATH
+                  ${cfg.config._mount}
+                '';
 
-                  diskoScript = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko" ''
-                    export PATH=${
-                      lib.makeBinPath ((cfg.config._packages pkgs) ++ [ pkgs.bash ] ++ destroyDependencies)
-                    }:$PATH
-                    ${cfg.config._disko}
-                  '';
+                diskoScript = (diskoLib.writeCheckedBash { inherit pkgs checked; }) "disko" ''
+                  export PATH=${
+                    lib.makeBinPath ((cfg.config._packages pkgs) ++ [ pkgs.bash ] ++ destroyDependencies)
+                  }:$PATH
+                  ${cfg.config._disko}
+                '';
 
-                  # These are useful to skip copying executables uploading a script to an in-memory installer
-                  destroyScriptNoDeps =
-                    (diskoLib.writeCheckedBash {
-                      inherit pkgs checked;
-                      noDeps = true;
-                    })
-                      "disko-destroy"
-                      ''
-                        ${cfg.config._legacyDestroy}
-                      '';
+                # These are useful to skip copying executables uploading a script to an in-memory installer
+                destroyScriptNoDeps =
+                  (diskoLib.writeCheckedBash {
+                    inherit pkgs checked;
+                    noDeps = true;
+                  })
+                    "disko-destroy"
+                    ''
+                      ${cfg.config._legacyDestroy}
+                    '';
 
-                  formatScriptNoDeps =
-                    (diskoLib.writeCheckedBash {
-                      inherit pkgs checked;
-                      noDeps = true;
-                    })
-                      "disko-format"
-                      ''
-                        ${cfg.config._create}
-                      '';
+                formatScriptNoDeps =
+                  (diskoLib.writeCheckedBash {
+                    inherit pkgs checked;
+                    noDeps = true;
+                  })
+                    "disko-format"
+                    ''
+                      ${cfg.config._create}
+                    '';
 
-                  mountScriptNoDeps =
-                    (diskoLib.writeCheckedBash {
-                      inherit pkgs checked;
-                      noDeps = true;
-                    })
-                      "disko-mount"
-                      ''
-                        ${cfg.config._mount}
-                      '';
+                mountScriptNoDeps =
+                  (diskoLib.writeCheckedBash {
+                    inherit pkgs checked;
+                    noDeps = true;
+                  })
+                    "disko-mount"
+                    ''
+                      ${cfg.config._mount}
+                    '';
 
-                  diskoScriptNoDeps =
-                    (diskoLib.writeCheckedBash {
-                      inherit pkgs checked;
-                      noDeps = true;
-                    })
-                      "disko"
-                      ''
-                        ${cfg.config._disko}
-                      '';
-                }
-              );
+                diskoScriptNoDeps =
+                  (diskoLib.writeCheckedBash {
+                    inherit pkgs checked;
+                    noDeps = true;
+                  })
+                    "disko"
+                    ''
+                      ${cfg.config._disko}
+                    '';
+              };
           };
           _legacyDestroy = lib.mkOption {
             internal = true;
@@ -1091,7 +1098,7 @@ let
             default = ''
               umount -Rv "${rootMountPoint}" || :
 
-              ${stopBcacheDevices}
+              ${releaseBcacheOnWipedDisks}
 
               # shellcheck disable=SC2043,2041
               for dev in ${
@@ -1138,7 +1145,7 @@ let
 
                 umount -Rv "${rootMountPoint}" || :
 
-                ${stopBcacheDevices}
+                ${releaseBcacheOnWipedDisks}
 
                 # shellcheck disable=SC2043,2041
                 for dev in ${toString (lib.catAttrs "device" disksToWipe)}; do

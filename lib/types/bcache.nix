@@ -3,9 +3,112 @@
   options,
   lib,
   diskoLib,
-  rootMountPoint,
   ...
 }:
+let
+  devBasename = builtins.baseNameOf config.device;
+  sysfs = "/sys/block/${devBasename}/bcache";
+  setName = lib.escapeShellArg config.name;
+
+  # Sets cache_dev/backing_dev from the members registered by bcache_cache and
+  # bcache_backing, plus their resolved kernel names.
+  readMembers = ''
+    for role in cache backing; do
+      if ! test -s "$disko_devices_dir"/bcache_''${role}_${setName}; then
+        printf "\033[31mERROR:\033[0m No %s device found for bcache set %s!\n" "$role" ${setName} >&2
+        exit 1
+      fi
+    done
+    cache_dev=$(head -n1 "$disko_devices_dir"/bcache_cache_${setName})
+    backing_dev=$(head -n1 "$disko_devices_dir"/bcache_backing_${setName})
+  '';
+
+  resolveMembers = ''
+    cache_resolved="$(readlink -f "$cache_dev")"
+    backing_resolved="$(readlink -f "$backing_dev")"
+    if [ "$cache_resolved" = "$backing_resolved" ]; then
+      printf "\033[31mERROR:\033[0m bcache set %s uses the same block device for cache and backing: %s\n" ${setName} "$cache_resolved" >&2
+      exit 1
+    fi
+    backing_basename="$(basename "$backing_resolved")"
+  '';
+
+  registerHelpers = ''
+    is_registered() {
+      [ -e "/sys/class/block/$1/bcache" ]
+    }
+
+    register_bcache_member() {
+      local resolved="$1"
+      local block_name
+      local i
+
+      block_name="$(basename "$resolved")"
+      if ! bcache-super-show "$resolved" >&2; then
+        printf "\033[31mERROR:\033[0m %s does not contain a bcache superblock\n" "$resolved" >&2
+        return 1
+      fi
+
+      is_registered "$block_name" && return 0
+      # A concurrent udev registration may win the race and fail this write.
+      printf '%s\n' "$resolved" > /sys/fs/bcache/register || true
+
+      for i in $(seq 1 30); do
+        is_registered "$block_name" && return 0
+        udevadm settle --timeout=1 || true
+        sleep 1
+      done
+
+      printf "\033[31mERROR:\033[0m bcache member %s did not register\n" "$resolved" >&2
+      return 1
+    }
+
+    wait_for_assembly() {
+      local i
+
+      for i in $(seq 1 60); do
+        if [ -b "${config.device}" ] && \
+           [ "$(cat "${sysfs}/backing_dev_name" 2>/dev/null)" = "$backing_basename" ] && \
+           [ -e "${sysfs}/cache" ]; then
+          return 0
+        fi
+        udevadm settle --timeout=1 || true
+        sleep 1
+      done
+      return 1
+    }
+  '';
+
+  # Fails unless config.device is backed by our backing member and attached to
+  # the cache set recorded in our cache member's superblock.
+  verifyAssembled = ''
+    if [ ! -b "${config.device}" ]; then
+      printf "\033[31mERROR:\033[0m bcache device ${config.device} did not appear\n" >&2
+      exit 1
+    fi
+    actual_backing_basename="$(cat "${sysfs}/backing_dev_name" 2>/dev/null || true)"
+    if [ "$actual_backing_basename" != "$backing_basename" ]; then
+      printf "\033[31mERROR:\033[0m bcache device ${config.device} is attached to backing %s, expected %s\n" "$actual_backing_basename" "$backing_basename" >&2
+      exit 1
+    fi
+    expected_cset=""
+    while read -r key value; do
+      if [ "$key" = cset.uuid ]; then
+        expected_cset="$value"
+      fi
+    done < <(bcache-super-show "$cache_resolved")
+    actual_cset=""
+    if [ -e "${sysfs}/cache" ]; then
+      actual_cset="$(basename "$(readlink -f "${sysfs}/cache")")"
+    fi
+    if [ -z "$expected_cset" ] || [ "$actual_cset" != "$expected_cset" ]; then
+      printf "\033[31mERROR:\033[0m bcache device ${config.device} is not attached to cache set %s of %s (attached: %s)\n" "$expected_cset" "$cache_dev" "''${actual_cset:-none}" >&2
+      exit 1
+    fi
+
+    echo "${config.cacheMode}" > "${sysfs}/cache_mode"
+  '';
+in
 {
   options = {
     name = lib.mkOption {
@@ -44,15 +147,20 @@
       default = "writethrough";
       description = "Cache mode for the bcache device.";
     };
-    extraCacheArgs = lib.mkOption {
+    extraArgs = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];
-      description = "Extra arguments passed to `make-bcache -C` for the cache device.";
-    };
-    extraBackingArgs = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      default = [ ];
-      description = "Extra arguments passed to `make-bcache -B` for the backing device.";
+      description = ''
+        Extra arguments appended to the single `make-bcache -C <cache> -B <backing>`
+        invocation. Its options apply to both members.
+      '';
+      example = [
+        "--block"
+        "4k"
+        "--bucket"
+        "2M"
+        "--discard"
+      ];
     };
     content = diskoLib.deviceType {
       parent = config;
@@ -72,183 +180,68 @@
     };
     _create = diskoLib.mkCreateOption {
       inherit config options;
-      default =
-        let
-          devBasename = builtins.baseNameOf config.device;
-        in
-        ''
-          # Read cache and backing device paths from temp directory
-          if ! test -s "$disko_devices_dir/bcache_cache_${lib.escapeShellArg config.name}"; then
-            printf "\033[31mERROR:\033[0m No cache device found for bcache set \"${config.name}\"!\n" >&2
-            exit 1
-          fi
-          if ! test -s "$disko_devices_dir/bcache_backing_${lib.escapeShellArg config.name}"; then
-            printf "\033[31mERROR:\033[0m No backing device found for bcache set \"${config.name}\"!\n" >&2
-            exit 1
-          fi
+      default = ''
+        ${readMembers}
+        modprobe bcache
+        ${resolveMembers}
+        ${registerHelpers}
+        ${diskoLib.bcacheReleaseMembers}
 
-          cache_dev=$(head -n1 "$disko_devices_dir/bcache_cache_${lib.escapeShellArg config.name}")
-          backing_dev=$(head -n1 "$disko_devices_dir/bcache_backing_${lib.escapeShellArg config.name}")
+        fresh_bcache=0
+        # Idempotency: keep an assembled set that already uses our backing device
+        if [ -b "${config.device}" ] && \
+           [ "$(cat "${sysfs}/backing_dev_name" 2>/dev/null)" = "$backing_basename" ]; then
+          bcache-super-show "$cache_resolved" >&2
+          bcache-super-show "$backing_resolved" >&2
+        else
+          fresh_bcache=1
+          # Release only our members (a stale set from an earlier run); other
+          # bcache sets on this machine keep running.
+          bcache_release_members "$cache_resolved" "$backing_resolved"
 
-          modprobe bcache
+          # --force replaces bcache metadata, but make-bcache still rejects
+          # other filesystem signatures. Clear the unassembled members before
+          # creating a fresh set; the idempotent branch above preserves them.
+          wipefs --all --force "$cache_resolved" "$backing_resolved"
 
-          # Resolve symlink to kernel device name for sysfs matching
-          cache_resolved="$(readlink -f "$cache_dev")"
-          backing_resolved="$(readlink -f "$backing_dev")"
-          if [ "$cache_resolved" = "$backing_resolved" ]; then
-            printf "\033[31mERROR:\033[0m bcache set \"${config.name}\" uses the same block device for cache and backing: %s\n" "$cache_resolved" >&2
-            exit 1
-          fi
-          backing_basename="$(basename "$backing_resolved")"
+          echo "Creating bcache set ${setName} with cache $cache_dev ($cache_resolved) and backing $backing_dev ($backing_resolved)" >&2
+          make-bcache \
+            -C "$cache_dev" \
+            -B "$backing_dev" \
+            --force \
+            ${lib.escapeShellArgs config.extraArgs}
 
-          verify_bcache_superblock() {
-            local role="$1"
-            local dev="$2"
-            local resolved
+          # Writing a superblock does not guarantee that udev registers the
+          # members before content creation, so register them explicitly.
+          udevadm settle --timeout=10 || true
+          register_bcache_member "$cache_resolved"
+          register_bcache_member "$backing_resolved"
+          wait_for_assembly || true
+        fi
 
-            resolved="$(readlink -f "$dev")"
-            echo "Verifying bcache $role superblock on $dev -> $resolved" >&2
-            if ! bcache-super-show "$resolved" >&2; then
-              printf "\033[31mERROR:\033[0m make-bcache did not create a valid bcache %s superblock on %s (%s)\n" "$role" "$dev" "$resolved" >&2
-              exit 1
-            fi
-          }
+        ${verifyAssembled}
 
-          # Idempotency: if the bcache device already exists with our backing device, skip creation
-          if [ -b "${config.device}" ] && \
-             [ -e "/sys/block/${devBasename}/bcache/backing_dev_name" ] && \
-             [ "$(cat "/sys/block/${devBasename}/bcache/backing_dev_name")" = "$backing_basename" ]; then
-            verify_bcache_superblock cache "$cache_dev"
-            verify_bcache_superblock backing "$backing_dev"
-          else
-            # Teardown stale bcache device if it exists (destroy-format-mount scenario)
-            if [ -e "/sys/block/${devBasename}/bcache/stop" ]; then
-              echo 1 > "/sys/block/${devBasename}/bcache/stop" 2>/dev/null || true
-            fi
-            # Unregister any active cache sets
-            find /sys/fs/bcache -maxdepth 1 -mindepth 1 -type d -exec sh -c '
-              for cset; do
-                if [ -e "$cset/unregister" ]; then
-                  echo 1 > "$cset/unregister" 2>/dev/null || true
-                fi
-              done
-            ' _ {} + 2>/dev/null || true
-            udevadm settle --timeout=10
-            # Wait for the bcache device to fully disappear
-            for i in $(seq 1 30); do
-              [ -b "${config.device}" ] || break
-              sleep 1
-            done
+        if [ "$fresh_bcache" = 1 ]; then
+          # A fresh bcache device maps backing data shifted by `data_offset`
+          # without zeroing it, so stale signatures from earlier backing
+          # content can surface and make content `_create` skip formatting.
+          wipefs --all --force "${config.device}" >&2
+        fi
 
-            # --force replaces bcache metadata, but make-bcache still rejects
-            # other filesystem signatures. Clear the unassembled members before
-            # creating a fresh set; the idempotent branch above preserves them.
-            wipefs --all --force "$cache_resolved" "$backing_resolved"
-
-            # Create bcache set — --force handles pre-existing bcache superblocks
-            echo "Creating bcache set \"${config.name}\" with cache $cache_dev ($cache_resolved) and backing $backing_dev ($backing_resolved)" >&2
-            make-bcache \
-              -C "$cache_dev" \
-              -B "$backing_dev" \
-              --force \
-              ${lib.optionalString (config.cacheMode == "writeback") "--writeback"} \
-              ${lib.concatStringsSep " " (map lib.escapeShellArg config.extraCacheArgs)} \
-              ${lib.concatStringsSep " " (map lib.escapeShellArg config.extraBackingArgs)}
-
-            verify_bcache_superblock cache "$cache_dev"
-            verify_bcache_superblock backing "$backing_dev"
-
-            # Explicitly register new members: writing a superblock does not
-            # guarantee that udev will assemble it before the formatter waits.
-            udevadm settle --timeout=10
-            for member in "$cache_resolved" "$backing_resolved"; do
-              member_basename="$(basename "$member")"
-              if [ ! -e "/sys/class/block/$member_basename/bcache" ]; then
-                if ! printf '%s\n' "$member" > /sys/fs/bcache/register; then
-                  # A concurrent udev registration may have won the race.
-                  if [ ! -e "/sys/class/block/$member_basename/bcache" ]; then
-                    printf "\033[31mERROR:\033[0m failed to register new bcache member %s\n" "$member" >&2
-                    exit 1
-                  fi
-                fi
-              fi
-            done
-
-            # Wait for the bcache block device to appear
-            for i in $(seq 1 60); do
-              [ -b "${config.device}" ] && break
-              sleep 1
-            done
-
-            # A freshly assembled bcache device shifts backing data by
-            # `data_offset` sectors but does not zero the resulting mapping.
-            # Stale filesystem signatures from prior content on the backing
-            # member can therefore surface on the new bcache device, causing
-            # downstream content `_create` checks (e.g. btrfs' "skip mkfs if
-            # blkid reports any TYPE=") to skip formatting and then fail at
-            # mount time. Wipe the new device so it is unambiguously empty.
-            if [ -b "${config.device}" ]; then
-              wipefs --all --force "${config.device}" >&2 || true
-            fi
-          fi
-
-          if [ ! -b "${config.device}" ]; then
-            printf "\033[31mERROR:\033[0m bcache device ${config.device} did not appear\n" >&2
-            exit 1
-          fi
-
-          if [ ! -e "/sys/block/${devBasename}/bcache/backing_dev_name" ]; then
-            printf "\033[31mERROR:\033[0m bcache device ${config.device} has no backing_dev_name in sysfs\n" >&2
-            exit 1
-          fi
-
-          actual_backing_basename="$(cat "/sys/block/${devBasename}/bcache/backing_dev_name")"
-          if [ "$actual_backing_basename" != "$backing_basename" ]; then
-            printf "\033[31mERROR:\033[0m bcache device ${config.device} is attached to backing %s, expected %s\n" "$actual_backing_basename" "$backing_basename" >&2
-            exit 1
-          fi
-
-          # Set cache mode
-          echo "${config.cacheMode}" > "/sys/block/${devBasename}/bcache/cache_mode"
-
-          ${lib.optionalString (config.content != null) config.content._create}
-        '';
+        ${lib.optionalString (config.content != null) config.content._create}
+      '';
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
       default =
         let
-          devBasename = builtins.baseNameOf config.device;
           content = lib.optionalAttrs (config.content != null) config.content._mount;
         in
         {
           dev = ''
-            if ! test -s "$disko_devices_dir/bcache_cache_${lib.escapeShellArg config.name}"; then
-              printf "\033[31mERROR:\033[0m No cache device found for bcache set \"${config.name}\"!\n" >&2
-              exit 1
-            fi
-            if ! test -s "$disko_devices_dir/bcache_backing_${lib.escapeShellArg config.name}"; then
-              printf "\033[31mERROR:\033[0m No backing device found for bcache set \"${config.name}\"!\n" >&2
-              exit 1
-            fi
-
-            cache_dev=$(head -n1 "$disko_devices_dir/bcache_cache_${lib.escapeShellArg config.name}")
-            backing_dev=$(head -n1 "$disko_devices_dir/bcache_backing_${lib.escapeShellArg config.name}")
-
-            wait_for_path() {
-              local path="$1"
-              local i
-
-              for i in $(seq 1 30); do
-                [ -e "$path" ] && return 0
-                udevadm settle --timeout=1 || true
-                sleep 1
-              done
-
-              printf "\033[31mERROR:\033[0m timed out waiting for %s\n" "$path" >&2
-              return 1
-            }
-
+            ${readMembers}
+            modprobe bcache
+            ${registerHelpers}
             wait_for_block() {
               local path="$1"
               local i
@@ -259,96 +252,21 @@
                 sleep 1
               done
 
-              printf "\033[31mERROR:\033[0m timed out waiting for bcache device %s\n" "$path" >&2
+              printf "\033[31mERROR:\033[0m timed out waiting for block device %s\n" "$path" >&2
               return 1
             }
-
-            wait_for_member_registration() {
-              local block_name="$1"
-              local i
-
-              for i in $(seq 1 30); do
-                if [ -e "/sys/class/block/$block_name/bcache" ] || [ -e "/sys/block/$block_name/bcache" ]; then
-                  return 0
-                fi
-                udevadm settle --timeout=1 || true
-                sleep 1
-              done
-
-              printf "\033[31mERROR:\033[0m bcache member %s did not register\n" "$block_name" >&2
-              return 1
-            }
-
-            register_bcache_member() {
-              local dev="$1"
-              local resolved
-              local block_name
-
-              wait_for_block "$dev"
-              resolved="$(readlink -f "$dev")"
-              if [ ! -b "$resolved" ]; then
-                printf "\033[31mERROR:\033[0m resolved bcache member %s is not a block device\n" "$resolved" >&2
-                return 1
-              fi
-              block_name="$(basename "$resolved")"
-
-              if ! bcache-super-show "$resolved" >/dev/null; then
-                printf "\033[31mERROR:\033[0m %s does not contain a bcache superblock\n" "$resolved" >&2
-                return 1
-              fi
-
-              if [ -e "/sys/class/block/$block_name/bcache" ] || [ -e "/sys/block/$block_name/bcache" ]; then
-                return 0
-              fi
-
-              if ! printf '%s\n' "$resolved" > /sys/fs/bcache/register; then
-                if [ -e "/sys/class/block/$block_name/bcache" ] || [ -e "/sys/block/$block_name/bcache" ]; then
-                  return 0
-                fi
-                if [ -b "${config.device}" ] && \
-                   [ -e "/sys/block/${devBasename}/bcache/backing_dev_name" ] && \
-                   [ "$(cat "/sys/block/${devBasename}/bcache/backing_dev_name")" = "$block_name" ]; then
-                  return 0
-                fi
-                printf "\033[31mERROR:\033[0m failed to register bcache member %s\n" "$resolved" >&2
-                return 1
-              fi
-
-              wait_for_member_registration "$block_name"
-            }
-
-            modprobe bcache
-            wait_for_path /sys/fs/bcache/register
+            for i in $(seq 1 30); do
+              [ -e /sys/fs/bcache/register ] && break
+              sleep 1
+            done
             wait_for_block "$cache_dev"
             wait_for_block "$backing_dev"
-            expected_backing_basename="$(basename "$(readlink -f "$backing_dev")")"
-            register_bcache_member "$cache_dev"
-            register_bcache_member "$backing_dev"
-            udevadm settle --timeout=10 || true
+            ${resolveMembers}
+            register_bcache_member "$cache_resolved"
+            register_bcache_member "$backing_resolved"
+            wait_for_assembly || true
 
-            if [ ! -b "${config.device}" ]; then
-              wait_for_block "${config.device}"
-            fi
-
-            if [ ! -b "${config.device}" ]; then
-              printf "\033[31mERROR:\033[0m bcache device ${config.device} did not appear\n" >&2
-              exit 1
-            fi
-
-            if [ ! -e "/sys/block/${devBasename}/bcache/backing_dev_name" ]; then
-              printf "\033[31mERROR:\033[0m bcache device ${config.device} has no backing_dev_name in sysfs\n" >&2
-              exit 1
-            fi
-
-            actual_backing_basename="$(cat "/sys/block/${devBasename}/bcache/backing_dev_name")"
-            if [ "$actual_backing_basename" != "$expected_backing_basename" ]; then
-              printf "\033[31mERROR:\033[0m bcache device ${config.device} is attached to backing %s, expected %s\n" "$actual_backing_basename" "$expected_backing_basename" >&2
-              exit 1
-            fi
-
-            if [ -e "/sys/block/${devBasename}/bcache/cache_mode" ]; then
-              echo "${config.cacheMode}" > "/sys/block/${devBasename}/bcache/cache_mode"
-            fi
+            ${verifyAssembled}
             ${content.dev or ""}
           '';
           fs = content.fs or { };
@@ -358,29 +276,31 @@
       inherit config options;
       default =
         let
-          devBasename = builtins.baseNameOf config.device;
           content = lib.optionalAttrs (config.content != null) config.content._unmount;
         in
         {
           fs = content.fs or { };
           dev = ''
             ${content.dev or ""}
-            # Stop the bcache device to release cache and backing devices
-            if [ -e "/sys/block/${devBasename}/bcache/detach" ]; then
-              echo 1 > "/sys/block/${devBasename}/bcache/detach" 2>/dev/null || true
-            fi
-            if [ -e "/sys/block/${devBasename}/bcache/stop" ]; then
-              echo 1 > "/sys/block/${devBasename}/bcache/stop" 2>/dev/null || true
-            fi
-            # Unregister cache sets
-            find /sys/fs/bcache -maxdepth 1 -mindepth 1 -type d -exec sh -c '
-              for cset; do
-                if [ -e "$cset/unregister" ]; then
-                  echo 1 > "$cset/unregister" 2>/dev/null || true
-                fi
+            # Stop the device, then unregister the cache set it was attached to.
+            # Never write `detach`: it permanently drops the cache from the
+            # backing superblock, so the next mount would run without a cache.
+            if [ -e "${sysfs}/stop" ]; then
+              cset=""
+              if [ -e "${sysfs}/cache" ]; then
+                cset="$(readlink -f "${sysfs}/cache")"
+              fi
+              echo 1 > "${sysfs}/stop"
+              for i in $(seq 1 30); do
+                [ -e "/sys/block/${devBasename}" ] || break
+                udevadm settle --timeout=1 || true
+                sleep 1
               done
-            ' _ {} + 2>/dev/null || true
-            udevadm settle --timeout=10
+              if [ -n "$cset" ] && [ -e "$cset/unregister" ]; then
+                echo 1 > "$cset/unregister"
+              fi
+              udevadm settle --timeout=10 || true
+            fi
           '';
         };
     };

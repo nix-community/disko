@@ -536,11 +536,15 @@ let
   failedInvalidConfigCases = lib.filterAttrs (_: configEvaluates) invalidCases;
   validMountScript = generator._cliMount validCase pkgs;
   validFormatScript = generator._cliFormat validCase pkgs;
+  validUnmountScript = generator._cliUnmount validCase pkgs;
+  validDestroyScript = generator._cliDestroy validCase pkgs;
 in
 pkgs.runCommand "bcache-validation" { } ''
   grep=${pkgs.gnugrep}/bin/grep
   mount_script=${lib.getExe validMountScript}
   format_script=${lib.getExe validFormatScript}
+  unmount_script=${lib.getExe validUnmountScript}
+  destroy_script=${lib.getExe validDestroyScript}
 
   ${lib.optionalString (failedInvalidCases != { }) ''
     echo "Expected invalid bcache configs to fail evaluation: ${lib.concatStringsSep ", " (lib.attrNames failedInvalidCases)}" >&2
@@ -564,9 +568,19 @@ pkgs.runCommand "bcache-validation" { } ''
   "$grep" -q '/sys/fs/bcache/register' "$mount_script"
   "$grep" -q 'backing_dev_name' "$mount_script"
   "$grep" -q 'make-bcache' "$format_script"
-  "$grep" -q 'verify_bcache_superblock cache' "$format_script"
-  "$grep" -q 'verify_bcache_superblock backing' "$format_script"
-  "$grep" -q 'did not create a valid bcache' "$format_script"
+  "$grep" -q 'register_bcache_member' "$format_script"
+  "$grep" -q 'bcache_release_members' "$format_script"
+  "$grep" -q 'is not attached to cache set' "$format_script"
+  "$grep" -q 'is not attached to cache set' "$mount_script"
+  "$grep" -q 'bcache_release_members' "$destroy_script"
+  # Unmount must never detach (drops the cache from the backing superblock)
+  # and teardown must never unregister unrelated cache sets.
+  for script in "$mount_script" "$unmount_script" "$format_script" "$destroy_script"; do
+    if "$grep" -qE 'bcache/detach|find /sys/fs/bcache' "$script"; then
+      echo "$script detaches bcache or unregisters all cache sets" >&2
+      exit 1
+    fi
+  done
   "$grep" -q 'backing_dev_name' "$format_script"
   "$grep" -q 'uses the same block device for cache and backing' "$format_script"
   if "$grep" -q 'make-bcache' "$mount_script"; then

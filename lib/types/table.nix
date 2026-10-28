@@ -174,32 +174,22 @@
           inherit config options;
           default =
             let
-              partitionMounts = (
-                map (
-                  partition: lib.optionalAttrs (partition.content != null) partition.content._mount
-                ) config.partitions
-              );
-              partMountFs = lib.foldr lib.recursiveUpdate { } (map (mount: mount.fs or { }) partitionMounts);
+              mounts = map (p: p.content._mount) (lib.filter (p: p.content != null) config.partitions);
             in
             {
-              dev = lib.concatMapStrings (mount: mount.dev or "") partitionMounts;
-              fs = partMountFs;
+              dev = lib.concatStringsSep "\n" (map (m: m.dev or "") mounts);
+              fs = lib.foldr lib.recursiveUpdate { } (map (m: m.fs or { }) mounts);
             };
         };
         _unmount = diskoLib.mkUnmountOption {
           inherit config options;
           default =
             let
-              partitionMounts = (
-                map (
-                  partition: lib.optionalAttrs (partition.content != null) partition.content._unmount
-                ) config.partitions
-              );
-              partMountFs = lib.foldr lib.recursiveUpdate { } (map (mount: mount.fs or { }) partitionMounts);
+              unmounts = map (p: p.content._unmount) (lib.filter (p: p.content != null) config.partitions);
             in
             {
-              dev = lib.concatMapStrings (mount: mount.dev or "") partitionMounts;
-              fs = partMountFs;
+              dev = lib.concatStringsSep "\n" (map (m: m.dev or "") unmounts);
+              fs = lib.foldr lib.recursiveUpdate { } (map (m: m.fs or { }) unmounts);
             };
         };
         _config = lib.mkOption {

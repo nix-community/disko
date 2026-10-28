@@ -56,73 +56,73 @@ diskoLib.testLib.makeDiskoTest {
   extraInstallerConfig = {
     boot.kernelModules = [ "bcache" ];
   };
-  extraSystemConfig = {
-    boot.bcache.enable = true;
-  };
-  # bcache root requires initrd support that NixOS doesn't fully provide yet;
-  # test format/mount/destroy/idempotency only
-  testBoot = false;
-  testMode = "direct";
-  extraTestScript = ''
-    # Verify bcache device exists and is a block device
-    machine.succeed("test -b /dev/bcache0")
+  # Runs after the harness's unmount -> mount cycle.
+  postMount = ''
+    # Regression: unmount must not detach the cache from the backing device.
+    machine.succeed("test -e /sys/block/bcache0/bcache/cache")
+    machine.succeed("grep -qE 'clean|dirty' /sys/block/bcache0/bcache/state")
+    machine.succeed("grep -qF '[writeback]' /sys/block/bcache0/bcache/cache_mode")
+
+    # An unrelated bcache set on loop devices must survive every disko
+    # operation below (unmount, mount, destroy, fresh format).
+    machine.succeed("truncate -s 256M /tmp/foreign-cache.img /tmp/foreign-backing.img")
+    foreign_cache = machine.succeed("losetup -f --show /tmp/foreign-cache.img").strip()
+    foreign_backing = machine.succeed("losetup -f --show /tmp/foreign-backing.img").strip()
+    machine.succeed(f"${pkgs.bcache-tools}/bin/make-bcache -C {foreign_cache} -B {foreign_backing} --force")
+    for member in (foreign_cache, foreign_backing):
+        name = member.removeprefix("/dev/")
+        machine.succeed(f"udevadm settle; test -e /sys/class/block/{name}/bcache || echo {member} > /sys/fs/bcache/register")
+    foreign_backing_name = foreign_backing.removeprefix("/dev/")
+    machine.wait_until_succeeds(f"test -e /sys/class/block/{foreign_backing_name}/bcache/dev/bcache/cache")
+    foreign_dev = machine.succeed(f"basename $(readlink -f /sys/class/block/{foreign_backing_name}/bcache/dev)").strip()
+    assert foreign_dev != "bcache0", foreign_dev
+
+    def assert_foreign_alive():
+        machine.succeed(f"test -b /dev/{foreign_dev}")
+        machine.succeed(f"test -e /sys/block/{foreign_dev}/bcache/cache")
+  '';
+  postDisko = ''
+    assert_foreign_alive()
 
     # Verify make-bcache wrote metadata to both member devices.
     machine.succeed("bcache-super-show /dev/disk/by-partlabel/disk-cache-disk-cache >&2")
     machine.succeed("bcache-super-show /dev/disk/by-partlabel/disk-backing-disk-backing >&2")
 
-    # Verify root is mounted on bcache
     machine.succeed("mountpoint /mnt")
-
-    # Verify cache mode is writeback
-    machine.succeed("cat /sys/block/bcache0/bcache/cache_mode | grep -q writeback")
-
-    # Verify the cache is attached (state should be "clean" or "dirty", not "no cache")
-    machine.succeed("cat /sys/block/bcache0/bcache/state | grep -qE 'clean|dirty'")
-
-    # Verify a backing device is attached (non-empty name)
-    machine.succeed("test -n \"$(cat /sys/block/bcache0/bcache/backing_dev_name)\"")
-
-    # Verify data read/write through bcache works
+    machine.succeed("findmnt -n -o FSTYPE /mnt | grep -q ext4")
+    machine.succeed("grep -qF '[writeback]' /sys/block/bcache0/bcache/cache_mode")
     machine.succeed("echo 'bcache test data' > /mnt/testfile")
     machine.succeed("grep -q 'bcache test data' /mnt/testfile")
 
-    # Verify the filesystem on bcache is ext4
-    machine.succeed("findmnt -n -o FSTYPE /mnt | grep -q ext4")
-
-    # Cold-style mount-only reassembly: stop the active set, unregister cache
-    # sets, and ensure the generated mount script brings /dev/bcache0 back.
+    # Cold-style mount-only reassembly: unmount must stop the set and release
+    # our cache set, and the mount script must bring /dev/bcache0 back.
+    cache_name = machine.succeed("basename $(readlink -f /dev/disk/by-partlabel/disk-cache-disk-cache)").strip()
     expected_backing = machine.succeed("basename $(readlink -f /dev/disk/by-partlabel/disk-backing-disk-backing)").strip()
-    machine.succeed(disko_unmount)
-    machine.succeed("test ! -b /dev/bcache0")
-    machine.succeed("find /sys/fs/bcache -maxdepth 1 -mindepth 1 -type d -exec sh -c 'for cset; do [ ! -e \"$cset/unregister\" ] || echo 1 > \"$cset/unregister\"; done' _ {} + 2>/dev/null || true")
-    machine.succeed("udevadm settle --timeout=10 || true")
-    machine.succeed(disko_mount)
-    machine.succeed("test -b /dev/bcache0")
-    machine.succeed(f'test "$(cat /sys/block/bcache0/bcache/backing_dev_name)" = "{expected_backing}"')
-    machine.succeed("mountpoint /mnt")
-
-    # Regression: a stale filesystem signature on the backing partition must
-    # not surface through /dev/bcache0 and trick content `_create` into
-    # skipping format. Tear the set down, wipe bcache metadata, pre-poison the
-    # backing partition with a btrfs filesystem, then re-run format. Creation
-    # must remove the raw signature before make-bcache, which rejects non-bcache
-    # superblocks even with --force. The bcache device must come back as the
-    # configured ext4, not the stale btrfs.
     machine.succeed("umount /mnt/boot")
     machine.succeed(disko_unmount)
     machine.succeed("test ! -b /dev/bcache0")
-    machine.succeed("find /sys/fs/bcache -maxdepth 1 -mindepth 1 -type d -exec sh -c 'for cset; do [ ! -e \"$cset/unregister\" ] || echo 1 > \"$cset/unregister\"; done' _ {} + 2>/dev/null || true")
-    machine.succeed("udevadm settle --timeout=10 || true")
+    machine.succeed(f"test ! -e /sys/class/block/{cache_name}/bcache")
+    assert_foreign_alive()
+    machine.succeed(disko_mount)
+    machine.succeed(f'test "$(cat /sys/block/bcache0/bcache/backing_dev_name)" = "{expected_backing}"')
+    machine.succeed("test -e /sys/block/bcache0/bcache/cache")
+    machine.succeed("grep -q 'bcache test data' /mnt/testfile")
+
+    # Regression: a stale filesystem signature on the backing partition must
+    # not surface through /dev/bcache0 and trick content `_create` into
+    # skipping format. Creation must remove the raw signature before
+    # make-bcache, which rejects non-bcache superblocks even with --force.
+    machine.succeed("umount /mnt/boot")
+    machine.succeed(disko_unmount)
     machine.succeed("wipefs --all --force /dev/disk/by-partlabel/disk-backing-disk-backing")
     machine.succeed("wipefs --all --force /dev/disk/by-partlabel/disk-cache-disk-cache")
     machine.succeed("mkfs.btrfs -f /dev/disk/by-partlabel/disk-backing-disk-backing")
     machine.succeed("blkid -o export /dev/disk/by-partlabel/disk-backing-disk-backing | grep -q '^TYPE=btrfs$'")
     machine.succeed(disko_format)
     machine.succeed(disko_mount)
-    machine.succeed("test -b /dev/bcache0")
     machine.succeed("blkid -o export /dev/bcache0 | grep -q '^TYPE=ext4$'")
     machine.succeed("findmnt -n -o FSTYPE /mnt | grep -q ext4")
+    assert_foreign_alive()
 
     # A mount-only config expecting a different backing device must not reuse an
     # unrelated active /dev/bcache0.
@@ -136,6 +136,17 @@ diskoLib.testLib.makeDiskoTest {
         "test $status -ne 0; "
         "grep -q 'is attached to backing' /tmp/wrong-bcache-mount.log"
     )
+
+    # Destroy releases the stray backing set on the wiped disk but leaves the
+    # foreign set alone; recreate a clean target for the boot test.
+    machine.succeed(f"{disko_destroy_format_mount} --yes-wipe-all-disks")
+    assert_foreign_alive()
+    machine.succeed("mountpoint /mnt/boot")
+  '';
+  extraTestScript = ''
+    machine.succeed("findmnt -n -o SOURCE / | grep -q bcache0")
+    machine.succeed("test -e /sys/block/bcache0/bcache/cache")
+    machine.succeed("grep -qF '[writeback]' /sys/block/bcache0/bcache/cache_mode")
   '';
   efi = false;
 }

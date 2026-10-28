@@ -27,17 +27,6 @@
       description = "Name of the bcache set this cache device belongs to.";
       example = "main";
     };
-    bucketSize = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
-      default = null;
-      description = "Bucket size for the cache device.";
-      example = "512k";
-    };
-    extraArgs = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      default = [ ];
-      description = "Extra arguments passed to `make-bcache -C`.";
-    };
     _parent = lib.mkOption {
       internal = true;
       default = parent;
@@ -59,14 +48,14 @@
     _create = diskoLib.mkCreateOption {
       inherit config options;
       default = ''
-        echo "${config.device}" >> "$disko_devices_dir/bcache_cache_${lib.escapeShellArg config.set}"
+        echo "${config.device}" >> "$disko_devices_dir"/bcache_cache_${lib.escapeShellArg config.set}
       '';
     };
     _mount = diskoLib.mkMountOption {
       inherit config options;
       default = {
         dev = ''
-          echo "${config.device}" >> "$disko_devices_dir/bcache_cache_${lib.escapeShellArg config.set}"
+          echo "${config.device}" >> "$disko_devices_dir"/bcache_cache_${lib.escapeShellArg config.set}
         '';
       };
     };
