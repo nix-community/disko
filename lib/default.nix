@@ -79,6 +79,8 @@ let
     _partitionTypes = {
       inherit (diskoLib.types)
         bcachefs
+        bcache_cache
+        bcache_backing
         btrfs
         filesystem
         zfs
@@ -105,6 +107,8 @@ let
     _deviceTypes = {
       inherit (diskoLib.types)
         bcachefs
+        bcache_cache
+        bcache_backing
         table
         gpt
         btrfs
@@ -128,6 +132,42 @@ let
         default = null;
         description = "The type of device";
       };
+
+    /*
+      Shell function `bcache_release_members DEV...`: stops the bcache device
+      a backing member feeds and unregisters the cache set a cache member
+      belongs to, then waits until the members are free. Only the given
+      members are touched; unrelated bcache sets keep running.
+    */
+    bcacheReleaseMembers = ''
+      bcache_release_members() {
+        local member name i
+        for member in "$@"; do
+          [ -e "$member" ] || continue
+          name="$(basename "$(readlink -f "$member")")"
+          if [ -e "/sys/class/block/$name/bcache/stop" ]; then
+            echo 1 > "/sys/class/block/$name/bcache/stop" || true
+          fi
+          if [ -e "/sys/class/block/$name/bcache/set/unregister" ]; then
+            echo 1 > "/sys/class/block/$name/bcache/set/unregister" || true
+          fi
+        done
+        udevadm settle --timeout=10 || true
+        for member in "$@"; do
+          [ -e "$member" ] || continue
+          name="$(basename "$(readlink -f "$member")")"
+          for i in $(seq 1 30); do
+            [ -e "/sys/class/block/$name/bcache" ] || break
+            udevadm settle --timeout=1 || true
+            sleep 1
+          done
+          if [ -e "/sys/class/block/$name/bcache" ]; then
+            printf "\033[31mERROR:\033[0m bcache member %s is still registered\n" "$member" >&2
+            return 1
+          fi
+        done
+      }
+    '';
 
     /**
         like lib.recursiveUpdate but supports merging of lists
@@ -697,6 +737,7 @@ let
       let
         devices = {
           inherit (cfg.config)
+            bcache
             bcachefs_filesystems
             disk
             mdadm
@@ -705,9 +746,106 @@ let
             nodev
             ;
         };
+        # Destructive paths wipe configured disks next; release bcache members
+        # on those disks only, so unrelated bcache sets keep running.
+        releaseBcacheOnWipedDisks = lib.optionalString (devices.bcache != { }) ''
+          ${diskoLib.bcacheReleaseMembers}
+          # shellcheck disable=SC2043
+          for disk in ${
+            lib.escapeShellArgs (
+              lib.catAttrs "device" (lib.attrValues (lib.filterAttrs (_: disk: disk.destroy) devices.disk))
+            )
+          }; do
+            [ -b "$disk" ] || continue
+            mapfile -t members < <(lsblk -nrpo NAME "$disk")
+            bcache_release_members "''${members[@]}"
+          done
+        '';
+        bcacheMeta = cfg.config._meta.bcache or { };
+        bcacheCacheMembers = bcacheMeta.cache or [ ];
+        bcacheBackingMembers = bcacheMeta.backing or [ ];
+        bcacheMembers =
+          (map (member: member // { role = "bcache_cache"; }) bcacheCacheMembers)
+          ++ (map (member: member // { role = "bcache_backing"; }) bcacheBackingMembers);
+        bcacheSetNames = lib.attrNames devices.bcache;
+        referencedBcacheSetNames = lib.unique (map (member: member.set) bcacheMembers);
+        bcacheDevicesByPath = lib.groupBy (bcache: bcache.device) (lib.attrValues devices.bcache);
+        duplicateBcacheDevices = lib.filterAttrs (_device: sets: lib.length sets != 1) bcacheDevicesByPath;
+        bcacheMembersByPath = lib.groupBy (member: member.device) bcacheMembers;
+        duplicateBcacheMemberDevices = lib.filterAttrs (
+          _device: members: lib.length members != 1
+        ) bcacheMembersByPath;
+        invalidBcacheDevices = lib.concatLists (
+          lib.mapAttrsToList (
+            set: bcache:
+            lib.optional (
+              builtins.match "/dev/bcache[0-9]+" bcache.device == null
+            ) "bcache set \"${set}\" device must be /dev/bcacheN, got \"${bcache.device}\""
+          ) devices.bcache
+        );
+        invalidBcacheMemberDevices = lib.concatMap (
+          member:
+          (lib.optional (builtins.match "/dev/.+" member.device == null)
+            "${member.role} for bcache set \"${member.set}\" device must be an absolute /dev/... path, got \"${member.device}\""
+          )
+          ++ (lib.optional (builtins.match "/dev/bcache[0-9]+" member.device != null)
+            "${member.role} for bcache set \"${member.set}\" must use a member device, not bcache output device \"${member.device}\""
+          )
+        ) bcacheMembers;
+        bcacheMemberErrors =
+          (lib.concatMap (
+            set:
+            lib.optional (
+              !(lib.elem set bcacheSetNames)
+            ) "bcache member references undefined bcache set \"${set}\""
+          ) referencedBcacheSetNames)
+          ++ (lib.concatMap (
+            set:
+            let
+              caches = lib.filter (member: member.set == set) bcacheCacheMembers;
+              backings = lib.filter (member: member.set == set) bcacheBackingMembers;
+              cacheDevices = map (member: member.device) caches;
+              backingDevices = map (member: member.device) backings;
+            in
+            (lib.optional (lib.length caches != 1)
+              "bcache set \"${set}\" needs exactly one bcache_cache partition, found ${toString (lib.length caches)}"
+            )
+            ++ (lib.optional (lib.length backings != 1)
+              "bcache set \"${set}\" needs exactly one bcache_backing partition, found ${toString (lib.length backings)}"
+            )
+            ++ (lib.optional
+              (
+                lib.length caches == 1
+                && lib.length backings == 1
+                && lib.head cacheDevices == lib.head backingDevices
+              )
+              "bcache set \"${set}\" uses the same member device for cache and backing: \"${lib.head cacheDevices}\""
+            )
+          ) bcacheSetNames)
+          ++ (lib.mapAttrsToList (
+            device: sets: "bcache device \"${device}\" is used by ${toString (lib.length sets)} bcache sets"
+          ) duplicateBcacheDevices)
+          ++ (lib.mapAttrsToList (
+            device: members:
+            "bcache member device \"${device}\" is used by ${toString (lib.length members)} bcache roles"
+          ) duplicateBcacheMemberDevices)
+          ++ invalidBcacheDevices
+          ++ invalidBcacheMemberDevices;
+        validateBcacheMembers =
+          if bcacheMemberErrors == [ ] then
+            true
+          else
+            throw "Invalid bcache disko configuration:\n${
+              lib.concatMapStringsSep "\n" (msg: "  - ${msg}") bcacheMemberErrors
+            }";
       in
       {
         options = {
+          bcache = lib.mkOption {
+            type = lib.types.attrsOf diskoLib.types.bcache;
+            default = { };
+            description = "bcache device (cache + backing)";
+          };
           bcachefs_filesystems = lib.mkOption {
             type = lib.types.attrsOf diskoLib.types.bcachefs_filesystem;
             default = { };
@@ -782,6 +920,8 @@ let
                 # @todo Do we need to add bcachefs-tools or not?
                 destroyDependencies = with pkgs; [
                   util-linux
+                  bcache-tools
+                  kmod
                   e2fsprogs
                   mdadm
                   zfs
@@ -958,6 +1098,8 @@ let
             default = ''
               umount -Rv "${rootMountPoint}" || :
 
+              ${releaseBcacheOnWipedDisks}
+
               # shellcheck disable=SC2043,2041
               for dev in ${
                 toString (
@@ -1003,6 +1145,8 @@ let
 
                 umount -Rv "${rootMountPoint}" || :
 
+                ${releaseBcacheOnWipedDisks}
+
                 # shellcheck disable=SC2043,2041
                 for dev in ${toString (lib.catAttrs "device" disksToWipe)}; do
                   $BASH ${../disk-deactivate}/disk-deactivate "$dev"
@@ -1021,11 +1165,13 @@ let
                 sortedDeviceList = diskoLib.sortDevicesByDependencies (cfg.config._meta.deviceDependencies or { }
                 ) devices;
               in
-              ''
+              builtins.seq validateBcacheMembers ''
                 set -efux
 
-                disko_devices_dir=$(mktemp -d)
-                trap 'rm -rf "$disko_devices_dir"' EXIT
+                if [ -z "''${disko_devices_dir:-}" ]; then
+                  disko_devices_dir=$(mktemp -d)
+                  trap 'rm -rf "$disko_devices_dir"' EXIT
+                fi
                 mkdir -p "$disko_devices_dir"
 
                 ${concatMapStrings (dev: (attrByPath (dev ++ [ "_create" ]) { } devices)) sortedDeviceList}
@@ -1062,8 +1208,14 @@ let
                 sortedDeviceList = diskoLib.sortDevicesByDependencies (cfg.config._meta.deviceDependencies or { }
                 ) devices;
               in
-              ''
+              builtins.seq validateBcacheMembers ''
                 set -efux
+                if [ -z "''${disko_devices_dir:-}" ]; then
+                  disko_devices_dir=$(mktemp -d)
+                  trap 'rm -rf "$disko_devices_dir"' EXIT
+                fi
+                mkdir -p "$disko_devices_dir"
+
                 # first create the necessary devices
                 ${concatMapStrings (dev: (attrByPath (dev ++ [ "_mount" ]) { } devices).dev or "") sortedDeviceList}
 
@@ -1146,7 +1298,9 @@ let
                 );
                 collectedConfigs = flatten (map (dev: dev._config) (flatten (map attrValues (attrValues devices))));
               in
-              genAttrs configKeys (key: mkMerge (catAttrs key collectedConfigs));
+              builtins.seq validateBcacheMembers (
+                genAttrs configKeys (key: mkMerge (catAttrs key collectedConfigs))
+              );
           };
         };
       }

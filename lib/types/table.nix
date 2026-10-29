@@ -126,7 +126,7 @@
           type = lib.types.functionTo diskoLib.jsonType;
           default =
             dev:
-            lib.foldr lib.recursiveUpdate { } (
+            lib.foldr diskoLib.recursiveUpdate { } (
               lib.imap (
                 _index: partition: lib.optionalAttrs (partition.content != null) (partition.content._meta dev)
               ) config.partitions
@@ -174,30 +174,22 @@
           inherit config options;
           default =
             let
-              partMounts = lib.foldr lib.recursiveUpdate { } (
-                map (
-                  partition: lib.optionalAttrs (partition.content != null) partition.content._mount
-                ) config.partitions
-              );
+              mounts = map (p: p.content._mount) (lib.filter (p: p.content != null) config.partitions);
             in
             {
-              dev = partMounts.dev or "";
-              fs = partMounts.fs or { };
+              dev = lib.concatStringsSep "\n" (map (m: m.dev or "") mounts);
+              fs = lib.foldr lib.recursiveUpdate { } (map (m: m.fs or { }) mounts);
             };
         };
         _unmount = diskoLib.mkUnmountOption {
           inherit config options;
           default =
             let
-              partMounts = lib.foldr lib.recursiveUpdate { } (
-                map (
-                  partition: lib.optionalAttrs (partition.content != null) partition.content._unmount
-                ) config.partitions
-              );
+              unmounts = map (p: p.content._unmount) (lib.filter (p: p.content != null) config.partitions);
             in
             {
-              dev = partMounts.dev or "";
-              fs = partMounts.fs or { };
+              dev = lib.concatStringsSep "\n" (map (m: m.dev or "") unmounts);
+              fs = lib.foldr lib.recursiveUpdate { } (map (m: m.fs or { }) unmounts);
             };
         };
         _config = lib.mkOption {

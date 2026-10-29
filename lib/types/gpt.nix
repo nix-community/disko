@@ -269,7 +269,7 @@ in
       type = lib.types.functionTo diskoLib.jsonType;
       default =
         dev:
-        lib.foldr lib.recursiveUpdate { } (
+        lib.foldr diskoLib.recursiveUpdate { } (
           map (partition: lib.optionalAttrs (partition.content != null) (partition.content._meta dev)) (
             lib.attrValues config.partitions
           )
