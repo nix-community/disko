@@ -130,6 +130,7 @@
         default = nixpkgs.legacyPackages.${system}.mkShell {
           packages = [
             self.formatter.${system}
+            self.packages.${system}.default
           ];
         };
       });

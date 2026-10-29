@@ -60,6 +60,7 @@ def deactivate:
     ]
   elif (.type | contains("raid")) then
     [
+      "wipefs --all -f \(.path | shellquote)",
       "mdadm --stop \(.name | shellquote)"
     ]
   else

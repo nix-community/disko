@@ -80,7 +80,10 @@ let
         extraInstallerConfig ? { },
         extraSystemConfig ? { },
         efi ? !pkgs.stdenv.hostPlatform.isRiscV64,
+        enableCanokey ? false,
         postDisko ? "",
+        postUnmountPreMount ? "",
+        postMount ? "",
         testMode ? "module", # can be one of direct module cli
         testBoot ? true, # if we actually want to test booting or just create/mount
         enableOCR ? false,
@@ -95,8 +98,13 @@ let
 
         # Get qemu-common library functions for this pkgs
         qemu-common = qemu-common-lib pkgs;
+
+        qemuPkg = pkgs.qemu_test.override {
+          canokeySupport = enableCanokey;
+        };
+
         # qemuBinary returns a string like: "/nix/store/.../qemu-system-x86_64 -machine accel=kvm:tcg -cpu max"
-        qemuBinaryString = qemu-common.qemuBinary pkgs.qemu_test;
+        qemuBinaryString = qemu-common.qemuBinary qemuPkg;
 
         # for installation we skip /dev/vda because it is the test runner disk
 
@@ -141,6 +149,9 @@ let
             boot.initrd.preDeviceCommands = lib.mkIf (!config.boot.initrd.systemd.enable) ''
               echo -n 'secretsecret' > /tmp/secret.key
             '';
+            boot.initrd.secrets = lib.mkIf config.boot.initrd.systemd.enable {
+              "/tmp/secret.key" = pkgs.writeText "secret.key" "secretsecret";
+            };
             boot.consoleLogLevel = lib.mkForce 100;
             boot.loader.systemd-boot.enable = lib.mkDefault efi;
           };
@@ -186,7 +197,10 @@ let
                       "cache=loose"
                     ];
                   };
-                  boot.zfs.devNodes = "/dev/disk/by-uuid"; # needed because /dev/disk/by-id is empty in qemu-vms
+                  # /dev/disk-by-id is empty in QEMU VMs, /dev/disk/by-uuid only shows one entry
+                  # per ZFS pool as members use the pool's GUID, /dev/disk/by-partuuid only shows
+                  # partitions so LVM backed members are missed. /dev is the only thing that catches all.
+                  boot.zfs.devNodes = "/dev";
 
                   # Silence mdadm warning about missing MAILADDR or PROGRAM
                   boot.swraid.mdadmConf = "PROGRAM ${pkgs.coreutils}/bin/true";
@@ -288,7 +302,16 @@ let
               (testConfigInstall ? networking.hostId) && (testConfigInstall.networking.hostId != null)
             ) testConfigInstall.networking.hostId;
 
-            virtualisation.emptyDiskImages = builtins.genList (_: 4096) num-disks;
+            virtualisation = {
+              emptyDiskImages = builtins.genList (_: 4096) num-disks;
+              qemu.options = lib.mkIf enableCanokey [
+                "-device pci-ohci,id=usb-bus"
+                "-device canokey,bus=usb-bus.0,file=/tmp/canokey-file"
+              ];
+
+              # REMOVEME when Canokey support is enabled upstream
+              qemu.package = lib.mkForce qemuPkg;
+            };
 
             # useful for debugging via repl
             system.build.systemToInstall = installed-system-eval;
@@ -334,8 +357,13 @@ let
                     "if=pflash,format=raw,unit=1,readonly=on,file=${pkgs.OVMF.variables}"
                   ]
                 ''}
+                ${lib.optionalString enableCanokey ''
+                  start_command += ["-device", "pci-ohci,id=usb-bus",
+                    "-device", "canokey,bus=usb-bus.0,file=/tmp/canokey-file"
+                  ]
+                ''}
                 machine = create_machine(start_command=" ".join(start_command), **kwargs)
-                driver.machines.append(machine)
+                driver.machines_qemu.append(machine)
                 return machine
 
             machine.start()
@@ -348,7 +376,9 @@ let
               machine.succeed("${lib.getExe tsp-mount}") # verify that mount is idempotent
               machine.succeed("${lib.getExe tsp-unmount}")
               machine.succeed("${lib.getExe tsp-unmount}") # verify that umount is idempotent
+              ${postUnmountPreMount}
               machine.succeed("${lib.getExe tsp-mount}") # verify that mount is idempotent
+              ${postMount}
               machine.succeed("${lib.getExe tsp-disko} --yes-wipe-all-disks") # verify that we can destroy and recreate
               machine.succeed("mkdir -p /mnt/home")
               machine.succeed("touch /mnt/home/testfile")
@@ -360,6 +390,11 @@ let
               machine.succeed("${lib.getExe nodes.machine.system.build.format}")
               machine.succeed("${lib.getExe nodes.machine.system.build.mount}")
               machine.succeed("${lib.getExe nodes.machine.system.build.mount}") # verify that mount is idempotent
+              machine.succeed("${lib.getExe nodes.machine.system.build.unmount}")
+              machine.succeed("${lib.getExe nodes.machine.system.build.unmount}") # verify that unmount is idempotent
+              ${postUnmountPreMount}
+              machine.succeed("${lib.getExe nodes.machine.system.build.mount}") # verify that mount is idempotent
+              ${postMount}
               machine.succeed("${lib.getExe nodes.machine.system.build.destroyFormatMount} --yes-wipe-all-disks") # verify that we can destroy and recreate again
               machine.succeed("mkdir -p /mnt/home")
               machine.succeed("touch /mnt/home/testfile")

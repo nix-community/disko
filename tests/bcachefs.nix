@@ -25,12 +25,6 @@ diskoLib.testLib.makeDiskoTest {
     environment.systemPackages = [
       pkgs.jq
     ];
-    boot.initrd.extraUtilsCommands = ''
-      # Copy tools for bcachefs
-      copy_bin_and_libs ${pkgs.lib.getOutput "mount" pkgs.util-linux}/bin/mount
-      copy_bin_and_libs ${pkgs.bcachefs-tools}/bin/bcachefs
-      copy_bin_and_libs ${pkgs.bcachefs-tools}/bin/mount.bcachefs
-    '';
   };
   extraTestScript = ''
     # Print debug information.
@@ -39,12 +33,22 @@ diskoLib.testLib.makeDiskoTest {
     machine.succeed("lsblk >&2");
     machine.succeed("lsblk -f >&2");
     machine.succeed("mount >&2");
-    # We need to manually unlock /dev/vda2 for some reason
-    # even though it should already get unlocked by bootCommands
-    machine.succeed(r'printf "secretsecret" | bcachefs unlock -k session /dev/vda2 >&2');
-    machine.succeed("bcachefs show-super /dev/vda2 >&2");
-    machine.succeed("bcachefs show-super /dev/vdd1 >&2");
+    machine.succeed("ls /sys/fs/bcachefs/ >&2");
     machine.succeed("findmnt --json >&2");
+
+    # bcachefs-tools >= 1.33.1 cannot read the superblock from a mounted device 
+    def bcachefs_sysfs(mp):
+        src = machine.succeed(f"findmnt -no SOURCE {mp}").strip().split(":")[0]
+        dev = src.rsplit("/", 1)[-1]
+        path = machine.succeed(
+            "for d in /sys/fs/bcachefs/*/dev-*/block; do "
+            f'  if [ "$(basename "$(readlink -f "$d")")" = "{dev}" ]; then '
+            '    dirname "$(dirname "$d")"; break; '
+            "  fi; "
+            "done"
+        ).strip()
+        assert path, f"no bcachefs sysfs entry found for {mp} (device {dev})"
+        return path
 
     # Verify existence of mountpoints.
     machine.succeed("mountpoint /");
@@ -53,21 +57,29 @@ diskoLib.testLib.makeDiskoTest {
     machine.succeed("mountpoint /home/Documents");
     machine.fail("mountpoint /non-existent");
 
-    # Verify device membership and labels.
-    machine.succeed("bcachefs show-super /dev/vda2 | grep 'Devices:' | grep -q '3'");
-    machine.succeed("bcachefs show-super /dev/vdd1 | grep 'Devices:' | grep -q '1'");
-    machine.succeed(r"bcachefs show-super /dev/vda2 | grep -qE '^[[:space:]]*Label:[[:space:]]+group_a\.vdb2'");
-    machine.succeed(r"bcachefs show-super /dev/vda2 | grep -qE '^[[:space:]]*Label:[[:space:]]+group_a\.vdc1'");
-    machine.succeed(r"bcachefs show-super /dev/vda2 | grep -qE '^[[:space:]]*Label:[[:space:]]+group_b\.vdd1'");
-    machine.succeed(r"bcachefs show-super /dev/vdd1 | grep -qE '^[[:space:]]*Label:[[:space:]]+group_a\.vde1'");
-    machine.fail("bcachefs show-super /dev/vda2 | grep 'Label:' | grep -q 'non-existent'");
+    multi_sysfs = bcachefs_sysfs("/")
+    single_sysfs = bcachefs_sysfs("/home/Documents")
 
-    # Verify format arguments.
-    # Test that lza4 compression and background_compression options were set for vda2.
-    machine.succeed("bcachefs show-super /dev/vda2 | grep -qE '^[[:space:]]*compression:[[:space:]]+lz4'");
-    machine.succeed("bcachefs show-super /dev/vda2 | grep -qE '^[[:space:]]*background_compression:[[:space:]]+lz4'");
-    # Test that no compression option was set for vdd1.
-    machine.succeed("bcachefs show-super /dev/vdd1 | grep -qE '^[[:space:]]*compression:[[:space:]]+none'");
+    # Verify device membership.
+    multi_devs = int(machine.succeed(f"ls -d {multi_sysfs}/dev-* | wc -l").strip())
+    assert multi_devs == 3, f"Expected 3 devices in {multi_sysfs}, got {multi_devs}"
+    single_devs = int(machine.succeed(f"ls -d {single_sysfs}/dev-* | wc -l").strip())
+    assert single_devs == 1, f"Expected 1 device in {single_sysfs}, got {single_devs}"
+
+    # Verify labels.
+    multi_labels = set(machine.succeed(f"cat {multi_sysfs}/dev-*/label").split())
+    expected_multi = {"group_a.vdb2", "group_a.vdc1", "group_b.vdd1"}
+    assert multi_labels == expected_multi, f"Expected {expected_multi}, got {multi_labels}"
+    single_labels = set(machine.succeed(f"cat {single_sysfs}/dev-*/label").split())
+    assert single_labels == {"group_a.vde1"}, f"Expected {{'group_a.vde1'}}, got {single_labels}"
+
+    # Verify format arguments via sysfs options.
+    multi_comp = machine.succeed(f"cat {multi_sysfs}/options/compression").strip()
+    assert multi_comp == "lz4", f"Expected lz4 compression, got {multi_comp!r}"
+    multi_bg = machine.succeed(f"cat {multi_sysfs}/options/background_compression").strip()
+    assert multi_bg == "lz4", f"Expected lz4 background_compression, got {multi_bg!r}"
+    single_comp = machine.succeed(f"cat {single_sysfs}/options/compression").strip()
+    assert single_comp == "none", f"Expected no compression, got {single_comp!r}"
 
     # Verify mount options from configuration.
     # Test that verbose option was set for "/".

@@ -55,6 +55,7 @@ in
     diskoBasedConfiguration
   ];
 
+  disko.enableConfig = false;
   disko.testMode = true;
 
   disko.imageBuilder.copyNixStore = false;

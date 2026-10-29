@@ -9,7 +9,7 @@ TODO: Still to be documented
 TODO: Include documentation here.
 
 For now, see the
-[upgrade guide](https://github.com/JillThornhill/disko/blob/master/docs/upgrade-guide.md)
+[upgrade guide](./upgrade-guide.md)
 
 ## Installing NixOS module
 

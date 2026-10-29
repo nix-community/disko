@@ -27,6 +27,15 @@ let
     ${pkgs.systemdMinimal}/lib/systemd/systemd-binfmt <(echo ${lib.strings.escapeShellArg binfmt.binfmtRegistration})
   '';
 
+  modulesTree = pkgs.aggregateModules (
+    [
+      cfg.kernelPackages.kernel
+    ]
+    ++ lib.optional (cfg.kernelPackages.kernel ? modules) cfg.kernelPackages.kernel.modules
+    ++ lib.optional (
+      lib.elem "zfs" cfg.extraRootModules || configSupportsZfs
+    ) cfg.kernelPackages.${config.boot.zfs.package.kernelModuleAttribute}
+  );
   vmTools = pkgs.vmTools.override (
     {
       rootModules = [
@@ -41,40 +50,45 @@ let
       ]
       ++ (lib.optional configSupportsZfs "zfs")
       ++ cfg.extraRootModules;
-      kernel = pkgs.aggregateModules (
-        [
-          cfg.kernelPackages.kernel
-        ]
-        ++ lib.optional (cfg.kernelPackages.kernel ? modules) cfg.kernelPackages.kernel.modules
-        ++ lib.optional (
-          lib.elem "zfs" cfg.extraRootModules || configSupportsZfs
-        ) cfg.kernelPackages.${config.boot.zfs.package.kernelModuleAttribute}
-      );
     }
+    // (
+      if diskoLib.vmToolsSupportsKernelModules pkgs then
+        {
+          kernel = cfg.kernelPackages.kernel;
+          kernelModules = modulesTree;
+        }
+      else
+        {
+          kernel = modulesTree;
+        }
+    )
     // lib.optionalAttrs (diskoLib.vmToolsSupportsCustomQemu lib) {
       customQemu = cfg.qemu;
     }
   );
+
   cleanedConfig = diskoLib.testLib.prepareDiskoConfig config diskoLib.testLib.devices;
-  systemToInstall = extendModules {
+  virtualDevicesModule = {
+    disko.devices = lib.mkForce cleanedConfig.disko.devices;
+    boot.loader.grub.devices = lib.mkForce cleanedConfig.boot.loader.grub.devices;
+  };
+  system = extendModules {
     modules = [
       cfg.extraConfig
       {
         disko.testMode = true;
-        disko.devices = lib.mkForce cleanedConfig.disko.devices;
-        boot.loader.grub.devices = lib.mkForce cleanedConfig.boot.loader.grub.devices;
       }
     ];
   };
-  systemToInstallNative =
+  cleanedSystem = system.extendModules {
+    modules = [ virtualDevicesModule ];
+  };
+  systemNative =
     if binfmt.systemsAreDifferent then
-      extendModules {
+      system.extendModules {
         modules = [
           cfg.extraConfig
           {
-            disko.testMode = true;
-            disko.devices = lib.mkForce cleanedConfig.disko.devices;
-            boot.loader.grub.devices = lib.mkForce cleanedConfig.boot.loader.grub.devices;
             boot.kernelPackages = lib.mkDefault cfg.kernelPackages;
             nixpkgs.hostPlatform = lib.mkForce pkgs.stdenv.hostPlatform;
             nixpkgs.buildPlatform = lib.mkForce pkgs.stdenv.hostPlatform;
@@ -82,7 +96,10 @@ let
         ];
       }
     else
-      systemToInstall;
+      system;
+  cleanedSystemNative = systemNative.extendModules {
+    modules = [ virtualDevicesModule ];
+  };
   dependencies =
     with pkgs;
     [
@@ -111,9 +128,6 @@ let
     install -m600 ${pkgs.OVMF.variables} efivars.fd
   '';
 
-  closureInfo = pkgs.closureInfo {
-    rootPaths = [ systemToInstall.config.system.build.toplevel ];
-  };
   partitioner = ''
     set -efux
     # running udev, stolen from stage-1.sh
@@ -124,7 +138,7 @@ let
     ln -sfn /proc/self/fd/2 /dev/stderr
     mkdir -p /etc/udev
     mount -t efivarfs none /sys/firmware/efi/efivars
-    ln -sfn ${systemToInstallNative.config.system.build.etc}/etc/udev/rules.d /etc/udev/rules.d
+    ln -sfn ${cleanedSystemNative.config.environment.etc."udev/rules.d".source} /etc/udev/rules.d
     mkdir -p /dev/.mdadm
     ${pkgs.systemdMinimal}/lib/systemd/systemd-udevd --daemon
     partprobe
@@ -134,9 +148,13 @@ let
     ${lib.optionalString diskoCfg.testMode ''
       export IN_DISKO_TEST=1
     ''}
-    ${lib.getExe systemToInstallNative.config.system.build.destroyFormatMount} --yes-wipe-all-disks
+    ${lib.getExe cleanedSystemNative.config.system.build.destroyFormatMount} --yes-wipe-all-disks
   '';
 
+  systemToInstall = if cfg.useVirtualDevices then cleanedSystem else system;
+  closureInfo = pkgs.closureInfo {
+    rootPaths = [ systemToInstall.config.system.build.toplevel ];
+  };
   installer = lib.optionalString cfg.copyNixStore ''
     ${binfmtSetup}
     unset NIX_REMOTE

@@ -342,32 +342,24 @@ in
       inherit config options;
       default =
         let
-          partitionMounts = (
-            map (partition: lib.optionalAttrs (partition.content != null) partition.content._mount) (
-              lib.attrValues config.partitions
-            )
-          );
-          partMountFs = lib.foldr lib.recursiveUpdate { } (map (mount: mount.fs or { }) partitionMounts);
+          activePartitions = lib.filter (p: p.content != null) (lib.attrValues config.partitions);
+          mounts = map (p: p.content._mount) activePartitions;
         in
         {
-          dev = lib.concatMapStrings (mount: mount.dev or "") partitionMounts;
-          fs = partMountFs;
+          dev = lib.concatStringsSep "\n" (map (m: m.dev or "") mounts);
+          fs = lib.foldr lib.recursiveUpdate { } (map (m: m.fs or { }) mounts);
         };
     };
     _unmount = diskoLib.mkUnmountOption {
       inherit config options;
       default =
         let
-          partitionMounts = (
-            map (partition: lib.optionalAttrs (partition.content != null) partition.content._unmount) (
-              lib.attrValues config.partitions
-            )
-          );
-          partMountFs = lib.foldr lib.recursiveUpdate { } (map (mount: mount.fs or { }) partitionMounts);
+          activePartitions = lib.filter (p: p.content != null) (lib.attrValues config.partitions);
+          unmounts = map (p: p.content._unmount) activePartitions;
         in
         {
-          dev = lib.concatMapStrings (mount: mount.dev or "") partitionMounts;
-          fs = partMountFs;
+          dev = lib.concatStringsSep "\n" (map (m: m.dev or "") unmounts);
+          fs = lib.foldr lib.recursiveUpdate { } (map (m: m.fs or { }) unmounts);
         };
     };
     _config = lib.mkOption {

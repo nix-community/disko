@@ -174,12 +174,12 @@
           # Format the filesystem with all devices and arguments.
           if ! blkid -o export "$(blkid -lU ${config.uuid})" | grep -q 'TYPE=bcachefs' >&2 2>&1; then
             bcachefs format \
-              "$@" \
               --uuid="${config.uuid}" \
               ${lib.concatStringsSep " \\\n" config.extraFormatArgs} \
               ${
                 lib.optionalString (config.passwordFile != null) ''--encrypted < "${config.passwordFile}"''
-              };
+              } \
+              "$@";
           fi;
         );
 
@@ -191,9 +191,11 @@
               (
                 TEMPDIR="$(mktemp -d)";
                 MNTPOINT="$(mktemp -d)";
-                ${lib.optionalString (
-                  config.passwordFile != null
-                ) ''bcachefs unlock -k session "/dev/disk/by-uuid/${config.uuid}" < "${config.passwordFile}";''}
+                ${lib.optionalString (config.passwordFile != null) ''
+                  if ! bcachefs unlock -k session "/dev/disk/by-uuid/${config.uuid}" < "${config.passwordFile}"; then
+                    test -d "/sys/fs/bcachefs/${config.uuid}";
+                  fi;
+                ''}
                 mount \
                   -t bcachefs \
                   -o "${lib.concatStringsSep "," (lib.unique ([ "X-mount.mkdir" ] ++ config.mountOptions))}" \
@@ -228,9 +230,11 @@
                   # @todo Figure out why the "X-mount.mkdir" option here doesn't seem to work,
                   # necessitating running `mkdir` here.
                   mkdir -p "${rootMountPoint}${subvolume.mountpoint}";
-                  ${lib.optionalString (
-                    config.passwordFile != null
-                  ) ''bcachefs unlock -k session "/dev/disk/by-uuid/${config.uuid}" < "${config.passwordFile}";''}
+                  ${lib.optionalString (config.passwordFile != null) ''
+                    if ! bcachefs unlock -k session "/dev/disk/by-uuid/${config.uuid}" < "${config.passwordFile}"; then
+                      test -d "/sys/fs/bcachefs/${config.uuid}";
+                    fi;
+                  ''}
                   mount \
                     -t bcachefs \
                     -o "${
@@ -260,9 +264,11 @@
                   # @todo Figure out why the "X-mount.mkdir" option here doesn't seem to work,
                   # necessitating running `mkdir` here.
                   mkdir -p "${rootMountPoint}${config.mountpoint}";
-                  ${lib.optionalString (
-                    config.passwordFile != null
-                  ) ''bcachefs unlock -k session "/dev/disk/by-uuid/${config.uuid}" < "${config.passwordFile}";''}
+                  ${lib.optionalString (config.passwordFile != null) ''
+                    if ! bcachefs unlock -k session "/dev/disk/by-uuid/${config.uuid}" < "${config.passwordFile}"; then
+                      test -d "/sys/fs/bcachefs/${config.uuid}";
+                    fi;
+                  ''}
                   mount \
                     -t bcachefs \
                     -o "${lib.concatStringsSep "," (lib.unique ([ "X-mount.mkdir" ] ++ config.mountOptions))}" \
