@@ -659,6 +659,44 @@ let
       )
       ) ? kernelModules;
 
+    /*
+      Filters out `boot.initrd.systemd.enable` if the option was removed
+      in the target NixOS configuration (e.g. NixOS 26.11+).
+
+      filterBoot :: options -> bootConfig -> bootConfig
+    */
+    filterBoot =
+      options: boot:
+      let
+        systemdStage1Available =
+          (options.boot.initrd.systemd ? enable) && (options.boot.initrd.systemd.enable.visible or true);
+        cleanItem =
+          item:
+          if item ? initrd && item.initrd ? systemd && item.initrd.systemd ? enable then
+            let
+              filteredSystemd = lib.removeAttrs item.initrd.systemd [ "enable" ];
+              initrdWithoutSystemd = lib.removeAttrs item.initrd [ "systemd" ];
+              filteredInitrd =
+                if filteredSystemd == { } then
+                  initrdWithoutSystemd
+                else
+                  initrdWithoutSystemd // { systemd = filteredSystemd; };
+            in
+            if filteredInitrd == { } then
+              lib.removeAttrs item [ "initrd" ]
+            else
+              item // { initrd = filteredInitrd; }
+          else
+            item;
+        walkBoot =
+          b:
+          if b ? _type && b._type == "merge" then
+            b // { contents = map walkBoot b.contents; }
+          else
+            cleanItem b;
+      in
+      if !systemdStage1Available then walkBoot boot else boot;
+
     optionTypes = rec {
       filename = lib.mkOptionType {
         name = "filename";

@@ -129,7 +129,16 @@ let
         num-disks = builtins.length (lib.attrNames testConfigBooted.disko.devices.disk);
 
         installed-system =
-          { config, ... }:
+          { config, options, ... }:
+          let
+            hasStage1Systemd =
+              if
+                (options.boot.initrd.systemd ? enable) && (options.boot.initrd.systemd.enable.visible or true)
+              then
+                config.boot.initrd.systemd.enable
+              else
+                true;
+          in
           {
             imports = [
               (lib.optionalAttrs (testMode == "direct") tsp-config)
@@ -146,10 +155,10 @@ let
             documentation.enable = false;
             hardware.enableAllFirmware = lib.mkForce false;
             # FIXME: we don't have an systemd in stage-1 equialvent for this
-            boot.initrd.preDeviceCommands = lib.mkIf (!config.boot.initrd.systemd.enable) ''
+            boot.initrd.preDeviceCommands = lib.mkIf (!hasStage1Systemd) ''
               echo -n 'secretsecret' > /tmp/secret.key
             '';
-            boot.initrd.secrets = lib.mkIf config.boot.initrd.systemd.enable {
+            boot.initrd.secrets = lib.mkIf hasStage1Systemd {
               "/tmp/secret.key" = pkgs.writeText "secret.key" "secretsecret";
             };
             boot.consoleLogLevel = lib.mkForce 100;
