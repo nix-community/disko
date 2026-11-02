@@ -18,7 +18,10 @@ let
   };
 in
 {
-  imports = [ ./lib/make-disk-image.nix ];
+  imports = [
+    ./lib/make-disk-image.nix
+    ./lib/unattended-install.nix
+  ];
 
   options.disko = {
     imageBuilder = {
