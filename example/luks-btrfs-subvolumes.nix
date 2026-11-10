@@ -31,7 +31,9 @@
                 additionalKeyFiles = [ "/tmp/additionalSecret.key" ];
                 content = {
                   type = "btrfs";
-                  extraArgs = [ "-f" ];
+                  # on LUKS, the default crc32c becomes always probabilistic, so choose the
+                  # algorithm with smaller collision chance and almost identical performance
+                  extraArgs = [ "--force" "--checksum" "xxhash" ];
                   subvolumes = {
                     "/root" = {
                       mountpoint = "/";
