@@ -1,8 +1,9 @@
 {
   lib ? import <nixpkgs/lib>,
   rootMountPoint ? "/mnt",
+  canToggleSystemdInitrd ? true,
   checked ? false,
-  diskoLib ? import ./lib { inherit lib rootMountPoint; },
+  diskoLib ? import ./lib { inherit lib rootMountPoint canToggleSystemdInitrd; },
 }:
 let
   eval =

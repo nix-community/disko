@@ -1,5 +1,6 @@
 {
   config,
+  options,
   lib,
   pkgs,
   extendModules,
@@ -270,6 +271,7 @@ in
       makeTest = import "${modulesPath}/../tests/make-test-python.nix";
       eval-config = import "${modulesPath}/../lib/eval-config.nix";
       qemu-common = import "${modulesPath}/../lib/qemu-common.nix";
+      canToggleSystemdInitrd = diskoLib.systemdInitrdToggleable options;
     };
 
     system.build =

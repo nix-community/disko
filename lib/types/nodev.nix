@@ -3,7 +3,7 @@
   config,
   options,
   diskoLib,
-  rootMountPoint,
+  globals,
   ...
 }:
 let
@@ -60,12 +60,12 @@ in
       default =
         let
           isBindMount = builtins.elem "bind" config.mountOptions;
-          device = if isBindMount then "${rootMountPoint}${config.device}" else config.device;
+          device = if isBindMount then "${globals.rootMountPoint}${config.device}" else config.device;
         in
         lib.optionalAttrs (config.mountpoint != null) {
           fs.${config.mountpoint} = ''
-            if ! findmnt ${config.fsType} "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
-              mount -t ${config.fsType} "${device}" "${rootMountPoint}${config.mountpoint}" \
+            if ! findmnt ${config.fsType} "${globals.rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
+              mount -t ${config.fsType} "${device}" "${globals.rootMountPoint}${config.mountpoint}" \
               ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
               -o X-mount.mkdir
             fi
@@ -76,8 +76,8 @@ in
       inherit config options;
       default = lib.optionalAttrs (config.mountpoint != null) {
         fs.${config.mountpoint} = ''
-          if findmnt ${config.fsType} "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
-            umount "${rootMountPoint}${config.mountpoint}"
+          if findmnt ${config.fsType} "${globals.rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
+            umount "${globals.rootMountPoint}${config.mountpoint}"
           fi
         '';
       };

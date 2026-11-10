@@ -3,7 +3,7 @@
   options,
   lib,
   diskoLib,
-  rootMountPoint,
+  globals,
   parent,
   device,
   ...
@@ -64,8 +64,8 @@
       inherit config options;
       default = lib.optionalAttrs (config.mountpoint != null) {
         fs.${config.mountpoint} = ''
-          if ! findmnt "${config.device}" "${rootMountPoint}${config.mountpoint}" >/dev/null 2>&1; then
-            mount "${config.device}" "${rootMountPoint}${config.mountpoint}" \
+          if ! findmnt "${config.device}" "${globals.rootMountPoint}${config.mountpoint}" >/dev/null 2>&1; then
+            mount "${config.device}" "${globals.rootMountPoint}${config.mountpoint}" \
               -t "${config.format}" \
               ${lib.concatMapStringsSep " " (opt: "-o ${lib.escapeShellArg opt}") config.mountOptions} \
               -o X-mount.mkdir
@@ -77,8 +77,8 @@
       inherit config options;
       default = lib.optionalAttrs (config.mountpoint != null) {
         fs.${config.mountpoint} = ''
-          if findmnt "${config.device}" "${rootMountPoint}${config.mountpoint}" >/dev/null 2>&1; then
-            umount "${rootMountPoint}${config.mountpoint}"
+          if findmnt "${config.device}" "${globals.rootMountPoint}${config.mountpoint}" >/dev/null 2>&1; then
+            umount "${globals.rootMountPoint}${config.mountpoint}"
           fi
         '';
       };

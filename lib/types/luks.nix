@@ -3,6 +3,7 @@
   options,
   lib,
   diskoLib,
+  globals,
   parent,
   device,
   ...
@@ -359,12 +360,13 @@ in
               crypttabExtraOpts = lib.mkIf config.enrollFido2 [ "fido2-device=auto" ];
             }
             // config.settings;
-
-            # If FIDO2 is used, systemd stage 1 is absolutely necessary.
-            # Should we turn this into an assertion?
-            boot.initrd.systemd.enable = lib.mkIf config.enrollFido2 true;
           }
         ])
+        # FIDO2 unlock requires systemd stage 1. NixOS 26.11+ always uses it and has removed the option,
+        # so only define it where it can still be toggled.
+        ++ (lib.optional (config.initrdUnlock && config.enrollFido2 && globals.canToggleSystemdInitrd) {
+          boot.initrd.systemd.enable = true;
+        })
         ++ (lib.optional (config.content != null) config.content._config);
       description = "NixOS configuration";
     };
