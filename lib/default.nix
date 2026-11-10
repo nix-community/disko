@@ -480,7 +480,8 @@ let
             postUnmountHook = diskoLib.mkHook "shell commands to run after unmount";
           };
           config._module.args = {
-            inherit diskoLib rootMountPoint;
+            inherit diskoLib;
+            globals = { inherit rootMountPoint; };
           };
         }
       ];
@@ -1168,7 +1169,7 @@ let
       lib.listToAttrs (map (option: lib.nameValuePair option type.options.${option}) options);
 
     typesSerializerLib = {
-      rootMountPoint = "";
+      globals.rootMountPoint = "";
       options = null;
       config = {
         _module = {

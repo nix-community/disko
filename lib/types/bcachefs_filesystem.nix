@@ -4,7 +4,7 @@
   lib,
   options,
   parent,
-  rootMountPoint,
+  globals,
   ...
 }:
 {
@@ -226,10 +226,10 @@
             subvolume:
             lib.optionalAttrs (subvolume.mountpoint != null) {
               ${subvolume.mountpoint} = ''
-                if ! findmnt "${rootMountPoint}${subvolume.mountpoint}" >&2 2>&1; then
+                if ! findmnt "${globals.rootMountPoint}${subvolume.mountpoint}" >&2 2>&1; then
                   # @todo Figure out why the "X-mount.mkdir" option here doesn't seem to work,
                   # necessitating running `mkdir` here.
-                  mkdir -p "${rootMountPoint}${subvolume.mountpoint}";
+                  mkdir -p "${globals.rootMountPoint}${subvolume.mountpoint}";
                   ${lib.optionalString (config.passwordFile != null) ''
                     if ! bcachefs unlock -k session "/dev/disk/by-uuid/${config.uuid}" < "${config.passwordFile}"; then
                       test -d "/sys/fs/bcachefs/${config.uuid}";
@@ -249,7 +249,7 @@
                       )
                     }" \
                     "/dev/disk/by-uuid/${config.uuid}" \
-                    "${rootMountPoint}${subvolume.mountpoint}";
+                    "${globals.rootMountPoint}${subvolume.mountpoint}";
                 fi;
               '';
             }
@@ -260,10 +260,10 @@
             subvolumeMounts
             // lib.optionalAttrs (config.mountpoint != null) {
               ${config.mountpoint} = ''
-                if ! findmnt "${rootMountPoint}${config.mountpoint}" >&2 2>&1; then
+                if ! findmnt "${globals.rootMountPoint}${config.mountpoint}" >&2 2>&1; then
                   # @todo Figure out why the "X-mount.mkdir" option here doesn't seem to work,
                   # necessitating running `mkdir` here.
-                  mkdir -p "${rootMountPoint}${config.mountpoint}";
+                  mkdir -p "${globals.rootMountPoint}${config.mountpoint}";
                   ${lib.optionalString (config.passwordFile != null) ''
                     if ! bcachefs unlock -k session "/dev/disk/by-uuid/${config.uuid}" < "${config.passwordFile}"; then
                       test -d "/sys/fs/bcachefs/${config.uuid}";
@@ -273,7 +273,7 @@
                     -t bcachefs \
                     -o "${lib.concatStringsSep "," (lib.unique ([ "X-mount.mkdir" ] ++ config.mountOptions))}" \
                     "/dev/disk/by-uuid/${config.uuid}" \
-                    "${rootMountPoint}${config.mountpoint}";
+                    "${globals.rootMountPoint}${config.mountpoint}";
                 fi;
               '';
             };
@@ -287,8 +287,8 @@
             _: subvolume:
             lib.optionalAttrs (subvolume.mountpoint != null) {
               ${subvolume.mountpoint} = ''
-                if findmnt "UUID=${config.uuid}" "${rootMountPoint}${subvolume.mountpoint}" >&2 2>&1; then
-                  umount "${rootMountPoint}${subvolume.mountpoint}";
+                if findmnt "UUID=${config.uuid}" "${globals.rootMountPoint}${subvolume.mountpoint}" >&2 2>&1; then
+                  umount "${globals.rootMountPoint}${subvolume.mountpoint}";
                 fi;
               '';
             }
@@ -299,8 +299,8 @@
             subvolumeMounts
             // lib.optionalAttrs (config.mountpoint != null) {
               ${config.mountpoint} = ''
-                if findmnt "UUID=${config.uuid}" "${rootMountPoint}${config.mountpoint}" >&2 2>&1; then
-                  umount "${rootMountPoint}${config.mountpoint}";
+                if findmnt "UUID=${config.uuid}" "${globals.rootMountPoint}${config.mountpoint}" >&2 2>&1; then
+                  umount "${globals.rootMountPoint}${config.mountpoint}";
                 fi;
               '';
             };

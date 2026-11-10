@@ -3,7 +3,7 @@
   options,
   lib,
   diskoLib,
-  rootMountPoint,
+  globals,
   ...
 }:
 let
@@ -364,7 +364,7 @@ in
             fi
             if [ $continue -eq 1 ]; then
               zpool create -f "${config.name}" \
-                -R ${rootMountPoint} \
+                -R ${globals.rootMountPoint} \
                 ${
                   if
                     (
@@ -407,7 +407,7 @@ in
         {
           dev = ''
             zpool list "${config.name}" >/dev/null 2>/dev/null ||
-              zpool import -l -R ${rootMountPoint} "${config.name}"
+              zpool import -l -R ${globals.rootMountPoint} "${config.name}"
 
             ${lib.concatMapStrings (x: x._mount.dev or "") (lib.attrValues config.datasets)}
           '';

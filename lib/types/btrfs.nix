@@ -3,7 +3,7 @@
   options,
   diskoLib,
   lib,
-  rootMountPoint,
+  globals,
   parent,
   device,
   ...
@@ -197,8 +197,8 @@ in
               (subvol.mountpoint != null)
               {
                 ${subvol.mountpoint} = ''
-                  if ! findmnt "${config.device}" "${rootMountPoint}${subvol.mountpoint}" > /dev/null 2>&1; then
-                    mount "${config.device}" "${rootMountPoint}${subvol.mountpoint}" \
+                  if ! findmnt "${config.device}" "${globals.rootMountPoint}${subvol.mountpoint}" > /dev/null 2>&1; then
+                    mount "${config.device}" "${globals.rootMountPoint}${subvol.mountpoint}" \
                     ${
                       lib.concatMapStringsSep " " (opt: "-o ${opt}") (subvol.mountOptions ++ [ "subvol=${subvol.name}" ])
                     } \
@@ -213,8 +213,8 @@ in
             subvolMounts
             // lib.optionalAttrs (config.mountpoint != null) {
               ${config.mountpoint} = ''
-                if ! findmnt "${config.device}" "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
-                  mount "${config.device}" "${rootMountPoint}${config.mountpoint}" \
+                if ! findmnt "${config.device}" "${globals.rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
+                  mount "${config.device}" "${globals.rootMountPoint}${config.mountpoint}" \
                   ${lib.concatMapStringsSep " " (opt: "-o ${opt}") config.mountOptions} \
                   -o X-mount.mkdir
                 fi
@@ -230,8 +230,8 @@ in
             _: subvol:
             lib.optionalAttrs (subvol.mountpoint != null) {
               ${subvol.mountpoint} = ''
-                if findmnt "${config.device}" "${rootMountPoint}${subvol.mountpoint}" > /dev/null 2>&1; then
-                  umount "${rootMountPoint}${subvol.mountpoint}"
+                if findmnt "${config.device}" "${globals.rootMountPoint}${subvol.mountpoint}" > /dev/null 2>&1; then
+                  umount "${globals.rootMountPoint}${subvol.mountpoint}"
                 fi
               '';
             }
@@ -242,8 +242,8 @@ in
             subvolMounts
             // lib.optionalAttrs (config.mountpoint != null) {
               ${config.mountpoint} = ''
-                if findmnt "${config.device}" "${rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
-                  umount "${rootMountPoint}${config.mountpoint}"
+                if findmnt "${config.device}" "${globals.rootMountPoint}${config.mountpoint}" > /dev/null 2>&1; then
+                  umount "${globals.rootMountPoint}${config.mountpoint}"
                 fi
               '';
             };
