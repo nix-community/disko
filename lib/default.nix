@@ -4,6 +4,7 @@
   makeTest ? import <nixpkgs/nixos/tests/make-test-python.nix>,
   eval-config ? import <nixpkgs/nixos/lib/eval-config.nix>,
   qemu-common ? import <nixpkgs/nixos/lib/qemu-common.nix>,
+  canToggleSystemdInitrd ? true,
 }:
 let
   # qemu-common is a function that takes { lib, stdenv } and returns QEMU utilities
@@ -22,6 +23,7 @@ let
         makeTest
         eval-config
         qemu-common-lib
+        diskoLib
         ;
     };
     # like lib.types.oneOf but instead of a list takes an attrset
@@ -481,7 +483,7 @@ let
           };
           config._module.args = {
             inherit diskoLib;
-            globals = { inherit rootMountPoint; };
+            globals = { inherit rootMountPoint canToggleSystemdInitrd; };
           };
         }
       ];
@@ -646,6 +648,17 @@ let
       vmToolsSupportsCustomQemu :: final_lib -> bool
     */
     vmToolsSupportsCustomQemu = final_lib: lib.versionAtLeast final_lib.version "24.11.20240709";
+
+    /*
+      Checks whether `boot.initrd.systemd.enable` can still be defined in a NixOS configuration.
+
+      NixOS 26.11 removed scripted initrd and replaced the option with `mkRemovedOptionModule`,
+      which declares an untyped option whose definition fails an assertion.
+      Real, hidden or renamed declarations keep their bool type.
+
+      systemdInitrdToggleable :: options -> bool
+    */
+    systemdInitrdToggleable = options: (options.boot.initrd.systemd.enable.type.name or null) == "bool";
 
     /*
       Checks whether vmTools supports the kernelModules argument.
@@ -1169,7 +1182,10 @@ let
       lib.listToAttrs (map (option: lib.nameValuePair option type.options.${option}) options);
 
     typesSerializerLib = {
-      globals.rootMountPoint = "";
+      globals = {
+        rootMountPoint = "";
+        canToggleSystemdInitrd = true;
+      };
       options = null;
       config = {
         _module = {

@@ -3,6 +3,7 @@
   makeTest,
   eval-config,
   qemu-common-lib,
+  diskoLib,
   ...
 }:
 
@@ -120,7 +121,16 @@ let
         # so /dev/vdb becomes /dev/vda etc.
         testConfigBooted = testLib.prepareDiskoConfig diskoConfigWithArgs testLib.devices;
 
-        tsp-generator = pkgs.callPackage ../. { checked = true; };
+        # direct mode feeds tsp-config straight into NixOS, so probe the options of the nixpkgs under test
+        tsp-generator = pkgs.callPackage ../. {
+          checked = true;
+          canToggleSystemdInitrd =
+            diskoLib.systemdInitrdToggleable
+              (eval-config {
+                modules = [ ];
+                system = pkgs.stdenv.hostPlatform.system;
+              }).options;
+        };
         tsp-format = (tsp-generator._cliFormat testConfigInstall) pkgs;
         tsp-mount = (tsp-generator._cliMount testConfigInstall) pkgs;
         tsp-unmount = (tsp-generator._cliUnmount testConfigInstall) pkgs;
@@ -129,7 +139,11 @@ let
         num-disks = builtins.length (lib.attrNames testConfigBooted.disko.devices.disk);
 
         installed-system =
-          { config, ... }:
+          { config, options, ... }:
+          let
+            # boot.initrd.systemd.enable throws once removed (NixOS 26.11+), where stage 1 is always systemd
+            systemdInitrd = !diskoLib.systemdInitrdToggleable options || config.boot.initrd.systemd.enable;
+          in
           {
             imports = [
               (lib.optionalAttrs (testMode == "direct") tsp-config)
@@ -146,10 +160,10 @@ let
             documentation.enable = false;
             hardware.enableAllFirmware = lib.mkForce false;
             # FIXME: we don't have an systemd in stage-1 equialvent for this
-            boot.initrd.preDeviceCommands = lib.mkIf (!config.boot.initrd.systemd.enable) ''
+            boot.initrd.preDeviceCommands = lib.mkIf (!systemdInitrd) ''
               echo -n 'secretsecret' > /tmp/secret.key
             '';
-            boot.initrd.secrets = lib.mkIf config.boot.initrd.systemd.enable {
+            boot.initrd.secrets = lib.mkIf systemdInitrd {
               "/tmp/secret.key" = pkgs.writeText "secret.key" "secretsecret";
             };
             boot.consoleLogLevel = lib.mkForce 100;
