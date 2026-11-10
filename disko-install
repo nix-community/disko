@@ -242,8 +242,7 @@ main() {
     --arg writeEfiBootEntries "$writeEfiBootEntries" \
     --arg diskMappings "$(serialiaseArrayToNix diskMappings)" \
     --argstr extraSystemConfig "$extraSystemConfig" \
-    -A installToplevel \
-    -A closureInfo \
+    -A installSystemFile \
     -A "$diskoAttr"); then
     echo "Failed to build NixOS configuration" >&2
     exit 1
@@ -251,20 +250,19 @@ main() {
 
   IFS=$'\n' mapfile -t artifacts <<<"$outputs"
 
-  if [[ ${#artifacts[@]} -ne 3 ]]; then
-    echo "Expected 3 build outputs, got ${#artifacts[@]}" >&2
+  if [[ ${#artifacts[@]} -ne 2 ]]; then
+    echo "Expected 2 build outputs, got ${#artifacts[@]}" >&2
     echo "Outputs received:" >&2
     printf '%s\n' "${artifacts[@]}" >&2
     exit 1
   fi
 
-  nixos_system=${artifacts[0]}
-  closure_info=${artifacts[1]}
-  disko_script=${artifacts[2]}
+  install_system_file=${artifacts[0]}
+  disko_script=${artifacts[1]}
 
   if [[ -n ${dry_run-} ]]; then
     echo "Would run: $disko_script"
-    echo "Would run: nixos-install --system '$nixos_system' --root '$mountPoint'"
+    echo "Would run: nixos-install --system '$install_system_file' --root '$mountPoint'"
     exit 0
   fi
 
@@ -278,18 +276,12 @@ main() {
     cp -ar "$source" "$mountPoint/$destination"
   done
 
-  # nix copy uses up a lot of memory and we work around issues with incorrect checksums in our store
-  # that can be caused by using closureInfo in combination with multiple builders and non-deterministic builds.
-  # Therefore if we have a blank store, we copy the store paths and registration from the closureInfo.
-  if [[ ! -f "${mountPoint}/nix/var/nix/db/db.sqlite" ]]; then
-    echo "Copying store paths" >&2
-    mkdir -p "${mountPoint}/nix/store"
-    xargs xcp --recursive --target-directory "${mountPoint}/nix/store"  < "${closure_info}/store-paths"
-    echo "Loading nix database" >&2
-    NIX_STATE_DIR=${mountPoint}/nix/var/nix nix-store --load-db < "${closure_info}/registration"
-  fi
-
-  nixos-install --no-channel-copy --no-root-password --system "$nixos_system" --root "$mountPoint"
+  nixos-install \
+    --option extra-experimental-features flakes \
+    --no-channel-copy \
+    --no-root-password \
+    --file "$install_system_file" \
+    --root "$mountPoint"
 }
 
 if main "$@"; then
