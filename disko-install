@@ -179,6 +179,45 @@ maybeRun () {
   fi
 }
 
+checkBinfmtForCrossCompilation() {
+  local flake=$1
+  local flakeAttr=$2
+
+  # Get the current system (host) from Nix
+  local host_system
+  host_system=$(nix-instantiate --eval --expr 'builtins.currentSystem' 2>/dev/null | tr -d '"') || return 0
+
+  # Get the target system by evaluating the flake (without building)
+  local target_system
+  target_system=$(nix eval --raw "${flake}#nixosConfigurations.${flakeAttr}.pkgs.system" 2>/dev/null) || return 0
+
+  # If systems match, no cross-compilation, no binfmt needed
+  if [[ "$host_system" == "$target_system" ]]; then
+    return 0
+  fi
+
+  # Cross-compilation detected, check binfmt configuration
+  local binfmt_file="/proc/sys/fs/binfmt_misc/$target_system"
+  if [[ ! -f "$binfmt_file" ]]; then
+    echo "Cross-compiling from $host_system to $target_system requires binfmt_misc configuration." >&2
+    echo "Add this to your NixOS configuration:" >&2
+    echo "  boot.binfmt.emulatedSystems = [ \"$target_system\" ];" >&2
+    echo "Then rebuild: nixos-rebuild switch" >&2
+    exit 1
+  fi
+
+  # Check for F flag (required for chroot)
+  local flags
+  flags=$(grep "^flags:" "$binfmt_file" | cut -d: -f2 | tr -d ' ')
+  if [[ ! "$flags" =~ F ]]; then
+    echo "Cross-compilation requires the binfmt_misc 'F' flag (current: $flags)" >&2
+    echo "Add this to your NixOS configuration:" >&2
+    echo "  boot.binfmt.preferStaticEmulators = true;" >&2
+    echo "Then rebuild: nixos-rebuild switch" >&2
+    exit 1
+  fi
+}
+
 main() {
   parseArgs "$@"
 
@@ -231,6 +270,9 @@ main() {
   if [[ -z ${dry_run-} ]]; then
      trap cleanupMountPoint EXIT
   fi
+
+  # Check binfmt configuration for cross-compilation before building
+  checkBinfmtForCrossCompilation "$flake" "$flakeAttr"
 
   if ! outputs=$(nixBuild "${libexec_dir}"/install-cli.nix \
     "${nix_args[@]}" \
