@@ -1,3 +1,20 @@
+# 2026-03-02 btrfs-mountoptions-guardrails
+
+Changes:
+
+- Btrfs mount option consistency guardrails were added for mounted subvolumes.
+- Disko now enforces consistency by default and throws when mounted subvolumes
+  disagree on non-whitelisted mount options (Btrfs mount options are largely
+  filesystem-wide).
+- Differences in these per-mount VFS flags are allowed:
+  `ro/rw`, `nosuid/suid`, `nodev/dev`, `noexec/exec`, and atime variants.
+- Subvolumes that do not set `mountOptions` (and therefore use the default
+  `mountOptions = [ "defaults" ];`) are treated as using the top-level Btrfs
+  `mountOptions` for this consistency check.
+- Set `enforceConsistentMountOptions = false;` to disable strict mode.
+- Set `warnOnInconsistentMountOptions = false;` to silence warnings when strict
+  mode is disabled.
+
 # 2023-07-09 121df48
 
 Changes:

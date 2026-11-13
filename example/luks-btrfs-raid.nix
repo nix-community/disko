@@ -53,6 +53,11 @@
                 };
                 content = {
                   type = "btrfs";
+                  mountOptions = [
+                    "relatime"
+                    "rw"
+                    "ssd"
+                  ];
                   extraArgs = [
                     "-d raid1"
                     "/dev/mapper/p1" # Use decrypted mapped device, same name as defined in disk1
@@ -60,11 +65,6 @@
                   subvolumes = {
                     "/root" = {
                       mountpoint = "/";
-                      mountOptions = [
-                        "rw"
-                        "relatime"
-                        "ssd"
-                      ];
                     };
                   };
                 };
