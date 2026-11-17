@@ -9,9 +9,10 @@ def remove:
     "if type zpool >/dev/null; then zpool destroy -f \(.label); zpool labelclear -f \(.label); fi"
   elif .fstype == "LVM2_member" then
     [
-      "vg=$(pvs \(.path | shellquote) --noheadings --options vg_name | grep -o '[a-zA-Z0-9-]*')",
-      "vgchange -a n \"$vg\"",
-      "vgremove -f \"$vg\""
+      # pvs pads its output with whitespace. Only strip that, vg names may contain any of [a-zA-Z0-9+_.-]
+      "vg=$(pvs \(.path | shellquote) --noheadings --options vg_name | tr -d '[:space:]')",
+      # the name is empty if the pv is not part of a vg
+      "if [[ -n \"${vg}\" ]]; then vgchange -a n \"$vg\"; vgremove -f \"$vg\"; fi"
     ]
   elif .fstype == "swap" then
     "swapoff \(.path | shellquote)"
@@ -26,6 +27,14 @@ def remove:
   else
     []
   end
+;
+
+# Split the device-mapper name of a logical volume into its vg and lv name.
+# The name is "<vg>-<lv>[-<layer>]", where every "-" inside the vg and lv name is doubled.
+# Neither name can start with a "-", so the first single "-" is the separator.
+def lvm_names:
+  capture("^(?<vg>[^-](?:[^-]|--)*)-(?<lv>[^-](?:[^-]|--)*)") |
+  map_values(gsub("--"; "-"))
 ;
 
 def deactivate:
@@ -53,10 +62,8 @@ def deactivate:
       "swapoff \(.path | shellquote)"
     ]
   elif .type == "lvm" then
-    (.name | split("-")[0]) as $vgname |
-    (.name | split("-")[1]) as $lvname |
     [
-      "lvremove -fy \($vgname)/\($lvname)"
+      (.name | lvm_names | "lvremove -fy \("\(.vg)/\(.lv)" | shellquote)")
     ]
   elif (.type | contains("raid")) then
     [
