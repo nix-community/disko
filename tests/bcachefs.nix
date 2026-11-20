@@ -6,14 +6,14 @@ diskoLib.testLib.makeDiskoTest {
   inherit pkgs;
   name = "bcachefs";
   disko-config = ../example/bcachefs.nix;
-  enableOCR = true;
+  # One unlock unit per mount point races on the shared filesystem, so the
+  # number and order of prompts varies: answer them until initrd-fs.target.
   bootCommands = ''
-    machine.wait_for_text("enter passphrase for /");
-    machine.send_chars("secretsecret\n");
-    machine.wait_for_text("enter passphrase for /home");
-    machine.send_chars("secretsecret\n");
-    machine.wait_for_text("enter passphrase for /nix");
-    machine.send_chars("secretsecret\n");
+    while True:
+        machine.wait_for_console_text("Starting password query on /dev/ttyS0|Reached target Initrd File Systems")
+        if "Reached target Initrd File Systems" in machine.get_console_log():
+            break
+        machine.send_console("secretsecret\n")
   '';
   extraInstallerConfig = {
     boot = {
