@@ -87,27 +87,25 @@ example we assume a system that has been booted with EFI:
 }
 ```
 
-Identify the device name that you want to install NixOS to:
+Identify the device id that you want to install NixOS to:
 
 ```console
-$ lsblk
-NAME        MAJ:MIN RM  SIZE RO TYPE MOUNTPOINTS
-sda           8:0    1 14.9G  0 disk
-└─sda1        8:1    1 14.9G  0 part
-zd0         230:0    0   10G  0 disk
-├─zd0p1     230:1    0  500M  0 part
-└─zd0p2     230:2    0  9.5G  0 part /mnt
-nvme0n1     259:0    0  1.8T  0 disk
-├─nvme0n1p1 259:1    0    1G  0 part /boot
-├─nvme0n1p2 259:2    0   16M  0 part
-├─nvme0n1p3 259:3    0  250G  0 part
-└─nvme0n1p4 259:4    0  1.6T  0 part
+$ ls -al /dev/disk/by-id
+lrwxrwxrwx 1 root root   9 Avg 21 12:11 ata-Lexar_SSD_NS100_1TB_XXXXXXXXXXXXXXXXXX -> ../../sdb
+lrwxrwxrwx 1 root root  10 Avg 21 12:11 ata-Lexar_SSD_NS100_1TB_XXXXXXXXXXXXXXXXXX -> ../../sdb1
+lrwxrwxrwx 1 root root  10 Avg 21 12:11 ata-Lexar_SSD_NS100_1TB_XXXXXXXXXXXXXXXXXX -> ../../sdb2
+lrwxrwxrwx 1 root root  10 Avg 21 12:11 ata-Lexar_SSD_NS100_1TB_XXXXXXXXXXXXXXXXXX -> ../../sdb3
+lrwxrwxrwx 1 root root   9 Avg 21 12:11 ata-TOSHIBA_HDWT720_XXXXXXXXXXXXXXXXXX -> ../../sda
+lrwxrwxrwx 1 root root  10 Avg 21 12:11 ata-TOSHIBA_HDWT720_XXXXXXXXXXXXXXXXXX-part1 -> ../../sda1
+lrwxrwxrwx 1 root root  10 Avg 21 12:11 wwn-0xxxxxxxxxxxxxxxxx-part1 -> ../../sdb1
+lrwxrwxrwx 1 root root  10 Avg 21 12:11 wwn-0xxxxxxxxxxxxxxxxx-part2 -> ../../sdb2
+lrwxrwxrwx 1 root root  10 Avg 21 12:11 wwn-0xxxxxxxxxxxxxxxxx-part3 -> ../../sdb3
 ```
 
 In our example, we want to install to a USB-stick (/dev/sda):
 
 ```console
-$ sudo nix run 'github:nix-community/disko/latest#disko-install' -- --flake '/tmp/config/etc/nixos#mymachine' --disk main /dev/sda
+$ sudo nix run 'github:nix-community/disko/latest#disko-install' -- --flake '/tmp/config/etc/nixos#mymachine' --disk main /dev/disk/by-id/
 ```
 
 Afterwards you can test your USB-stick by either selecting during the boot or
@@ -126,7 +124,7 @@ new hardware or to prioritize it in your current machine's boot order, use the
 --write-efi-boot-entries option:
 
 ```console
-$ sudo nix run 'github:nix-community/disko/latest#disko-install' -- --write-efi-boot-entries --flake '/tmp/config/etc/nixos#mymachine' --disk main /dev/sda
+$ sudo nix run 'github:nix-community/disko/latest#disko-install' -- --write-efi-boot-entries --flake '/tmp/config/etc/nixos#mymachine' --disk main /dev/disk/by-id/
 ```
 
 This command installs NixOS with **disko-install** and sets the newly installed
