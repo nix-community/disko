@@ -183,9 +183,22 @@ in
                 description = "Alignment of the partition, if sectors are used as start or end it can be aligned to 1";
               };
               start = lib.mkOption {
-                type = lib.types.str;
+                # addCheck isn't in disko's jsonTypes doc-generation stub lib,
+                # so fall back to a no-op there instead of crashing; real
+                # evaluation always has the genuine addCheck.
+                type = (lib.types.addCheck or (elemType: _check: elemType)) lib.types.str (
+                  start: builtins.match "[+-]?0+[KMGTP]" start == null
+                );
                 default = "0";
-                description = "Start of the partition, in sgdisk format, use 0 for next available range";
+                description = ''
+                  Start of the partition, in sgdisk format, use 0 for next available range.
+
+                  Note: sgdisk treats a bare "0" as "next available range", but "0"
+                  followed directly by a size unit (e.g. "0M") is a literal
+                  zero-byte offset that collides with the GPT header, causing a
+                  confusing sgdisk failure. Use a bare "0" or a non-zero offset
+                  (e.g. "1M") instead.
+                '';
               };
               end = lib.mkOption {
                 type = lib.types.str;
