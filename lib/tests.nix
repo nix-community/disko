@@ -82,6 +82,7 @@ let
         extraSystemConfig ? { },
         efi ? !pkgs.stdenv.hostPlatform.isRiscV64,
         enableCanokey ? false,
+        enableTpm ? false,
         postDisko ? "",
         postUnmountPreMount ? "",
         postMount ? "",
@@ -317,6 +318,7 @@ let
             ) testConfigInstall.networking.hostId;
 
             virtualisation = {
+              tpm.enable = enableTpm;
               emptyDiskImages = builtins.genList (_: 4096) num-disks;
               qemu.options = lib.mkIf enableCanokey [
                 "-device pci-ohci,id=usb-bus"
@@ -348,7 +350,7 @@ let
                 return disk_flags
 
             def create_test_machine(
-                oldmachine=None, **kwargs
+                oldmachine, **kwargs
             ):  # taken from <nixpkgs/nixos/tests/installer.nix>
                 # Use qemu-common from nixpkgs to get the proper QEMU binary with correct machine type and flags
                 # shlex.split properly handles the command string with options like "-machine virt,gic-version=max"
@@ -360,21 +362,79 @@ let
                     *disks(oldmachine, ${toString num-disks})
                 ]
                 ${lib.optionalString efi ''
-                  start_command += ["-drive",
-                    "if=pflash,format=raw,unit=0,readonly=on,file=${pkgs.OVMF.firmware}",
-                    "-drive",
-                    "if=pflash,format=raw,unit=1,readonly=on,file=${pkgs.OVMF.variables}"
-                  ]
+                  #
+                      start_command += [
+                        "-drive",
+                        "if=pflash,format=raw,unit=0,readonly=on,file=${pkgs.OVMF.firmware}",
+                        "-drive",
+                        "if=pflash,format=raw,unit=1,readonly=on,file=${pkgs.OVMF.variables}"
+                      ]
                 ''}
                 ${lib.optionalString enableCanokey ''
-                  start_command += ["-device", "pci-ohci,id=usb-bus",
-                    "-device", "canokey,bus=usb-bus.0,file=/tmp/canokey-file"
-                  ]
+                  #
+                      start_command += ["-device", "pci-ohci,id=usb-bus",
+                        "-device", "canokey,bus=usb-bus.0,file=/tmp/canokey-file"
+                      ]
+                ''}
+                ${lib.optionalString enableTpm ''
+                  #
+                      import subprocess, os, time, glob, signal
+
+                      # nixpkgs puts machine-swtpm in the VM's TMPDIR, not state_dir
+                      candidates = glob.glob("/tmp/nix-vm.*/machine-swtpm") + \
+                                  glob.glob(f"{oldmachine.state_dir}/machine-swtpm") + \
+                                  glob.glob("/build/vm-state-*/machine-swtpm")
+                      state_dir = candidates[0] if candidates else f"{oldmachine.state_dir}/machine-swtpm"
+                      os.makedirs(state_dir, exist_ok=True)
+
+                      # kill old swtpm if its pid file exists (best-effort)
+                      try:
+                          pid = int(open(f"{state_dir}/pid").read().strip())
+                          os.kill(pid, signal.SIGTERM)
+                          time.sleep(0.5)
+                      except (FileNotFoundError, ProcessLookupError, ValueError):
+                          pass
+
+                      for f in ["socket", "socket.ctrl", "stdout", "pid"]:
+                          try: os.remove(f"{state_dir}/{f}")
+                          except FileNotFoundError: pass
+                      swtpm_proc = subprocess.Popen([
+                          "${pkgs.swtpm}/bin/swtpm", "socket",
+                          "--tpmstate", f"dir={state_dir}",
+                          "--server", f"type=unixio,path={state_dir}/socket",
+                          "--ctrl", f"type=unixio,path={state_dir}/socket.ctrl",
+                          "--pid", f"file={state_dir}/pid",
+                          "--flags", "not-need-init",
+                          "--tpm2",
+                          "--log", f"file={state_dir}/stdout,level=6"
+                      ])
+                      print("swtpm_proc silence usage:")
+                      print(swtpm_proc)
+                      for _ in range(50):
+                          if os.path.exists(f"{state_dir}/socket") and os.path.exists(f"{state_dir}/socket.ctrl"): break
+                          if swtpm_proc.poll() is not None:
+                            with open(f"{state_dir}/stdout") as stdoutput:
+                              for line in stdoutput:
+                                print(line)
+                            raise Exception(f"swtpm died with rc={swtpm_proc.returncode}, see {state_dir}/stdout")
+                          time.sleep(0.1)
+                      else:
+                          raise Exception("swtpm socket never appeared")
+
+                      start_command += [
+                        "-chardev", f"socket,id=chrtpm,path={oldmachine.state_dir}/machine-swtpm/socket.ctrl",
+                        "-tpmdev", "emulator,id=tpm_dev_0,chardev=chrtpm",
+                        "-device", "tpm-tis,tpmdev=tpm_dev_0",
+                      ]
                 ''}
                 machine = create_machine(start_command=" ".join(start_command), **kwargs)
                 driver.machines_qemu.append(machine)
                 return machine
 
+            ${lib.optionalString enableTpm ''
+              import os
+              os.environ["NIX_SWTPM_DIR"] = f"{machine.state_dir}/machine-swtpm"
+            ''}
             machine.start()
             machine.succeed("echo -n 'additionalSecret' > /tmp/additionalSecret.key")
             machine.succeed("echo -n 'secretsecret' > /tmp/secret.key")
@@ -432,6 +492,7 @@ let
               machine.succeed("sync")
               machine.shutdown()
 
+              ${ /* FIXME: ConnectionResetError: [Errno 104] Connection reset by peer */ "" }
               machine = create_test_machine(oldmachine=machine, name="booted_machine")
               machine.start()
               ${bootCommands}
