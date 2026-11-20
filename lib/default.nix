@@ -671,7 +671,8 @@ let
       (pkgs.vmTools.override.__functionArgs or (
         if lib.isFunction pkgs.vmTools.override then builtins.functionArgs pkgs.vmTools.override else { }
       )
-      ) ? kernelModules;
+      )
+        ? kernelModules;
 
     optionTypes = rec {
       filename = lib.mkOptionType {
