@@ -29,7 +29,7 @@ system rebuild.
 partitioning options, including:
 
 - Disk layouts: GPT, MBR, and mixed.
-- Partition tools: LVM, mdadm, LUKS, and more.
+- Partition tools: LVM, mdadm, LUKS, bcache, and more.
 - Filesystems: ext4, btrfs, ZFS, bcachefs, tmpfs, and others.
 
 It can work with these in various configurations and orders, and supports
