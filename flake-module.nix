@@ -1,7 +1,35 @@
-{ lib, ... }:
+{
+  config,
+  lib,
+  extendModules,
+  modulesPath,
+  ...
+}:
+
+let
+  diskoLib = import ./lib {
+    inherit lib;
+    rootMountPoint = config.disko.rootMountPoint;
+  };
+in
 {
   options.flake.diskoConfigurations = lib.mkOption {
-    type = lib.types.lazyAttrsOf lib.types.raw;
+    type = lib.types.attrsOf (
+      lib.types.submodule {
+        imports = [
+          ./module.nix
+          {
+            # `modulesPath` and `extendedModules` are probably not needed here.
+            # its only here to test if virtualisation.vmVariantWithDisko would get properly typed
+            # but alas it does not.
+            inherit diskoLib extendModules modulesPath;
+          }
+
+          # Minimal stub to satisfy basic module requirements if pkgs/config are used
+          { _module.check = false; }
+        ];
+      }
+    );
     default = { };
     description = "Instantiated Disko configurations. Used by `disko` and `disko-install`.";
     example = {
