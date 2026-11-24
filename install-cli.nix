@@ -8,7 +8,8 @@
 }:
 let
   originalSystem = (builtins.getFlake "${flake}").nixosConfigurations."${flakeAttr}";
-  lib = originalSystem.pkgs.lib;
+  pkgs = originalSystem.pkgs;
+  lib = pkgs.lib;
 
   deviceName =
     name:
@@ -43,25 +44,27 @@ let
     ];
   };
 
-  installSystem = originalSystem.extendModules {
-    modules = [
-      (
-        { lib, ... }:
-        {
-          boot.loader.efi.canTouchEfiVariables = lib.mkVMOverride writeEfiBootEntries;
-          boot.loader.grub.devices = lib.mkVMOverride (lib.attrValues diskMappings);
-          imports = [
-            ({ _file = "disko-install --system-config"; } // (builtins.fromJSON extraSystemConfig))
-          ];
-        }
-      )
-    ];
-  };
+  installSystemDataFile = pkgs.writeText "installSystemData.json" (
+    builtins.toJSON {
+      inherit
+        flake
+        flakeAttr
+        diskMappings
+        extraSystemConfig
+        writeEfiBootEntries
+        ;
+    }
+  );
+
+  # We need to yield a Nix file for the modified installSystem to avoid
+  # building it on the Nix store of the running system (which may be
+  # space-limited) and instead defer building to nixos-install (which will
+  # build on the Nix store of the install target).
+  installSystemFile = pkgs.writeText "install-system.nix" /* nix */ ''
+    import ${./lib/make-install-system.nix} (builtins.fromJSON (builtins.readFile "${installSystemDataFile}"))
+  '';
 in
 {
-  installToplevel = installSystem.config.system.build.toplevel;
-  closureInfo = installSystem.pkgs.closureInfo {
-    rootPaths = [ installSystem.config.system.build.toplevel ];
-  };
+  inherit installSystemFile;
   inherit (diskoSystem.config.system.build) formatScript mountScript diskoScript;
 }
