@@ -7,7 +7,11 @@
   rootMountPoint ? "/mnt",
 }:
 let
-  originalSystem = (builtins.getFlake "${flake}").nixosConfigurations."${flakeAttr}";
+  outputs = (builtins.getFlake "${flake}");
+  originalSystem =
+    outputs.packages.${builtins.currentSystem}.nixosConfigurations."${flakeAttr}"
+      or outputs.legacyPackages.${builtins.currentSystem}.nixosConfigurations."${flakeAttr}"
+        or outputs.nixosConfigurations."${flakeAttr}";
   lib = originalSystem.pkgs.lib;
 
   deviceName =
