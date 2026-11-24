@@ -12,6 +12,7 @@
 - [How to Guide](./HowTo.md)
 - [Disko-Install](./disko-install.md)
 - [Disko-Images](./disko-images.md)
+- [Performing Unattended NixOS Installations](./unattended-install.md)
 - [Support Matrix](./supportmatrix.md)
 - [Reference](./reference.md)
 - [Upgrade Guide](./upgrade-guide.md)
