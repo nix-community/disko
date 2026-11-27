@@ -193,7 +193,9 @@
                 MNTPOINT="$(mktemp -d)";
                 ${lib.optionalString (config.passwordFile != null) ''
                   if ! bcachefs unlock -k session "/dev/disk/by-uuid/${config.uuid}" < "${config.passwordFile}"; then
-                    test -d "/sys/fs/bcachefs/${config.uuid}";
+                    # Mounted already, so unlocked.  sysfs names a single-device
+                    # filesystem after its device rather than its UUID.
+                    test -d "/sys/fs/bcachefs/${config.uuid}" || findmnt --source "UUID=${config.uuid}" >&2;
                   fi;
                 ''}
                 mount \
@@ -232,7 +234,9 @@
                   mkdir -p "${globals.rootMountPoint}${subvolume.mountpoint}";
                   ${lib.optionalString (config.passwordFile != null) ''
                     if ! bcachefs unlock -k session "/dev/disk/by-uuid/${config.uuid}" < "${config.passwordFile}"; then
-                      test -d "/sys/fs/bcachefs/${config.uuid}";
+                      # Mounted already, so unlocked.  sysfs names a single-device
+                      # filesystem after its device rather than its UUID.
+                      test -d "/sys/fs/bcachefs/${config.uuid}" || findmnt --source "UUID=${config.uuid}" >&2;
                     fi;
                   ''}
                   mount \
@@ -266,7 +270,9 @@
                   mkdir -p "${globals.rootMountPoint}${config.mountpoint}";
                   ${lib.optionalString (config.passwordFile != null) ''
                     if ! bcachefs unlock -k session "/dev/disk/by-uuid/${config.uuid}" < "${config.passwordFile}"; then
-                      test -d "/sys/fs/bcachefs/${config.uuid}";
+                      # Mounted already, so unlocked.  sysfs names a single-device
+                      # filesystem after its device rather than its UUID.
+                      test -d "/sys/fs/bcachefs/${config.uuid}" || findmnt --source "UUID=${config.uuid}" >&2;
                     fi;
                   ''}
                   mount \

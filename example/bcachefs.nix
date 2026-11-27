@@ -93,6 +93,24 @@
           };
         };
       };
+
+      vdf = {
+        device = "/dev/vdf";
+        type = "disk";
+        content = {
+          type = "gpt";
+          partitions = {
+            vdf1 = {
+              size = "100%";
+              content = {
+                type = "bcachefs";
+                filesystem = "encrypted_single_device";
+                label = "group_a.vdf1";
+              };
+            };
+          };
+        };
+      };
     };
 
     bcachefs_filesystems = {
@@ -136,6 +154,22 @@
         type = "bcachefs_filesystem";
         mountpoint = "/home/Documents";
         uuid = "64e50034-ebe2-eaf8-1f93-cf56266a8d86";
+      };
+
+      # Example showing an encrypted single-disk filesystem with more
+      # than one mounted subvolume.
+      encrypted_single_device = {
+        type = "bcachefs_filesystem";
+        passwordFile = "/tmp/secret.key";
+        subvolumes = {
+          "subvolumes/srv" = {
+            mountpoint = "/srv";
+          };
+          # Mounted beneath the subvolume above, so after it at boot.
+          "subvolumes/data" = {
+            mountpoint = "/srv/data";
+          };
+        };
       };
     };
   };
