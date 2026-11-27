@@ -353,15 +353,15 @@ in
       default =
         [ ]
         # If initrdUnlock is true, then add a device entry to the initrd.luks.devices config.
-        ++ (lib.optional config.initrdUnlock [
-          {
-            boot.initrd.luks.devices.${config.name} = {
-              inherit (config) device;
-              crypttabExtraOpts = lib.mkIf config.enrollFido2 [ "fido2-device=auto" ];
-            }
-            // config.settings;
+        ++ (lib.optional (config.initrdUnlock && config.enrollFido2) {
+          boot.initrd.luks.devices.${config.name}.crypttabExtraOpts = [ "fido2-device=auto" ];
+        })
+        ++ (lib.optional config.initrdUnlock {
+          boot.initrd.luks.devices.${config.name} = {
+            inherit (config) device;
           }
-        ])
+          // config.settings;
+        })
         # FIDO2 unlock requires systemd stage 1. NixOS 26.11+ always uses it and has removed the option,
         # so only define it where it can still be toggled.
         ++ (lib.optional (config.initrdUnlock && config.enrollFido2 && globals.canToggleSystemdInitrd) {
