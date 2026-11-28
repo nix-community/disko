@@ -38,7 +38,8 @@ diskoLib.testLib.makeDiskoTest {
 
     # bcachefs-tools >= 1.33.1 cannot read the superblock from a mounted device 
     def bcachefs_sysfs(mp):
-        src = machine.succeed(f"findmnt -no SOURCE {mp}").strip().split(":")[0]
+        # --nofsroot leaves out the [/subvolume] of a subvolume mount
+        src = machine.succeed(f"findmnt --nofsroot -no SOURCE {mp}").strip().split(":")[0]
         dev = src.rsplit("/", 1)[-1]
         path = machine.succeed(
             "for d in /sys/fs/bcachefs/*/dev-*/block; do "
@@ -55,16 +56,22 @@ diskoLib.testLib.makeDiskoTest {
     machine.succeed("mountpoint /home");
     machine.succeed("mountpoint /nix");
     machine.succeed("mountpoint /home/Documents");
+    machine.succeed("mountpoint /srv");
+    machine.succeed("mountpoint /srv/data");
     machine.fail("mountpoint /non-existent");
 
     multi_sysfs = bcachefs_sysfs("/")
     single_sysfs = bcachefs_sysfs("/home/Documents")
+    encrypted_single_sysfs = bcachefs_sysfs("/srv")
 
     # Verify device membership.
     multi_devs = int(machine.succeed(f"ls -d {multi_sysfs}/dev-* | wc -l").strip())
     assert multi_devs == 3, f"Expected 3 devices in {multi_sysfs}, got {multi_devs}"
     single_devs = int(machine.succeed(f"ls -d {single_sysfs}/dev-* | wc -l").strip())
     assert single_devs == 1, f"Expected 1 device in {single_sysfs}, got {single_devs}"
+    encrypted_single_devs = int(machine.succeed(f"ls -d {encrypted_single_sysfs}/dev-* | wc -l").strip())
+    assert encrypted_single_devs == 1, f"Expected 1 device in {encrypted_single_sysfs}, got {encrypted_single_devs}"
+    assert encrypted_single_sysfs == bcachefs_sysfs("/srv/data"), "Expected /srv and /srv/data on one filesystem"
 
     # Verify labels.
     multi_labels = set(machine.succeed(f"cat {multi_sysfs}/dev-*/label").split())
