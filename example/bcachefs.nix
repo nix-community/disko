@@ -87,7 +87,6 @@
               content = {
                 type = "bcachefs";
                 filesystem = "relies_on_external_subvolume";
-                label = "group_a.vde1";
               };
             };
           };

@@ -33,7 +33,7 @@
       description = "Extra arguments passed to the bcachefs format command.";
       example = [ "--discard" ];
     };
-    # This value is passed to the `--label` option for the device corresponding to this one in the invocation of the `bcachefs format` command
+    # This value, unless empty, is passed to the `--label` option for the device corresponding to this one in the invocation of the `bcachefs format` command
     # in the bcachefs_filesystem type defined in bcachefs_filesystem.nix used to format the bcachefs filesystem that this device is a part of.
     label = lib.mkOption {
       type = lib.types.str;
@@ -41,6 +41,7 @@
       description = ''
         Label to use for this device.
         This value is passed as the `--label` argument to the `bcachefs format` command when formatting the device.
+        If it is empty, the device is formatted without a label.
       '';
       example = "group_a.sda2";
     };
@@ -66,7 +67,7 @@
       default = ''
         # Write device arguments to temporary directory for bcachefs_filesystem.
         {
-          printf '%s\n' '--label=${config.label}';
+          ${lib.optionalString (config.label != "") ''printf '%s\n' '--label=${config.label}';''}
           ${lib.concatMapStrings (args: ''printf '%s\n' '${args}';'') config.extraFormatArgs}
           printf '%s\n' '${config.device}';
         } >> "$disko_devices_dir/bcachefs-${lib.escapeShellArg config.filesystem}";
