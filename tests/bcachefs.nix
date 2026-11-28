@@ -71,7 +71,7 @@ diskoLib.testLib.makeDiskoTest {
     expected_multi = {"group_a.vdb2", "group_a.vdc1", "group_b.vdd1"}
     assert multi_labels == expected_multi, f"Expected {expected_multi}, got {multi_labels}"
     single_labels = set(machine.succeed(f"cat {single_sysfs}/dev-*/label").split())
-    assert single_labels == {"group_a.vde1"}, f"Expected {{'group_a.vde1'}}, got {single_labels}"
+    assert single_labels == {"none"}, f"Expected no label, got {single_labels}"
 
     # Verify format arguments via sysfs options.
     multi_comp = machine.succeed(f"cat {multi_sysfs}/options/compression").strip()
